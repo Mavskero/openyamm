@@ -42,16 +42,45 @@ function(openyamm_configure_ffmpeg)
         --enable-demuxer=ogg
         --enable-demuxer=mp3
         --enable-demuxer=wav
+        --enable-demuxer=smacker
+        --enable-demuxer=bink
         --enable-decoder=theora
         --enable-decoder=vorbis
         --enable-decoder=mp3
         --enable-decoder=mp3float
         --enable-decoder=adpcm_ima_wav
+        --enable-decoder=smacker
+        --enable-decoder=smackaud
+        --enable-decoder=bink
+        --enable-decoder=binkaudio_dct
+        --enable-decoder=binkaudio_rdft
+        --enable-decoder=pcm_u8
+        --enable-decoder=pcm_s16le
         --enable-parser=vorbis
         --enable-parser=mpegaudio
     )
 
-    if (ANDROID)
+    if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+        if (NOT CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+            message(FATAL_ERROR "The initial iOS FFmpeg build supports arm64; build simulator and device separately.")
+        endif()
+        if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+            set(openyammAppleSdk "iphonesimulator")
+            set(openyammAppleTarget "arm64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}-simulator")
+        else()
+            set(openyammAppleSdk "iphoneos")
+            set(openyammAppleTarget "arm64-apple-ios${CMAKE_OSX_DEPLOYMENT_TARGET}")
+        endif()
+        execute_process(COMMAND xcrun --sdk ${openyammAppleSdk} --show-sdk-path
+            OUTPUT_VARIABLE openyammAppleSysroot OUTPUT_STRIP_TRAILING_WHITESPACE
+            COMMAND_ERROR_IS_FATAL ANY)
+        list(APPEND openyammFfmpegConfigureArgs
+            --enable-cross-compile --target-os=darwin --arch=aarch64
+            --cc=${CMAKE_C_COMPILER} --ar=${CMAKE_AR} --ranlib=${CMAKE_RANLIB}
+            --sysroot=${openyammAppleSysroot}
+            "--extra-cflags=-target ${openyammAppleTarget}"
+            "--extra-ldflags=-target ${openyammAppleTarget}")
+    elseif (ANDROID)
         if (CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
             set(openyammFfmpegArch "aarch64")
             set(openyammFfmpegCompilerPrefix "aarch64-linux-android")
@@ -91,6 +120,8 @@ function(openyamm_configure_ffmpeg)
         endif()
     endif()
 
+    # Generators enter WORKING_DIRECTORY before executing the first command.
+    file(MAKE_DIRECTORY "${OPENYAMM_FFMPEG_BUILD_DIR}")
     add_custom_command(
         OUTPUT
             "${OPENYAMM_FFMPEG_LIBAVFORMAT}"
@@ -98,7 +129,6 @@ function(openyamm_configure_ffmpeg)
             "${OPENYAMM_FFMPEG_LIBSWRESAMPLE}"
             "${OPENYAMM_FFMPEG_LIBSWSCALE}"
             "${OPENYAMM_FFMPEG_LIBAVUTIL}"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${OPENYAMM_FFMPEG_BUILD_DIR}"
         COMMAND bash "${OPENYAMM_FFMPEG_SOURCE_DIR}/configure"
             ${openyammFfmpegConfigureArgs}
         COMMAND ${OPENYAMM_FFMPEG_MAKE_PROGRAM} -j4

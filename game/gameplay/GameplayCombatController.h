@@ -14,6 +14,7 @@ namespace OpenYAMM::Game
 {
 class GameplayScreenRuntime;
 class IGameplayWorldRuntime;
+class CombatTextTable;
 
 class GameplayCombatController
 {
@@ -64,6 +65,7 @@ public:
     };
 
     static std::string formatPartyAttackStatusText(
+        const CombatTextTable &texts,
         const std::string &attackerName,
         const std::string &targetName,
         const CharacterAttackResult &attack,

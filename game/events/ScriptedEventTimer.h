@@ -63,6 +63,8 @@ struct ScriptedEventTimerState
     bool initialCalendarFirePending = false;
     bool migratedFromLegacySave = false;
     double migratedRemainingGameMinutes = 0.0;
+    // Anchored native timers are re-registered on map load, so their poll cursor is transient.
+    int64_t lastNativePollTime = -1;
 };
 
 double legacyTimerGameMinutesFromTicks(int64_t legacyTicks);

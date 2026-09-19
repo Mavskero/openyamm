@@ -1,4 +1,8 @@
 #include "game/ui/MenuScreenBase.h"
+#include "game/ui/Utf8Text.h"
+#if defined(__APPLE__)
+#include "engine/AppleText.h"
+#endif
 #include "engine/BgfxContext.h"
 #include "engine/ImageAssetLoader.h"
 #include "game/render/TextureFiltering.h"
@@ -91,6 +95,10 @@ std::filesystem::path getShaderPath(bgfx::RendererType::Enum rendererType, const
 
     case bgfx::RendererType::OpenGLES:
         rendererDirectory = "essl";
+        break;
+
+    case bgfx::RendererType::Metal:
+        rendererDirectory = "metal";
         break;
 
     case bgfx::RendererType::Vulkan:
@@ -1000,6 +1008,28 @@ std::optional<MenuScreenBase::TexturePixelsBgra> MenuScreenBase::texturePixelsBg
     };
 }
 
+#if defined(__APPLE__)
+bool MenuScreenBase::drawUtf8Text(const std::string &text, float size, float x, float y,
+    uint32_t colorAbgr, bool shadow)
+{
+    if (text.empty())
+    {
+        return true;
+    }
+    if (shadow)
+    {
+        drawUtf8Text(text, size, x + 1, y + 1, colorAbgr & 0xff000000u, false);
+    }
+    const std::optional<AppleTextTextureCache::Entry> entry = m_utf8TextTextures.ensure(text, size, colorAbgr);
+    if (!entry)
+    {
+        return false;
+    }
+    drawTextureHandle(entry->handle, {x, y, float(entry->width), float(entry->height)});
+    return true;
+}
+#endif
+
 bool MenuScreenBase::drawText(
     const std::string &fontName,
     const std::string &text,
@@ -1015,6 +1045,14 @@ bool MenuScreenBase::drawText(
     {
         return false;
     }
+
+#if defined(__APPLE__)
+    if (hasUtf8MultibyteText(text))
+    {
+        const std::string line = text.substr(0, text.find_first_of("\r\n"));
+        return drawUtf8Text(line, pFont->fontHeight * scale, pixelX, pixelY, colorAbgr, drawShadow);
+    }
+#endif
 
     const bgfx::TextureHandle mainTextureHandle = ensureFontColor(*pFont, colorAbgr);
 
@@ -1172,6 +1210,14 @@ float MenuScreenBase::measureTextWidth(const std::string &fontName, const std::s
     {
         return 0.0f;
     }
+
+#if defined(__APPLE__)
+    if (hasUtf8MultibyteText(text))
+    {
+        const std::string line = text.substr(0, text.find_first_of("\r\n"));
+        return Engine::measureAppleText(line, pFont->fontHeight * scale).value_or(0.0f);
+    }
+#endif
 
     float widthPixels = 0.0f;
 
@@ -1350,6 +1396,9 @@ void MenuScreenBase::ensureRendererInitialized()
 
 void MenuScreenBase::destroyRendererResources()
 {
+#if defined(__APPLE__)
+    m_utf8TextTextures.clear();
+#endif
     if (Engine::BgfxContext::isBgfxInitialized() && bgfx::isValid(m_texturedProgramHandle))
     {
         bgfx::destroy(m_texturedProgramHandle);

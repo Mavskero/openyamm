@@ -10087,7 +10087,7 @@ bool IndoorWorldRuntime::scenarioPartyActorCollisionEnabled() const
     return m_scenarioPartyActorCollisionEnabled;
 }
 
-void IndoorWorldRuntime::updateActorAi(float deltaSeconds)
+void IndoorWorldRuntime::updateActorAi(float deltaSeconds, ActorAiUpdateMode mode)
 {
     const bool collectDiagnostics = actorAiPerformanceDiagnosticsEnabled();
     const uint64_t totalBeginTickCount = collectDiagnostics ? SDL_GetTicksNS() : 0;
@@ -10139,8 +10139,8 @@ void IndoorWorldRuntime::updateActorAi(float deltaSeconds)
         }
 
         const uint64_t collectBeginTickCount = collectDiagnostics ? SDL_GetTicksNS() : 0;
-        const ActorAiFrameFacts actorAiFacts =
-            collectIndoorActorAiFrameFacts(ActorUpdateStepSeconds, pDiagnostics);
+        ActorAiFrameFacts actorAiFacts = collectIndoorActorAiFrameFacts(ActorUpdateStepSeconds, pDiagnostics);
+        actorAiFacts.updateMode = mode;
         recordDiagnostics(m_actorAiPerformanceDiagnostics.collectNanoseconds, collectBeginTickCount);
 
         const GameplayActorAiSystem actorAiSystem = {};
@@ -13727,13 +13727,6 @@ bool IndoorWorldRuntime::activateTelekinesisTarget(const GameplayWorldHit &hit)
 
         if (attemptOpenChest(chestId, true))
         {
-            MapDeltaData *pMapDeltaData = mapDeltaData();
-
-            if (pMapDeltaData != nullptr && chestId < pMapDeltaData->chests.size())
-            {
-                pMapDeltaData->chests[chestId].flags |= static_cast<uint16_t>(EvtChestFlag::Opened);
-            }
-
             activateChestView(chestId);
             return true;
         }
@@ -15996,7 +15989,6 @@ void IndoorWorldRuntime::applyEventRuntimeState(bool syncPersistentHostilityMask
         {
             if (attemptOpenChest(openedChestId, openedChestRequest.openedByTelekinesis))
             {
-                pMapDeltaData->chests[openedChestId].flags |= static_cast<uint16_t>(EvtChestFlag::Opened);
                 activateChestView(openedChestId);
             }
         }
@@ -16916,7 +16908,7 @@ IndoorWorldRuntime::ChestViewState IndoorWorldRuntime::buildChestView(uint32_t c
 
 void IndoorWorldRuntime::activateChestView(uint32_t chestId)
 {
-    const MapDeltaData *pMapDeltaData = mapDeltaData();
+    MapDeltaData *pMapDeltaData = mapDeltaData();
 
     if (pMapDeltaData == nullptr || chestId >= pMapDeltaData->chests.size())
     {
@@ -16928,6 +16920,7 @@ void IndoorWorldRuntime::activateChestView(uint32_t chestId)
         m_materializedChestViews.resize(chestId + 1);
     }
 
+    markChestOpened(chestId, pMapDeltaData->chests[chestId], eventRuntimeState());
     const bool cached = m_materializedChestViews[chestId].has_value();
 
     if (!cached)
@@ -16935,6 +16928,7 @@ void IndoorWorldRuntime::activateChestView(uint32_t chestId)
         m_materializedChestViews[chestId] = buildChestView(chestId);
     }
 
+    m_materializedChestViews[chestId]->flags = pMapDeltaData->chests[chestId].flags;
     m_activeChestView = *m_materializedChestViews[chestId];
 
     if (EventRuntimeState *pEventRuntimeState = eventRuntimeState())

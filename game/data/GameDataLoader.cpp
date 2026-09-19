@@ -1545,6 +1545,24 @@ bool GameDataLoader::loadInternal(
     m_scriptBitmapPathByKey.clear();
     m_scriptBitmapPixelsByKey.clear();
 
+    std::vector<std::vector<std::string>> combatTextRows;
+    m_combatTextTable = {};
+    if (!loadTextTableRows(assetFileSystem, "engine/data_tables/combat_text.txt", combatTextRows)
+        || !m_combatTextTable.loadFromRows(combatTextRows))
+    {
+        std::cerr << "Missing or invalid combat_text.txt; rebuild/reimport the runtime content package.\n";
+        return false;
+    }
+
+    std::vector<std::vector<std::string>> houseServiceTextRows;
+    m_houseServiceTextTable = {};
+    if (!loadTextTableRows(assetFileSystem, "engine/data_tables/house_service_text.txt", houseServiceTextRows)
+        || !m_houseServiceTextTable.loadFromRows(houseServiceTextRows))
+    {
+        std::cerr << "Missing or invalid house_service_text.txt; rebuild/reimport the runtime content package.\n";
+        return false;
+    }
+
     if (!loadMapStats(assetFileSystem))
     {
         return false;
@@ -1881,6 +1899,16 @@ const ObjectTable &GameDataLoader::getObjectTable() const
 const SpellTable &GameDataLoader::getSpellTable() const
 {
     return m_spellTable;
+}
+
+const CombatTextTable &GameDataLoader::getCombatTextTable() const
+{
+    return m_combatTextTable;
+}
+
+const HouseServiceTextTable &GameDataLoader::getHouseServiceTextTable() const
+{
+    return m_houseServiceTextTable;
 }
 
 const ItemTable &GameDataLoader::getItemTable() const
@@ -4489,6 +4517,23 @@ bool GameDataLoader::loadSelectedMap(
         }
     }
     timingLogger.stage("global lua loaded");
+
+    if (m_selectedMap->outdoorMapData && m_selectedMap->localEventProgram)
+    {
+        const std::unordered_map<std::string, uint16_t> &modelEvents =
+            m_selectedMap->localEventProgram->outdoorModelEvents();
+        for (OutdoorBModel &model : m_selectedMap->outdoorMapData->bmodels)
+        {
+            const auto iterator = modelEvents.find(model.name);
+            if (iterator != modelEvents.end())
+            {
+                for (OutdoorBModelFace &face : model.faces)
+                {
+                    face.cogTriggeredNumber = iterator->second;
+                }
+            }
+        }
+    }
 
     normalizeMapFaceHintOnlyAttributes(
         *m_selectedMap,

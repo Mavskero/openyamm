@@ -6,6 +6,9 @@
 #include "game/party/SpellSchool.h"
 #include "game/tables/ItemTable.h"
 #include "game/ui/GameplayHudCommon.h"
+#include "game/ui/CharacterSkillsLayout.h"
+#include "game/ui/CharacterSkillRows.h"
+#include "game/ui/CharacterStatLayout.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/ui/SpellbookUiLayout.h"
 
@@ -233,215 +236,6 @@ std::string defaultCharacterPortraitTextureName(const Character &character)
     return buffer;
 }
 
-struct CharacterSkillUiRow
-{
-    std::string canonicalName;
-    std::string label;
-    std::string level;
-};
-
-struct CharacterSkillUiData
-{
-    std::vector<CharacterSkillUiRow> weaponRows;
-    std::vector<CharacterSkillUiRow> magicRows;
-    std::vector<CharacterSkillUiRow> armorRows;
-    std::vector<CharacterSkillUiRow> miscRows;
-};
-
-struct CharacterStatRowDefinition
-{
-    const char *pStatName;
-    const char *pLabelId;
-    const char *pValueId;
-};
-
-constexpr std::array<CharacterStatRowDefinition, 26> CharacterStatRows = {{
-    {"SkillPoints", "CharacterStatsSkillPointsTextLabel", "CharacterStatsSkillPointsValue"},
-    {"Might", "CharacterStatMightLabel", "CharacterStatMightValue"},
-    {"Intellect", "CharacterStatIntellectLabel", "CharacterStatIntellectValue"},
-    {"Personality", "CharacterStatPersonalityLabel", "CharacterStatPersonalityValue"},
-    {"Endurance", "CharacterStatEnduranceLabel", "CharacterStatEnduranceValue"},
-    {"Accuracy", "CharacterStatAccuracyLabel", "CharacterStatAccuracyValue"},
-    {"Speed", "CharacterStatSpeedLabel", "CharacterStatSpeedValue"},
-    {"Luck", "CharacterStatLuckLabel", "CharacterStatLuckValue"},
-    {"HitPoints", "CharacterStatHitPointsLabel", "CharacterStatHitPointsValue"},
-    {"SpellPoints", "CharacterStatSpellPointsLabel", "CharacterStatSpellPointsValue"},
-    {"ArmorClass", "CharacterStatArmorClassLabel", "CharacterStatArmorClassValue"},
-    {"Condition", "CharacterStatConditionLabel", "CharacterStatConditionValue"},
-    {"QuickSpell", "CharacterStatQuickSpellLabel", "CharacterStatQuickSpellValue"},
-    {"Age", "CharacterStatAgeLabel", "CharacterStatAgeValue"},
-    {"Level", "CharacterStatLevelLabel", "CharacterStatLevelValue"},
-    {"Experience", "CharacterStatExperienceLabel", "CharacterStatExperienceValue"},
-    {"Attack", "CharacterStatAttackLabel", "CharacterStatAttackValue"},
-    {"MeleeDamage", "CharacterStatMeleeDamageLabel", "CharacterStatMeleeDamageValue"},
-    {"Shoot", "CharacterStatShootLabel", "CharacterStatShootValue"},
-    {"RangedDamage", "CharacterStatRangedDamageLabel", "CharacterStatRangedDamageValue"},
-    {"FireResistance", "CharacterStatFireResistanceLabel", "CharacterStatFireResistanceValue"},
-    {"AirResistance", "CharacterStatAirResistanceLabel", "CharacterStatAirResistanceValue"},
-    {"WaterResistance", "CharacterStatWaterResistanceLabel", "CharacterStatWaterResistanceValue"},
-    {"EarthResistance", "CharacterStatEarthResistanceLabel", "CharacterStatEarthResistanceValue"},
-    {"MindResistance", "CharacterStatMindResistanceLabel", "CharacterStatMindResistanceValue"},
-    {"BodyResistance", "CharacterStatBodyResistanceLabel", "CharacterStatBodyResistanceValue"},
-}};
-
-std::string skillPageMasteryDisplayName(SkillMastery mastery)
-{
-    const std::string displayName = masteryDisplayName(mastery);
-
-    if (displayName == "Grandmaster")
-    {
-        return "Grand";
-    }
-
-    return displayName;
-}
-
-void appendCharacterSkillUiRows(
-    const Character &character,
-    std::vector<CharacterSkillUiRow> &rows,
-    std::unordered_set<std::string> &shownSkillNames,
-    const char *const *pSkillNames,
-    size_t skillCount)
-{
-    for (size_t skillIndex = 0; skillIndex < skillCount; ++skillIndex)
-    {
-        const std::string canonicalName = pSkillNames[skillIndex];
-        const CharacterSkill *pSkill = character.findSkillByCanonicalName(canonicalName);
-
-        if (pSkill == nullptr)
-        {
-            continue;
-        }
-
-        CharacterSkillUiRow row = {};
-        row.canonicalName = canonicalName;
-        row.label = displaySkillName(pSkill->name);
-
-        if (pSkill->mastery != SkillMastery::None && pSkill->mastery != SkillMastery::Normal)
-        {
-            row.label += " " + skillPageMasteryDisplayName(pSkill->mastery);
-        }
-
-        row.level = std::to_string(pSkill->level);
-        rows.push_back(std::move(row));
-        shownSkillNames.insert(canonicalName);
-    }
-}
-
-CharacterSkillUiData buildCharacterSkillUiData(const Character *pCharacter)
-{
-    static constexpr const char *WeaponSkillNames[] = {
-        "Axe",
-        "Bow",
-        "Throwing",
-        "Dagger",
-        "Mace",
-        "Spear",
-        "Staff",
-        "Sword",
-        "Unarmed",
-        "Blaster",
-    };
-    static constexpr const char *MagicSkillNames[] = {
-        "FireMagic",
-        "AirMagic",
-        "WaterMagic",
-        "EarthMagic",
-        "SpiritMagic",
-        "MindMagic",
-        "BodyMagic",
-        "LightMagic",
-        "DarkMagic",
-    };
-    static constexpr const char *ArmorSkillNames[] = {
-        "LeatherArmor",
-        "ChainArmor",
-        "PlateArmor",
-        "Shield",
-        "Dodging",
-    };
-    static constexpr const char *MiscSkillNames[] = {
-        "Alchemy",
-        "Armsmaster",
-        "Bodybuilding",
-        "IdentifyItem",
-        "IdentifyMonster",
-        "Learning",
-        "DisarmTraps",
-        "Meditation",
-        "Merchant",
-        "Perception",
-        "RepairItem",
-        "Stealing",
-    };
-
-    CharacterSkillUiData data = {};
-
-    if (pCharacter == nullptr)
-    {
-        return data;
-    }
-
-    std::unordered_set<std::string> shownSkillNames;
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.weaponRows,
-        shownSkillNames,
-        WeaponSkillNames,
-        std::size(WeaponSkillNames));
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.magicRows,
-        shownSkillNames,
-        MagicSkillNames,
-        std::size(MagicSkillNames));
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.armorRows,
-        shownSkillNames,
-        ArmorSkillNames,
-        std::size(ArmorSkillNames));
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.miscRows,
-        shownSkillNames,
-        MiscSkillNames,
-        std::size(MiscSkillNames));
-
-    std::vector<CharacterSkillUiRow> extraMiscRows;
-
-    for (const auto &[skillName, skill] : pCharacter->skills)
-    {
-        if (shownSkillNames.contains(skillName))
-        {
-            continue;
-        }
-
-        CharacterSkillUiRow row = {};
-        row.canonicalName = skillName;
-        row.label = displaySkillName(skill.name);
-
-        if (skill.mastery != SkillMastery::None && skill.mastery != SkillMastery::Normal)
-        {
-            row.label += " " + skillPageMasteryDisplayName(skill.mastery);
-        }
-
-        row.level = std::to_string(skill.level);
-        extraMiscRows.push_back(std::move(row));
-    }
-
-    std::sort(
-        extraMiscRows.begin(),
-        extraMiscRows.end(),
-        [](const CharacterSkillUiRow &left, const CharacterSkillUiRow &right)
-        {
-            return left.label < right.label;
-        });
-
-    data.miscRows.insert(data.miscRows.end(), extraMiscRows.begin(), extraMiscRows.end());
-    return data;
-}
-
 int skillMasteryAvailability(
     const ClassSkillTable *pClassSkillTable,
     const Character *pCharacter,
@@ -604,7 +398,7 @@ void GameplayHudOverlaySupport::updateCharacterInspectOverlay(
 
     if (context.characterScreenReadOnly().page == GameplayUiController::CharacterPage::Stats)
     {
-        for (const CharacterStatRowDefinition &row : CharacterStatRows)
+        for (const CharacterStatRowDefinition &row : characterStatRows())
         {
             const GameplayScreenRuntime::HudLayoutElement *pLabelLayout = context.findHudLayoutElement(row.pLabelId);
             const GameplayScreenRuntime::HudLayoutElement *pValueLayout = context.findHudLayoutElement(row.pValueId);
@@ -686,14 +480,18 @@ void GameplayHudOverlaySupport::updateCharacterInspectOverlay(
         return;
     }
 
-    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(pCharacter);
+    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(pCharacter, context.characterInspectTable());
     const std::optional<GameplayScreenRuntime::HudFontHandle> skillRowFont = context.findHudFont("Lucida");
-    const float skillRowHeight = skillRowFont.has_value()
-        ? float(std::max(1, skillRowFont->fontHeight - 3))
-        : 11.0f;
+    const float naturalSkillRowHeight =
+        skillRowFont.has_value() ? static_cast<float>(std::max(1, skillRowFont->fontHeight - 3)) : 11.0f;
+    const CharacterSkillLayout skillLayout = layoutCharacterSkillRows(
+        context, width, height, naturalSkillRowHeight,
+        {skillUiData.weaponRows.size(), skillUiData.magicRows.size(),
+         skillUiData.armorRows.size(), skillUiData.miscRows.size()});
+    const float skillRowHeight = skillLayout.rowHeight;
 
     const auto tryShowSkillPopup =
-        [&context, &overlay, width, height, mouseX, mouseY, pCharacter, skillRowHeight](
+        [&context, &overlay, width, height, mouseX, mouseY, pCharacter, skillRowHeight, &skillLayout](
             const char *pRegionId,
             const char *pLevelHeaderId,
             const std::vector<CharacterSkillUiRow> &rows) -> bool
@@ -738,13 +536,18 @@ void GameplayHudOverlaySupport::updateCharacterInspectOverlay(
             {
                 const CharacterSkillUiRow &row = rows[rowIndex];
                 const float rowY = resolvedRegion->y + float(rowIndex) * rowHeightPixels;
-                const GameplayScreenRuntime::ResolvedHudLayoutElement rowRect = {
+                GameplayScreenRuntime::ResolvedHudLayoutElement rowRect = {
                     resolvedRegion->x,
                     rowY,
                     rowWidth,
                     rowHeightPixels,
                     resolvedRegion->scale
                 };
+
+                if (!skillLayout.placeVisible(rowRect))
+                {
+                    continue;
+                }
 
                 if (!GameplayHudCommon::isPointerInsideResolvedElement(rowRect, mouseX, mouseY))
                 {
@@ -1240,13 +1043,14 @@ void GameplayHudOverlaySupport::updateSpellInspectOverlay(
 
     const GameplayInputFrame *pInput = context.currentGameplayInputFrame();
 
-    if (pInput == nullptr || !pInput->rightMouseButton.held)
+    const bool inspectSelected = context.spellbookReadOnly().inspectSelected;
+    if (!inspectSelected && (pInput == nullptr || !pInput->rightMouseButton.held))
     {
         return;
     }
 
-    const float mouseX = pInput->pointerX;
-    const float mouseY = pInput->pointerY;
+    const float mouseX = pInput != nullptr ? pInput->pointerX : 0.0f;
+    const float mouseY = pInput != nullptr ? pInput->pointerY : 0.0f;
 
     const SpellbookSchoolUiDefinition *pDefinition = findSpellbookSchoolUiDefinition(context.spellbookReadOnly().school);
 
@@ -1280,7 +1084,9 @@ void GameplayHudOverlaySupport::updateSpellInspectOverlay(
             pLayout->width,
             pLayout->height);
 
-        if (!resolved || !GameplayHudCommon::isPointerInsideResolvedElement(*resolved, mouseX, mouseY))
+        if (!resolved || (inspectSelected
+            ? spellId != context.spellbookReadOnly().selectedSpellId
+            : !GameplayHudCommon::isPointerInsideResolvedElement(*resolved, mouseX, mouseY)))
         {
             continue;
         }

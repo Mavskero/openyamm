@@ -45,6 +45,19 @@ std::string getCell(const std::vector<std::string> &row, size_t index)
     return trimCopy(row[index]);
 }
 
+std::string canonicalBodyEquipmentType(const std::string &value)
+{
+    const std::string key = toLowerCopy(value);
+    for (const char *pType : {"Armor", "Helm", "Belt", "Boots", "Cloak"})
+    {
+        if (key == toLowerCopy(pType))
+        {
+            return pType;
+        }
+    }
+    return value;
+}
+
 std::vector<std::string> splitPipeSeparated(const std::string &value)
 {
     std::vector<std::string> result;
@@ -469,7 +482,7 @@ bool ItemTable::load(
         entry.iconName = getCell(row, 1);
         entry.name = getCell(row, 2);
         entry.value = parseInt(getCell(row, 3));
-        entry.equipStat = getCell(row, 4);
+        entry.equipStat = canonicalBodyEquipmentType(getCell(row, 4));
         entry.skillGroup = getCell(row, 5);
         entry.mod1 = getCell(row, 6);
         entry.mod2 = getCell(row, 7);

@@ -50,6 +50,13 @@ double nextExactAlarmGameMinutes(double startGameMinutes, double periodGameMinut
     return startGameMinutes + elapsedPeriods * periodGameMinutes;
 }
 
+double nextNativeExactAlarmGameMinutes(double alarmGameMinutes, double periodGameMinutes, int64_t lastPollTime)
+{
+    const double pollBoundary = legacyTimerGameMinutesFromTicks(lastPollTime) + 1.0 / LegacyTicksPerGameMinute;
+    const double periods = std::max(1.0, std::floor((pollBoundary - alarmGameMinutes) / periodGameMinutes) + 1.0);
+    return alarmGameMinutes + periods * periodGameMinutes;
+}
+
 ScriptedEventTimerState initializeTimer(
     const ScriptedEventTimerDefinition &definition,
     double currentGameMinutes,
@@ -60,7 +67,23 @@ ScriptedEventTimerState initializeTimer(
 
     if (definition.origin == ScriptedEventTimerOrigin::Native)
     {
-        state.nextAlarmGameMinutes = currentGameMinutes + std::max(0.0, definition.initialDelayGameMinutes);
+        if (definition.scheduleKind == ScriptedEventTimerScheduleKind::Interval)
+        {
+            // Original registration and subsequent alarms use the preceding map poll tick.
+            // A long absence may therefore cause catch-up callbacks on successive polls.
+            const double previousVisit = legacyTimerGameMinutesFromTicks(lastVisitTime);
+            state.lastNativePollTime = lastVisitTime == 0 ? -1 : lastVisitTime;
+            const double start = dailyStartOffsetGameMinutes(definition);
+            state.nextAlarmGameMinutes = start <= currentGameMinutes && start <= previousVisit
+                ? nextNativeExactAlarmGameMinutes(start,
+                    std::max(MinimumNativeTimerIntervalGameMinutes, definition.intervalGameMinutes),
+                    state.lastNativePollTime)
+                : start;
+        }
+        else
+        {
+            state.nextAlarmGameMinutes = currentGameMinutes + std::max(0.0, definition.initialDelayGameMinutes);
+        }
         state.eligibleGameMinutes = currentGameMinutes;
         return state;
     }
@@ -112,7 +135,10 @@ void advanceTimerAfterFire(ScriptedEventTimerState &state, double currentGameMin
         {
             const double intervalGameMinutes =
                 std::max(MinimumNativeTimerIntervalGameMinutes, definition.intervalGameMinutes);
-            state.nextAlarmGameMinutes += intervalGameMinutes;
+            state.nextAlarmGameMinutes = definition.scheduleKind == ScriptedEventTimerScheduleKind::Interval
+                ? nextNativeExactAlarmGameMinutes(state.nextAlarmGameMinutes,
+                    intervalGameMinutes, state.lastNativePollTime)
+                : state.nextAlarmGameMinutes + intervalGameMinutes;
         }
         else
         {
@@ -196,7 +222,10 @@ std::vector<ScriptedEventTimerState> reconcileScriptedEventTimers(
     {
         size_t matchedIndex = savedStates.size();
 
-        if (!(resetLegacyTimers && definition.origin == ScriptedEventTimerOrigin::Legacy))
+        const bool rebuildAnchoredNativeTimer = definition.origin == ScriptedEventTimerOrigin::Native
+            && definition.scheduleKind == ScriptedEventTimerScheduleKind::Interval;
+        if (!rebuildAnchoredNativeTimer
+            && !(resetLegacyTimers && definition.origin == ScriptedEventTimerOrigin::Legacy))
         {
             for (size_t savedIndex = 0; savedIndex < savedStates.size(); ++savedIndex)
             {
@@ -255,15 +284,30 @@ bool updateScriptedEventTimers(
 
     for (ScriptedEventTimerState &state : states)
     {
-        if ((state.hasFired && !state.definition.repeating)
-            || currentGameMinutes < state.eligibleGameMinutes
-            || currentGameMinutes < state.nextAlarmGameMinutes)
+        const bool anchoredNativeTimer = state.definition.origin == ScriptedEventTimerOrigin::Native
+            && state.definition.scheduleKind == ScriptedEventTimerScheduleKind::Interval;
+        // The native clock can lie between original ticks. Rounding up would consume a future poll
+        // before its alarm is eligible (for example 2.999 followed by exactly 3 game minutes).
+        const int64_t currentPollTime = anchoredNativeTimer
+            ? legacyTimerTicksFromGameMinutes(std::floor(currentGameMinutes * LegacyTicksPerGameMinute)
+                / LegacyTicksPerGameMinute)
+            : 0;
+        if (anchoredNativeTimer && currentPollTime == state.lastNativePollTime)
         {
             continue;
         }
 
-        executedAny = executeTimer(state.definition) || executedAny;
-        advanceTimerAfterFire(state, currentGameMinutes);
+        if (!(state.hasFired && !state.definition.repeating)
+            && currentGameMinutes >= state.eligibleGameMinutes
+            && currentGameMinutes >= state.nextAlarmGameMinutes)
+        {
+            executedAny = executeTimer(state.definition) || executedAny;
+            advanceTimerAfterFire(state, currentGameMinutes);
+        }
+        if (anchoredNativeTimer)
+        {
+            state.lastNativePollTime = currentPollTime;
+        }
     }
 
     return executedAny;

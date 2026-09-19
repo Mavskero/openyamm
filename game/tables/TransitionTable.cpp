@@ -34,6 +34,8 @@ std::string getCell(const std::vector<std::string> &row, size_t index)
 bool TransitionTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
 {
     m_entriesById.clear();
+    const bool sourceNotes = !rows.empty()
+        && rows.front() == std::vector<std::string>{"2D#", "Transition Description", "Note"};
 
     for (const std::vector<std::string> &row : rows)
     {
@@ -47,7 +49,14 @@ bool TransitionTable::loadFromRows(const std::vector<std::vector<std::string>> &
         TransitionEntry entry = {};
         entry.id = id;
         entry.description = getCell(row, 1);
-        entry.title = getCell(row, 2);
+        if (sourceNotes)
+        {
+            entry.sourceNote = getCell(row, 2);
+        }
+        else
+        {
+            entry.title = getCell(row, 2);
+        }
         m_entriesById[id] = std::move(entry);
     }
 

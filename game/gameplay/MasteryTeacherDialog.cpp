@@ -88,9 +88,11 @@ std::optional<MasteryTeacherTopicDefinition> resolveMasteryTeacherTopic(
         definition.requiredGold = pTeacherTopic->requiredGold;
         definition.requiredSkill = pTeacherTopic->requiredSkill;
     }
-    else if (topicId >= 300 && topicId <= 416)
+    else if (topicId >= 300 && topicId <= 416
+        && (pTeacherTopicTable == nullptr || !pTeacherTopicTable->hasCompleteDefinitions()))
     {
-        // MMerge keeps these original MM8 topic ids active even when Teacher topics.txt only extends the table.
+        // Legacy extension tables may rely on base MM8 topics. A complete imported source
+        // defines the active set explicitly and must not reactivate removed topics.
         definition.topicId = topicId;
         definition.skillId = (topicId - 300) / 3;
         definition.masteryRank = ((topicId - 300) % 3) + 1;

@@ -39,35 +39,6 @@ constexpr int GameplayMinimapDefaultZoomStep = 1;
 constexpr int GameplayMinimapMaxZoomStep = 2;
 constexpr int DefaultJournalMapZoomStep = 0;
 constexpr float OeRestHostileAlertDistance = 5120.0f;
-constexpr float DimensionDoorTileSize = 512.0f;
-
-struct DimensionDoorRadiusTrigger
-{
-    const char *pMapName = nullptr;
-    float x = 0.0f;
-    float y = 0.0f;
-    float radius = 0.0f;
-};
-
-struct DimensionDoorTileTrigger
-{
-    const char *pMapName = nullptr;
-    int tileX = 0;
-    int tileY = 0;
-};
-
-constexpr std::array<DimensionDoorRadiusTrigger, 2> DimensionDoorRadiusTriggers = {{
-    {"out09.odm", -5121.0f, 98.0f, 1500.0f},
-    {"outb3.odm", -8384.0f, -13040.0f, 1500.0f},
-}};
-
-constexpr std::array<DimensionDoorTileTrigger, 4> DimensionDoorTileTriggers = {{
-    {"out01.odm", 63, 59},
-    {"out07.odm", 43, 98},
-    {"outb3.odm", 89, 47},
-    {"7out04.odm", 84, 94},
-}};
-
 const char *restModeTraceName(GameplayUiController::RestMode mode)
 {
     switch (mode)
@@ -92,32 +63,6 @@ bool isHouseInventoryOverlay(const GameplayUiController::InventoryNestedOverlayS
             || overlay.mode == GameplayUiController::InventoryNestedOverlayMode::ShopRepair);
 }
 
-std::string normalizedMapFileName(std::string mapName)
-{
-    std::replace(mapName.begin(), mapName.end(), '\\', '/');
-
-    const size_t slashIndex = mapName.find_last_of('/');
-
-    if (slashIndex != std::string::npos)
-    {
-        mapName = mapName.substr(slashIndex + 1);
-    }
-
-    return toLowerCopy(mapName);
-}
-
-bool mapNameMatches(const std::string &currentMapName, const char *pExpectedMapName)
-{
-    return normalizedMapFileName(currentMapName) == normalizedMapFileName(pExpectedMapName != nullptr ? pExpectedMapName : "");
-}
-
-bool partyIsOnDimensionDoorTile(float partyX, float partyY, const DimensionDoorTileTrigger &trigger)
-{
-    const int tileX = static_cast<int>(std::floor(partyX / DimensionDoorTileSize + 64.0f));
-    const int tileY = static_cast<int>(std::floor(64.0f - partyY / DimensionDoorTileSize));
-    return tileX == trigger.tileX && tileY == trigger.tileY;
-}
-
 bool isBodyEquipmentVisualSlot(EquipmentSlot slot)
 {
     switch (slot)
@@ -132,11 +77,6 @@ bool isBodyEquipmentVisualSlot(EquipmentSlot slot)
         default:
             return false;
     }
-}
-
-bool usesAlternateCloakEquippedVariant(EquipmentSlot slot)
-{
-    return slot == EquipmentSlot::Cloak;
 }
 
 uint32_t currentAnimationTicks()
@@ -525,7 +465,9 @@ GameplayDialogController::Context GameplayScreenRuntime::buildDialogContext(Even
         &m_session.data().mergedContinentSettingTable(),
         &m_session.data().mergedTeacherTopicTable(),
         &m_session.data().mergedTeacherAutonoteTable(),
-        &m_session.data().spellTable());
+        &m_session.data().spellTable(),
+        &m_session.data().characterInspectTable(),
+        &m_session.data().houseServiceTextTable());
 }
 
 void GameplayScreenRuntime::presentActiveEventDialog()
@@ -631,6 +573,16 @@ bool GameplayScreenRuntime::mobileFlightControlsAvailable() const
 
 bool GameplayScreenRuntime::mobileInspectControlAvailable() const
 {
+    const HudLayoutElement *pButton = findHudLayoutElement("OutdoorMobileInspectButton");
+    const HudLayoutElement *pIcon = findHudLayoutElement("OutdoorMobileInspectButtonIcon");
+    if (pButton == nullptr || !pButton->visible || !pButton->interactive
+        || pIcon == nullptr || !pIcon->visible || pIcon->primaryAsset.empty())
+    {
+        // Classic layouts have no inspect modifier. Its mobile touch region
+        // must not intercept unrelated controls such as the character tabs.
+        return false;
+    }
+
     const GameplayHudScreenState hudScreenState = currentHudScreenState();
 
     if (hudScreenState == GameplayHudScreenState::Gameplay || hudScreenState == GameplayHudScreenState::Chest)
@@ -692,6 +644,16 @@ GameAudioSystem *GameplayScreenRuntime::audioSystem() const
 const ItemTable *GameplayScreenRuntime::itemTable() const
 {
     return &m_session.data().itemTable();
+}
+
+const CombatTextTable *GameplayScreenRuntime::combatTextTable() const
+{
+    return m_session.data().isBound() ? &m_session.data().combatTextTable() : nullptr;
+}
+
+const HouseServiceTextTable *GameplayScreenRuntime::houseServiceTextTable() const
+{
+    return m_session.data().isBound() ? &m_session.data().houseServiceTextTable() : nullptr;
 }
 
 const StandardItemEnchantTable *GameplayScreenRuntime::standardItemEnchantTable() const
@@ -1350,7 +1312,8 @@ void GameplayScreenRuntime::beginRestAction(
     restScreen.mode = mode;
     restScreen.innRest = innRest;
     restScreen.totalMinutes = std::max(0.0f, minutes);
-    restScreen.remainingMinutes = restScreen.totalMinutes;
+    restScreen.targetGameMinutes = worldRuntime()->gameMinutes() + restScreen.totalMinutes;
+    restScreen.remainingMinutes = std::max(0.0f, restScreen.targetGameMinutes - worldRuntime()->gameMinutes());
 
     GAMEPLAY_DEBUG_TRACE(
         "rest_action_started mode=\"" + std::string(restModeTraceName(mode)) + "\""
@@ -1626,8 +1589,9 @@ void GameplayScreenRuntime::completeRestAction(bool closeRestScreenAfterCompleti
 
     const GameplayUiController::RestMode completedMode = restScreen.mode;
     const bool completedInnRest = restScreen.innRest;
-    const float remainingMinutes = std::max(0.0f, restScreen.remainingMinutes);
     const float beforeGameMinutes = worldRuntime() != nullptr ? worldRuntime()->gameMinutes() : 0.0f;
+    const float remainingMinutes = completedMode != GameplayUiController::RestMode::None
+        ? std::max(0.0f, restScreen.targetGameMinutes - beforeGameMinutes) : 0.0f;
 
     if (remainingMinutes > 0.0f && worldRuntime() != nullptr)
     {
@@ -1661,6 +1625,7 @@ void GameplayScreenRuntime::completeRestAction(bool closeRestScreenAfterCompleti
     restScreen.innRest = false;
     restScreen.totalMinutes = 0.0f;
     restScreen.remainingMinutes = 0.0f;
+    restScreen.targetGameMinutes = 0.0f;
 
     if (completedMode == GameplayUiController::RestMode::Heal && completedInnRest && worldRuntime() != nullptr)
     {
@@ -2891,7 +2856,6 @@ void GameplayScreenRuntime::resetInventoryNestedOverlayInteractionState()
 
 void GameplayScreenRuntime::resetLootOverlayInteractionState()
 {
-    interactionState().closeOverlayLatch = false;
     interactionState().chestClickLatch = false;
     interactionState().chestItemClickLatch = false;
     interactionState().chestPressedTarget = {};
@@ -3312,16 +3276,19 @@ std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> GameplayScreenRun
 
     const float portraitWidth = static_cast<float>(faceMaskTexture->width) * resolvedBasebar->scale;
     const float portraitHeight = static_cast<float>(faceMaskTexture->height) * resolvedBasebar->scale;
+    const UiLayoutManager::TextureRegion *pBasebarRegion = useGameplayWideHud
+        ? uiRuntime().layoutManager().findTextureRegion(pBasebarLayout->primaryAsset) : nullptr;
     float portraitStartX = resolvedPartyStrip->x + resolvedPartyStrip->width * (20.0f / 471.0f);
     float portraitY = resolvedPartyStrip->y + resolvedPartyStrip->height * (23.0f / 92.0f);
-    const float portraitDeltaX = resolvedPartyStrip->width * (94.0f / 471.0f);
+    const float portraitDeltaX = pBasebarRegion != nullptr
+        ? resolvedBasebar->width / 5.0f : resolvedPartyStrip->width * (94.0f / 471.0f);
 
     if (useGameplayWideHud)
     {
         const float basebarCenterX = resolvedBasebar->x + resolvedBasebar->width * 0.5f;
         const float portraitGroupWidth = portraitWidth + static_cast<float>(members.size() - 1) * portraitDeltaX;
         portraitStartX = basebarCenterX - portraitGroupWidth * 0.5f;
-        portraitY -= 15.0f * resolvedBasebar->scale;
+        portraitY -= (pBasebarRegion != nullptr ? pBasebarRegion->y : 15.0f) * resolvedBasebar->scale;
     }
 
     return ResolvedHudLayoutElement{
@@ -3805,63 +3772,123 @@ bool GameplayScreenRuntime::ensureTownPortalDestinationsLoaded()
 
 bool GameplayScreenRuntime::ensureDimensionDoorDestinationsLoaded()
 {
-    constexpr const char *CrossContinentsGotMainQuestVar = "MMerge.CrossContinents.GotMainQuest";
     constexpr float MinutesPerDay = 24.0f * 60.0f;
 
     const IGameplayWorldRuntime *pWorldRuntime = worldRuntime();
     const float gameMinutes = pWorldRuntime != nullptr ? std::max(0.0f, pWorldRuntime->gameMinutes()) : 0.0f;
     const uint32_t dayIndex = static_cast<uint32_t>(std::floor(gameMinutes / MinutesPerDay));
-    const EventRuntimeState *pEventRuntimeState =
-        pWorldRuntime != nullptr ? pWorldRuntime->eventRuntimeState() : nullptr;
-    bool crossContinentsUnlocked = false;
-
-    if (pEventRuntimeState != nullptr)
-    {
-        const auto iterator = pEventRuntimeState->namedGlobalVars.find(CrossContinentsGotMainQuestVar);
-        crossContinentsUnlocked = iterator != pEventRuntimeState->namedGlobalVars.end() && iterator->second != 0;
-    }
-
-    return uiRuntime().ensureDimensionDoorDestinationsLoaded(dayIndex, crossContinentsUnlocked);
+    return uiRuntime().ensureDimensionDoorDestinationsLoaded(
+        m_dimensionDoorState.active ? m_dimensionDoorState.destinationDayIndex : dayIndex);
 }
 
-bool GameplayScreenRuntime::shouldTownPortalCastOpenDimensionDoor() const
+void GameplayScreenRuntime::resetTownPortalContact()
 {
-    const IGameplayWorldRuntime *pWorldRuntime = worldRuntime();
+    m_townPortalContactState = {};
+}
 
-    if (pWorldRuntime == nullptr)
+bool GameplayScreenRuntime::tryInterruptTownPortalForVerdant(bool dimensionDoorEligible)
+{
+    // These events identify the audited MMerge intro overlay. Base-only packages must not open an empty NPC.
+    constexpr uint32_t VerdantNpcEnterEvent = 65500;
+    constexpr uint32_t VerdantIntroTopic = 1778;
+    constexpr uint32_t VerdantNpcId = 803;
+
+    IGameplayWorldRuntime *pWorldRuntime = worldRuntime();
+    EventRuntimeState *pEventRuntimeState = pWorldRuntime != nullptr ? pWorldRuntime->eventRuntimeState() : nullptr;
+    const std::optional<ScriptedEventProgram> *pGlobalProgram =
+        pWorldRuntime != nullptr ? pWorldRuntime->globalEventProgram() : nullptr;
+    const NpcDialogTable *pNpcTable = npcDialogTable();
+
+    if (party() == nullptr || pEventRuntimeState == nullptr || pGlobalProgram == nullptr
+        || !pGlobalProgram->has_value() || !(*pGlobalProgram)->hasEvent(VerdantNpcEnterEvent)
+        || !(*pGlobalProgram)->hasEvent(VerdantIntroTopic)
+        || pNpcTable == nullptr || pNpcTable->getNpc(VerdantNpcId) == nullptr)
     {
         return false;
     }
 
-    const std::string &mapName = pWorldRuntime->mapName();
-    const float x = pWorldRuntime->partyX();
-    const float y = pWorldRuntime->partyY();
-
-    for (const DimensionDoorRadiusTrigger &trigger : DimensionDoorRadiusTriggers)
+    const auto iterator = pEventRuntimeState->namedGlobalVars.find("MMerge.CrossContinents.MetVerdant");
+    const bool metVerdant = iterator != pEventRuntimeState->namedGlobalVars.end() && iterator->second != 0;
+    if (!m_townPortalContactState.onTownPortalAttempt(
+            pWorldRuntime->gameMinutes(), dimensionDoorEligible, metVerdant))
     {
-        if (!mapNameMatches(mapName, trigger.pMapName))
-        {
-            continue;
-        }
-
-        const float dx = x - trigger.x;
-        const float dy = y - trigger.y;
-
-        if (dx * dx + dy * dy <= trigger.radius * trigger.radius)
-        {
-            return true;
-        }
+        return false;
     }
 
-    for (const DimensionDoorTileTrigger &trigger : DimensionDoorTileTriggers)
+    GameplayDialogController::Context context = buildDialogContext(*pEventRuntimeState);
+    const GameplayDialogController::Result result =
+        m_session.gameplayDialogController().openNpcDialogue(context, VerdantNpcId);
+    presentPendingDialogActionResult(result);
+    return true;
+}
+
+void GameplayScreenRuntime::activateDimensionDoor(DimensionDoorActivationSource source)
+{
+    IGameplayWorldRuntime *pWorldRuntime = worldRuntime();
+    if (pWorldRuntime != nullptr)
     {
-        if (mapNameMatches(mapName, trigger.pMapName) && partyIsOnDimensionDoorTile(x, y, trigger))
+        m_dimensionDoorState.activate(pWorldRuntime->gameMinutes(), source);
+        setStatusBarEvent("You feel high magic presence here.", 4.0f);
+    }
+}
+
+void GameplayScreenRuntime::resetDimensionDoor()
+{
+    m_dimensionDoorState = {};
+}
+
+void GameplayScreenRuntime::updateDimensionDoor()
+{
+    IGameplayWorldRuntime *pWorldRuntime = worldRuntime();
+    if (pWorldRuntime == nullptr)
+    {
+        return;
+    }
+    if (EventRuntimeState *pState = pWorldRuntime->eventRuntimeState())
+    {
+        const uint32_t activations = pState->pendingDimensionDoorActivations;
+        pState->pendingDimensionDoorActivations = 0;
+        for (uint32_t index = 0; index < activations; ++index)
         {
-            return true;
+            activateDimensionDoor();
         }
     }
+    const GameplayUiController::UtilitySpellOverlayState &overlay = utilitySpellOverlayReadOnly();
+    // Original screen 3 includes the journal/map/history and Lloyd's Beacon as well as Town Portal.
+    const bool infoScreenOpen = overlay.active || journalScreenStateReadOnly().active;
+    m_dimensionDoorState.update(pWorldRuntime->gameMinutes(), infoScreenOpen);
+}
 
-    return false;
+void GameplayScreenRuntime::dispatchOutdoorStep(int tileX, int tileY)
+{
+    if (IGameplayWorldRuntime *pWorldRuntime = worldRuntime())
+    {
+        pWorldRuntime->executeOutdoorStepHook(tileX, tileY);
+        updateDimensionDoor();
+    }
+}
+
+bool GameplayScreenRuntime::tryRunTownPortalHook()
+{
+    IGameplayWorldRuntime *pWorldRuntime = worldRuntime();
+    EventRuntimeState *pState = pWorldRuntime != nullptr ? pWorldRuntime->eventRuntimeState() : nullptr;
+    if (pState == nullptr)
+    {
+        return false;
+    }
+    const std::optional<EventRuntimeState::ActiveHookContext> previous = pState->activeHookContext;
+    pState->activeHookContext = EventRuntimeState::ActiveHookContext{};
+    pState->activeHookContext->kind = EventRuntimeHookKind::TownPortal;
+    pWorldRuntime->executeEventHooks(EventRuntimeHookKind::TownPortal);
+    const bool blocked = pState->activeHookContext && pState->activeHookContext->blocked;
+    pState->activeHookContext = previous;
+    return blocked;
+}
+
+bool GameplayScreenRuntime::shouldTownPortalCastOpenDimensionDoor()
+{
+    updateDimensionDoor();
+    return m_dimensionDoorState.active;
 }
 
 bool GameplayScreenRuntime::openDimensionDoorOverlay(
@@ -3892,6 +3919,67 @@ const std::string &GameplayScreenRuntime::townPortalBackgroundTextureName() cons
 const std::vector<GameplayTownPortalDestination> &GameplayScreenRuntime::townPortalDestinations() const
 {
     return uiRuntime().townPortalDestinations();
+}
+
+std::optional<size_t> GameplayScreenRuntime::resolveTownPortalDestinationAtPoint(
+    int screenWidth, int screenHeight, float pointerX, float pointerY, std::optional<size_t> pressedDestination)
+{
+    const HudLayoutElement *pBackground = findHudLayoutElement("TownPortalBackground");
+    if (pBackground == nullptr || !pBackground->visible)
+    {
+        return std::nullopt;
+    }
+    const std::optional<ResolvedHudLayoutElement> background = resolveHudLayoutElement(
+        "TownPortalBackground", screenWidth, screenHeight, pBackground->width, pBackground->height);
+    if (!background || background->width <= 0.0f)
+    {
+        return std::nullopt;
+    }
+
+    const float scale = background->width / 640.0f;
+    const float logicalX = (pointerX - background->x) / scale;
+    const float logicalY = (pointerY - background->y) / scale;
+    const Party *pParty = partyReadOnly();
+    const std::vector<GameplayTownPortalDestination> &destinations = townPortalDestinations();
+    const auto containsDestination = [&](size_t index)
+    {
+        const GameplayTownPortalDestination &destination = destinations[index];
+        if (destination.unlockQBitId != 0 && (pParty == nullptr || !pParty->hasQuestBit(destination.unlockQBitId)))
+        {
+            return false;
+        }
+        const int32_t x = destination.hitWidth != 0 ? destination.hitX : destination.iconX;
+        const int32_t y = destination.hitHeight != 0 ? destination.hitY : destination.iconY;
+        uint32_t width = destination.hitWidth != 0 ? destination.hitWidth : destination.iconWidth;
+        uint32_t height = destination.hitHeight != 0 ? destination.hitHeight : destination.iconHeight;
+        if (width == 0 || height == 0)
+        {
+            int textureWidth = 0;
+            int textureHeight = 0;
+            if (!uiRuntime().ensureHudTextureDimensions(destination.iconTextureName, textureWidth, textureHeight))
+            {
+                return false;
+            }
+            width = static_cast<uint32_t>(textureWidth);
+            height = static_cast<uint32_t>(textureHeight);
+        }
+        return logicalX >= x && logicalY >= y && logicalX <= float(x) + width && logicalY <= float(y) + height;
+    };
+    // A pressed image button keeps ownership until release leaves its own bounds, including overlapping areas.
+    if (pressedDestination && *pressedDestination < destinations.size() && containsDestination(*pressedDestination))
+    {
+        return pressedDestination;
+    }
+    // Original image buttons use inclusive texture bounds, with later slots receiving input first.
+    for (size_t remaining = destinations.size(); remaining > 0;)
+    {
+        const size_t index = --remaining;
+        if (containsDestination(index))
+        {
+            return index;
+        }
+    }
+    return std::nullopt;
 }
 
 std::string GameplayScreenRuntime::resolveMapLocationName(const std::string &mapFileName) const
@@ -4003,58 +4091,17 @@ std::string GameplayScreenRuntime::resolveEquippedItemHudTextureName(
     const ItemDefinition &itemDefinition,
     uint32_t dollTypeId,
     bool hasRightHandWeapon,
-    EquipmentSlot slot)
+    EquipmentSlot slot,
+    EquipmentPicturePart part)
 {
     if (!isBodyEquipmentVisualSlot(slot))
     {
-        return itemDefinition.iconName;
+        return part == EquipmentPicturePart::Body ? itemDefinition.iconName : std::string{};
     }
-
-    std::vector<std::string> candidateSuffixes;
-
-    if (dollTypeId >= 5)
-    {
-        return itemDefinition.iconName;
-    }
-
-    uint32_t variantNumber = dollTypeId + 1;
-
-    if (usesAlternateCloakEquippedVariant(slot) && (dollTypeId == 2 || dollTypeId == 3))
-    {
-        variantNumber = 1;
-    }
-
-    const std::string primarySuffix = "v" + std::to_string(variantNumber);
-
-    if (slot == EquipmentSlot::Armor)
-    {
-        const std::string alternateSuffix = primarySuffix + "a";
-        candidateSuffixes = hasRightHandWeapon
-            ? std::vector<std::string>{primarySuffix, alternateSuffix}
-            : std::vector<std::string>{alternateSuffix, primarySuffix};
-    }
-    else if (slot == EquipmentSlot::Cloak)
-    {
-        candidateSuffixes = {primarySuffix + "a"};
-    }
-    else
-    {
-        candidateSuffixes = {primarySuffix};
-    }
-
-    for (const std::string &suffix : candidateSuffixes)
-    {
-        const std::string candidateName = itemDefinition.iconName + suffix;
-        int width = 0;
-        int height = 0;
-
-        if (gameplayUiRuntime().ensureItemIconTextureDimensions(candidateName, width, height))
-        {
-            return candidateName;
-        }
-    }
-
-    return itemDefinition.iconName;
+    const MergedComplexItemPictureEntry *pPicture =
+        m_session.data().mergedComplexItemPictureTable().get(itemDefinition.itemId);
+    return equipmentPictureName(itemDefinition.iconName, itemDefinition.equipStat, dollTypeId,
+        pPicture != nullptr && pPicture->complex, hasRightHandWeapon, part);
 }
 
 std::optional<GameplayResolvedHudLayoutElement> GameplayScreenRuntime::resolveCharacterEquipmentRenderRect(
@@ -4065,7 +4112,8 @@ std::optional<GameplayResolvedHudLayoutElement> GameplayScreenRuntime::resolveCh
     const CharacterDollTypeEntry *pCharacterDollType,
     EquipmentSlot slot,
     int screenWidth,
-    int screenHeight) const
+    int screenHeight,
+    EquipmentPicturePart part) const
 {
     const float fallbackWidth = layout.width > 0.0f ? layout.width : static_cast<float>(texture.width);
     const float fallbackHeight = layout.height > 0.0f ? layout.height : static_cast<float>(texture.height);
@@ -4082,19 +4130,24 @@ std::optional<GameplayResolvedHudLayoutElement> GameplayScreenRuntime::resolveCh
 
     if (isBodyEquipmentVisualSlot(slot))
     {
-        const MergedComplexItemPictureEntry *pEntry =
-            mergedComplexItemPictureTable() != nullptr
-                ? mergedComplexItemPictureTable()->get(itemDefinition.itemId)
-                : nullptr;
         const uint32_t dollTypeId = pCharacterDollType != nullptr ? pCharacterDollType->id : 0;
+        const std::optional<uint32_t> sourcePortraitId = pCharacterDollEntry != nullptr
+            ? std::optional<uint32_t>(pCharacterDollEntry->id - 1) : std::nullopt;
+        const std::optional<MergedPoint> point = m_session.data().mergedComplexItemPictureTable().resolvePoint(
+            itemDefinition.itemId, dollTypeId, m_session.data().mergedComplexItemPictureOffsetTable(),
+            sourcePortraitId, part != EquipmentPicturePart::Body);
         int offsetX = 0;
         int offsetY = 0;
 
-        if (pEntry != nullptr && dollTypeId < pEntry->points.size())
+        if (point)
         {
-            const MergedPoint &point = pEntry->points[dollTypeId];
-            offsetX = point.x;
-            offsetY = point.y;
+            offsetX = point->x;
+            offsetY = point->y;
+        }
+        if (slot == EquipmentSlot::Helm && pCharacterDollEntry != nullptr)
+        {
+            offsetX += pCharacterDollEntry->helmOffsetX;
+            offsetY += pCharacterDollEntry->helmOffsetY;
         }
 
         GameplayResolvedHudLayoutElement rect = {};
@@ -4154,8 +4207,10 @@ std::optional<GameplayResolvedHudLayoutElement> GameplayScreenRuntime::resolveCh
             }
             else if (itemDefinition.equipStat == "Shield")
             {
-                offsetX += pCharacterDollType->leftHandClosedX + pCharacterDollType->shieldX - itemDefinition.equipX;
-                offsetY += pCharacterDollType->leftHandClosedY + pCharacterDollType->shieldY - itemDefinition.equipY;
+                offsetX = pCharacterDollType->offHandWeaponAnchorX()
+                    + pCharacterDollType->shieldX - itemDefinition.equipX;
+                offsetY = pCharacterDollType->offHandWeaponAnchorY()
+                    + pCharacterDollType->shieldY - itemDefinition.equipY;
             }
             else
             {

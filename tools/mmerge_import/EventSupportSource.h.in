@@ -1,0 +1,8 @@
+#pragma once
+
+#include <string_view>
+
+namespace OpenYAMM::Import
+{
+constexpr std::string_view EventSupportSource = R"OY_EVENT_SUPPORT(@OPENYAMM_EVENT_SUPPORT_SOURCE@)OY_EVENT_SUPPORT";
+}

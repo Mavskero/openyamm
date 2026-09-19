@@ -1,6 +1,8 @@
 #include "game/ui/GameplayUiRuntime.h"
+#include "game/ui/Utf8Text.h"
 
 #include "engine/BgfxContext.h"
+#include "engine/TextTable.h"
 #include "game/StringUtils.h"
 #include "game/render/TextureFiltering.h"
 #include "game/tables/MapStats.h"
@@ -167,8 +169,9 @@ bool appendTownPortalDestination(
 
     GameplayTownPortalDestination destination = {};
     destination.id = group.name + ":" + std::to_string(sourceDestination.id);
-    destination.label =
-        sourceDestination.description.empty() ? pDestinationMap->name : sourceDestination.description;
+    // Original mapped portals use MapStats.Name; map-zero world controls retain their authored description.
+    destination.label = sourceDestination.mapId == 0 && !sourceDestination.description.empty()
+        ? sourceDestination.description : pDestinationMap->name;
     destination.iconTextureName = townPortalIconTextureName(iconName);
     destination.mapName = pDestinationMap->fileName;
     destination.x = sourceDestination.x;
@@ -203,45 +206,39 @@ bool appendTownPortalDestination(
 
 bool resolveDimensionDoorDestinationOverride(
     const MergedTownPortalDestination &sourceDestination,
-    uint32_t /*dayIndex*/,
+    uint32_t dayIndex,
     TownPortalDestinationOverride &destinationOverride)
 {
     const std::string description = toLowerCopy(sourceDestination.description);
 
     destinationOverride = {};
     destinationOverride.clearUnlockQBit = true;
-    destinationOverride.clearDirection = true;
 
     if (description == "jadame")
     {
-        destinationOverride.mapId = 1;
-        destinationOverride.iconName = sourceDestination.iconName;
-        destinationOverride.hitX = 0;
-        destinationOverride.hitY = 0;
-        destinationOverride.hitWidth = 213;
-        destinationOverride.hitHeight = 480;
+        constexpr std::array<uint32_t, 8> MapIds = {1, 2, 6, 1, 2, 7, 7, 8};
+        const size_t index = dayIndex % MapIds.size();
+        destinationOverride.mapId = MapIds[index];
+        destinationOverride.iconName = "TPJadam" + std::to_string(index + 1);
         return true;
     }
 
     if (description == "antagarich")
     {
-        destinationOverride.mapId = 62;
-        destinationOverride.iconName = sourceDestination.iconName;
-        destinationOverride.hitX = 213;
-        destinationOverride.hitY = 0;
-        destinationOverride.hitWidth = 214;
-        destinationOverride.hitHeight = 480;
+        constexpr std::array<uint32_t, 8> MapIds = {64, 67, 67, 68, 70, 65, 66, 72};
+        // GenDimDoor uses ceil(day / 1.2); integer arithmetic keeps the six-day boundary exact.
+        const size_t index = ((uint64_t(dayIndex) * 5 + 5) / 6) % MapIds.size();
+        destinationOverride.mapId = MapIds[index];
+        destinationOverride.iconName = "TPAntag" + std::to_string(index + 1);
         return true;
     }
 
     if (description == "enroth")
     {
-        destinationOverride.mapId = 151;
-        destinationOverride.iconName = sourceDestination.iconName;
-        destinationOverride.hitX = 427;
-        destinationOverride.hitY = 0;
-        destinationOverride.hitWidth = 213;
-        destinationOverride.hitHeight = 480;
+        constexpr std::array<uint32_t, 5> MapIds = {144, 151, 150, 143, 147};
+        const size_t index = dayIndex % MapIds.size();
+        destinationOverride.mapId = MapIds[index];
+        destinationOverride.iconName = "TPEnroth" + std::to_string(index + 1);
         return true;
     }
 
@@ -422,6 +419,8 @@ void GameplayUiRuntime::clear()
     m_lastOverlayFramePerformanceDiagnostics = {};
     m_pAssetFileSystem = nullptr;
     m_assetWorldId.clear();
+    m_minimapArrowsLoaded = false;
+    m_minimapArrowTextures.clear();
     m_uiAssetScaleTier = Engine::AssetScaleTier::X1;
     m_iconAssetScaleTier = Engine::AssetScaleTier::X1;
     m_fontAssetScaleTier = Engine::AssetScaleTier::X1;
@@ -707,10 +706,9 @@ bool GameplayUiRuntime::ensureTownPortalDestinationsLoaded(const std::string &cu
     return !m_townPortalDestinations.empty();
 }
 
-bool GameplayUiRuntime::ensureDimensionDoorDestinationsLoaded(uint32_t dayIndex, bool crossContinentsUnlocked)
+bool GameplayUiRuntime::ensureDimensionDoorDestinationsLoaded(uint32_t dayIndex)
 {
-    const std::string cacheKey = "__dimension_door:" + std::to_string(dayIndex)
-        + (crossContinentsUnlocked ? ":unlocked" : ":locked");
+    const std::string cacheKey = "__dimension_door:" + std::to_string(dayIndex);
 
     if (m_townPortalDestinationsLoaded
         && toLowerCopy(m_townPortalDestinationsMapFileName) == toLowerCopy(cacheKey))
@@ -722,12 +720,6 @@ bool GameplayUiRuntime::ensureDimensionDoorDestinationsLoaded(uint32_t dayIndex,
     m_townPortalBackgroundTextureName.clear();
     m_townPortalDestinations.clear();
     m_townPortalDestinationsLoaded = false;
-
-    if (!crossContinentsUnlocked)
-    {
-        m_townPortalDestinationsLoaded = true;
-        return false;
-    }
 
     if (m_pDataRepository == nullptr || !m_pDataRepository->isBound())
     {
@@ -791,7 +783,9 @@ bool GameplayUiRuntime::loadHudTexture(const std::string &textureName)
         m_assetLoadCache,
         textureName,
         m_hudTextureHandles,
-        m_hudTextureIndexByName);
+        m_hudTextureIndexByName,
+        GameplayHudBitmapTransparencyMode::HudColorKey,
+        m_layoutManager.findTextureRegion(textureName));
 
     if (cacheMiss)
     {
@@ -1013,6 +1007,59 @@ std::optional<GameplayResolvedHudLayoutElement> GameplayUiRuntime::resolveHudLay
             fallbackHeight);
     m_hudLayoutResolutionCache.emplace(std::move(cacheKey), resolved);
     return resolved;
+}
+
+std::optional<std::string> GameplayUiRuntime::minimapArrowTextureName(size_t directionIndex)
+{
+    if (directionIndex >= 8 || m_pAssetFileSystem == nullptr)
+    {
+        return std::nullopt;
+    }
+    if (!m_minimapArrowsLoaded)
+    {
+        m_minimapArrowsLoaded = true;
+        const std::string worldRoot = "worlds/" + m_assetWorldId + "/";
+        const std::string path = worldRoot + "ui/minimap_arrows.txt";
+        if (!m_pAssetFileSystem->exists(path))
+        {
+            // Packages without a declared world binding keep their existing shared MAPDIR convention.
+            for (size_t index = 1; index <= 8; ++index)
+            {
+                m_minimapArrowTextures.push_back("MAPDIR" + std::to_string(index));
+            }
+        }
+        else
+        {
+            const std::optional<std::string> text = m_pAssetFileSystem->readTextFile(path);
+            const std::optional<Engine::TextTable> table = text && text->size() <= 4096
+                ? Engine::TextTable::parseTabSeparated(*text) : std::nullopt;
+            bool valid = table && table->getRowCount() == 9
+                && table->getRow(0) == std::vector<std::string>{"Direction", "Texture"};
+            std::vector<std::string> textures;
+            for (size_t index = 1; valid && index <= 8; ++index)
+            {
+                const std::vector<std::string> &row = table->getRow(index);
+                valid = row.size() == 2 && row[0] == std::to_string(index)
+                    && row[1].size() > 4 && row[1].size() <= 68 && row[1].ends_with(".bmp")
+                    && row[1].substr(0, row[1].size() - 4).find_first_not_of(
+                        "abcdefghijklmnopqrstuvwxyz0123456789_-") == std::string::npos;
+                if (valid)
+                {
+                    textures.push_back(worldRoot + "icons/" + row[1]);
+                }
+            }
+            if (valid)
+            {
+                m_minimapArrowTextures = std::move(textures);
+            }
+            else
+            {
+                std::fprintf(stderr, "GameplayUiRuntime: invalid minimap arrow bindings: %s\n", path.c_str());
+            }
+        }
+    }
+    return directionIndex < m_minimapArrowTextures.size()
+        ? std::optional<std::string>(m_minimapArrowTextures[directionIndex]) : std::nullopt;
 }
 
 std::optional<GameplayHudTextureHandle> GameplayUiRuntime::ensureHudTextureLoaded(const std::string &textureName)
@@ -1325,6 +1372,16 @@ const std::vector<uint8_t> *GameplayUiRuntime::hudTexturePixels(
 
 bool GameplayUiRuntime::ensureHudTextureDimensions(const std::string &textureName, int &width, int &height)
 {
+    // Input geometry can be resolved before a renderer is initialized, using the same source pixels and scale.
+    if (!canUseBgfxResources() && m_pAssetFileSystem != nullptr)
+    {
+        const std::optional<std::vector<uint8_t>> pixels = GameplayHudCommon::loadHudBitmapPixelsBgraCached(
+            m_pAssetFileSystem, m_assetLoadCache, textureName, width, height,
+            GameplayHudBitmapTransparencyMode::HudColorKey, m_layoutManager.findTextureRegion(textureName));
+        width = Engine::scalePhysicalPixelsToLogical(width, m_pAssetFileSystem->getAssetScaleTier());
+        height = Engine::scalePhysicalPixelsToLogical(height, m_pAssetFileSystem->getAssetScaleTier());
+        return pixels.has_value() && width > 0 && height > 0;
+    }
     const std::optional<GameplayHudTextureHandle> texture = ensureHudTextureLoaded(textureName);
 
     if (!texture)
@@ -1995,6 +2052,45 @@ void GameplayUiRuntime::renderHudFontLayer(
         return;
     }
 
+#if defined(__APPLE__)
+    if (hasUtf8MultibyteText(text))
+    {
+        if (!bgfx::isValid(textureHandle))
+        {
+            return;
+        }
+        uint32_t color = 0xffffffffu;
+        if (textureHandle.idx == pFont->shadowTextureHandle.idx)
+        {
+            color = 0xff000000u;
+            textX += std::max(1.0f, fontScale);
+            textY += std::max(1.0f, fontScale);
+        }
+        else if (textureHandle.idx != pFont->mainTextureHandle.idx)
+        {
+            const auto tinted = std::find_if(m_hudFontColorTextureHandles.begin(), m_hudFontColorTextureHandles.end(),
+                [&](const GameplayHudFontColorTextureData &entry)
+                {
+                    return entry.textureHandle.idx == textureHandle.idx;
+                });
+            if (tinted == m_hudFontColorTextureHandles.end())
+            {
+                return;
+            }
+            color = tinted->colorAbgr;
+        }
+        const std::string line = text.substr(0, text.find_first_of("\r\n"));
+        const std::optional<AppleTextTextureCache::Entry> entry =
+            m_utf8TextTextures.ensure(line, pFont->fontHeight * fontScale, color);
+        if (entry)
+        {
+            submitHudTexturedQuad(entry->handle, textX, textY, float(entry->width), float(entry->height),
+                0, 0, 1, 1, TextureFilterProfile::Text);
+        }
+        return;
+    }
+#endif
+
     GameplayHudCommon::renderHudFontLayer(
         *pFont,
         textureHandle,
@@ -2305,6 +2401,9 @@ void GameplayUiRuntime::clearPortraitRuntime()
 
 void GameplayUiRuntime::clearHudResources()
 {
+#if defined(__APPLE__)
+    m_utf8TextTextures.clear();
+#endif
     if (!canUseBgfxResources())
     {
         for (GameplayHudTextureData &textureHandle : m_hudTextureHandles)

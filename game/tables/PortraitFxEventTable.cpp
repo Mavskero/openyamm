@@ -61,6 +61,22 @@ PortraitFxEventKind parsePortraitFxEventKind(const std::string &value)
 }
 }
 
+const std::string &PortraitFxEventEntry::animationForAction(PortraitFxAction action) const
+{
+    switch (action)
+    {
+        case PortraitFxAction::Set:
+            return setAnimationName.empty() ? animationName : setAnimationName;
+        case PortraitFxAction::Add:
+            return addAnimationName.empty() ? animationName : addAnimationName;
+        case PortraitFxAction::Subtract:
+            return subtractAnimationName.empty() ? animationName : subtractAnimationName;
+        case PortraitFxAction::Default:
+            return animationName;
+    }
+    return animationName;
+}
+
 bool PortraitFxEventTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
 {
     m_entries.clear();
@@ -88,6 +104,12 @@ bool PortraitFxEventTable::loadFromRows(const std::vector<std::vector<std::strin
         if (row.size() >= 4 && !row[3].empty())
         {
             entry.faceAnimationId = faceAnimationIdFromName(row[3]);
+        }
+        if (row.size() >= 7)
+        {
+            entry.setAnimationName = row[4];
+            entry.addAnimationName = row[5];
+            entry.subtractAnimationName = row[6];
         }
 
         m_entryIndexByKind[entry.kind] = m_entries.size();

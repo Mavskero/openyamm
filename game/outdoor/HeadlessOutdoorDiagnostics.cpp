@@ -3440,7 +3440,7 @@ bool openActorInScenario(
     }
 
     const std::optional<std::string> newsText =
-        gameDataLoader.getNpcDialogTable().getNewsDialogText(resolution->newsId);
+        gameDataLoader.getNpcDialogTable().getNewsDialogText(resolution->newsId, resolution->newsFromNpcText);
 
     if (!newsText)
     {
@@ -3451,6 +3451,7 @@ bool openActorInScenario(
     context.kind = DialogueContextKind::NpcNews;
     context.sourceId = resolution->npcId;
     context.newsId = resolution->newsId;
+    context.newsFromNpcText = resolution->newsFromNpcText;
     context.participantPictureId = resolution->portraitPictureId;
     context.titleOverride = actorName;
     scenario.pEventRuntimeState->pendingDialogueContext = std::move(context);
@@ -3949,6 +3950,7 @@ int HeadlessGameplayDiagnostics::runProfileFullMapLoad(
     }
 
     GameDataLoader gameDataLoader;
+    gameDataLoader.setInitialMapFileName(mapFileName);
 
     if (!gameDataLoader.loadForHeadlessGameplay(assetFileSystem))
     {
@@ -6703,7 +6705,7 @@ int HeadlessGameplayDiagnostics::runOpenActor(
             else
             {
             const std::optional<std::string> newsText =
-                gameDataLoader.getNpcDialogTable().getNewsDialogText(resolution->newsId);
+                gameDataLoader.getNpcDialogTable().getNewsDialogText(resolution->newsId, resolution->newsFromNpcText);
 
             if (newsText)
             {
@@ -6711,6 +6713,7 @@ int HeadlessGameplayDiagnostics::runOpenActor(
                 context.kind = DialogueContextKind::NpcNews;
                 context.sourceId = resolution->npcId;
                 context.newsId = resolution->newsId;
+                context.newsFromNpcText = resolution->newsFromNpcText;
                 context.participantPictureId = resolution->portraitPictureId;
                 context.titleOverride = actorName;
                 pEventRuntimeState->pendingDialogueContext = std::move(context);

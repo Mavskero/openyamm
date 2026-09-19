@@ -6,6 +6,10 @@
 #include "game/gameplay/GameMechanics.h"
 #include "game/party/SkillData.h"
 #include "game/party/SpeechIds.h"
+#include "game/ui/Utf8Text.h"
+#if defined(__APPLE__)
+#include "engine/AppleText.h"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -884,14 +888,6 @@ std::string portraitTextureNameForEntry(const CharacterDollEntry &entry)
     return buffer;
 }
 
-bool isPrintableNameCharacter(char character)
-{
-    return std::isalnum(static_cast<unsigned char>(character)) != 0
-        || character == ' '
-        || character == '\''
-        || character == '-';
-}
-
 std::string characterCreationSkillDisplayName(const std::string &skillName)
 {
     const std::string canonicalName = canonicalSkillName(skillName);
@@ -997,6 +993,14 @@ void NewGameScreen::onExit()
 
 void NewGameScreen::handleSdlEvent(const SDL_Event &event)
 {
+    if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
+    {
+        resetNameBackspaceRepeat();
+        m_returnPressed = false;
+        m_escapePressed = false;
+        return;
+    }
+
     if (event.type == SDL_EVENT_KEY_UP && event.key.key == SDLK_BACKSPACE)
     {
         resetNameBackspaceRepeat();
@@ -1012,13 +1016,7 @@ void NewGameScreen::handleSdlEvent(const SDL_Event &event)
             return;
         }
 
-        for (size_t i = 0; pText[i] != '\0' && m_state.nameEditBuffer.size() < MaximumNameLength; ++i)
-        {
-            if (isPrintableNameCharacter(pText[i]))
-            {
-                m_state.nameEditBuffer.push_back(pText[i]);
-            }
-        }
+        appendUtf8Label(m_state.nameEditBuffer, pText, MaximumNameLength);
 
         return;
     }
@@ -1458,6 +1456,27 @@ bool NewGameScreen::textInputActive() const
     return m_state.nameEditing;
 }
 
+SDL_Rect NewGameScreen::textInputArea(int windowWidth, int windowHeight) const
+{
+    if (!m_state.nameEditing || !m_layoutLoaded || windowWidth <= 0 || windowHeight <= 0)
+    {
+        return {};
+    }
+    std::unordered_set<std::string> visited;
+    const std::optional<ResolvedLayoutElement> field = resolveLayoutElementRecursive(
+        m_layoutManager, "CharacterCreationNameField", windowWidth, windowHeight, 110.0f, 24.0f, visited);
+    if (!field)
+    {
+        return {};
+    }
+    return {
+        static_cast<int>(std::round(field->x)),
+        static_cast<int>(std::round(field->y)),
+        static_cast<int>(std::round(field->width)),
+        static_cast<int>(std::round(field->height))
+    };
+}
+
 void NewGameScreen::beginNameEditing()
 {
     if (m_state.nameEditing)
@@ -1512,7 +1531,7 @@ void NewGameScreen::deleteNameEditCharacter()
 {
     if (m_state.nameEditing && !m_state.nameEditBuffer.empty())
     {
-        m_state.nameEditBuffer.pop_back();
+        eraseLastUtf8Character(m_state.nameEditBuffer);
     }
 }
 
@@ -1926,6 +1945,14 @@ std::vector<int> NewGameScreen::availableVoiceIdsForSelectedCandidate() const
     if (pSelectedEntry == nullptr || m_pGameData == nullptr)
     {
         return voiceIds;
+    }
+
+    const std::optional<std::vector<uint32_t>> sourceVoices =
+        m_pGameData->mergedCharacterVoiceTable().availableVoiceIds(
+            pSelectedEntry->id - 1, pSelectedEntry->raceId, pSelectedEntry->defaultSex);
+    if (sourceVoices)
+    {
+        return std::vector<int>(sourceVoices->begin(), sourceVoices->end());
     }
 
     std::unordered_set<int> seenVoiceIds;
@@ -3182,11 +3209,34 @@ void NewGameScreen::drawScreen(float deltaSeconds)
     }
 
     const std::string displayedName = m_state.nameEditing ? m_state.nameEditBuffer : m_state.name;
-    drawText(fontName, displayedName, nameValueRect.x, nameValueRect.y, WhiteColor, scale);
+    const auto nameWidth = [this, &fontName, &displayedName](float textScale)
+    {
+#if defined(__APPLE__)
+        if (hasUtf8MultibyteText(displayedName))
+        {
+            const std::optional<Engine::AppleTextImageSize> image =
+                Engine::measureAppleTextImageSize(displayedName, fontHeight(fontName) * textScale);
+            if (image)
+            {
+                return static_cast<float>(image->width) + 1.0f;
+            }
+        }
+#endif
+        return measureTextWidth(fontName, displayedName, textScale);
+    };
+    const float cursorWidth = m_state.nameEditing ? measureTextWidth(fontName, "_", scale) + 2.0f * scale : 0.0f;
+    const float availableNameWidth =
+        std::max(1.0f, nameFieldRect.x + nameFieldRect.width - nameValueRect.x - cursorWidth);
+    float nameScale = scale;
+    for (int pass = 0; pass < 3 && nameWidth(nameScale) > availableNameWidth; ++pass)
+    {
+        nameScale *= std::max(1.0f, availableNameWidth - 1.0f) / nameWidth(nameScale);
+    }
+    drawText(fontName, displayedName, nameValueRect.x, nameValueRect.y, WhiteColor, nameScale);
 
     if (m_state.nameEditing)
     {
-        const float cursorX = nameValueRect.x + measureTextWidth(fontName, displayedName, scale) + 2.0f * scale;
+        const float cursorX = nameValueRect.x + nameWidth(nameScale) + 2.0f * scale;
         const float cursorY = nameValueRect.y;
         drawText(fontName, "_", cursorX, cursorY, WhiteColor, scale);
     }

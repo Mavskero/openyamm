@@ -1,0 +1,5 @@
+combat.melee_hit	%s hits %s for %lu damage
+combat.projectile_hit	%s shoots %s for %lu points
+combat.kill	%s inflicts %lu points killing %s
+combat.stun	%s stuns %s
+combat.paralyze	%s paralyzes %s

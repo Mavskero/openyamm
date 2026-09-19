@@ -255,7 +255,7 @@ void applyMagicalPrimaryStatResourceBonuses(
 
 void clampCurrentResourcesToMaximum(Character &member)
 {
-    member.health = std::clamp(member.health, 0, currentMaximumHealth(member));
+    member.health = std::min(member.health, currentMaximumHealth(member));
     member.spellPoints = std::clamp(member.spellPoints, 0, currentMaximumSpellPoints(member));
 }
 
@@ -649,11 +649,15 @@ void initializePortraitRuntimeState(Character &member)
 {
     const std::optional<uint32_t> parsedPictureId = tryParsePictureIdFromPortraitTextureName(member.portraitTextureName);
 
-    if (parsedPictureId)
+    if (member.characterDataId != 0)
+    {
+        member.portraitPictureId = member.characterDataId - 1;
+    }
+    else if (parsedPictureId)
     {
         member.portraitPictureId = *parsedPictureId;
     }
-    else if (member.portraitTextureName.empty())
+    if (member.portraitTextureName.empty())
     {
         member.portraitTextureName = portraitTextureNameFromPictureId(member.portraitPictureId);
     }
@@ -854,6 +858,8 @@ void applyCharacterIdentityFromDollTable(Character &member, const CharacterDollT
         return;
     }
 
+    member.portraitPictureId = member.characterDataId - 1;
+    member.portraitTextureName = portraitTextureNameFromCharacterDollEntry(*pEntry);
     if (member.voiceId < 0)
     {
         member.voiceId = static_cast<int32_t>(pEntry->defaultVoiceId);
@@ -3732,6 +3738,7 @@ bool Party::recruitRosterMember(const RosterEntry &rosterEntry)
     }
 
     m_members.push_back(buildCharacterFromRosterEntry(rosterEntry, m_pClassMultiplierTable));
+    applyCharacterIdentityFromDollTable(m_members.back(), m_pCharacterDollTable);
     initializePortraitRuntimeState(m_members.back());
     grantRosterInventoryToCharacter(
         m_members.back(),
@@ -3917,6 +3924,7 @@ bool Party::replaceMemberWithRosterEntry(size_t memberIndex, const RosterEntry &
     }
 
     m_members[memberIndex] = buildCharacterFromRosterEntry(rosterEntry, m_pClassMultiplierTable);
+    applyCharacterIdentityFromDollTable(m_members[memberIndex], m_pCharacterDollTable);
     applyCharacterIdentityFromDollTable(m_members[memberIndex], m_pCharacterDollTable);
     initializePortraitRuntimeState(m_members[memberIndex]);
     grantRosterInventoryToCharacter(
@@ -6315,7 +6323,7 @@ bool Party::healMember(size_t memberIndex, int amount)
 
     const int maxHealth = effectiveMaximumHealth(*pMember);
     const int previousHealth = pMember->health;
-    pMember->health = std::clamp(pMember->health + amount, 0, maxHealth);
+    pMember->health = int(std::min(int64_t(pMember->health) + amount, int64_t(maxHealth)));
     updateMemberIncapacitatedCondition(
         *pMember,
         m_characterBuffs[memberIndex][static_cast<size_t>(CharacterBuffId::Preservation)].active());

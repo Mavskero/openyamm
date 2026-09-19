@@ -34,6 +34,14 @@ constexpr uint32_t FirstMercenaryRosterId = 42;
 constexpr uint32_t PlaceholderNpcProfessionId = 0;
 constexpr uint32_t MercenaryStartingGoldEquivalent = 0;
 
+constexpr const char *MercenaryRefillMonthVar = "LastMercsRefill";
+
+int32_t mercenaryMonth(float gameMinutes)
+{
+    constexpr int32_t MinutesPerMonth = 28 * 24 * 60;
+    return (static_cast<int32_t>(std::max(0.0f, gameMinutes)) / MinutesPerMonth) % 12;
+}
+
 constexpr std::array<uint32_t, 8> JadameBaseClassIds = {5, 8, 16, 20, 38, 40, 44, 48};
 constexpr std::array<uint32_t, 10> AntagarichBaseClassIds = {0, 4, 12, 16, 22, 26, 30, 34, 42, 48};
 constexpr std::array<uint32_t, 7> EnrothBaseClassIds = {0, 4, 12, 16, 26, 42, 48};
@@ -1064,9 +1072,10 @@ EventRuntimeState::GeneratedMercenaryRecruit generateMercenary(
     Party &party,
     uint32_t npcId,
     uint32_t houseId,
-    const MercenaryRecruitmentTables &tables)
+    const MercenaryRecruitmentTables &tables,
+    int32_t refillMonth)
 {
-    std::mt19937 rng(generationSeed(map, npcId, party));
+    std::mt19937 rng(hashStep(generationSeed(map, npcId, party), uint32_t(refillMonth)));
     const std::string className = chooseClassName(
         map.mergedContinentId,
         party,
@@ -1201,13 +1210,36 @@ std::optional<uint32_t> findMercenaryRecruitmentHouseId(
     return bestTavern ? bestTavern : bestAdventurersInn;
 }
 
+void migrateLegacyMercenaryRefillState(EventRuntimeState &runtimeState, float savedGameMinutes)
+{
+    if (runtimeState.namedMapVars.contains(MercenaryRefillMonthVar))
+    {
+        return;
+    }
+
+    // Old saves kept generated candidates and their map-local presentation overrides, but
+    // omitted the refill month. Use that map snapshot's saved time, never the time of re-entry.
+    // Empty states without generation evidence still need their first ordinary refill.
+    bool wasGenerated = !runtimeState.generatedMercenaryRecruitsByNpcId.empty();
+    for (uint32_t npcId = FirstMercenaryNpcId; npcId <= LastMercenaryNpcId && !wasGenerated; ++npcId)
+    {
+        wasGenerated = runtimeState.npcNameOverrides.contains(npcId)
+            && runtimeState.npcPictureOverrides.contains(npcId);
+    }
+    if (wasGenerated)
+    {
+        runtimeState.namedMapVars.emplace(MercenaryRefillMonthVar, mercenaryMonth(savedGameMinutes));
+    }
+}
+
 bool refreshMercenaryRecruitmentForCurrentMap(
     const MapStatsEntry &map,
     Party &party,
     EventRuntimeState &runtimeState,
-    const MercenaryRecruitmentTables &tables)
+    const MercenaryRecruitmentTables &tables,
+    float gameMinutes)
 {
-    if (tables.pHouseTable == nullptr)
+    if (tables.pHouseTable == nullptr || map.mergedContinentId == 4)
     {
         return false;
     }
@@ -1218,6 +1250,16 @@ bool refreshMercenaryRecruitmentForCurrentMap(
     {
         return false;
     }
+
+    const int32_t month = mercenaryMonth(gameMinutes);
+    const auto lastRefill = runtimeState.namedMapVars.find(MercenaryRefillMonthVar);
+    if (lastRefill != runtimeState.namedMapVars.end() && lastRefill->second == month)
+    {
+        return false;
+    }
+    const bool replaceExisting = lastRefill != runtimeState.namedMapVars.end();
+    // The original map records the attempt even when no free roster slot remains.
+    runtimeState.namedMapVars[MercenaryRefillMonthVar] = month;
 
     for (uint32_t npcId = FirstMercenaryNpcId; npcId <= LastMercenaryNpcId; ++npcId)
     {
@@ -1233,15 +1275,16 @@ bool refreshMercenaryRecruitmentForCurrentMap(
         EventRuntimeState::GeneratedMercenaryRecruit *pRecruit = nullptr;
         const auto recruitIt = runtimeState.generatedMercenaryRecruitsByNpcId.find(npcId);
 
-        if (recruitIt != runtimeState.generatedMercenaryRecruitsByNpcId.end())
+        if (recruitIt != runtimeState.generatedMercenaryRecruitsByNpcId.end() && !replaceExisting)
         {
             pRecruit = &recruitIt->second;
         }
         else
         {
             EventRuntimeState::GeneratedMercenaryRecruit recruit =
-                generateMercenary(map, party, npcId, *houseId, tables);
-            pRecruit = &runtimeState.generatedMercenaryRecruitsByNpcId.emplace(npcId, std::move(recruit)).first->second;
+                generateMercenary(map, party, npcId, *houseId, tables, month);
+            pRecruit = &runtimeState.generatedMercenaryRecruitsByNpcId
+                .insert_or_assign(npcId, std::move(recruit)).first->second;
         }
 
         pRecruit->houseId = *houseId;

@@ -41,6 +41,8 @@ function(openyamm_populate_dependency dependencyName outputSourceDirVariable)
 endfunction()
 
 function(openyamm_configure_sdl3)
+    include(PatchSdlCocoa)
+    include(PatchSdlUIKit)
     if (TARGET SDL3::SDL3)
         return()
     endif()
@@ -63,6 +65,8 @@ function(openyamm_configure_sdl3)
     set(SDL_X11_XTEST OFF CACHE BOOL "" FORCE)
 
     if (DEFINED OPENYAMM_SDL3_SOURCE_DIR AND IS_DIRECTORY "${OPENYAMM_SDL3_SOURCE_DIR}")
+        openyamm_patch_sdl_cocoa("${OPENYAMM_SDL3_SOURCE_DIR}")
+        openyamm_patch_sdl_uikit("${OPENYAMM_SDL3_SOURCE_DIR}")
         add_subdirectory("${OPENYAMM_SDL3_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/sdl3")
         return()
     endif()
@@ -72,7 +76,10 @@ function(openyamm_configure_sdl3)
         URL ${OPENYAMM_SDL3_URL}
         URL_HASH ${OPENYAMM_SDL3_URL_HASH}
     )
-    FetchContent_MakeAvailable(sdl3)
+    openyamm_populate_dependency(sdl3 sdl3SourceDir)
+    openyamm_patch_sdl_cocoa("${sdl3SourceDir}")
+    openyamm_patch_sdl_uikit("${sdl3SourceDir}")
+    add_subdirectory("${sdl3SourceDir}" "${sdl3_BINARY_DIR}")
 endfunction()
 
 function(openyamm_configure_lua)
@@ -128,6 +135,10 @@ function(openyamm_configure_lua)
         )
 
         target_compile_features(openyamm_lua PUBLIC c_std_99)
+
+        if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+            target_compile_definitions(openyamm_lua PRIVATE LUA_USE_IOS)
+        endif()
 
         if (UNIX)
             target_link_libraries(openyamm_lua PUBLIC m)

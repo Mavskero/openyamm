@@ -2307,6 +2307,7 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
     OutdoorGameView &view,
     uint16_t viewId,
     const float *pViewMatrix,
+    float projectionYScale,
     const bx::Vec3 &cameraPosition)
 {
     if (!view.m_outdoorActorPreviewBillboardSet && !view.m_outdoorDecorationBillboardSet)
@@ -3431,10 +3432,18 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
             continue;
         }
 
-        const float barScale = std::max(0.65f, drawItem.healthBarScale);
-        const float barWidth = 92.0f * barScale;
-        const float barHeight = 11.0f * barScale;
         const bx::Vec3 center = {drawItem.x, drawItem.y, drawItem.healthBarZ};
+        const float viewDepth = -(center.x * pViewMatrix[2] + center.y * pViewMatrix[6]
+            + center.z * pViewMatrix[10] + pViewMatrix[14]);
+        const std::optional<CombatActorHealthBarDimensions> dimensions = combatActorHealthBarDimensions(
+            drawItem.healthBarScale, viewDepth, projectionYScale, drawItem.healthRatio);
+        if (!dimensions)
+        {
+            continue;
+        }
+        const float barScale = dimensions->scale;
+        const float barWidth = dimensions->width;
+        const float barHeight = dimensions->height;
         const bx::Vec3 shadowCenter = {
             center.x - cameraUp.x * 3.0f * barScale,
             center.y - cameraUp.y * 3.0f * barScale,
@@ -3453,9 +3462,9 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
         appendWorldQuadVertices(healthBarVertices, shadowCenter, frameRight, frameUp, makeAbgrAlpha(0, 0, 0, 150));
         appendWorldQuadVertices(healthBarVertices, center, frameRight, frameUp, makeAbgrAlpha(18, 12, 10, 230));
 
-        const float innerWidth = std::max(2.0f, barWidth - 6.0f * barScale);
-        const float innerHeight = std::max(2.0f, barHeight - 4.0f * barScale);
-        const float fillWidth = std::max(1.0f, innerWidth * drawItem.healthRatio);
+        const float innerWidth = dimensions->innerWidth;
+        const float innerHeight = dimensions->innerHeight;
+        const float fillWidth = dimensions->fillWidth;
         const float fillOffset = (innerWidth - fillWidth) * 0.5f;
         const bx::Vec3 fillCenter = {
             center.x - cameraRight.x * fillOffset,

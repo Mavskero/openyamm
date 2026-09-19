@@ -1,6 +1,7 @@
 #pragma once
 
 #include "game/scene/IndoorSceneRuntime.h"
+#include "game/gameplay/TurnBasedCombatRuntime.h"
 #include "game/scene/SceneKind.h"
 #include "game/outdoor/OutdoorPartyRuntime.h"
 #include "game/outdoor/OutdoorWorldRuntime.h"
@@ -34,6 +35,8 @@ struct GameSaveData
     float savedGameMinutes = 0.0f;
     float outdoorCameraYawRadians = 0.0f;
     float outdoorCameraPitchRadians = 0.0f;
+    float indoorCameraYawRadians = 0.0f;
+    float indoorCameraPitchRadians = 0.15f;
     bool heldInventoryItemActive = false;
     InventoryItem heldInventoryItem = {};
     uint8_t heldInventoryItemGrabCellOffsetX = 0;
@@ -43,6 +46,7 @@ struct GameSaveData
     std::unordered_map<std::string, uint32_t> requiredContentPackages;
     std::string saveName;
     std::vector<uint8_t> previewBmp;
+    TurnBasedCombatRuntime::Snapshot turnBasedCombat;
 };
 
 void migrateLegacyConsumedCorpseMarkers(GameSaveData &data, uint32_t sourceSaveVersion);

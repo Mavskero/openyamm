@@ -66,8 +66,11 @@ public:
     void onExit() override;
     void handleSdlEvent(const SDL_Event &event) override;
     bool textInputActive() const;
+    SDL_Rect textInputArea(int windowWidth, int windowHeight) const;
 
 private:
+    friend struct NewGameScreenTestAccess;
+
     enum class FlowStage
     {
         ContinentSelection,

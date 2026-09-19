@@ -295,7 +295,9 @@ enum class GameplaySpellbookPointerTargetType
     SpellButton,
     CloseButton,
     QuickCastButton,
-    AttackCastButton
+    AttackCastButton,
+    CastButton,
+    InspectButton
 };
 
 struct GameplaySpellbookPointerTarget

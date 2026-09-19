@@ -1,5 +1,6 @@
 #include "game/indoor/IndoorMapData.h"
 #include "game/BinaryReader.h"
+#include "game/maps/MapDecorationDirection.h"
 
 #include <array>
 #include <algorithm>
@@ -816,7 +817,7 @@ std::optional<IndoorMapData> IndoorMapDataLoader::loadFromBytes(const std::vecto
                 .x = entity.x,
                 .y = entity.y,
                 .z = entity.z,
-                .facingDegrees = entity.facing,
+                .facingDegrees = int(mapDecorationFacingDegrees(entity.facing, entity.variableSecondary)),
             };
         }
 

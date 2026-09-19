@@ -23,6 +23,10 @@ struct TerrainTileDescriptor
     uint16_t flags = 0;
 };
 
+// Shared legacy tile-code mapping, also used when collecting imported texture dependencies.
+std::optional<int> resolveTerrainDescriptorIndex(
+    const OutdoorMapData &map, int tileIndex, bool remapDirectTilesByMasterTile);
+
 std::string terrainTileDataPath(uint8_t masterTile);
 
 std::optional<std::vector<TerrainTileDescriptor>> loadTerrainTileDescriptors(

@@ -1,0 +1,72 @@
+temple.heal_action	Heal {price} gold
+temple.donate_action	Donate {price} gold
+temple.learn_skills_action	Learn Skills
+temple.learn_skill_action	Learn {skill} for {price} gold
+temple.no_skills	No skills are available here for this character.
+temple.heal_unavailable	Healing is not offered here.
+temple.no_character	No character is selected.
+temple.cannot_treat	The temple staff cannot treat {member}'s condition.
+temple.already_well	The temple staff says {member} is already well.
+temple.heal_insufficient_gold	You need {price} gold for healing.
+temple.heal_success	The temple restores {member} for {price} gold.
+temple.donate_unavailable	Donations are not accepted here.
+temple.donate_insufficient_gold	You need {price} gold to donate here.
+temple.donate_success	Thank You!
+temple.lesson_unavailable	That lesson is not available.
+temple.cannot_learn	{member} cannot learn {skill} here.
+temple.learn_insufficient_gold	You don't have enough gold
+temple.learn_success	{member} learns {skill} for {price} gold.
+common.closed_hours	This place is open from {open} to {close}
+common.not_enough_gold	You don't have enough gold
+tavern.rent_action	Rent Room for {price} gold
+tavern.food_action	Fill Packs to {food} days for {price} gold
+tavern.packs_full	Your packs are already full!
+tavern.rent_insufficient_gold	You need {price} gold to rent a room.
+tavern.food_insufficient_gold	You need {price} gold for provisions.
+tavern.food_success	The innkeeper fills your packs to {food} days.
+training.action	Train
+training.action_with_level_price	Train to level {level} for {price} gold
+training.max_level	With your skills, you should be working here as a teacher. Sorry, but we are unable to train you.
+training.experience_shortfall	You need {experience} more experience to train to level {level}
+training.no_character	No character is selected for training.
+training.insufficient_gold	You need {price} gold for training.
+training.unavailable	Training is not available right now.
+training.success	{member} is now level {level} and has earned {points} skill points!
+shop.buy_standard_action	Buy Standard
+shop.buy_special_action	Buy Special
+shop.display_equipment_action	Display Inventory
+shop.sell_action	Sell
+shop.identify_action	Identify
+shop.repair_action	Repair
+shop.select_buy_standard	Select the Item to Buy
+shop.select_buy_special	Select the Special Item to Buy
+shop.select_sell	Select the Item to Sell
+shop.select_identify	Select the Item to Identify
+shop.select_repair	Select the Item to Repair
+shop.nothing_for_sale	Nothing is for sale in that slot.
+shop.unavailable	That item is unavailable.
+shop.inventory_full	Pack is Full
+shop.bought	Bought {item} for {price} gold.
+shop.no_item	No item there.
+shop.cannot_sell	That item cannot be sold.
+shop.sold	Sold {item} for {price} gold.
+shop.already_identified	That item is already identified.
+shop.wrong_identify_shop	This shop cannot identify that item.
+shop.identify_failed	Identify Item Failed
+shop.identify_success	Done!
+shop.nothing_to_repair	That item does not need repair.
+shop.wrong_repair_shop	This shop cannot repair that item.
+shop.repair_failed	Repair Item Failed
+shop.repair_success	Good as New!
+shop.buy_hover	Buy {item} for {price} gold.
+shop.sell_hover	Sell {item} for {price} gold.
+shop.identify_hover	Identify {item} for {price} gold.
+shop.repair_hover	Repair {item} for {price} gold.
+transport.route_action_single	{days} day to {destination} for {price} gold
+transport.route_action_plural	{days} days to {destination} for {price} gold
+transport.no_route_today	Sorry, come back another day
+transport.route_unavailable	That route is not available.
+transport.travel_unavailable	Travel is unavailable right now.
+transport.insufficient_gold	You need {price} gold for travel.
+transport.success_single	It will take {days} day to travel to {destination}.
+transport.success_plural	It will take {days} days to travel to {destination}.

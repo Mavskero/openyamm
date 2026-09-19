@@ -317,7 +317,7 @@ public:
         bool allowWorldInput) override;
     void setScenarioPartyActorCollisionEnabled(bool enabled) override;
     bool scenarioPartyActorCollisionEnabled() const;
-    void updateActorAi(float deltaSeconds) override;
+    void updateActorAi(float deltaSeconds, ActorAiUpdateMode mode = ActorAiUpdateMode::Full) override;
     void updateTurnBasedPausedActorAnimations(float deltaSeconds) override;
     size_t turnBasedPendingWorldActionCount() const override;
     bool turnBasedActorActionInProgress() const override;

@@ -1283,6 +1283,22 @@ elements:
             z_index: 52
             notes: Cloak slot
 
+          - id: CharacterDollCloakCollar
+            anchor: top_left
+            offset_x: 0
+            offset_y: 0
+            width: 0
+            height: 0
+            z_index: 68
+
+          - id: CharacterDollCloakCollarFront
+            anchor: top_left
+            offset_x: 0
+            offset_y: 0
+            width: 0
+            height: 0
+            z_index: 70
+
           - id: CharacterDollBody
             anchor: top_left
             offset_x: 0
@@ -1361,7 +1377,7 @@ elements:
             offset_y: 0
             width: 0
             height: 0
-            z_index: 66
+            z_index: 69
             notes: Helmet slot
 
           - id: CharacterDollBeltSlot

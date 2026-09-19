@@ -17,6 +17,7 @@ struct SoundCatalogEntry
     uint32_t soundId = 0;
     std::string name;
     bool positional = false;
+    uint32_t loadType = 0;
 };
 
 class SoundCatalog

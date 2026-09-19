@@ -1,5 +1,18 @@
 screen: OutdoorHud
 
+wide_hud_scale: &wide_hud_scale
+  min: 1.0
+  max: 8.0
+  reference_width: 960
+
+# Logical regions of the player's original UI skin. These are loaded from the original image at runtime.
+texture_regions:
+  - {name: Basebar_cut, source: Basebar, source_width: 640, source_height: 114, x: 0, y: 20, width: 485, height: 94}
+  - {name: Basebar_ender, source: Basebar, source_width: 640, source_height: 114, x: 465, y: 20, width: 20, height: 94}
+  - {name: status_bar, source: Basebar, source_width: 640, source_height: 114, x: 0, y: 0, width: 483, height: 20}
+  - {name: scorebg_gold, source: scoreBG, source_width: 170, source_height: 23, x: 100, y: 0, width: 45, height: 23}
+  - {name: scorebg_food, source: scoreBG, source_width: 170, source_height: 23, x: 0, y: 0, width: 45, height: 23}
+
 elements:
   - id: OutdoorBasebar
     anchor: bottom_center
@@ -236,6 +249,11 @@ elements:
           default: butn4u
           highlighted: butn4d
           pressed: butn4d
+        text:
+          value: "Menu"
+          font: Lucida
+          align_x: center
+          align_y: middle
         notes: Standard options button.
 
       - id: OutdoorStandardButtonQuickReference
@@ -476,9 +494,7 @@ elements:
     width: 485
     height: 94
     z_index: 200
-    scale:
-      min: 1.0
-      max: 8.0
+    scale: *wide_hud_scale
     asset:
       default: Basebar_cut
     notes: Gameplay-only centered base bar cropped to current party size.
@@ -553,9 +569,7 @@ elements:
     width: 185
     height: 34
     z_index: 60
-    scale:
-      min: 1.0
-      max: 8.0
+    scale: *wide_hud_scale
     asset:
       default: topbar
     notes: Gameplay command strip at the lower-left screen corner.
@@ -605,7 +619,31 @@ elements:
           default: butn4u
           highlighted: butn4d
           pressed: butn4d
+        text:
+          value: "Menu"
+          font: Lucida
+          align_x: center
+          align_y: middle
         notes: Options button.
+
+  - id: OutdoorTurnPhaseLabel
+    anchor_space: screen
+    anchor: top_center
+    offset_y: 8
+    width: 240
+    height: 26
+    z_index: 220
+    scale: *wide_hud_scale
+    text:
+      value: "{phase}"
+      font: Lucida
+      scale: 0.9
+      fit_height: true
+      pad_x: 6
+      pad_y: 2
+      align_x: center
+      align_y: middle
+    notes: Shared turn phase and remaining movement display; visible only during turn-based gameplay.
 
   - id: OutdoorGoldBar
     anchor_space: screen
@@ -613,9 +651,7 @@ elements:
     width: 125
     height: 25
     z_index: 60
-    scale:
-      min: 1.0
-      max: 8.0
+    scale: *wide_hud_scale
     asset:
       default: topbar
     children:
@@ -655,9 +691,7 @@ elements:
     width: 64
     height: 64
     z_index: 61
-    scale:
-      min: 1.0
-      max: 8.0
+    scale: *wide_hud_scale
     asset:
       default: sp21a10
     notes: Fly buff icon.
@@ -668,9 +702,7 @@ elements:
     width: 125
     height: 25
     z_index: 60
-    scale:
-      min: 1.0
-      max: 8.0
+    scale: *wide_hud_scale
     asset:
       default: topbar
     children:
@@ -716,6 +748,7 @@ elements:
         notes: Rest button.
 
   - id: OutdoorBuffBodyPanel
+    scale: *wide_hud_scale
     anchor_space: screen
     anchor: bottom_left
     offset_x: 6
@@ -815,6 +848,7 @@ elements:
         notes: Immolation buff icon.
 
   - id: OutdoorBuffSkullPanel
+    scale: *wide_hud_scale
     anchor_space: screen
     anchor: bottom_left
     offset_x: 77
@@ -888,9 +922,7 @@ elements:
     width: 159
     height: 113
     z_index: 70
-    scale:
-      min: 1.0
-      max: 8.0
+    scale: *wide_hud_scale
     asset:
       default: mapframe
     notes: Gameplay minimap frame in the lower-right corner.
@@ -936,9 +968,7 @@ elements:
     width: 91
     height: 292
     z_index: 110
-    scale:
-      min: 1.0
-      max: 8.0
+    scale: *wide_hud_scale
     asset:
       default: npcpnl
     notes: MMerge follower panel, moved to the right screen edge and centered vertically for the widescreen HUD.
@@ -1031,9 +1061,7 @@ elements:
     width: 26
     height: 26
     z_index: 111
-    scale:
-      min: 1.0
-      max: 8.0
+    scale: *wide_hud_scale
     interactive: true
     asset:
       default: npcopenup
@@ -1050,7 +1078,5 @@ elements:
     z_index: 101
     interactive: true
     visible: false
-    scale:
-      min: 1.0
-      max: 8.0
+    scale: *wide_hud_scale
     notes: Runtime context action popup target; enabled by setting for mobile or desktop testing.

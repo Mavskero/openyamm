@@ -35,6 +35,7 @@
 #include "game/party/Party.h"
 #include "game/party/SpellIds.h"
 #include "game/tables/JournalQuestTable.h"
+#include "game/tables/CombatTextTable.h"
 #include "game/tables/ItemTable.h"
 #include "game/tables/MonsterTable.h"
 #include "game/tables/SpriteTables.h"
@@ -2711,6 +2712,12 @@ TEST_CASE("party attack target filtering treats dying actors as unavailable")
 
 TEST_CASE("party melee status text reports applied damage")
 {
+    OpenYAMM::Game::CombatTextTable texts;
+    REQUIRE(texts.loadFromRows({
+        {"combat.melee_hit", "%s hits %s for %lu damage"},
+        {"combat.projectile_hit", "%s shoots %s for %lu points"},
+        {"combat.kill", "%s inflicts %lu points killing %s"},
+        {"combat.stun", "%s stuns %s"}, {"combat.paralyze", "%s paralyzes %s"}}));
     OpenYAMM::Game::CharacterAttackResult attack = {};
     attack.mode = OpenYAMM::Game::CharacterAttackMode::Melee;
     attack.canAttack = true;
@@ -2719,6 +2726,7 @@ TEST_CASE("party melee status text reports applied damage")
 
     CHECK_EQ(
         OpenYAMM::Game::GameplayCombatController::formatPartyAttackStatusText(
+            texts,
             "Ariel",
             "Goblin",
             attack,
@@ -2728,6 +2736,7 @@ TEST_CASE("party melee status text reports applied damage")
 
     CHECK_EQ(
         OpenYAMM::Game::GameplayCombatController::formatPartyAttackStatusText(
+            texts,
             "Ariel",
             "Goblin",
             attack,

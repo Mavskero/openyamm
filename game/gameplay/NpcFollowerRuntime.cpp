@@ -131,7 +131,7 @@ std::vector<HiredNpcFollowerView> buildHiredNpcFollowerViews(
         view.feePercent = follower.weeklyCost / 100u;
         view.portraitPictureId = npc.pictureId;
         view.name = npc.name;
-        view.profession = pProfession != nullptr ? pProfession->profession : std::string();
+        view.profession = pProfession != nullptr ? pProfession->displayName() : std::string();
         views.push_back(std::move(view));
     }
 

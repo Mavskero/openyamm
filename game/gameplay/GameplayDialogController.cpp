@@ -357,28 +357,6 @@ int mapTransitionTravelFoodRequired(
     return std::max(0, transition.travelDays);
 }
 
-int outdoorMapMoveTravelDays(
-    const GameplayDialogController::Context &context,
-    const EventRuntimeState::PendingMapMove &move)
-{
-    if (context.pCurrentMap == nullptr || !move.mapName.has_value())
-    {
-        return 0;
-    }
-
-    const std::string currentMapFileName = toLowerCopy(context.pCurrentMap->fileName);
-    const std::string destinationMapFileName = toLowerCopy(*move.mapName);
-
-    if (currentMapFileName == destinationMapFileName
-        || !isOutdoorMapFileName(currentMapFileName)
-        || !isOutdoorMapFileName(destinationMapFileName))
-    {
-        return 0;
-    }
-
-    return OutdoorMapTravelFoodCost;
-}
-
 const Mm9MapTransition *pendingMm9PositionedTransition(
     const GameplayDialogController::Context &context,
     const EventRuntimeState::PendingDialogueContext &dialogueContext)
@@ -716,6 +694,7 @@ bool samePendingDialogueContext(
         && left->sourceActorIndex == right->sourceActorIndex
         && left->hostHouseId == right->hostHouseId
         && left->newsId == right->newsId
+        && left->newsFromNpcText == right->newsFromNpcText
         && left->participantPictureId == right->participantPictureId
         && left->titleOverride == right->titleOverride
         && samePendingMapMove(left->transitionMapMove, right->transitionMapMove)
@@ -973,7 +952,7 @@ bool isAdventurersInnHouse(const GameplayDialogController::Context &context, uin
     }
 
     const HouseEntry *pHouseEntry = context.pHouseTable->get(houseId);
-    return pHouseEntry != nullptr && pHouseEntry->name == "The Adventurer's Inn";
+    return pHouseEntry != nullptr && pHouseEntry->isAdventurersInn();
 }
 
 uint32_t defaultAdventurersInnHouseId(const GameplayDialogController::Context &context)
@@ -984,7 +963,7 @@ uint32_t defaultAdventurersInnHouseId(const GameplayDialogController::Context &c
 
         for (const auto &[candidateHouseId, houseEntry] : context.pHouseTable->entries())
         {
-            if (houseEntry.name == "The Adventurer's Inn")
+            if (houseEntry.isAdventurersInn())
             {
                 if (!selectedHouseId.has_value() || candidateHouseId < *selectedHouseId)
                 {
@@ -1273,7 +1252,9 @@ void applyPendingMapMoveTravelSideEffects(
     GameplayDialogController::Context &context,
     const EventRuntimeState::PendingMapMove &move)
 {
-    const int travelDays = outdoorMapMoveTravelDays(context, move);
+    const int travelDays = outdoorMapMoveTravelDays(
+        context.pCurrentMap != nullptr ? context.pCurrentMap->fileName : std::string(),
+        move.mapName.value_or(std::string()));
 
     if (travelDays <= 0)
     {
@@ -1976,7 +1957,7 @@ std::string formatNpcProfessionText(
         text,
         "%12",
         reputationLabel(requiredReputation.has_value() ? *requiredReputation : effectiveReputation));
-    replaceAllInPlace(text, "%14", profession.profession);
+    replaceAllInPlace(text, "%14", profession.displayName());
     replaceAllInPlace(text, "%17", std::to_string(profession.weeklyCost / 100u));
     return text;
 }
@@ -2885,7 +2866,9 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 *context.pParty,
                 context.pClassSkillTable,
                 context.pWorldRuntime,
-                context.pNpcDialogTable
+                context.pNpcDialogTable,
+                context.pCharacterInspectTable,
+                context.pHouseServiceTextTable
             );
 
             if (houseResult.soundType.has_value())
@@ -2908,8 +2891,10 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 {
                     context.eventRuntimeState.messages.push_back(message);
                 }
-
-                context.uiController.setStatusBarEvent(message);
+                else
+                {
+                    context.uiController.setStatusBarEvent(message);
+                }
             }
 
             if (houseResult.succeeded
@@ -4033,7 +4018,9 @@ GameplayDialogController::PresentPendingDialogResult GameplayDialogController::p
         context.pNewsProfessionTopicTable,
         context.pNpcBtbTable,
         context.pTeacherTopicTable,
-        context.pContinentSettingTable
+        context.pContinentSettingTable,
+        context.pCharacterInspectTable,
+        context.pHouseServiceTextTable
     ));
 
     if (context.eventRuntimeState.pendingDialogueContext.has_value()
@@ -4224,7 +4211,8 @@ GameplayDialogController::Result GameplayDialogController::openNpcNews(
     uint32_t newsId,
     const std::string &titleOverride,
     const std::string &newsText,
-    uint32_t participantPictureId) const
+    uint32_t participantPictureId,
+    bool newsFromNpcText) const
 {
     Result result = {};
     result.previousMessageCount = context.eventRuntimeState.messages.size();
@@ -4238,6 +4226,7 @@ GameplayDialogController::Result GameplayDialogController::openNpcNews(
     pendingContext.kind = DialogueContextKind::NpcNews;
     pendingContext.sourceId = npcId;
     pendingContext.newsId = newsId;
+    pendingContext.newsFromNpcText = newsFromNpcText;
     pendingContext.participantPictureId = participantPictureId;
     pendingContext.titleOverride = titleOverride;
     context.eventRuntimeState.pendingDialogueContext = std::move(pendingContext);

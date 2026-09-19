@@ -1,4 +1,5 @@
 #include "game/app/GameApplication.h"
+#include "engine/WindowPointer.h"
 
 #include "game/StringUtils.h"
 #include "game/app/GprofControl.h"
@@ -2499,7 +2500,7 @@ InventoryItem generateStarterRing(
     return makeStarterInventoryItem(BronzeRingItemId, itemTable);
 }
 
-void grantCreatedCharacterStarterItems(
+void grantCreatedCharacterStarterLoadout(
     Character &character,
     const ItemTable &itemTable,
     const StandardItemEnchantTable &standardItemEnchantTable,
@@ -2542,20 +2543,20 @@ void grantCreatedCharacterStarterItems(
             continue;
         }
 
-        for (uint32_t spellId = spellRange->first;
-             spellId <= spellRange->second && spellId < spellRange->first + 2;
-             ++spellId)
+        // MMerge character creation grants basic knowledge from the selected skill level.
+        const uint32_t learnedCount = std::min(skill.level, spellRange->second - spellRange->first + 1);
+        for (uint32_t offset = 0; offset < learnedCount; ++offset)
         {
-            const std::optional<uint32_t> spellbookItemId = spellbookItemIdForSpell(itemTable, spellId);
-
-            if (!spellbookItemId)
-            {
-                continue;
-            }
-
+            character.learnSpell(spellRange->first + offset);
+        }
+        // The starting book teaches the second spell; the first is already known at level one.
+        const std::optional<uint32_t> spellbookItemId = spellbookItemIdForSpell(itemTable, spellRange->first + 1);
+        if (spellbookItemId)
+        {
             addStarterInventoryItem(character, makeStarterInventoryItem(*spellbookItemId, itemTable));
         }
     }
+    character.synchronizeInnateAbilitySpells();
 }
 
 void seedSimulatedPartyFromRoster(
@@ -2776,7 +2777,7 @@ Character buildFreshCreatedCharacter(
 
     if (!preserveDebugLoadout)
     {
-        grantCreatedCharacterStarterItems(character, itemTable, standardItemEnchantTable, specialItemEnchantTable);
+        grantCreatedCharacterStarterLoadout(character, itemTable, standardItemEnchantTable, specialItemEnchantTable);
     }
 
     return character;
@@ -2807,7 +2808,8 @@ GameApplication::GameApplication(const Engine::ApplicationConfig &config)
             std::placeholders::_4
         ),
         std::bind(&GameApplication::shutdownApplication, this),
-        std::bind(&GameApplication::applicationTextInputActive, this)
+        std::bind(&GameApplication::applicationTextInputActive, this),
+        std::bind(&GameApplication::applicationTextInputArea, this, std::placeholders::_1, std::placeholders::_2)
     )
     , m_gameSession()
     , m_indoorGameView(m_gameSession)
@@ -4883,7 +4885,14 @@ void GameApplication::beginDebugConsoleFrame()
 
         if (pWindow != nullptr)
         {
-            SDL_SetWindowRelativeMouseMode(pWindow, false);
+            if (Engine::hasLockedMenuPointer(pWindow))
+            {
+                Engine::setLockedPointerMouseLook(pWindow, false);
+            }
+            else
+            {
+                SDL_SetWindowRelativeMouseMode(pWindow, false);
+            }
         }
 
         SDL_ShowCursor();
@@ -5206,9 +5215,11 @@ void GameApplication::handleSdlEvent(const SDL_Event &event)
         pActiveScreen->handleSdlEvent(event);
         return;
     }
+#endif
 
     m_gameInputSystem.handleSdlEvent(event);
 
+#if defined(__ANDROID__)
     if (m_gameInputSystem.consumeMobileDebugConsoleToggleRequested())
     {
         if (m_settings.debugConsole && m_debugConsoleRendererInitialized)
@@ -5269,6 +5280,39 @@ bool GameApplication::applicationTextInputActive() const
 
     return (saveGameScreen.active && saveGameScreen.editActive)
         || gameplayScreenRuntime.houseBankState().inputActive();
+}
+
+SDL_Rect GameApplication::applicationTextInputArea(int windowWidth, int windowHeight) const
+{
+    if (const IScreen *pScreen = m_screenManager.activeScreen())
+    {
+        if (const NewGameScreen *pCreation = dynamic_cast<const NewGameScreen *>(pScreen))
+        {
+            return pCreation->textInputArea(windowWidth, windowHeight);
+        }
+        return {};
+    }
+
+    const GameplayScreenRuntime &view = m_gameSession.gameplayScreenRuntime();
+    const GameplayUiController::SaveGameScreenState &saveGame = view.saveGameScreenState();
+    if (!saveGame.active || !saveGame.editActive)
+    {
+        return {};
+    }
+
+    const std::optional<GameplayResolvedHudLayoutElement> row = view.resolveHudLayoutElement(
+        "SaveGameSlotRow" + std::to_string(saveGame.editSlotIndex), windowWidth, windowHeight, 205.0f, 22.0f);
+    if (!row)
+    {
+        return {};
+    }
+
+    return {
+        static_cast<int>(std::floor(row->x)),
+        static_cast<int>(std::floor(row->y)),
+        static_cast<int>(std::ceil(row->width)),
+        static_cast<int>(std::ceil(row->height))
+    };
 }
 
 bool GameApplication::handlePendingInputPromptSdlEvent(const SDL_Event &event)
@@ -5594,7 +5638,9 @@ void GameApplication::presentPendingInputPromptDialogResult(size_t previousMessa
         &m_gameDataLoader.getMergedNewsProfessionTopicTable(),
         &m_gameDataLoader.getMergedNpcBtbTable(),
         nullptr,
-        &m_gameDataLoader.getMergedContinentSettingTable());
+        &m_gameDataLoader.getMergedContinentSettingTable(),
+        &m_gameDataLoader.getCharacterInspectTable(),
+        &m_gameDataLoader.getHouseServiceTextTable());
 
 }
 
@@ -6218,22 +6264,28 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
         if (EventRuntimeState *pEventRuntimeState = m_pOutdoorWorldRuntime->eventRuntimeState())
         {
             m_gameSession.applyNamedGlobalVarsToRuntime(*pEventRuntimeState);
+            m_gameSession.applyHistoryToRuntime(*pEventRuntimeState);
 
-            EventRuntime eventRuntime(&m_gameDataLoader.getHouseTable(), &m_gameDataLoader.getNpcDialogTable());
+            // A loaded runtime snapshot already contains entry/refill effects. Replaying
+            // them here can reset a saved puzzle while retaining its textures and timers.
+            if (!m_loadingSavedGameRuntime || !restoreSavedOutdoorState)
+            {
+                EventRuntime eventRuntime(&m_gameDataLoader.getHouseTable(), &m_gameDataLoader.getNpcDialogTable());
 
-            eventRuntime.executeOnLoadEvents(
-                selectedMap->localEventProgram,
-                selectedMap->globalEventProgram,
-                *pEventRuntimeState,
-                &m_pOutdoorPartyRuntime->party(),
-                m_pOutdoorWorldRuntime.get());
-            eventRuntime.executeMapRefillHooks(
-                selectedMap->localEventProgram,
-                selectedMap->globalEventProgram,
-                selectedMap->outdoorMapDeltaData,
-                *pEventRuntimeState,
-                &m_pOutdoorPartyRuntime->party(),
-                m_pOutdoorWorldRuntime.get());
+                eventRuntime.executeOnLoadEvents(
+                    selectedMap->localEventProgram,
+                    selectedMap->globalEventProgram,
+                    *pEventRuntimeState,
+                    &m_pOutdoorPartyRuntime->party(),
+                    m_pOutdoorWorldRuntime.get());
+                eventRuntime.executeMapRefillHooks(
+                    selectedMap->localEventProgram,
+                    selectedMap->globalEventProgram,
+                    selectedMap->outdoorMapDeltaData,
+                    *pEventRuntimeState,
+                    &m_pOutdoorPartyRuntime->party(),
+                    m_pOutdoorWorldRuntime.get());
+            }
             m_pOutdoorWorldRuntime->applyEventRuntimeState(true);
             m_pOutdoorPartyRuntime->applyEventRuntimeState(*pEventRuntimeState, false);
         }
@@ -6452,21 +6504,27 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
         if (EventRuntimeState *pEventRuntimeState = pIndoorSceneRuntime->eventRuntimeState())
         {
             m_gameSession.applyNamedGlobalVarsToRuntime(*pEventRuntimeState);
+            m_gameSession.applyHistoryToRuntime(*pEventRuntimeState);
 
-            EventRuntime eventRuntime(&m_gameDataLoader.getHouseTable(), &m_gameDataLoader.getNpcDialogTable());
-            eventRuntime.executeOnLoadEvents(
-                selectedMap->localEventProgram,
-                selectedMap->globalEventProgram,
-                *pEventRuntimeState,
-                &pIndoorSceneRuntime->party(),
-                pIndoorSceneRuntime->sceneEventContext());
-            eventRuntime.executeMapRefillHooks(
-                selectedMap->localEventProgram,
-                selectedMap->globalEventProgram,
-                pIndoorSceneRuntime->mapDeltaData(),
-                *pEventRuntimeState,
-                &pIndoorSceneRuntime->party(),
-                pIndoorSceneRuntime->sceneEventContext());
+            // A loaded runtime snapshot already contains entry/refill effects. Replaying
+            // them here can reset a saved puzzle while retaining its textures and timers.
+            if (!m_loadingSavedGameRuntime || !restoreSavedIndoorState)
+            {
+                EventRuntime eventRuntime(&m_gameDataLoader.getHouseTable(), &m_gameDataLoader.getNpcDialogTable());
+                eventRuntime.executeOnLoadEvents(
+                    selectedMap->localEventProgram,
+                    selectedMap->globalEventProgram,
+                    *pEventRuntimeState,
+                    &pIndoorSceneRuntime->party(),
+                    pIndoorSceneRuntime->sceneEventContext());
+                eventRuntime.executeMapRefillHooks(
+                    selectedMap->localEventProgram,
+                    selectedMap->globalEventProgram,
+                    pIndoorSceneRuntime->mapDeltaData(),
+                    *pEventRuntimeState,
+                    &pIndoorSceneRuntime->party(),
+                    pIndoorSceneRuntime->sceneEventContext());
+            }
             pIndoorSceneRuntime->worldRuntime().applyEventRuntimeState(true);
             pIndoorSceneRuntime->party().applyEventRuntimeState(*pEventRuntimeState, false);
         }
@@ -6652,7 +6710,9 @@ void GameApplication::synchronizeSessionFromRuntime()
         m_gameSession.captureIndoorRuntimeState(
             m_pMapSceneRuntime->currentMapFileName(),
             m_pMapSceneRuntime->party(),
-            snapshot);
+            snapshot,
+            m_indoorRenderer.cameraYawRadians(),
+            m_indoorRenderer.cameraPitchRadians());
 
         const std::optional<MapAssetInfo> &selectedMap = m_gameDataLoader.getSelectedMap();
 
@@ -7331,7 +7391,7 @@ void GameApplication::cancelLoadingOverlay()
     m_pLoadingOverlayScreen.reset();
 }
 
-bool GameApplication::applyCurrentSessionToRuntime(bool initializeView)
+bool GameApplication::applyCurrentSessionToRuntime()
 {
     if (m_pMapSceneRuntime == nullptr)
     {
@@ -7345,14 +7405,19 @@ bool GameApplication::applyCurrentSessionToRuntime(bool initializeView)
             m_pOutdoorPartyRuntime->restoreSnapshot(*m_gameSession.outdoorPartyState());
         }
 
-        if (initializeView)
-        {
-            m_outdoorGameView.setCameraAngles(
-                m_gameSession.outdoorCameraYawRadians(),
-                m_gameSession.outdoorCameraPitchRadians());
-        }
+        // Camera angles are saved game state, even when the renderer has not been initialized.
+        m_outdoorGameView.setCameraAngles(
+            m_gameSession.outdoorCameraYawRadians(),
+            m_gameSession.outdoorCameraPitchRadians());
 
         applyCurrentSettingsToActiveRuntime();
+    }
+
+    if (m_pMapSceneRuntime->kind() == SceneKind::Indoor)
+    {
+        m_indoorRenderer.setCameraAngles(
+            m_gameSession.indoorCameraYawRadians(),
+            m_gameSession.indoorCameraPitchRadians());
     }
 
     synchronizeSessionFromRuntime();
@@ -7926,7 +7991,7 @@ bool GameApplication::quickLoadFromPath(const std::filesystem::path &path, bool 
 
     renderLoadingOverlayProgress(90);
 
-    if (!applyCurrentSessionToRuntime(initializeView))
+    if (!applyCurrentSessionToRuntime())
     {
         cancelLoadingOverlay();
         GAMEPLAY_DEBUG_TRACE(
@@ -7937,6 +8002,12 @@ bool GameApplication::quickLoadFromPath(const std::filesystem::path &path, bool 
         return false;
     }
 
+    if (!m_gameSession.restoreTurnBasedCombatFromSaveData(*saveData))
+    {
+        cancelLoadingOverlay();
+        reportQuickSaveStatus("Quick load failed: turn-based world state mismatch");
+        return false;
+    }
     m_gameSession.restoreHeldInventoryItemFromSaveData(*saveData);
 
     renderLoadingOverlayProgress(95);
@@ -8972,7 +9043,7 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
     finishFrameDiagnostics();
 }
 
-bool GameApplication::processPendingMapMove()
+bool GameApplication::processPendingMapMove(bool initializeView)
 {
     if (m_pAssetFileSystem == nullptr)
     {
@@ -8999,20 +9070,30 @@ bool GameApplication::processPendingMapMove()
 
     const auto applyMapMoveDirection = [this, &pendingMapMove]()
     {
-        if (!pendingMapMove->directionDegrees.has_value() || m_pMapSceneRuntime == nullptr)
+        if ((!pendingMapMove->directionDegrees && !pendingMapMove->lookAngleDegrees) || m_pMapSceneRuntime == nullptr)
         {
             return;
         }
 
-        const float yawRadians = mapMoveHeadingDegreesToYawRadians(*pendingMapMove->directionDegrees);
-
         if (m_pMapSceneRuntime->kind() == SceneKind::Outdoor)
         {
-            m_outdoorGameView.setCameraAngles(yawRadians, m_outdoorGameView.cameraPitchRadians());
+            const float yawRadians = pendingMapMove->directionDegrees
+                ? mapMoveHeadingDegreesToYawRadians(*pendingMapMove->directionDegrees)
+                : m_outdoorGameView.cameraYawRadians();
+            const float pitchRadians = pendingMapMove->lookAngleDegrees
+                ? static_cast<float>(*pendingMapMove->lookAngleDegrees) * Pi / 180.0f
+                : m_outdoorGameView.cameraPitchRadians();
+            m_outdoorGameView.setCameraAngles(yawRadians, pitchRadians);
         }
         else if (m_pMapSceneRuntime->kind() == SceneKind::Indoor)
         {
-            m_indoorRenderer.setCameraAngles(yawRadians, m_indoorRenderer.cameraPitchRadians());
+            const float yawRadians = pendingMapMove->directionDegrees
+                ? mapMoveHeadingDegreesToYawRadians(*pendingMapMove->directionDegrees)
+                : m_indoorRenderer.cameraYawRadians();
+            const float pitchRadians = pendingMapMove->lookAngleDegrees
+                ? static_cast<float>(*pendingMapMove->lookAngleDegrees) * Pi / 180.0f
+                : m_indoorRenderer.cameraPitchRadians();
+            m_indoorRenderer.setCameraAngles(yawRadians, pitchRadians);
         }
     };
     if (isSameMapTeleport)
@@ -9072,7 +9153,7 @@ bool GameApplication::processPendingMapMove()
     renderLoadingOverlayProgress(15);
 
     if (!loadCurrentSessionMap(
-            true,
+            initializeView,
             [this](int localProgress)
             {
                 renderLoadingOverlayProgress(remapLoadingProgress(localProgress, 20, 85));
@@ -9080,7 +9161,7 @@ bool GameApplication::processPendingMapMove()
     {
         m_gameSession.setCurrentMapFileName(previousMapFileName);
         const bool previousMapRestored = loadCurrentSessionMap(
-            true,
+            initializeView,
             [this](int localProgress)
             {
                 renderLoadingOverlayProgress(remapLoadingProgress(localProgress, 20, 85));
@@ -9454,6 +9535,7 @@ bool GameApplication::processPendingDimensionDoorOverlay()
     pRuntimeState->pendingDimensionDoorOverlay = false;
 
     GameplayScreenRuntime &screenRuntime = m_gameSession.gameplayScreenRuntime();
+    screenRuntime.activateDimensionDoor();
 
     if (!screenRuntime.ensureDimensionDoorDestinationsLoaded())
     {
@@ -9467,6 +9549,12 @@ bool GameApplication::processPendingDimensionDoorOverlay()
         GameplayUiController::UtilitySpellOverlayMode::DimensionDoor,
         spellIdValue(SpellId::TownPortal),
         casterMemberIndex);
+    // This pending event is a scripted direct cast, not an ordinary spellbook selection.
+    GameplayUiController::UtilitySpellOverlayState &overlay = screenRuntime.utilitySpellOverlay();
+    overlay.skillLevelOverride = 10;
+    overlay.skillMasteryOverride = SkillMastery::Grandmaster;
+    overlay.spendMana = false;
+    overlay.applyRecovery = false;
     screenRuntime.resetUtilitySpellOverlayInteractionState();
     screenRuntime.setStatusBarEvent("You feel high magic presence here.", 4.0f);
     return true;

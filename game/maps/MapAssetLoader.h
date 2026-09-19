@@ -90,7 +90,7 @@ struct DecorationBillboard
     int x = 0;
     int y = 0;
     int z = 0;
-    int facing = 0;
+    float facing = 0.0f; // Resolved degrees; map records retain their original yaw units.
     uint16_t eventIdPrimary = 0;
     uint16_t eventIdSecondary = 0;
     int16_t sectorId = -1;

@@ -317,6 +317,15 @@ InventoryItemMixResult InventoryItemMixingRuntime::tryApplyHeldItemToInventoryIt
         return {};
     }
 
+    // A stale recipe may point at a valid item ID that is no longer a potion.
+    // Validate before the failure/consumption path can modify either input.
+    if (combination->failureDamageLevel == 0
+        && (itemTable.get(combination->resultItemId) == nullptr
+            || potionSettingTable.getByItemId(combination->resultItemId) == nullptr))
+    {
+        return {};
+    }
+
     const uint8_t damageLevel = combination->failureDamageLevel != 0
         ? combination->failureDamageLevel
         : requiredFailureDamageLevel(combination->resultItemId, alchemyMastery(alchemyMember), potionSettingTable);

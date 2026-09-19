@@ -8,6 +8,7 @@
 #include "game/tables/MergedBaseTables.h"
 
 #include <filesystem>
+#include <cstdlib>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -87,8 +88,13 @@ bool loadTextTableRows(
 bool loadRegressionGameData(RegressionGameData &data, std::string &failure)
 {
     Engine::AssetFileSystem assetFileSystem;
-    const std::filesystem::path sourceRoot = OPENYAMM_SOURCE_DIR;
-    const std::filesystem::path assetsRoot = sourceRoot / "assets_dev";
+    const char *pRuntimeRoot = std::getenv("OPENYAMM_REGRESSION_RUNTIME_ROOT");
+    const std::filesystem::path sourceRoot = pRuntimeRoot != nullptr && *pRuntimeRoot != '\0'
+        ? std::filesystem::path(pRuntimeRoot)
+        : std::filesystem::path(OPENYAMM_SOURCE_DIR);
+    const std::filesystem::path assetsRoot = pRuntimeRoot != nullptr && *pRuntimeRoot != '\0'
+        ? sourceRoot
+        : sourceRoot / "assets_dev";
 
     if (!assetFileSystem.initialize(sourceRoot, assetsRoot, Engine::AssetScaleTier::X1))
     {
@@ -552,6 +558,40 @@ bool loadRegressionGameData(RegressionGameData &data, std::string &failure)
     if (!data.classSkillTable.loadClassMetadataFromRows(classExtraRows))
     {
         failure = "could not load class metadata for regression tests";
+        return false;
+    }
+
+    std::vector<std::vector<std::string>> skillDescriptionRows;
+
+    if (!loadTextTableRows(
+            assetFileSystem,
+            engineEnglishDataTablePath("skill_des.txt"),
+            skillDescriptionRows,
+            failure))
+    {
+        return false;
+    }
+
+    if (!data.characterInspectTable.loadSkillRows(skillDescriptionRows))
+    {
+        failure = "could not load character skill display names for regression tests";
+        return false;
+    }
+
+    std::vector<std::vector<std::string>> houseServiceTextRows;
+
+    if (!loadTextTableRows(
+            assetFileSystem,
+            engineDataTablePath("house_service_text.txt"),
+            houseServiceTextRows,
+            failure))
+    {
+        return false;
+    }
+
+    if (!data.houseServiceTextTable.loadFromRows(houseServiceTextRows))
+    {
+        failure = "could not load house service text for regression tests";
         return false;
     }
 

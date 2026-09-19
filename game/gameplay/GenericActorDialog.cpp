@@ -370,13 +370,13 @@ std::string resolveGenericNpcName(const std::string &actorName, uint32_t actorGr
     }
 }
 
-std::optional<uint32_t> firstMapAreaNewsId(
+const MergedNewsTopicEntry *firstMapAreaNews(
     const MapStatsEntry *pCurrentMap,
     const MergedNewsTopicTable *pNewsAreaTopicTable)
 {
     if (pCurrentMap == nullptr || pNewsAreaTopicTable == nullptr)
     {
-        return std::nullopt;
+        return nullptr;
     }
 
     const uint32_t mapId = static_cast<uint32_t>(std::max(pCurrentMap->id, 0));
@@ -385,31 +385,31 @@ std::optional<uint32_t> firstMapAreaNewsId(
     {
         if (entry.ownerId == mapId && entry.newsTextId != 0)
         {
-            return entry.newsTextId;
+            return &entry;
         }
     }
 
-    return std::nullopt;
+    return nullptr;
 }
 
-std::optional<uint32_t> firstContinentNewsId(
+const MergedNewsTopicEntry *firstContinentNews(
     const MapStatsEntry *pCurrentMap,
     const MergedNewsTopicTable *pNewsContinentTopicTable)
 {
     if (pCurrentMap == nullptr || pNewsContinentTopicTable == nullptr || pCurrentMap->mergedContinentId == 0)
     {
-        return std::nullopt;
+        return nullptr;
     }
 
     for (const MergedNewsTopicEntry &entry : pNewsContinentTopicTable->entries())
     {
         if (entry.ownerId == pCurrentMap->mergedContinentId && entry.newsTextId != 0)
         {
-            return entry.newsTextId;
+            return &entry;
         }
     }
 
-    return std::nullopt;
+    return nullptr;
 }
 
 bool isPlaceholderGroupNews(uint32_t newsId)
@@ -486,17 +486,19 @@ std::optional<GenericActorDialogResolution> resolveGenericActorDialog(
         newsId = 0;
     }
 
+    const MergedNewsTopicEntry *pNews = nullptr;
     if (newsId == 0)
     {
-        newsId = firstMapAreaNewsId(pCurrentMap, pNewsAreaTopicTable).value_or(0);
+        pNews = firstMapAreaNews(pCurrentMap, pNewsAreaTopicTable);
+        if (pNews == nullptr)
+        {
+            pNews = firstContinentNews(pCurrentMap, pNewsContinentTopicTable);
+        }
+        newsId = pNews != nullptr ? pNews->newsTextId : 0;
     }
+    const bool newsFromNpcText = pNews != nullptr && pNews->textFromNpcTable;
 
-    if (newsId == 0)
-    {
-        newsId = firstContinentNewsId(pCurrentMap, pNewsContinentTopicTable).value_or(0);
-    }
-
-    if (newsId == 0 || !npcDialogTable.getNewsDialogText(newsId))
+    if (newsId == 0 || !npcDialogTable.getNewsDialogText(newsId, newsFromNpcText))
     {
         return std::nullopt;
     }
@@ -504,6 +506,7 @@ std::optional<GenericActorDialogResolution> resolveGenericActorDialog(
     GenericActorDialogResolution resolution = {};
     resolution.npcId = genericNpcId;
     resolution.newsId = newsId;
+    resolution.newsFromNpcText = newsFromNpcText;
     resolution.portraitPictureId = resolveActorPortraitId(
         pMonsterPortraitTable,
         actorName,

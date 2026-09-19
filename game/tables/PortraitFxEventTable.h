@@ -22,12 +22,25 @@ enum class PortraitFxEventKind : uint8_t
     MonsterSpecial,
 };
 
+enum class PortraitFxAction : uint8_t
+{
+    Default,
+    Set,
+    Add,
+    Subtract,
+};
+
 struct PortraitFxEventEntry
 {
     PortraitFxEventKind kind = PortraitFxEventKind::None;
     std::string name;
     std::string animationName;
     std::optional<FaceAnimationId> faceAnimationId;
+    std::string setAnimationName;
+    std::string addAnimationName;
+    std::string subtractAnimationName;
+
+    const std::string &animationForAction(PortraitFxAction action) const;
 };
 
 class PortraitFxEventTable

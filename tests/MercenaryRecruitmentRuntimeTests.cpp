@@ -129,7 +129,7 @@ TEST_CASE("MMerge-style mercenary recruits are generated into current-map recrui
         map,
         harness.party(),
         harness.eventRuntimeState(),
-        makeRecruitmentTables(gameData));
+        makeRecruitmentTables(gameData), 0.0f);
 
     REQUIRE(placed);
     REQUIRE(harness.eventRuntimeState().generatedMercenaryRecruitsByNpcId.size() == 1);
@@ -167,7 +167,7 @@ TEST_CASE("Generated mercenary residents can join the party through shared house
         map,
         harness.party(),
         harness.eventRuntimeState(),
-        makeRecruitmentTables(gameData)));
+        makeRecruitmentTables(gameData), 0.0f));
 
     const OpenYAMM::Game::EventRuntimeState::GeneratedMercenaryRecruit recruit =
         harness.eventRuntimeState().generatedMercenaryRecruitsByNpcId.begin()->second;

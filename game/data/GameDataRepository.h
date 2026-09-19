@@ -16,6 +16,7 @@
 #include "game/tables/ClassSkillTable.h"
 #include "game/tables/FaceAnimationTable.h"
 #include "game/tables/HouseTable.h"
+#include "game/tables/HouseServiceTextTable.h"
 #include "game/tables/IconFrameTable.h"
 #include "game/tables/ItemTable.h"
 #include "game/tables/JournalAutonoteTable.h"
@@ -35,6 +36,7 @@
 #include "game/tables/ReadableScrollTable.h"
 #include "game/tables/RosterTable.h"
 #include "game/tables/SpellTable.h"
+#include "game/tables/CombatTextTable.h"
 #include "game/tables/SpellFxTable.h"
 #include "game/tables/TransitionTable.h"
 
@@ -57,6 +59,8 @@ public:
     const MonsterProjectileTable &monsterProjectileTable() const;
     const ObjectTable &objectTable() const;
     const SpellTable &spellTable() const;
+    const CombatTextTable &combatTextTable() const;
+    const HouseServiceTextTable &houseServiceTextTable() const;
     const ItemTable &itemTable() const;
     const StandardItemEnchantTable &standardItemEnchantTable() const;
     const SpecialItemEnchantTable &specialItemEnchantTable() const;
@@ -99,11 +103,13 @@ public:
     const MergedNewsProfessionTopicTable &mergedNewsProfessionTopicTable() const;
     const MergedBolsterMapTable &mergedBolsterMapTable() const;
     const MergedBolsterMonsterTable &mergedBolsterMonsterTable() const;
+    const MergedCharacterVoiceTable &mergedCharacterVoiceTable() const;
     const MergedContinentSettingTable &mergedContinentSettingTable() const;
     const MergedMonsterPortraitTable &mergedMonsterPortraitTable() const;
     const MergedPotionSettingTable &mergedPotionSettingTable() const;
     const MergedReagentSettingTable &mergedReagentSettingTable() const;
     const MergedComplexItemPictureTable &mergedComplexItemPictureTable() const;
+    const MergedComplexItemPictureOffsetTable &mergedComplexItemPictureOffsetTable() const;
     const MergedTeacherTopicTable &mergedTeacherTopicTable() const;
     const MergedTeacherAutonoteTable &mergedTeacherAutonoteTable() const;
 
@@ -113,6 +119,8 @@ private:
     const MonsterProjectileTable *m_pMonsterProjectileTable = nullptr;
     const ObjectTable *m_pObjectTable = nullptr;
     const SpellTable *m_pSpellTable = nullptr;
+    const CombatTextTable *m_pCombatTextTable = nullptr;
+    const HouseServiceTextTable *m_pHouseServiceTextTable = nullptr;
     const ItemTable *m_pItemTable = nullptr;
     const StandardItemEnchantTable *m_pStandardItemEnchantTable = nullptr;
     const SpecialItemEnchantTable *m_pSpecialItemEnchantTable = nullptr;
@@ -155,11 +163,13 @@ private:
     const MergedNewsProfessionTopicTable *m_pMergedNewsProfessionTopicTable = nullptr;
     const MergedBolsterMapTable *m_pMergedBolsterMapTable = nullptr;
     const MergedBolsterMonsterTable *m_pMergedBolsterMonsterTable = nullptr;
+    const MergedCharacterVoiceTable *m_pMergedCharacterVoiceTable = nullptr;
     const MergedContinentSettingTable *m_pMergedContinentSettingTable = nullptr;
     const MergedMonsterPortraitTable *m_pMergedMonsterPortraitTable = nullptr;
     const MergedPotionSettingTable *m_pMergedPotionSettingTable = nullptr;
     const MergedReagentSettingTable *m_pMergedReagentSettingTable = nullptr;
     const MergedComplexItemPictureTable *m_pMergedComplexItemPictureTable = nullptr;
+    const MergedComplexItemPictureOffsetTable *m_pMergedComplexItemPictureOffsetTable = nullptr;
     const MergedTeacherTopicTable *m_pMergedTeacherTopicTable = nullptr;
     const MergedTeacherAutonoteTable *m_pMergedTeacherAutonoteTable = nullptr;
 };

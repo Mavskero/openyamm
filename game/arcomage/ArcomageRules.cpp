@@ -239,7 +239,10 @@ bool ArcomageRules::playCard(const ArcomageLibrary &library, size_t handIndex, A
     const ArcomageEffectBundle &bundle = usePrimary ? pCard->primary : pCard->secondary;
     player.hand[handIndex] = -1;
     applyEffectBundle(bundle, player, enemy);
-    applyMm8SpecialCard(*pCard, player, enemy);
+    if (!pCard->usesMm8BinaryEffects)
+    {
+        applyMm8SpecialCard(*pCard, player, enemy);
+    }
     state.lastPlayedCard = ArcomagePlayedCard{cardId, playerIndex, false};
     appendShownCard(*state.lastPlayedCard, state);
 
@@ -571,6 +574,10 @@ void ArcomageRules::applyEffectBundle(
     applyBuildingDamage(enemy, bundle.bothBuildings);
     applyScalarChange(player.wall, enemy.wall, bundle.bothWall);
     applyScalarChange(enemy.wall, player.wall, bundle.bothWall);
+    if (bundle.swapWalls)
+    {
+        std::swap(player.wall, enemy.wall);
+    }
     applyScalarChange(player.tower, enemy.tower, bundle.bothTower);
     applyScalarChange(enemy.tower, player.tower, bundle.bothTower);
 }

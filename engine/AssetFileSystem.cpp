@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -84,6 +85,103 @@ const std::string &AssetReadStream::virtualPath() const
 
 namespace
 {
+// PhysicsFS identifies mounts by filename, so mounting the same filename again does not add a namespace.
+// Independent, streamed I/O lets a ZIP retain its legacy root mount and a distinct world-qualified mount.
+struct NativeArchiveIo
+{
+    PHYSFS_Io io = {};
+    std::filesystem::path path;
+    std::ifstream stream;
+    uint64_t size = 0;
+    uint64_t position = 0;
+
+    static PHYSFS_Io *open(const std::filesystem::path &path, uint64_t position = 0)
+    {
+        try
+        {
+            std::unique_ptr<NativeArchiveIo> owner = std::make_unique<NativeArchiveIo>();
+            owner->path = path;
+            owner->stream.open(path, std::ios::binary | std::ios::ate);
+            const std::streampos end = owner->stream.tellg();
+            if (!owner->stream || end < 0 || position > uint64_t(end))
+            {
+                PHYSFS_setErrorCode(PHYSFS_ERR_IO);
+                return nullptr;
+            }
+            owner->size = uint64_t(end);
+            owner->stream.seekg(std::streamoff(position));
+            if (!owner->stream)
+            {
+                PHYSFS_setErrorCode(PHYSFS_ERR_IO);
+                return nullptr;
+            }
+            owner->position = position;
+            owner->io.opaque = owner.get();
+            owner->io.read = [](PHYSFS_Io *pIo, void *pBuffer, PHYSFS_uint64 count) -> PHYSFS_sint64
+            {
+                NativeArchiveIo &source = *static_cast<NativeArchiveIo *>(pIo->opaque);
+                const uint64_t amount = std::min<uint64_t>({count, source.size - source.position,
+                    uint64_t(std::numeric_limits<std::streamsize>::max())});
+                if (amount == 0)
+                {
+                    return 0;
+                }
+                source.stream.read(static_cast<char *>(pBuffer), std::streamsize(amount));
+                const std::streamsize read = source.stream.gcount();
+                source.position += uint64_t(read);
+                if (read == 0 || source.stream.bad())
+                {
+                    PHYSFS_setErrorCode(PHYSFS_ERR_IO);
+                    return -1;
+                }
+                return read;
+            };
+            owner->io.seek = [](PHYSFS_Io *pIo, PHYSFS_uint64 offset) -> int
+            {
+                NativeArchiveIo &source = *static_cast<NativeArchiveIo *>(pIo->opaque);
+                if (offset > source.size)
+                {
+                    PHYSFS_setErrorCode(PHYSFS_ERR_PAST_EOF);
+                    return 0;
+                }
+                source.stream.clear();
+                source.stream.seekg(std::streamoff(offset));
+                if (!source.stream)
+                {
+                    PHYSFS_setErrorCode(PHYSFS_ERR_IO);
+                    return 0;
+                }
+                source.position = offset;
+                return 1;
+            };
+            owner->io.tell = [](PHYSFS_Io *pIo) -> PHYSFS_sint64
+            {
+                return static_cast<NativeArchiveIo *>(pIo->opaque)->position;
+            };
+            owner->io.length = [](PHYSFS_Io *pIo) -> PHYSFS_sint64
+            {
+                return static_cast<NativeArchiveIo *>(pIo->opaque)->size;
+            };
+            owner->io.duplicate = [](PHYSFS_Io *pIo) -> PHYSFS_Io *
+            {
+                const NativeArchiveIo &source = *static_cast<NativeArchiveIo *>(pIo->opaque);
+                return open(source.path, source.position);
+            };
+            owner->io.destroy = [](PHYSFS_Io *pIo)
+            {
+                // Ownership was transferred to the C API by open().
+                const std::unique_ptr<NativeArchiveIo> owner(static_cast<NativeArchiveIo *>(pIo->opaque));
+            };
+            return &owner.release()->io;
+        }
+        catch (...)
+        {
+            PHYSFS_setErrorCode(PHYSFS_ERR_IO);
+            return nullptr;
+        }
+    }
+};
+
 constexpr const char *EditorDevelopmentRootName = "assets_editor_dev";
 constexpr const char *EngineDevelopmentRootName = "engine";
 constexpr const char *WorldsDevelopmentRootName = "worlds";
@@ -913,7 +1011,41 @@ bool AssetFileSystem::mountSearchRootAt(
         return false;
     }
 
-    if (!PHYSFS_mount(assetRoot.string().c_str(), mountPoint.c_str(), appendToPath ? 1 : 0))
+    bool mounted = false;
+    const std::string physicalName = assetRoot.string();
+    const char *pPreviousMount = PHYSFS_getMountPoint(physicalName.c_str());
+    std::string previousMount = pPreviousMount != nullptr ? normalizeVirtualPath(pPreviousMount) : "";
+    std::string desiredMount = normalizeVirtualPath(mountPoint);
+    for (std::string *pPoint : {&previousMount, &desiredMount})
+    {
+        while (!pPoint->empty() && pPoint->back() == '/')
+        {
+            pPoint->pop_back();
+        }
+    }
+    if (isZipArchivePath(assetRoot) && pPreviousMount != nullptr
+        && previousMount != desiredMount)
+    {
+        const std::string mountId = physicalName + "::" + normalizeVirtualPath(mountPoint) + ".zip";
+        if (PHYSFS_getMountPoint(mountId.c_str()) != nullptr)
+        {
+            return true;
+        }
+        PHYSFS_Io *pIo = NativeArchiveIo::open(assetRoot);
+        if (pIo != nullptr)
+        {
+            mounted = PHYSFS_mountIo(pIo, mountId.c_str(), mountPoint.c_str(), appendToPath ? 1 : 0) != 0;
+            if (!mounted)
+            {
+                pIo->destroy(pIo);
+            }
+        }
+    }
+    else
+    {
+        mounted = PHYSFS_mount(physicalName.c_str(), mountPoint.c_str(), appendToPath ? 1 : 0) != 0;
+    }
+    if (!mounted)
     {
         std::cerr << "PHYSFS_mount failed for " << assetRoot << " at " << mountPoint << ": "
                   << PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()) << '\n';

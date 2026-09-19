@@ -105,7 +105,10 @@ bool SpellTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
         SpellEntry entry = {};
         entry.id = std::stoi(row[0]);
         entry.name = row[2];
-        entry.normalizedName = canonicalLegacySpellAlias(normalizeName(entry.name));
+        // Native localized tables append the source semantic name. Monster
+        // spell descriptors and gameplay rules continue to use that identity.
+        const std::string &baseName = row.size() > 24 && !row[24].empty() ? row[24] : entry.name;
+        entry.normalizedName = canonicalLegacySpellAlias(normalizeName(baseName));
         entry.schoolName = row.size() > 3 ? row[3] : "";
         entry.shortName = row.size() > 4 ? row[4] : "";
         entry.description = row.size() > 5 ? row[5] : "";
@@ -129,7 +132,7 @@ bool SpellTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
         entry.damageDiceSides = row.size() > 23 && !row[23].empty() ? std::stoi(row[23]) : 0;
         m_entryIndexById[entry.id] = m_entries.size();
         m_entryIndexByNormalizedName[entry.normalizedName] = m_entries.size();
-        m_entryIndexByNormalizedName[compactName(entry.name)] = m_entries.size();
+        m_entryIndexByNormalizedName[compactName(baseName)] = m_entries.size();
         m_entries.push_back(std::move(entry));
     }
 

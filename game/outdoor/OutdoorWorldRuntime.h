@@ -612,7 +612,8 @@ public:
     RainIntensityPreset rainIntensityPreset() const;
     const char *rainIntensityPresetName() const;
     void advanceGameMinutes(float minutes) override;
-    void updateMapActors(float deltaSeconds, float partyX, float partyY, float partyZ);
+    void updateMapActors(float deltaSeconds, float partyX, float partyY, float partyZ,
+        ActorAiUpdateMode mode = ActorAiUpdateMode::Full);
     void updateMm9FoundPlayerEvents(float deltaSeconds, float partyX, float partyY, float partyZ);
     void queueActorAiUpdate(float deltaSeconds, float partyX, float partyY, float partyZ);
     void setOutdoorPathfindingSettings(bool enabled, bool logEnabled);
@@ -882,7 +883,7 @@ public:
         float deltaSeconds,
         bool allowWorldInput) override;
     const GameplayWorldMovementFrameDiagnostics *lastWorldMovementFrameDiagnostics() const override;
-    void updateActorAi(float deltaSeconds) override;
+    void updateActorAi(float deltaSeconds, ActorAiUpdateMode mode = ActorAiUpdateMode::Full) override;
     void updateTurnBasedPausedActorAnimations(float deltaSeconds) override;
     size_t turnBasedPendingWorldActionCount() const override;
     bool turnBasedActorActionInProgress() const override;

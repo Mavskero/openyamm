@@ -40,6 +40,9 @@ bool AudioSystem::initialize(const AssetFileSystem &assetFileSystem)
 {
     shutdown();
     m_pAssetFileSystem = &assetFileSystem;
+    // Original IMA WAVs often end with a partial block containing complete sample frames.
+    // SDL's default drops that entire block, including the whole payload of some short UI sounds.
+    SDL_SetHint(SDL_HINT_WAVE_TRUNCATION, "dropframe");
 
     if (!isAudioSubsystemInitialized())
     {
@@ -73,7 +76,7 @@ bool AudioSystem::initialize(const AssetFileSystem &assetFileSystem)
 
 bool AudioSystem::preloadClip(const std::string &virtualPath)
 {
-    const std::shared_ptr<AudioClip> pClip = loadClip(virtualPath);
+    const std::shared_ptr<AudioClip> pClip = loadClip(virtualPath, true);
     return pClip != nullptr && pClip->frameCount > 0;
 }
 
@@ -87,6 +90,8 @@ bool AudioSystem::registerClip(const std::string &virtualPath, std::vector<float
     std::shared_ptr<AudioClip> pClip = std::make_shared<AudioClip>();
     pClip->virtualPath = virtualPath;
     pClip->samples = std::move(samples);
+    pClip->pinned = true;
+    pClip->lastUseSerial = ++m_cacheUseSerial;
     pClip->frameCount = frameCount != 0
         ? frameCount
         : static_cast<uint32_t>(pClip->samples.size() / OutputChannels);
@@ -109,6 +114,7 @@ AudioSystem::CacheStats AudioSystem::cacheStats() const
 {
     CacheStats stats = {};
     stats.clipCount = m_clipCache.size();
+    stats.evictedClipCount = m_cacheEvictions;
 
     for (const std::pair<const std::string, std::shared_ptr<AudioClip>> &entry : m_clipCache)
     {
@@ -117,16 +123,64 @@ AudioSystem::CacheStats AudioSystem::cacheStats() const
         if (pClip != nullptr)
         {
             stats.sampleBytes += pClip->samples.size() * sizeof(float);
+            if (!pClip->pinned)
+            {
+                stats.transientSampleBytes += pClip->samples.size() * sizeof(float);
+            }
         }
     }
 
     return stats;
 }
 
+void AudioSystem::setTransientCacheLimit(size_t sampleBytes)
+{
+    m_transientCacheLimit = sampleBytes;
+    trimClipCache();
+}
+
+void AudioSystem::trimClipCache()
+{
+    size_t transientBytes = 0;
+    for (const auto &[path, pClip] : m_clipCache)
+    {
+        if (!pClip->pinned)
+        {
+            transientBytes += pClip->samples.size() * sizeof(float);
+        }
+    }
+    if (transientBytes <= m_transientCacheLimit)
+    {
+        return;
+    }
+    std::vector<std::pair<uint64_t, std::string>> unused;
+    for (const auto &[path, pClip] : m_clipCache)
+    {
+        // Playing (including paused) instances and callers still acquiring a clip retain their own reference.
+        if (!pClip->pinned && pClip.use_count() == 1)
+        {
+            unused.emplace_back(pClip->lastUseSerial, path);
+        }
+    }
+    std::sort(unused.begin(), unused.end());
+    for (const auto &[serial, path] : unused)
+    {
+        if (transientBytes <= m_transientCacheLimit)
+        {
+            break;
+        }
+        transientBytes -= m_clipCache.at(path)->samples.size() * sizeof(float);
+        m_clipCache.erase(path);
+        ++m_cacheEvictions;
+    }
+}
+
 void AudioSystem::shutdown()
 {
     stopAll();
     m_clipCache.clear();
+    m_cacheUseSerial = 0;
+    m_cacheEvictions = 0;
     m_playbackCacheMissWarningPaths.clear();
 
     if (m_pAudioStream != nullptr)
@@ -189,6 +243,7 @@ void AudioSystem::stopClip(uint64_t instanceId)
                 return instance.instanceId == instanceId;
             }),
         m_playingInstances.end());
+    trimClipCache();
 }
 
 void AudioSystem::pauseClip(uint64_t instanceId)
@@ -252,6 +307,7 @@ void AudioSystem::stopAll()
 {
     m_playingInstances.clear();
     clearQueuedAudio();
+    trimClipCache();
 }
 
 void AudioSystem::update(const ListenerState &listenerState)
@@ -270,9 +326,10 @@ void AudioSystem::update(const ListenerState &listenerState)
 
         mixNextChunk(listenerState);
     }
+    trimClipCache();
 }
 
-std::shared_ptr<AudioSystem::AudioClip> AudioSystem::loadClip(const std::string &virtualPath)
+std::shared_ptr<AudioSystem::AudioClip> AudioSystem::loadClip(const std::string &virtualPath, bool pinned)
 {
     if (m_pAssetFileSystem == nullptr || virtualPath.empty())
     {
@@ -284,6 +341,8 @@ std::shared_ptr<AudioSystem::AudioClip> AudioSystem::loadClip(const std::string 
 
     if (existingClipIt != m_clipCache.end())
     {
+        existingClipIt->second->pinned = existingClipIt->second->pinned || pinned;
+        existingClipIt->second->lastUseSerial = ++m_cacheUseSerial;
         return existingClipIt->second;
     }
 
@@ -356,7 +415,10 @@ std::shared_ptr<AudioSystem::AudioClip> AudioSystem::loadClip(const std::string 
     pClip->virtualPath = virtualPath;
     pClip->samples = std::move(convertedSamples);
     pClip->frameCount = static_cast<uint32_t>(pClip->samples.size() / OutputChannels);
+    pClip->pinned = pinned;
+    pClip->lastUseSerial = ++m_cacheUseSerial;
     m_clipCache[virtualPath] = pClip;
+    trimClipCache();
     return pClip;
 }
 

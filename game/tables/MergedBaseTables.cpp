@@ -602,6 +602,8 @@ bool loadNewsRows(
 
         MergedNewsTopicEntry entry = {};
 
+        entry.topicFromNpcTable = trimCopy(row[1]).starts_with("NPCTopic ");
+        entry.textFromNpcTable = trimCopy(row[2]).starts_with("NPCText ");
         if (!parseUnsigned(row[0], entry.ownerId)
             || (!parseUnsigned(row[1], entry.topicTextId)
                 && !parsePrefixedUnsigned(row[1], "NPCTopic ", entry.topicTextId))
@@ -1054,6 +1056,8 @@ bool MergedTeacherTopicTable::loadFromRows(const std::vector<std::vector<std::st
 {
     m_entries.clear();
     m_entryIndicesByTopicId.clear();
+    m_completeDefinitions = !rows.empty()
+        && rows[0] == std::vector<std::string>{"#TeacherTopicMode", "Complete"};
 
     for (size_t rowIndex = 1; rowIndex < rows.size(); ++rowIndex)
     {
@@ -1082,6 +1086,11 @@ bool MergedTeacherTopicTable::loadFromRows(const std::vector<std::vector<std::st
     }
 
     return !m_entries.empty();
+}
+
+bool MergedTeacherTopicTable::hasCompleteDefinitions() const
+{
+    return m_completeDefinitions;
 }
 
 bool MergedTeacherAutonoteTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
@@ -1157,6 +1166,10 @@ bool MergedNpcProfessionTable::loadFromRows(const std::vector<std::vector<std::s
         entry.recruit = row.size() > 8 && isMarkerCell(row[8]);
         entry.joinTextId = parseOptionalUnsigned(row, 9);
         entry.descriptionTextId = parseOptionalUnsigned(row, 10);
+        if (rows[0].size() > 11 && rows[0][11] == "Display Name" && row.size() > 11)
+        {
+            entry.localizedProfession = trimCopy(row[11]);
+        }
         m_entries.push_back(std::move(entry));
     }
 
@@ -1879,16 +1892,43 @@ const MergedBolsterMonsterEntry *MergedBolsterMonsterTable::findById(uint32_t id
 bool MergedCharacterVoiceTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
 {
     m_entries.clear();
+    m_availability = {};
 
     if (rows.empty())
     {
         return false;
     }
 
-    for (size_t rowIndex = 1; rowIndex < rows.size(); ++rowIndex)
+    const bool complete = rows[0] == std::vector<std::string>{"#CharacterVoiceMode", "Complete"};
+    const size_t firstSoundRow = complete ? 2 : 1;
+    const size_t endSoundRow = complete ? firstSoundRow + 100 : rows.size();
+    size_t voiceCount = 0;
+    if (complete)
+    {
+        if (rows.size() <= endSoundRow || rows[1].size() < 2 || rows[1].size() > 257
+            || rows[1][0] != "Soundtype/Voicesetid")
+        {
+            return false;
+        }
+        voiceCount = rows[1].size() - 1;
+        for (size_t voice = 0; voice < voiceCount; ++voice)
+        {
+            uint32_t id = 0;
+            if (!parseUnsigned(rows[1][voice + 1], id) || id != voice)
+            {
+                return false;
+            }
+        }
+    }
+
+    for (size_t rowIndex = firstSoundRow; rowIndex < endSoundRow; ++rowIndex)
     {
         const std::vector<std::string> &row = rows[rowIndex];
 
+        if (complete && (row.size() != voiceCount + 1 || trimCopy(row[0]).empty()))
+        {
+            return false;
+        }
         if (row.empty() || trimCopy(row[0]).empty())
         {
             continue;
@@ -1899,13 +1939,98 @@ bool MergedCharacterVoiceTable::loadFromRows(const std::vector<std::vector<std::
 
         for (size_t columnIndex = 1; columnIndex < row.size(); ++columnIndex)
         {
-            entry.soundIdsByVoiceSetId.push_back(parseOptionalUnsigned(row, columnIndex));
+            uint32_t soundId = parseOptionalUnsigned(row, columnIndex);
+            if (complete && (!parseUnsigned(row[columnIndex], soundId) || soundId > 65535))
+            {
+                return false;
+            }
+            entry.soundIdsByVoiceSetId.push_back(soundId);
         }
 
         m_entries.push_back(std::move(entry));
     }
 
+    if (complete)
+    {
+        const std::array<std::string, 6> categories =
+            {"Man", "Woman", "Dragon", "Undead Man", "Undead Woman", "Undead Dragon"};
+        std::array<std::vector<bool>, 6> availability;
+        size_t category = 0;
+        bool notesSeen = false;
+        for (size_t rowIndex = endSoundRow; rowIndex < rows.size(); ++rowIndex)
+        {
+            const std::vector<std::string> &row = rows[rowIndex];
+            if (row.empty() || (row.size() == 1 && row[0].empty()))
+            {
+                continue;
+            }
+            if (row.size() != voiceCount + 1)
+            {
+                return false;
+            }
+            if (row[0].empty())
+            {
+                if (std::any_of(row.begin(), row.end(), [](const std::string &value) { return !value.empty(); }))
+                {
+                    return false;
+                }
+                continue;
+            }
+            if (row[0] == "Notes")
+            {
+                if (notesSeen || category != categories.size())
+                {
+                    return false;
+                }
+                notesSeen = true;
+                continue;
+            }
+            if (notesSeen || category >= categories.size() || row[0] != categories[category])
+            {
+                return false;
+            }
+            for (size_t voice = 0; voice < voiceCount; ++voice)
+            {
+                const std::string &value = row[voice + 1];
+                if (value != "x" && value != "-" && !value.empty())
+                {
+                    return false;
+                }
+                availability[category].push_back(value == "x");
+            }
+            ++category;
+        }
+        if (category != categories.size())
+        {
+            return false;
+        }
+        m_availability = std::move(availability);
+    }
+
     return !m_entries.empty();
+}
+
+std::optional<std::vector<uint32_t>> MergedCharacterVoiceTable::availableVoiceIds(
+    uint32_t sourcePortraitId, int32_t raceId, uint32_t sexId) const
+{
+    if (m_availability[0].empty())
+    {
+        return std::nullopt;
+    }
+    // CharacterOutfits.lua gives the two undead dragon faces priority over race/sex.
+    const size_t category = sourcePortraitId == 67 || sourcePortraitId == 68 ? 5
+        : raceId == 5 ? 2
+        : raceId == 6 || raceId == 10 ? (sexId == 1 ? 4 : 3)
+        : (sexId == 1 ? 1 : 0);
+    std::vector<uint32_t> voices;
+    for (size_t voice = 0; voice < m_availability[category].size(); ++voice)
+    {
+        if (m_availability[category][voice])
+        {
+            voices.push_back(static_cast<uint32_t>(voice));
+        }
+    }
+    return voices;
 }
 
 const std::vector<MergedCharacterVoiceEntry> &MergedCharacterVoiceTable::entries() const
@@ -1945,6 +2070,31 @@ std::vector<uint32_t> MergedCharacterVoiceTable::soundIdsForTypes(
     }
 
     return soundIds;
+}
+
+std::optional<uint32_t> MergedCharacterVoiceTable::selectSoundIdForGroups(
+    uint32_t voiceSetId, const std::vector<uint32_t> &groups, uint32_t seed) const
+{
+    if (groups.empty() || m_entries.size() != 100)
+    {
+        return std::nullopt;
+    }
+    const uint32_t group = groups[seed % groups.size()];
+    if (group == 0 || group > 50)
+    {
+        return std::nullopt;
+    }
+    const size_t start = (group - 1) * 2;
+    const size_t variant = (seed / groups.size()) % 2;
+    const std::vector<uint32_t> &selected = m_entries[start + variant].soundIdsByVoiceSetId;
+    const std::vector<uint32_t> &alternate = m_entries[start + (1 - variant)].soundIdsByVoiceSetId;
+    if (voiceSetId >= selected.size() || voiceSetId >= alternate.size())
+    {
+        return std::nullopt;
+    }
+    // Keep group probability when one variant is silent; never flatten all nonzero variants across groups.
+    const uint32_t id = selected[voiceSetId] != 0 ? selected[voiceSetId] : alternate[voiceSetId];
+    return id == 0 ? std::nullopt : std::optional<uint32_t>{id};
 }
 
 bool MergedClassStartingStatTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
@@ -2041,6 +2191,19 @@ const std::vector<MergedComplexItemPictureOffsetEntry> &MergedComplexItemPicture
     return m_entries;
 }
 
+const MergedComplexItemPictureOffsetEntry *MergedComplexItemPictureOffsetTable::get(
+    uint32_t sourcePortraitId, uint32_t itemId) const
+{
+    for (const MergedComplexItemPictureOffsetEntry &entry : m_entries)
+    {
+        if (entry.portraitId == sourcePortraitId && entry.itemId == itemId)
+        {
+            return &entry;
+        }
+    }
+    return nullptr;
+}
+
 bool MergedComplexItemPictureTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
 {
     m_entries.clear();
@@ -2063,6 +2226,7 @@ bool MergedComplexItemPictureTable::loadFromRows(const std::vector<std::vector<s
         }
 
         entry.notes = trimCopy(row[2]);
+        entry.complex = trimCopy(row[3]) == "x";
 
         constexpr size_t firstPointColumn = 4;
         constexpr size_t pointCount = 6;
@@ -2082,6 +2246,16 @@ bool MergedComplexItemPictureTable::loadFromRows(const std::vector<std::vector<s
             entry.points.push_back({x, y, 0});
         }
 
+        if (row.size() > firstPointColumn + pointCount * 2)
+        {
+            for (size_t pointIndex = 0; pointIndex < pointCount; ++pointIndex)
+            {
+                const size_t columnIndex = firstPointColumn + (pointCount + pointIndex) * 2;
+                entry.collarPoints.push_back(
+                    {parseOptionalSigned(row, columnIndex), parseOptionalSigned(row, columnIndex + 1), 0});
+            }
+        }
+
         m_entryIndicesByItemId[entry.itemId] = m_entries.size();
         m_entries.push_back(std::move(entry));
     }
@@ -2098,6 +2272,38 @@ const MergedComplexItemPictureEntry *MergedComplexItemPictureTable::get(uint32_t
 const std::vector<MergedComplexItemPictureEntry> &MergedComplexItemPictureTable::entries() const
 {
     return m_entries;
+}
+
+std::optional<MergedPoint> MergedComplexItemPictureTable::resolvePoint(uint32_t itemId, uint32_t dollTypeId,
+    const MergedComplexItemPictureOffsetTable &offsets, std::optional<uint32_t> sourcePortraitId, bool collar) const
+{
+    const MergedComplexItemPictureEntry *pEntry = get(itemId);
+    if (pEntry == nullptr)
+    {
+        return std::nullopt;
+    }
+    const std::vector<MergedPoint> &points = collar ? pEntry->collarPoints : pEntry->points;
+    if (dollTypeId >= points.size())
+    {
+        return std::nullopt;
+    }
+    MergedPoint point = points[dollTypeId];
+    if (sourcePortraitId)
+    {
+        const MergedComplexItemPictureOffsetEntry *pOffset = offsets.get(*sourcePortraitId, itemId);
+        if (pOffset != nullptr)
+        {
+            const int64_t x = static_cast<int64_t>(point.x) + pOffset->x;
+            const int64_t y = static_cast<int64_t>(point.y) + pOffset->y;
+            if (x < INT32_MIN || x > INT32_MAX || y < INT32_MIN || y > INT32_MAX)
+            {
+                return std::nullopt;
+            }
+            point.x = static_cast<int32_t>(x);
+            point.y = static_cast<int32_t>(y);
+        }
+    }
+    return point;
 }
 
 bool MergedContinentSettingTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
@@ -2322,7 +2528,18 @@ bool MergedHouseRuleTable::loadFromRows(const std::vector<std::vector<std::strin
 
         if (!values.empty())
         {
-            pCurrentSection->numericRows.push_back(std::move(values));
+            // RemoveHouseRulesLimits.lua writes rows by ID, so later definitions replace earlier ones.
+            const auto existing = std::find_if(pCurrentSection->numericRows.begin(),
+                pCurrentSection->numericRows.end(), [&values](const std::vector<int32_t> &candidate)
+                { return !candidate.empty() && candidate.front() == values.front(); });
+            if (existing == pCurrentSection->numericRows.end())
+            {
+                pCurrentSection->numericRows.push_back(std::move(values));
+            }
+            else
+            {
+                *existing = std::move(values);
+            }
         }
     }
 

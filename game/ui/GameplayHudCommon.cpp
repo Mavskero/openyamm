@@ -1,4 +1,8 @@
 #include "game/ui/GameplayHudCommon.h"
+#include "game/ui/Utf8Text.h"
+#if defined(__APPLE__)
+#include "engine/AppleText.h"
+#endif
 
 #include "engine/ImageAssetLoader.h"
 #include "game/maps/MapIdentity.h"
@@ -194,8 +198,14 @@ std::optional<ParsedHudBitmapFont> parseHudBitmapFont(const std::vector<uint8_t>
 
 bool usesBlackTransparencyKey(std::string_view textureName)
 {
-    const std::string normalizedName = toLowerCopy(std::string(textureName));
-    return normalizedName.rfind("mapdir", 0) == 0 || normalizedName.rfind("micon", 0) == 0;
+    std::string normalizedName = toLowerCopy(std::string(textureName));
+    const size_t separator = normalizedName.find_last_of('/');
+    if (separator != std::string::npos)
+    {
+        normalizedName.erase(0, separator + 1);
+    }
+    return normalizedName.starts_with("mapdir") || normalizedName.starts_with("6mapdir")
+        || normalizedName.starts_with("7mapdir") || normalizedName.starts_with("micon");
 }
 
 bgfx::TextureHandle ensureHudTextureColorWithMode(
@@ -896,7 +906,8 @@ std::optional<std::vector<uint8_t>> GameplayHudCommon::loadHudBitmapPixelsBgraCa
     const std::string &textureName,
     int &width,
     int &height,
-    GameplayHudBitmapTransparencyMode transparencyMode)
+    GameplayHudBitmapTransparencyMode transparencyMode,
+    const UiLayoutManager::TextureRegion *pRegion)
 {
     if (pAssetFileSystem == nullptr)
     {
@@ -907,15 +918,16 @@ std::optional<std::vector<uint8_t>> GameplayHudCommon::loadHudBitmapPixelsBgraCa
     decodeOptions.applyPaletteZeroTransparencyKey = transparencyMode == GameplayHudBitmapTransparencyMode::ItemIcon;
     decodeOptions.applyMagentaTransparencyKey = true;
     decodeOptions.applyTealTransparencyKey = true;
-    decodeOptions.applyBlackTransparencyKey = usesBlackTransparencyKey(textureName);
+    const std::string &sourceName = pRegion != nullptr ? pRegion->source : textureName;
+    decodeOptions.applyBlackTransparencyKey = usesBlackTransparencyKey(sourceName);
 
     std::string directoryPath = "Data/icons";
-    std::string fileName = textureName;
-    const size_t separator = textureName.find_last_of('/');
+    std::string fileName = sourceName;
+    const size_t separator = sourceName.find_last_of('/');
     if (separator != std::string::npos)
     {
-        directoryPath = textureName.substr(0, separator);
-        fileName = textureName.substr(separator + 1);
+        directoryPath = sourceName.substr(0, separator);
+        fileName = sourceName.substr(separator + 1);
     }
 
     const std::optional<Engine::ImagePixelsBgra> image = Engine::loadImageAssetPixelsBgra(
@@ -934,6 +946,24 @@ std::optional<std::vector<uint8_t>> GameplayHudCommon::loadHudBitmapPixelsBgraCa
 
     width = image->width;
     height = image->height;
+    if (pRegion != nullptr)
+    {
+        const int scale = pRegion->pixelScaleForSource(width, height);
+        if (scale == 0)
+        {
+            return std::nullopt;
+        }
+        width = pRegion->width * scale;
+        height = pRegion->height * scale;
+        std::vector<uint8_t> pixels(size_t(width) * height * 4);
+        for (int row = 0; row < height; ++row)
+        {
+            const size_t sourceOffset = (size_t(pRegion->y * scale + row) * image->width + pRegion->x * scale) * 4;
+            std::copy_n(image->pixels.data() + sourceOffset, size_t(width) * 4,
+                pixels.data() + size_t(row) * width * 4);
+        }
+        return pixels;
+    }
     return image->pixels;
 }
 
@@ -996,7 +1026,8 @@ bool GameplayHudCommon::loadHudTexture(
     const std::string &textureName,
     std::vector<GameplayHudTextureData> &textures,
     std::unordered_map<std::string, size_t> &textureIndexByName,
-    GameplayHudBitmapTransparencyMode transparencyMode)
+    GameplayHudBitmapTransparencyMode transparencyMode,
+    const UiLayoutManager::TextureRegion *pRegion)
 {
     if (textureName.empty())
     {
@@ -1011,7 +1042,7 @@ bool GameplayHudCommon::loadHudTexture(
     int width = 0;
     int height = 0;
     const std::optional<std::vector<uint8_t>> pixels =
-        loadHudBitmapPixelsBgraCached(pAssetFileSystem, cache, textureName, width, height, transparencyMode);
+        loadHudBitmapPixelsBgraCached(pAssetFileSystem, cache, textureName, width, height, transparencyMode, pRegion);
 
     if (!pixels || width <= 0 || height <= 0 || pAssetFileSystem == nullptr)
     {
@@ -1470,6 +1501,13 @@ bgfx::TextureHandle GameplayHudCommon::ensureHudFontMainTextureColor(
 
 float GameplayHudCommon::measureHudTextWidth(const GameplayHudFontData &font, const std::string &text)
 {
+#if defined(__APPLE__)
+    if (hasUtf8MultibyteText(text))
+    {
+        const std::string line = text.substr(0, text.find_first_of("\r\n"));
+        return Engine::measureAppleText(line, float(font.fontHeight)).value_or(0.0f);
+    }
+#endif
     float widthPixels = 0.0f;
 
     for (unsigned char character : text)
@@ -1497,6 +1535,13 @@ std::string GameplayHudCommon::clampHudTextToWidth(
     const std::string &text,
     float maxWidth)
 {
+#if defined(__APPLE__)
+    if (hasUtf8MultibyteText(text))
+    {
+        return Engine::truncateAppleText(text, float(font.fontHeight), std::max(0.0f, maxWidth))
+            .value_or(std::string());
+    }
+#endif
     std::string clampedText = text;
 
     while (!clampedText.empty() && measureHudTextWidth(font, clampedText) > maxWidth)
@@ -1522,6 +1567,13 @@ std::vector<std::string> GameplayHudCommon::wrapHudTextToWidth(
         return {text};
     }
 
+#if defined(__APPLE__)
+    if (hasUtf8MultibyteText(text))
+    {
+        return Engine::wrapAppleText(text, float(font.fontHeight), maxWidth)
+            .value_or(std::vector<std::string>{});
+    }
+#endif
     std::vector<std::string> lines;
     std::string currentLine;
     std::string currentWord;
@@ -1697,27 +1749,62 @@ void GameplayHudCommon::renderLayoutLabel(
         fontScale = std::max(0.5f, fontScale);
     }
 
-    const float labelHeightPixels = static_cast<float>(pFont->fontHeight) * fontScale;
-    const float maxLabelWidth = std::max(0.0f, resolved.width - std::abs(layout.textPadX * fontScale) * 2.0f);
-    std::string clampedLabel = clampHudTextToWidth(*pFont, label, maxLabelWidth);
-
-    if (clampedLabel.empty())
+    const float maxLabelWidthPixels =
+        std::max(0.0f, resolved.width - std::abs(layout.textPadX * resolved.scale) * 2.0f);
+    if (maxLabelWidthPixels <= 0.0f)
     {
-        const GameplayHudFontData *pFallbackFont = findHudFontFn("Lucida");
+        return;
+    }
 
-        if (pFallbackFont != nullptr)
+    // Fit the full label, including numeric values, inside its pixel bounds.
+    // Truncating a counter would change the value presented to the player.
+    const float labelWidth = measureHudTextWidth(*pFont, label);
+    if (labelWidth > 0.0f)
+    {
+        fontScale = std::min(fontScale, maxLabelWidthPixels / labelWidth);
+    }
+
+    float labelHeightPixels = static_cast<float>(pFont->fontHeight) * fontScale;
+    float labelWidthPixels = labelWidth * fontScale;
+    bool fitRasterBounds = false;
+#if defined(__APPLE__)
+    if (hasUtf8MultibyteText(label))
+    {
+        const std::string line = label.substr(0, label.find_first_of("\r\n"));
+        std::optional<Engine::AppleTextImageSize> imageSize =
+            Engine::measureAppleTextImageSize(line, pFont->fontHeight * fontScale);
+        if (!imageSize)
         {
-            pFont = pFallbackFont;
-            clampedLabel = clampHudTextToWidth(*pFont, label, maxLabelWidth);
+            return;
         }
+        // CoreText line height includes descent/leading, and the texture adds four
+        // padding pixels. Neither is represented by the legacy bitmap font height.
+        const float shadowOffset = std::max(1.0f, fontScale);
+        const float availableWidth = std::floor(maxLabelWidthPixels) - 4.0f - shadowOffset;
+        const float availableHeight = layout.textFitHeight
+            ? std::floor(resolved.height - 2.0f * std::abs(layout.textPadY * resolved.scale)) - 4.0f - shadowOffset
+            : float(imageSize->height - 4);
+        if (availableWidth <= 0 || availableHeight <= 0)
+        {
+            return;
+        }
+        const float fit = std::min({1.0f,
+            availableWidth / std::max(1, imageSize->width - 4),
+            availableHeight / std::max(1, imageSize->height - 4)});
+        if (fit < 1.0f)
+        {
+            fontScale *= fit;
+            imageSize = Engine::measureAppleTextImageSize(line, pFont->fontHeight * fontScale);
+            if (!imageSize)
+            {
+                return;
+            }
+        }
+        labelWidthPixels = imageSize->width + std::max(1.0f, fontScale);
+        labelHeightPixels = imageSize->height + std::max(1.0f, fontScale);
+        fitRasterBounds = true;
     }
-
-    if (clampedLabel.empty())
-    {
-        clampedLabel = label;
-    }
-
-    const float labelWidthPixels = measureHudTextWidth(*pFont, clampedLabel) * fontScale;
+#endif
     float textX = resolved.x + layout.textPadX * resolved.scale;
     float textY = resolved.y + layout.textPadY * resolved.scale;
 
@@ -1749,8 +1836,8 @@ void GameplayHudCommon::renderLayoutLabel(
         break;
     }
 
-    textX = std::round(textX);
-    textY = std::round(textY);
+    textX = fitRasterBounds ? std::floor(textX) : std::round(textX);
+    textY = fitRasterBounds ? std::floor(textY) : std::round(textY);
 
     bgfx::TextureHandle coloredMainTextureHandle = ensureHudFontColorFn(*pFont, layout.textColorAbgr);
 
@@ -1759,7 +1846,7 @@ void GameplayHudCommon::renderLayoutLabel(
         coloredMainTextureHandle = pFont->mainTextureHandle;
     }
 
-    renderHudFontLayerFn(*pFont, pFont->shadowTextureHandle, clampedLabel, textX, textY, fontScale);
-    renderHudFontLayerFn(*pFont, coloredMainTextureHandle, clampedLabel, textX, textY, fontScale);
+    renderHudFontLayerFn(*pFont, pFont->shadowTextureHandle, label, textX, textY, fontScale);
+    renderHudFontLayerFn(*pFont, coloredMainTextureHandle, label, textX, textY, fontScale);
 }
 } // namespace OpenYAMM::Game

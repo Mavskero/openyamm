@@ -581,6 +581,10 @@ void GameplayScreenController::updateRestOverlayProgress(
     const float gameMinutesPerSecond = animationDurationSeconds > 0.0f
         ? restScreen.totalMinutes / animationDurationSeconds
         : restScreen.totalMinutes;
+    // Derive remaining time from the world's clock, avoiding accumulated rounding differences
+    // between two independently advanced floats at dawn and other exact opening times.
+    restScreen.remainingMinutes = std::max(0.0f,
+        restScreen.targetGameMinutes - context.worldRuntime()->gameMinutes());
     const float advancedMinutes = std::min(
         restScreen.remainingMinutes,
         gameMinutesPerSecond * safeDeltaSeconds);
@@ -599,7 +603,7 @@ void GameplayScreenController::updateRestOverlayProgress(
         {
             context.itemService().updateConnectorStoneRecharge(*pParty, *pEventRuntimeState, pWorldRuntime->gameMinutes());
         }
-        restScreen.remainingMinutes = std::max(0.0f, restScreen.remainingMinutes - advancedMinutes);
+        restScreen.remainingMinutes = std::max(0.0f, restScreen.targetGameMinutes - pWorldRuntime->gameMinutes());
     }
 
     if (restScreen.remainingMinutes > 0.0f)
@@ -698,10 +702,11 @@ GameplayUiOverlayInputResult GameplayScreenController::handleStandardUiInput(
 #if defined(__ANDROID__)
     const bool allowPortraitPointerInput =
         config.allowGameplayPointerInput
+        || input.pointerFromTouch
         || input.leftMouseButton.held
         || context.interactionState().partyPortraitClickLatch;
 #else
-    const bool allowPortraitPointerInput = config.allowGameplayPointerInput;
+    const bool allowPortraitPointerInput = config.allowGameplayPointerInput || input.pointerFromTouch;
 #endif
 
     const bool gameplayReadyForPortraitClicks =
@@ -784,10 +789,11 @@ GameplayUiOverlayInputResult GameplayScreenController::handleStandardUiInput(
     const bool allowGameplayHudPointerInput =
 #if defined(__ANDROID__)
         config.allowGameplayPointerInput
+        || input.pointerFromTouch
         || input.leftMouseButton.held
         || context.interactionState().gameplayHudClickLatch;
 #else
-        config.allowGameplayPointerInput;
+        config.allowGameplayPointerInput || input.pointerFromTouch;
 #endif
 
     const bool canClickGameplayHudButtons =

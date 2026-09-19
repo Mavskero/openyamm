@@ -2408,6 +2408,7 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         ? std::nullopt
                         : std::optional<std::string>(request.utilityMapMoveMapName);
                 move.directionDegrees = request.utilityMapMoveDirectionDegrees;
+                move.lookAngleDegrees = request.utilityMapMoveLookAngleDegrees;
                 move.useMapStartPosition = request.utilityMapMoveUseMapStartPosition;
                 move.useFullscreenLoading = request.utilityMapMoveUseFullscreenLoading;
                 pEventRuntimeState->pendingMapMove = move;

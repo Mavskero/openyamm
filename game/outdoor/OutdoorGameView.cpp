@@ -2,6 +2,7 @@
 
 #include "game/app/GameSession.h"
 #include "engine/BgfxContext.h"
+#include "engine/WindowPointer.h"
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/FaceEnums.h"
 #include "game/gameplay/GenericActorDialog.h"
@@ -28,6 +29,7 @@
 #include "game/outdoor/OutdoorWorldRuntime.h"
 #include "game/items/PriceCalculator.h"
 #include "game/maps/MapIdentity.h"
+#include "game/maps/MapDecorationDirection.h"
 #include "game/maps/SaveGame.h"
 #include "game/scene/OutdoorSceneRuntime.h"
 #include "game/SpawnPreview.h"
@@ -2176,7 +2178,7 @@ std::optional<OutdoorPartyStartPoint> resolveOutdoorPartyStartPoint(
         startPoint.x = static_cast<float>(entity.x);
         startPoint.y = static_cast<float>(entity.y);
         startPoint.z = static_cast<float>(entity.z);
-        startPoint.yawRadians = static_cast<float>(entity.facing) * Pi / 180.0f;
+        startPoint.yawRadians = mapDecorationFacingDegrees(entity.facing, entity.variableSecondary) * Pi / 180.0f;
         return startPoint;
     }
 
@@ -2833,6 +2835,10 @@ std::filesystem::path getShaderPath(bgfx::RendererType::Enum rendererType, const
         rendererDirectory = "essl";
         break;
 
+    case bgfx::RendererType::Metal:
+        rendererDirectory = "metal";
+        break;
+
     default:
         return {};
     }
@@ -3079,7 +3085,8 @@ bool OutdoorGameView::initialize(
                 .pStandardItemEnchantTable = &data.standardItemEnchantTable(),
                 .pSpecialItemEnchantTable = &data.specialItemEnchantTable(),
                 .pSpellTable = &data.spellTable(),
-            });
+            },
+            m_pOutdoorWorldRuntime->gameMinutes());
     }
     timingLogger.stage("mercenary recruitment refreshed");
 
@@ -3561,7 +3568,8 @@ void OutdoorGameView::render(int width, int height, const GameplayInputFrame &in
         cameraForward,
         cameraRight,
         cameraUp,
-        wireframeViewMatrix);
+        wireframeViewMatrix,
+        wireframeProjectionMatrix[5]);
     captureFrameTimingStage(worldRenderStageNanoseconds);
 
     if (captureSavePreviewThisFrame)
@@ -4181,6 +4189,15 @@ void OutdoorGameView::syncGameplayMouseLookMode(SDL_Window *pWindow, bool enable
     const bool windowFocused = windowHasInputFocus(pWindow);
     const bool effectiveEnabled = enabled && windowFocused;
 
+    if (Engine::hasLockedMenuPointer(pWindow))
+    {
+        if (Engine::setLockedPointerMouseLook(pWindow, effectiveEnabled))
+        {
+            m_gameSession.requestRelativeMouseMotionReset();
+        }
+        return;
+    }
+
     if (pWindow != nullptr && SDL_GetWindowRelativeMouseMode(pWindow) != effectiveEnabled)
     {
         if (effectiveEnabled)
@@ -4192,7 +4209,7 @@ void OutdoorGameView::syncGameplayMouseLookMode(SDL_Window *pWindow, bool enable
         {
             int windowWidth = 0;
             int windowHeight = 0;
-            SDL_GetWindowSizeInPixels(pWindow, &windowWidth, &windowHeight);
+            SDL_GetWindowSize(pWindow, &windowWidth, &windowHeight);
 
             if (windowWidth > 0 && windowHeight > 0)
             {
@@ -4267,19 +4284,11 @@ void OutdoorGameView::syncCursorToGameplayCrosshair(SDL_Window *pWindow)
 
     int windowWidth = 0;
     int windowHeight = 0;
-    SDL_GetWindowSizeInPixels(pWindow, &windowWidth, &windowHeight);
+    SDL_GetWindowSize(pWindow, &windowWidth, &windowHeight);
 
     if (windowWidth <= 0 || windowHeight <= 0)
     {
-        const GameplayInputFrame *pInputFrame = m_gameSession.currentGameplayInputFrame();
-
-        if (pInputFrame == nullptr || pInputFrame->screenWidth <= 0 || pInputFrame->screenHeight <= 0)
-        {
-            return;
-        }
-
-        windowWidth = pInputFrame->screenWidth;
-        windowHeight = pInputFrame->screenHeight;
+        return;
     }
 
     const float cursorX = static_cast<float>(windowWidth) * 0.5f;

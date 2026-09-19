@@ -256,6 +256,7 @@ public:
     struct SpellbookState
     {
         bool active = false;
+        bool inspectSelected = false;
         SpellbookSchool school = SpellbookSchool::Fire;
         bool hasRememberedSchool = false;
         uint32_t selectedSpellId = 0;
@@ -268,6 +269,7 @@ public:
         bool innRest = false;
         float totalMinutes = 0.0f;
         float remainingMinutes = 0.0f;
+        float targetGameMinutes = 0.0f;
         float hourglassElapsedSeconds = 0.0f;
     };
 
@@ -377,6 +379,9 @@ public:
         size_t sourceIndex = 0;
         size_t awardScrollOffset = 0;
         size_t adventurersInnScrollOffset = 0;
+        float skillScrollOffset = 0;
+        float skillDragStartOffset = 0;
+        bool skillDragActive = false;
     };
 
     struct InventoryNestedOverlayState

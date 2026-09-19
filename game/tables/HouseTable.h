@@ -154,6 +154,13 @@ struct HouseEntry
     uint32_t deterministicStockGenerationVersion = 0;
     std::vector<DeterministicStockPage> deterministicStandardStockPages;
     std::vector<DeterministicStockPage> deterministicSpecialStockPages;
+
+    bool isAdventurersInn() const
+    {
+        // Merged content declares the service independently of translated display names.
+        // Earlier English packages represented the same venue as an ordinary House.
+        return type == "The Adventurer's Inn" || (type == "House" && name == "The Adventurer's Inn");
+    }
 };
 
 class HouseTable

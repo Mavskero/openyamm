@@ -1,10 +1,14 @@
 #pragma once
 
+#include "game/items/EquipmentPictureVariants.h"
+
 #include "game/app/GameSettings.h"
 #include "game/tables/ChestTable.h"
 #include "game/events/EventDialogContent.h"
 #include "game/gameplay/GameplayDialogUiFlow.h"
 #include "game/gameplay/GameplayRuntimeInterfaces.h"
+#include "game/gameplay/TownPortalContactState.h"
+#include "game/gameplay/DimensionDoorState.h"
 #include "game/ui/GameplayOverlayAdapters.h"
 #include "game/ui/GameplayOverlayTypes.h"
 #include "game/tables/HouseTable.h"
@@ -38,6 +42,8 @@ class AwardTable;
 class ItemTable;
 class MergedComplexItemPictureTable;
 class MonsterTable;
+class CombatTextTable;
+class HouseServiceTextTable;
 class MergedPotionSettingTable;
 class MergedReagentSettingTable;
 class MergedNpcProfessionTable;
@@ -114,6 +120,8 @@ public:
     const ChestTable *chestTable() const;
     const NpcDialogTable *npcDialogTable() const;
     const MonsterTable *monsterTable() const;
+    const CombatTextTable *combatTextTable() const;
+    const HouseServiceTextTable *houseServiceTextTable() const;
 
     GameplayUiController::CharacterScreenState &characterScreen() const;
     GameplayUiController::HeldInventoryItemState &heldInventoryItem() const;
@@ -411,13 +419,24 @@ public:
     void collectGameplayMinimapMarkers(std::vector<GameplayMinimapMarkerState> &markers) const;
     bool ensureTownPortalDestinationsLoaded();
     bool ensureDimensionDoorDestinationsLoaded();
-    bool shouldTownPortalCastOpenDimensionDoor() const;
+    void resetTownPortalContact();
+    bool tryInterruptTownPortalForVerdant(bool dimensionDoorEligible);
+    void activateDimensionDoor(
+        DimensionDoorActivationSource source = DimensionDoorActivationSource::NaturalLocation);
+    void resetDimensionDoor();
+    void updateDimensionDoor();
+    void dispatchOutdoorStep(int tileX, int tileY);
+    bool tryRunTownPortalHook();
+    bool shouldTownPortalCastOpenDimensionDoor();
     bool openDimensionDoorOverlay(
         size_t casterMemberIndex,
         uint32_t spellId,
         const std::string &statusText = "Choose Dimension Door destination");
     const std::string &townPortalBackgroundTextureName() const;
     const std::vector<GameplayTownPortalDestination> &townPortalDestinations() const;
+    std::optional<size_t> resolveTownPortalDestinationAtPoint(
+        int screenWidth, int screenHeight, float pointerX, float pointerY,
+        std::optional<size_t> pressedDestination = std::nullopt);
     std::string resolveMapLocationName(const std::string &mapFileName) const;
     float measureHudTextWidth(const std::string &fontName, const std::string &text) const;
     int hudFontHeight(const std::string &fontName) const;
@@ -445,7 +464,8 @@ public:
         const ItemDefinition &itemDefinition,
         uint32_t dollTypeId,
         bool hasRightHandWeapon,
-        EquipmentSlot slot);
+        EquipmentSlot slot,
+        EquipmentPicturePart part = EquipmentPicturePart::Body);
     std::optional<GameplayResolvedHudLayoutElement> resolveCharacterEquipmentRenderRect(
         const UiLayoutManager::LayoutElement &layout,
         const ItemDefinition &itemDefinition,
@@ -454,7 +474,8 @@ public:
         const CharacterDollTypeEntry *pCharacterDollType,
         EquipmentSlot slot,
         int screenWidth,
-        int screenHeight) const;
+        int screenHeight,
+        EquipmentPicturePart part = EquipmentPicturePart::Body) const;
     void submitWorldTextureQuad(
         bgfx::TextureHandle textureHandle,
         float x,
@@ -491,6 +512,8 @@ private:
     void returnToHouseBankMainDialogShared();
 
     GameSession &m_session;
+    TownPortalContactState m_townPortalContactState;
+    DimensionDoorState m_dimensionDoorState;
     GameAudioSystem *m_pAudioSystem = nullptr;
     GameSettings *m_pSettings = nullptr;
     IGameplayOverlaySceneAdapter *m_pSceneAdapter = nullptr;

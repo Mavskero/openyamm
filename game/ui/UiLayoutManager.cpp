@@ -264,6 +264,31 @@ void UiLayoutManager::clear()
     m_layoutElements.clear();
     m_layoutElementByLookupId.clear();
     m_sortedLayoutIdsByScreen.clear();
+    m_textureRegions.clear();
+}
+
+int UiLayoutManager::TextureRegion::pixelScaleForSource(int physicalWidth, int physicalHeight) const
+{
+    if (sourceWidth <= 0 || sourceHeight <= 0 || sourceWidth > 4096 || sourceHeight > 4096
+        || width <= 0 || height <= 0 || width > sourceWidth || height > sourceHeight
+        || x < 0 || y < 0 || x > sourceWidth - width || y > sourceHeight - height
+        || physicalWidth <= 0 || physicalWidth % sourceWidth != 0)
+    {
+        return 0;
+    }
+    const int scale = physicalWidth / sourceWidth;
+    return scale >= 1 && scale <= 8 && physicalHeight == sourceHeight * scale ? scale : 0;
+}
+
+const std::unordered_map<std::string, UiLayoutManager::TextureRegion> &UiLayoutManager::textureRegions() const
+{
+    return m_textureRegions;
+}
+
+const UiLayoutManager::TextureRegion *UiLayoutManager::findTextureRegion(const std::string &name) const
+{
+    const auto found = m_textureRegions.find(toLowerCopy(name));
+    return found != m_textureRegions.end() ? &found->second : nullptr;
 }
 
 bool UiLayoutManager::loadLayoutFile(const Engine::AssetFileSystem &assetFileSystem, const std::string &path)
@@ -296,6 +321,45 @@ bool UiLayoutManager::loadLayoutText(const std::string &sourceName, const std::s
         if (!screenNode || !screenNode.IsScalar() || !elementsNode || !elementsNode.IsSequence())
         {
             return false;
+        }
+
+        const YAML::Node regionsNode = root["texture_regions"];
+        if (regionsNode)
+        {
+            if (!regionsNode.IsSequence() || regionsNode.size() > 128)
+            {
+                return false;
+            }
+            for (const YAML::Node &node : regionsNode)
+            {
+                TextureRegion region;
+                const std::string name = toLowerCopy(node["name"].as<std::string>());
+                region.source = toLowerCopy(node["source"].as<std::string>());
+                region.sourceWidth = node["source_width"].as<int>();
+                region.sourceHeight = node["source_height"].as<int>();
+                region.x = node["x"].as<int>();
+                region.y = node["y"].as<int>();
+                region.width = node["width"].as<int>();
+                region.height = node["height"].as<int>();
+                const auto safeName = [](const std::string &value)
+                {
+                    return !value.empty() && value.size() <= 64
+                        && value.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_-") == std::string::npos;
+                };
+                if (!safeName(name) || !safeName(region.source) || name == region.source
+                    || region.pixelScaleForSource(region.sourceWidth, region.sourceHeight) == 0
+                    || !m_textureRegions.emplace(name, region).second)
+                {
+                    return false;
+                }
+            }
+            for (const auto &[name, region] : m_textureRegions)
+            {
+                if (m_textureRegions.contains(region.source))
+                {
+                    return false;
+                }
+            }
         }
 
         const std::string screen = screenNode.as<std::string>();
@@ -437,6 +501,7 @@ bool UiLayoutManager::loadLayoutText(const std::string &sourceName, const std::s
                     element.textAlignX = *textAlignX;
                     element.textAlignY = *textAlignY;
                     element.textScale = yamlFloatOrDefault(textNode, "scale", 1.0f);
+                    element.textFitHeight = yamlBoolOrDefault(textNode, "fit_height", false);
                     element.textPadX = yamlFloatOrDefault(textNode, "pad_x", 0.0f);
                     element.textPadY = yamlFloatOrDefault(textNode, "pad_y", 0.0f);
 

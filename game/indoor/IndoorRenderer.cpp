@@ -1827,6 +1827,10 @@ std::filesystem::path getShaderPath(bgfx::RendererType::Enum rendererType, const
         rendererDirectory = "essl";
         break;
 
+    case bgfx::RendererType::Metal:
+        rendererDirectory = "metal";
+        break;
+
     default:
         return {};
     }
@@ -3938,7 +3942,7 @@ void IndoorRenderer::render(
     const float deltaMilliseconds = deltaSeconds * 1000.0f;
     m_elapsedTime += std::max(deltaSeconds, 0.0f);
 
-    if (allowWorldSimulation && m_pSceneRuntime != nullptr && !gameSession.turnBasedCombatRuntime().active())
+    if (allowWorldSimulation && m_pSceneRuntime != nullptr)
     {
         const bool collectDiagnostics = m_logIndoorPerformanceDiagnostics;
         const uint64_t mechanismBeginTickCount = collectDiagnostics ? SDL_GetTicksNS() : 0;
@@ -3948,7 +3952,9 @@ void IndoorRenderer::render(
             pPreviousEventRuntimeState != nullptr
                 ? pPreviousEventRuntimeState->mechanisms
                 : std::unordered_map<uint32_t, RuntimeMechanismState>();
-        const bool simulationAdvanced = m_pSceneRuntime->advanceSimulation(deltaMilliseconds);
+        const bool simulationAdvanced = gameSession.turnBasedCombatRuntime().active()
+            ? m_pSceneRuntime->advanceMechanisms(deltaMilliseconds)
+            : m_pSceneRuntime->advanceSimulation(deltaMilliseconds);
 
         if (collectDiagnostics)
         {
@@ -4518,6 +4524,7 @@ void IndoorRenderer::render(
     renderActorPreviewBillboards(
         MainViewId,
         viewMatrix,
+        projectionMatrix[5],
         eye,
         renderVisibleSectorMask,
         lightingFrame,
@@ -7661,6 +7668,7 @@ void IndoorRenderer::renderDecorationBillboards(
 void IndoorRenderer::renderActorPreviewBillboards(
     uint16_t viewId,
     const float *pViewMatrix,
+    float projectionYScale,
     const bx::Vec3 &cameraPosition,
     const std::vector<uint8_t> &visibleSectorMask,
     const IndoorLightingFrame &lightingFrame,
@@ -8246,14 +8254,22 @@ void IndoorRenderer::renderActorPreviewBillboards(
             continue;
         }
 
-        const float barScale = std::max(0.65f, drawItem.healthBarScale);
-        const float barWidth = 92.0f * barScale;
-        const float barHeight = 11.0f * barScale;
         const bx::Vec3 center = {
             static_cast<float>(drawItem.x),
             static_cast<float>(drawItem.y),
             drawItem.healthBarZ
         };
+        const float viewDepth = -(center.x * pViewMatrix[2] + center.y * pViewMatrix[6]
+            + center.z * pViewMatrix[10] + pViewMatrix[14]);
+        const std::optional<CombatActorHealthBarDimensions> dimensions = combatActorHealthBarDimensions(
+            drawItem.healthBarScale, viewDepth, projectionYScale, drawItem.healthRatio);
+        if (!dimensions)
+        {
+            continue;
+        }
+        const float barScale = dimensions->scale;
+        const float barWidth = dimensions->width;
+        const float barHeight = dimensions->height;
         const bx::Vec3 shadowCenter = {
             center.x - cameraUp.x * 3.0f * barScale,
             center.y - cameraUp.y * 3.0f * barScale,
@@ -8272,9 +8288,9 @@ void IndoorRenderer::renderActorPreviewBillboards(
         appendWorldQuadVertices(healthBarVertices, shadowCenter, frameRight, frameUp, makeAbgrAlpha(0, 0, 0, 150));
         appendWorldQuadVertices(healthBarVertices, center, frameRight, frameUp, makeAbgrAlpha(18, 12, 10, 230));
 
-        const float innerWidth = std::max(2.0f, barWidth - 6.0f * barScale);
-        const float innerHeight = std::max(2.0f, barHeight - 4.0f * barScale);
-        const float fillWidth = std::max(1.0f, innerWidth * drawItem.healthRatio);
+        const float innerWidth = dimensions->innerWidth;
+        const float innerHeight = dimensions->innerHeight;
+        const float fillWidth = dimensions->fillWidth;
         const float fillOffset = (innerWidth - fillWidth) * 0.5f;
         const bx::Vec3 fillCenter = {
             center.x - cameraRight.x * fillOffset,
@@ -12842,12 +12858,12 @@ void IndoorRenderer::updateCameraFromInput(
         pKeyboardState[SDL_SCANCODE_LSHIFT] || pKeyboardState[SDL_SCANCODE_RSHIFT];
     const bool turboPressed =
         pKeyboardState[SDL_SCANCODE_LCTRL] || pKeyboardState[SDL_SCANCODE_RCTRL];
-    const bool jumpPressed = input.action(KeyboardAction::Jump).held;
+    const bool jumpPressed = input.isActionActive(KeyboardAction::Jump);
     const bool jumpRequested = allowWorldInput && jumpPressed && !m_jumpHeld;
     m_jumpHeld = jumpPressed;
     const bool standardControls = !m_gameplayMouseLookEnabled;
-    const bool leftPressed = input.action(KeyboardAction::Left).held;
-    const bool rightPressed = input.action(KeyboardAction::Right).held;
+    const bool leftPressed = input.isActionActive(KeyboardAction::Left);
+    const bool rightPressed = input.isActionActive(KeyboardAction::Right);
     const bool strafeLeftPressed = !standardControls && leftPressed;
     const bool strafeRightPressed = !standardControls && rightPressed;
     const float keyboardYawSpeed = 1.75f;
@@ -12881,13 +12897,13 @@ void IndoorRenderer::updateCameraFromInput(
         const float strafeMoveSpeed =
             walkSpeed * indoorStrafeMultiplier * runScale * turboScale * inputSpeedScale;
 
-        if (allowWorldInput && input.action(KeyboardAction::Forward).held)
+        if (allowWorldInput && input.isActionActive(KeyboardAction::Forward))
         {
             desiredVelocityX += cosYaw * forwardMoveSpeed;
             desiredVelocityY += sinYaw * forwardMoveSpeed;
         }
 
-        if (allowWorldInput && input.action(KeyboardAction::Backward).held)
+        if (allowWorldInput && input.isActionActive(KeyboardAction::Backward))
         {
             desiredVelocityX -= cosYaw * backwardMoveSpeed;
             desiredVelocityY -= sinYaw * backwardMoveSpeed;
@@ -12935,14 +12951,14 @@ void IndoorRenderer::updateCameraFromInput(
         const float currentMoveSpeed =
             walkSpeed * (turboPressed ? turboMultiplier : 1.5f) * inputSpeedScale;
 
-        if (allowWorldInput && input.action(KeyboardAction::Forward).held)
+        if (allowWorldInput && input.isActionActive(KeyboardAction::Forward))
         {
             m_cameraPositionX += forward.x * currentMoveSpeed * deltaSeconds;
             m_cameraPositionY += forward.y * currentMoveSpeed * deltaSeconds;
             m_cameraPositionZ += forward.z * currentMoveSpeed * deltaSeconds;
         }
 
-        if (allowWorldInput && input.action(KeyboardAction::Backward).held)
+        if (allowWorldInput && input.isActionActive(KeyboardAction::Backward))
         {
             m_cameraPositionX -= forward.x * currentMoveSpeed * deltaSeconds;
             m_cameraPositionY -= forward.y * currentMoveSpeed * deltaSeconds;

@@ -5,6 +5,8 @@ function(openyamm_bgfx_shader_platform outputVariable)
         set(shaderPlatform "android")
     elseif (WIN32)
         set(shaderPlatform "windows")
+    elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+        set(shaderPlatform "ios")
     elseif (APPLE)
         set(shaderPlatform "osx")
     else()
@@ -22,8 +24,10 @@ function(openyamm_bgfx_shader_targets outputVariable)
             "windows|120|glsl"
             "windows|s_5_0|dxbc"
         )
+    elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+        set(shaderTargets "ios|metal|metal")
     elseif (APPLE)
-        set(shaderTargets "osx|120|glsl")
+        set(shaderTargets "osx|metal|metal")
     else()
         set(shaderTargets "linux|120|glsl")
     endif()
@@ -133,7 +137,7 @@ function(openyamm_configure_bgfx_runtime)
     if (NOT TARGET openyamm_bgfx)
         find_package(Threads REQUIRED)
 
-        if (NOT ANDROID)
+        if (NOT ANDROID AND NOT APPLE)
             find_package(OpenGL REQUIRED)
         endif()
 
@@ -176,6 +180,22 @@ function(openyamm_configure_bgfx_runtime)
             )
         endif()
 
+        if (APPLE)
+            if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+                include(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/PatchBgfxMetal.cmake)
+                openyamm_patch_bgfx_metal()
+            endif()
+            target_sources(openyamm_bgfx PRIVATE ${OPENYAMM_BGFX_SOURCE_DIR}/src/renderer_mtl.cpp)
+            set_source_files_properties(${OPENYAMM_BGFX_SOURCE_DIR}/src/renderer_mtl.cpp
+                PROPERTIES LANGUAGE OBJCXX)
+            target_compile_options(openyamm_bgfx PRIVATE -fblocks)
+            if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+                target_include_directories(openyamm_bgfx PUBLIC ${OPENYAMM_BX_SOURCE_DIR}/include/compat/ios)
+            else()
+                target_include_directories(openyamm_bgfx PUBLIC ${OPENYAMM_BX_SOURCE_DIR}/include/compat/osx)
+            endif()
+        endif()
+
         target_include_directories(openyamm_bgfx
             PUBLIC
                 ${OPENYAMM_BGFX_SOURCE_DIR}/include
@@ -192,7 +212,14 @@ function(openyamm_configure_bgfx_runtime)
         )
 
         target_compile_features(openyamm_bgfx PUBLIC cxx_std_20)
-        if (ANDROID)
+        set(openyammBgfxMetal 0)
+        if (APPLE)
+            set(openyammBgfxOpenGlVersion 0)
+            set(openyammBgfxOpenGlesVersion 0)
+            set(openyammBgfxDirect3D11 0)
+            set(openyammBgfxMetal 1)
+            set(openyammBgfxDebug "$<IF:$<CONFIG:Debug>,1,0>")
+        elseif (ANDROID)
             set(openyammBgfxOpenGlVersion 0)
             set(openyammBgfxOpenGlesVersion 30)
             set(openyammBgfxDirect3D11 0)
@@ -214,7 +241,7 @@ function(openyamm_configure_bgfx_runtime)
             PRIVATE
                 BGFX_CONFIG_RENDERER_DIRECT3D11=${openyammBgfxDirect3D11}
                 BGFX_CONFIG_RENDERER_DIRECT3D12=0
-                BGFX_CONFIG_RENDERER_METAL=0
+                BGFX_CONFIG_RENDERER_METAL=${openyammBgfxMetal}
                 BGFX_CONFIG_RENDERER_VULKAN=0
                 BGFX_CONFIG_RENDERER_WEBGPU=0
                 BGFX_CONFIG_RENDERER_OPENGL=${openyammBgfxOpenGlVersion}
@@ -228,7 +255,13 @@ function(openyamm_configure_bgfx_runtime)
 
         target_link_libraries(openyamm_bgfx PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
 
-        if (ANDROID)
+        if (APPLE)
+            target_link_libraries(openyamm_bgfx PUBLIC
+                "-framework Metal" "-framework QuartzCore" "-framework Foundation")
+            if (NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+                target_link_libraries(openyamm_bgfx PUBLIC "-framework Cocoa" "-framework IOKit")
+            endif()
+        elseif (ANDROID)
             target_link_libraries(openyamm_bgfx PUBLIC EGL GLESv3 android log)
         else()
             target_link_libraries(openyamm_bgfx PUBLIC OpenGL::GL)
@@ -312,9 +345,9 @@ function(openyamm_configure_bgfx_runtime)
 
     set(OPENYAMM_HOST_SHADERC "" CACHE FILEPATH "Host bgfx shaderc executable used while cross-compiling.")
 
-    if (NOT TARGET openyamm_shaderc AND ANDROID)
+    if (NOT TARGET openyamm_shaderc AND (ANDROID OR APPLE))
         if (OPENYAMM_HOST_SHADERC STREQUAL "")
-            message(FATAL_ERROR "Set OPENYAMM_HOST_SHADERC to a host bgfx shaderc executable for Android builds.")
+            message(FATAL_ERROR "Set OPENYAMM_HOST_SHADERC to a native bgfx shaderc; on Apple use scripts/build_apple.sh.")
         endif()
 
         if (NOT EXISTS "${OPENYAMM_HOST_SHADERC}")

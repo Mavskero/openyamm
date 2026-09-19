@@ -109,18 +109,18 @@ void OutdoorGameplayInputController::updateCameraFromInput(
         0.0f
     };
 
-    const bool moveForwardPressed = input.action(KeyboardAction::Forward).held;
-    const bool moveBackwardPressed = input.action(KeyboardAction::Backward).held;
-    const bool leftPressed = input.action(KeyboardAction::Left).held;
-    const bool rightPressed = input.action(KeyboardAction::Right).held;
+    const bool moveForwardPressed = input.isActionActive(KeyboardAction::Forward);
+    const bool moveBackwardPressed = input.isActionActive(KeyboardAction::Backward);
+    const bool leftPressed = input.isActionActive(KeyboardAction::Left);
+    const bool rightPressed = input.isActionActive(KeyboardAction::Right);
     const bool strafeLeftPressed = !classicControls && leftPressed;
     const bool strafeRightPressed = !classicControls && rightPressed;
-    const bool jumpPressed = input.action(KeyboardAction::Jump).held;
-    const bool flyUpPressed = input.action(KeyboardAction::FlyUp).held;
-    const bool flyDownPressed = input.action(KeyboardAction::FlyDown).held;
-    const bool lookUpPressed = input.action(KeyboardAction::LookUp).held;
-    const bool lookDownPressed = input.action(KeyboardAction::LookDown).held;
-    const bool centerViewPressed = input.action(KeyboardAction::CenterView).held;
+    const bool jumpPressed = input.isActionActive(KeyboardAction::Jump);
+    const bool flyUpPressed = input.isActionActive(KeyboardAction::FlyUp);
+    const bool flyDownPressed = input.isActionActive(KeyboardAction::FlyDown);
+    const bool lookUpPressed = input.isActionActive(KeyboardAction::LookUp);
+    const bool lookDownPressed = input.isActionActive(KeyboardAction::LookDown);
+    const bool centerViewPressed = input.isActionActive(KeyboardAction::CenterView);
 
     const bool allowWorldSimulation = !hasActiveLootView && !hasPendingSpellCast && !input.rightMouseButton.held;
     const bool allowCameraMovementInput = allowWorldSimulation && !gameplayMouseLookState.cursorModeActive;

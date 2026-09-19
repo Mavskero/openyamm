@@ -205,7 +205,8 @@ bool CharacterInspectTable::loadStatRows(const std::vector<std::vector<std::stri
         }
 
         StatInspectEntry entry = {};
-        entry.name = name;
+        const std::string displayName = cellValue(row, 2);
+        entry.name = displayName.empty() ? name : displayName;
         entry.description = description;
         m_stats[canonicalName] = std::move(entry);
     }
@@ -219,6 +220,10 @@ bool CharacterInspectTable::loadSkillRows(const std::vector<std::vector<std::str
 
     for (const std::vector<std::string> &row : rows)
     {
+        if (cellValue(row, 0) == "Skill" && cellValue(row, 1) == "Description")
+        {
+            continue;
+        }
         const std::string canonicalSkill = canonicalSkillName(cellValue(row, 0));
 
         if (canonicalSkill.empty())
@@ -227,7 +232,8 @@ bool CharacterInspectTable::loadSkillRows(const std::vector<std::vector<std::str
         }
 
         SkillInspectEntry entry = {};
-        entry.name = displaySkillName(canonicalSkill);
+        const std::string displayName = cellValue(row, 6);
+        entry.name = displayName.empty() ? displaySkillName(canonicalSkill) : displayName;
         entry.description = cellValue(row, 1);
         entry.normalDescription = cellValue(row, 2);
         entry.expertDescription = cellValue(row, 3);
@@ -245,6 +251,10 @@ bool CharacterInspectTable::loadClassRows(const std::vector<std::vector<std::str
 
     for (const std::vector<std::string> &row : rows)
     {
+        if (cellValue(row, 0) == "Class name" && cellValue(row, 1) == "Class description")
+        {
+            continue;
+        }
         const std::string canonicalClass = canonicalClassName(cellValue(row, 0));
         const std::string description = cellValue(row, 1);
 
@@ -254,7 +264,8 @@ bool CharacterInspectTable::loadClassRows(const std::vector<std::vector<std::str
         }
 
         ClassInspectEntry entry = {};
-        entry.name = displayClassName(canonicalClass);
+        const std::string displayName = cellValue(row, 3);
+        entry.name = displayName.empty() ? displayClassName(canonicalClass) : displayName;
         entry.description = description;
         m_classes[canonicalClass] = std::move(entry);
     }

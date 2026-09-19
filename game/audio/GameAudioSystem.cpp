@@ -560,7 +560,29 @@ bool decodeAudioSamplesFromBytes(const std::vector<uint8_t> &bytes, std::vector<
         return false;
     }
 
-    return drainDecoder(true) && !samples.empty();
+    if (!drainDecoder(true))
+    {
+        return false;
+    }
+
+    // The resampler retains a short filter tail even after the decoder has reached EOF.
+    std::array<float, 2048> tail;
+    uint8_t *pTailData[1] = {reinterpret_cast<uint8_t *>(tail.data())};
+    while (true)
+    {
+        const int frames = swr_convert(pResampler.get(), pTailData, 1024, nullptr, 0);
+        if (frames < 0)
+        {
+            std::cerr << "GameAudioSystem: failed to flush resampled audio\n";
+            return false;
+        }
+        if (frames == 0)
+        {
+            break;
+        }
+        samples.insert(samples.end(), tail.begin(), tail.begin() + frames * 2);
+    }
+    return !samples.empty();
 }
 }
 
@@ -604,6 +626,14 @@ bool GameAudioSystem::initializeSoundCatalog(const Engine::AssetFileSystem &asse
 
     if (!engineSoundCatalogText || !speechReactionText)
     {
+        if (!engineSoundCatalogText)
+        {
+            std::cerr << "Missing sound catalog: engine/data_tables/sounds.txt\n";
+        }
+        if (!speechReactionText)
+        {
+            std::cerr << "Missing speech reaction table: engine/data_tables/character_speech_events.txt\n";
+        }
         return false;
     }
 
@@ -1155,7 +1185,8 @@ bool GameAudioSystem::playSpeech(const Character &character, SpeechId speechId, 
         return false;
     }
 
-    if (pReaction->soundTypes.empty() || m_pCharacterVoiceTable == nullptr || m_pAssetFileSystem == nullptr)
+    if ((pReaction->soundTypes.empty() && pReaction->voiceGroups.empty())
+        || m_pCharacterVoiceTable == nullptr || m_pAssetFileSystem == nullptr)
     {
         return false;
     }
@@ -1167,14 +1198,27 @@ bool GameAudioSystem::playSpeech(const Character &character, SpeechId speechId, 
         return false;
     }
 
-    const std::vector<uint32_t> soundIds = m_pCharacterVoiceTable->soundIdsForTypes(*voiceId, pReaction->soundTypes);
+    const uint32_t pickSeed = seed == 0 ? SDL_GetTicks() : seed;
+    std::vector<uint32_t> soundIds;
+    if (!pReaction->voiceGroups.empty())
+    {
+        const std::optional<uint32_t> selected =
+            m_pCharacterVoiceTable->selectSoundIdForGroups(*voiceId, pReaction->voiceGroups, pickSeed);
+        if (selected)
+        {
+            soundIds.push_back(*selected);
+        }
+    }
+    else
+    {
+        soundIds = m_pCharacterVoiceTable->soundIdsForTypes(*voiceId, pReaction->soundTypes);
+    }
 
     if (soundIds.empty())
     {
         return false;
     }
 
-    const uint32_t pickSeed = seed == 0 ? SDL_GetTicks() : seed;
     std::optional<uint32_t> selectedSoundId;
     std::optional<std::string> selectedVirtualPath;
 
@@ -1506,6 +1550,12 @@ void GameAudioSystem::resumeBackgroundMusic()
     if (m_activeMusicInstanceId != 0)
     {
         m_audioSystem.resumeClip(m_activeMusicInstanceId);
+    }
+
+    if (m_pendingMusicTrack > 0)
+    {
+        // Requests made while paused still need the normal transition away from the old instance.
+        setBackgroundMusicTrack(m_pendingMusicTrack);
     }
 }
 

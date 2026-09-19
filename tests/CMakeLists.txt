@@ -4,16 +4,27 @@ add_executable(openyamm_unit_tests
     AudioRegressionTests.cpp
     ArcomageRegressionTests.cpp
     ChestRegressionTests.cpp
+    ChestOpenStateTests.cpp
     ContentManifestTests.cpp
     HouseDialogueRegressionTests.cpp
+    HouseServiceIdentityTests.cpp
+    ShopSaleResultTests.cpp
     ScriptedMapRegressionTests.cpp
     UnitTestMain.cpp
     CharacterSheetRegressionTests.cpp
+    CharacterDollCoordinatesTests.cpp
+    EquipmentPictureVariantsTests.cpp
     CombatActorHealthBarPolicyTests.cpp
+    CombatTextTableTests.cpp
+    HouseServiceTextTableTests.cpp
     GameplayActorAiSystemTests.cpp
     GameplayBolsterRuntimeTests.cpp
     GameplaySaveLoadUiSupportTests.cpp
     GameplayRuleRegressionTests.cpp
+    HistoryEventTests.cpp
+    HistorySessionTests.cpp
+    RestClockTests.cpp
+    TravelPromptTests.cpp
     GameInputSystemTests.cpp
     AwardRuntimeTests.cpp
     GameplayProjectileServiceTests.cpp
@@ -47,6 +58,7 @@ add_executable(openyamm_unit_tests
     OutdoorLightingRuntimeTests.cpp
     OutdoorLightingDataTests.cpp
     OutdoorPathfindingBuilderTests.cpp
+    OutdoorStepUpTests.cpp
     OutdoorNavigationDataTests.cpp
     OutdoorRenderDataTests.cpp
     BillboardGeometryTests.cpp

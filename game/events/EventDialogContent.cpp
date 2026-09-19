@@ -4,6 +4,7 @@
 #include "game/gameplay/HouseInteraction.h"
 #include "game/gameplay/MasteryTeacherDialog.h"
 #include "game/gameplay/ReputationRuntime.h"
+#include "game/gameplay/TravelRuntime.h"
 #include "game/StringUtils.h"
 #include "game/tables/MergedBaseTables.h"
 
@@ -402,6 +403,49 @@ std::string transitionVideoNameForTransitionTitle(const std::string &title)
     }
 
     return {};
+}
+
+std::string transitionVideoNameForSourceNote(const std::string &note)
+{
+    const std::string exact = transitionVideoNameForTransitionTitle(note);
+    if (!exact.empty())
+    {
+        return exact;
+    }
+
+    // Source notes sometimes append an area number; only known video names may match after removal.
+    std::string title = lowerTransitionTitle(note);
+    const size_t area = title.rfind(" (area ");
+    size_t digits = std::string::npos;
+    size_t end = title.size();
+    size_t cut = std::string::npos;
+    if (area != std::string::npos && title.ends_with(')'))
+    {
+        digits = area + 7;
+        --end;
+        cut = area;
+    }
+    else
+    {
+        const size_t separator = title.find_last_of(" ,");
+        if (separator != std::string::npos)
+        {
+            digits = separator + 1;
+            cut = separator;
+        }
+    }
+    if (digits == std::string::npos || digits >= end
+        || !std::all_of(title.begin() + digits, title.begin() + end,
+            [](char value) { return value >= '0' && value <= '9'; }))
+    {
+        return {};
+    }
+    while (cut > 0 && (title[cut - 1] == ' ' || title[cut - 1] == ','))
+    {
+        --cut;
+    }
+    title.resize(cut);
+    return transitionVideoNameForTransitionTitle(title);
 }
 
 std::string transitionVideoNameForDungeonHouse(
@@ -883,7 +927,9 @@ EventDialogContent buildEventDialogContent(
     const MergedNewsProfessionTopicTable *pNewsProfessionTopicTable,
     const MergedNpcBtbTable *pNpcBtbTable,
     const MergedTeacherTopicTable *pTeacherTopicTable,
-    const MergedContinentSettingTable *pContinentSettingTable
+    const MergedContinentSettingTable *pContinentSettingTable,
+    const CharacterInspectTable *pCharacterInspectTable,
+    const HouseServiceTextTable *pHouseServiceTextTable
 )
 {
     EventDialogContent dialog = {};
@@ -914,7 +960,9 @@ EventDialogContent buildEventDialogContent(
                 pClassSkillTable,
                 pWorldRuntime,
                 currentGameMinutes,
-                currentHouseServiceMenuId(eventRuntimeState)
+                currentHouseServiceMenuId(eventRuntimeState),
+                pCharacterInspectTable,
+                pHouseServiceTextTable
             );
             const std::optional<uint32_t> residentNpcId = singleSelectableResidentNpcId(
                 *pHouseEntry,
@@ -1034,9 +1082,11 @@ EventDialogContent buildEventDialogContent(
                     ? transitionVideoNameForDungeonHouse(pHouseTable, pDungeonHouseMap, dialog.title)
                     : std::string();
             }
-            if (dialog.videoName.empty() && pTransitionText != nullptr && !pTransitionText->title.empty())
+            if (dialog.videoName.empty() && pTransitionText != nullptr)
             {
-                dialog.videoName = transitionVideoNameForTransitionTitle(pTransitionText->title);
+                dialog.videoName = pTransitionText->sourceNote.empty()
+                    ? transitionVideoNameForTransitionTitle(pTransitionText->title)
+                    : transitionVideoNameForSourceNote(pTransitionText->sourceNote);
             }
             if (dialog.videoName.empty() && !dialog.title.empty())
             {
@@ -1049,9 +1099,11 @@ EventDialogContent buildEventDialogContent(
         }
         dialog.videoDirectory = !dialog.videoName.empty() ? TransitionVideoDirectory : std::string();
 
-        if (pTransition != nullptr && pTransition->has_value() && (*pTransition)->travelDays > 0)
+        const int travelDays = context.transitionMapMove.has_value()
+            ? outdoorMapMoveTravelDays(currentMapName, transitionMapName)
+            : ((pTransition != nullptr && pTransition->has_value()) ? (*pTransition)->travelDays : 0);
+        if (travelDays > 0)
         {
-            const int travelDays = (*pTransition)->travelDays;
             dialog.lines.push_back(
                 "It will take "
                 + std::to_string(travelDays)
@@ -1184,7 +1236,9 @@ EventDialogContent buildEventDialogContent(
                 pClassSkillTable,
                 pWorldRuntime,
                 currentGameMinutes,
-                houseServiceMenuId
+                houseServiceMenuId,
+                pCharacterInspectTable,
+                pHouseServiceTextTable
             );
 
             for (const HouseActionOption &houseAction : houseActions)
@@ -1566,7 +1620,7 @@ EventDialogContent buildEventDialogContent(
                                 action.id = pProfession->actionTopicId;
                                 action.label = professionTopic && !professionTopic->topic.empty()
                                     ? professionTopic->topic
-                                    : (!pProfession->profession.empty() ? pProfession->profession : "Profession");
+                                    : (!pProfession->displayName().empty() ? pProfession->displayName() : "Profession");
                                 dialog.actions.push_back(std::move(action));
                             }
                         }
@@ -1616,7 +1670,7 @@ EventDialogContent buildEventDialogContent(
                         action.secondaryId = pProfessionTopic->newsTextId;
                         action.label = newsTopic && !newsTopic->empty()
                             ? *newsTopic
-                            : (!pProfession->profession.empty() ? pProfession->profession : "Profession");
+                            : (!pProfession->displayName().empty() ? pProfession->displayName() : "Profession");
                         dialog.actions.push_back(std::move(action));
                     }
                 }
@@ -1628,7 +1682,8 @@ EventDialogContent buildEventDialogContent(
             && pNpcDialogTable != nullptr
             && context.newsId != 0)
         {
-            const std::optional<std::string> newsText = pNpcDialogTable->getNewsDialogText(context.newsId);
+            const std::optional<std::string> newsText =
+                pNpcDialogTable->getNewsDialogText(context.newsId, context.newsFromNpcText);
 
             if (newsText && !newsText->empty())
             {
@@ -1709,7 +1764,12 @@ EventDialogContent buildEventDialogContent(
             if (pHouseEntry != nullptr)
             {
                 const DialogueMenuId menuId = currentHouseServiceMenuId(eventRuntimeState);
-                dialog.lines = buildHouseServiceInfoLines(*pHouseEntry, pParty, pClassSkillTable, menuId);
+                dialog.lines = buildHouseServiceInfoLines(
+                    *pHouseEntry,
+                    pParty,
+                    pClassSkillTable,
+                    menuId,
+                    pHouseServiceTextTable);
             }
         }
     }

@@ -1,5 +1,8 @@
 #include "engine/BgfxContext.h"
 #include "engine/EngineApplication.h"
+#if defined(__APPLE__)
+#include "engine/ApplePointer.h"
+#endif
 
 #include <SDL3/SDL.h>
 
@@ -92,6 +95,11 @@ struct SdlWindowDeleter
 
 void enforceMinimumWindowAspect(SDL_Window *pWindow)
 {
+#if defined(SDL_PLATFORM_IOS)
+    // UIKit owns the window size during system gestures and multitasking.
+    static_cast<void>(pWindow);
+    return;
+#endif
     if (pWindow == nullptr)
     {
         return;
@@ -123,6 +131,14 @@ void enforceMinimumWindowAspect(SDL_Window *pWindow)
 uint64_t initialWindowFlagsForMode(WindowMode mode)
 {
     uint64_t flags = 0;
+#if defined(__APPLE__)
+    flags |= SDL_WINDOW_METAL | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+#endif
+#if defined(SDL_PLATFORM_IOS)
+    // SDL's UIKit controller hides the status bar for borderless game windows.
+    // The native import launcher owns a separate window and keeps its status bar.
+    flags |= SDL_WINDOW_BORDERLESS;
+#endif
 
     if (mode == WindowMode::Windowed)
     {
@@ -247,6 +263,20 @@ void invokeShutdownCallback(const EngineApplication::ShutdownCallback &shutdownC
         shutdownCallback();
     }
 }
+
+class RenderShutdownGuard
+{
+public:
+    explicit RenderShutdownGuard(const EngineApplication::ShutdownCallback &callback) : m_callback(callback)
+    {
+    }
+    ~RenderShutdownGuard()
+    {
+        invokeShutdownCallback(m_callback);
+    }
+private:
+    const EngineApplication::ShutdownCallback &m_callback;
+};
 }
 
 EngineApplication::EngineApplication(
@@ -256,7 +286,8 @@ EngineApplication::EngineApplication(
     EventCallback eventCallback,
     RenderFrameCallback renderFrameCallback,
     ShutdownCallback shutdownCallback,
-    TextInputActiveCallback textInputActiveCallback
+    TextInputActiveCallback textInputActiveCallback,
+    TextInputAreaCallback textInputAreaCallback
 )
     : m_config(config)
     , m_startupCallback(std::move(startupCallback))
@@ -265,6 +296,7 @@ EngineApplication::EngineApplication(
     , m_renderFrameCallback(std::move(renderFrameCallback))
     , m_shutdownCallback(std::move(shutdownCallback))
     , m_textInputActiveCallback(std::move(textInputActiveCallback))
+    , m_textInputAreaCallback(std::move(textInputAreaCallback))
 {
 }
 
@@ -279,6 +311,13 @@ int EngineApplication::run() const
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 #endif
 
+#if defined(SDL_PLATFORM_IOS)
+    // GameInputSystem handles finger events itself. Synthesized mouse motion
+    // would count the same camera drag twice; physical mouse events stay enabled.
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+    // Keep a movable in-game menu cursor while the system pointer stays locked.
+    SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_CENTER, "0");
+#endif
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
     {
         std::cerr << "SDL_Init failed: " << SDL_GetError() << '\n';
@@ -330,9 +369,10 @@ int EngineApplication::run() const
         return 1;
     }
 
+    // App resources must be destroyed before bgfx, including callback exceptions.
+    const RenderShutdownGuard renderShutdown(m_shutdownCallback);
     if (m_renderSetupCallback && !m_renderSetupCallback())
     {
-        invokeShutdownCallback(m_shutdownCallback);
         return 1;
     }
 
@@ -365,7 +405,13 @@ int EngineApplication::run() const
     std::cout << "Data directory available: " << (hasDataDirectory ? "yes" : "no") << '\n';
     std::cout << "Close the window to exit.\n";
 
+#if defined(__APPLE__)
+    ApplePointer applePointer(pWindow.get(), m_config.performanceTrace);
+#endif
     bool isRunning = true;
+#if defined(SDL_PLATFORM_IOS)
+    bool applicationActive = true;
+#endif
     uint64_t lastFrameTickCount = SDL_GetTicksNS();
     const bool logFps = m_config.fpsTrace;
     const bool collectPerformanceDiagnostics = m_config.performanceTrace;
@@ -382,25 +428,42 @@ int EngineApplication::run() const
     uint64_t fpsWindowSizeNanoseconds = 0;
     uint64_t fpsRenderCallbackNanoseconds = 0;
     uint64_t fpsBgfxFrameNanoseconds = 0;
-#if defined(__ANDROID__)
-    bool managedTextInputActive = false;
-    const auto syncManagedTextInput =
-        [&managedTextInputActive, this, &pWindow]()
+    const auto syncManagedTextInput = [this, &pWindow]()
+    {
+        if (!m_textInputActiveCallback)
         {
-            const bool textInputRequested = m_textInputActiveCallback && m_textInputActiveCallback();
-
-            if (textInputRequested && !managedTextInputActive)
+            return;
+        }
+        const bool requested = m_textInputActiveCallback();
+        const bool active = SDL_TextInputActive(pWindow.get());
+        if (requested && m_textInputAreaCallback)
+        {
+            // SDL expects window coordinates, including on high-density displays.
+            // UIKit uses this area to keep the editor above its software keyboard.
+            int width = 0;
+            int height = 0;
+            SDL_GetWindowSize(pWindow.get(), &width, &height);
+            const SDL_Rect area = m_textInputAreaCallback(width, height);
+            SDL_Rect previousArea = {};
+            SDL_GetTextInputArea(pWindow.get(), &previousArea, nullptr);
+            if (!SDL_RectsEqual(&area, &previousArea))
             {
-                startManagedAndroidTextInput(pWindow.get());
-                managedTextInputActive = true;
+                SDL_SetTextInputArea(pWindow.get(), &area, 0);
             }
-            else if (!textInputRequested && managedTextInputActive)
-            {
-                SDL_StopTextInput(pWindow.get());
-                managedTextInputActive = false;
-            }
-        };
+        }
+        if (requested && !active)
+        {
+#if defined(__ANDROID__)
+            startManagedAndroidTextInput(pWindow.get());
+#else
+            SDL_StartTextInput(pWindow.get());
 #endif
+        }
+        else if (!requested && active)
+        {
+            SDL_StopTextInput(pWindow.get());
+        }
+    };
 
     while (isRunning)
     {
@@ -444,11 +507,21 @@ int EngineApplication::run() const
 
             if (event.type == SDL_EVENT_DID_ENTER_FOREGROUND)
             {
+#if defined(SDL_PLATFORM_IOS)
+                applicationActive = true;
+#endif
                 frameDeltaNanoseconds = 16666667ULL;
                 deltaSeconds = 1.0f / 60.0f;
                 lastFrameTickCount = SDL_GetTicksNS();
                 refreshRenderWindow = true;
             }
+
+#if defined(SDL_PLATFORM_IOS)
+            if (event.type == SDL_EVENT_WILL_ENTER_BACKGROUND || event.type == SDL_EVENT_DID_ENTER_BACKGROUND)
+            {
+                applicationActive = false;
+            }
+#endif
 
             if (event.type == SDL_EVENT_MOUSE_WHEEL)
             {
@@ -461,6 +534,15 @@ int EngineApplication::run() const
             }
         }
 
+#if defined(SDL_PLATFORM_IOS)
+        if (!applicationActive)
+        {
+            applePointer.update();
+            lastFrameTickCount = SDL_GetTicksNS();
+            SDL_Delay(10);
+            continue;
+        }
+#endif
         if (refreshRenderWindow)
         {
             int resizedDrawableWidth = 0;
@@ -482,9 +564,10 @@ int EngineApplication::run() const
             }
         }
 
-#if defined(__ANDROID__)
-        syncManagedTextInput();
+#if defined(__APPLE__)
+        applePointer.update();
 #endif
+        syncManagedTextInput();
 
         const uint64_t windowSizeBeginTickCount = collectFrameTimings ? SDL_GetTicksNS() : 0;
         int drawableWidth = 0;
@@ -515,9 +598,7 @@ int EngineApplication::run() const
             bgfx::touch(0);
         }
 
-#if defined(__ANDROID__)
         syncManagedTextInput();
-#endif
 
         uint64_t frameRenderCallbackNanoseconds = 0;
 
@@ -531,6 +612,9 @@ int EngineApplication::run() const
             }
         }
 
+#if defined(__APPLE__)
+        applePointer.update();
+#endif
         const uint64_t bgfxFrameBeginTickCount = collectFrameTimings ? SDL_GetTicksNS() : 0;
         bgfx::frame();
 
@@ -633,14 +717,10 @@ int EngineApplication::run() const
         }
     }
 
-#if defined(__ANDROID__)
-    if (managedTextInputActive)
+    if (m_textInputActiveCallback && SDL_TextInputActive(pWindow.get()))
     {
         SDL_StopTextInput(pWindow.get());
     }
-#endif
-
-    invokeShutdownCallback(m_shutdownCallback);
 
     return 0;
 }

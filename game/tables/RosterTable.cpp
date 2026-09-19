@@ -131,7 +131,7 @@ bool RosterTable::loadFromRows(
     {
         const std::vector<std::string> &headerRow = rows[1];
 
-        for (size_t columnIndex = 22; columnIndex < headerRow.size(); columnIndex += 2)
+        for (size_t columnIndex = 22; columnIndex < 100 && columnIndex < headerRow.size(); columnIndex += 2)
         {
             skillColumns.push_back(canonicalSkillName(headerRow[columnIndex]));
         }
@@ -222,14 +222,17 @@ bool RosterTable::loadFromRows(
                 continue;
             }
 
-            const SkillMastery mastery = parseSkillMasteryToken(row[masteryColumn]);
             uint32_t level = 0;
 
-            if (mastery == SkillMastery::None || !parseUnsigned(row[levelColumn], level) || level == 0)
+            if (!parseUnsigned(row[levelColumn], level) || level == 0)
             {
                 continue;
             }
 
+            // Roster records store a level plus optional E/M/G mastery bits. A positive
+            // level with no higher mastery (including the original N token) is Basic.
+            const SkillMastery parsedMastery = parseSkillMasteryToken(row[masteryColumn]);
+            const SkillMastery mastery = parsedMastery == SkillMastery::None ? SkillMastery::Normal : parsedMastery;
             CharacterSkill skill = {};
             skill.name = skillColumns[skillIndex];
             skill.level = level;

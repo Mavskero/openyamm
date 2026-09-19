@@ -292,7 +292,9 @@ public:
             &m_gameData.mergedNewsProfessionTopicTable,
             &m_gameData.mergedNpcBtbTable,
             &m_gameData.mergedTeacherTopicTable,
-            &m_gameData.mergedContinentSettingTable);
+            &m_gameData.mergedContinentSettingTable,
+            &m_gameData.characterInspectTable,
+            &m_gameData.houseServiceTextTable);
     }
 
 private:
@@ -348,7 +350,9 @@ private:
             &m_gameData.mergedContinentSettingTable,
             &m_gameData.mergedTeacherTopicTable,
             &m_gameData.mergedTeacherAutonoteTable,
-            &m_gameData.spellTable);
+            &m_gameData.spellTable,
+            &m_gameData.characterInspectTable,
+            &m_gameData.houseServiceTextTable);
     }
 
     const RegressionGameData &m_gameData;

@@ -1758,7 +1758,9 @@ GameplayDialogController::Context OutdoorInteractionController::createGameplayDi
         &view.data().mergedContinentSettingTable(),
         &view.data().mergedTeacherTopicTable(),
         &view.data().mergedTeacherAutonoteTable(),
-        &view.data().spellTable());
+        &view.data().spellTable(),
+        &view.data().characterInspectTable(),
+        &view.data().houseServiceTextTable());
 }
 
 void OutdoorInteractionController::executeActiveDialogAction(OutdoorGameView &view)
@@ -2329,13 +2331,13 @@ std::string OutdoorInteractionController::resolveActorInspectDisplayName(
     const MergedNpcProfessionEntry *pProfession =
         view.data().mergedNpcProfessionTable().get(resolution->generatedProfessionId);
 
-    if (pProfession == nullptr || pProfession->profession.empty())
+    if (pProfession == nullptr || pProfession->displayName().empty())
     {
         return resolution->generatedName;
     }
 
     // MMerge assigns NPC_ID to the monster; the original display path then uses NameAndTitle(NPC).
-    return resolution->generatedName + " the " + pProfession->profession;
+    return resolution->generatedName + " (" + pProfession->displayName() + ")";
 }
 
 GameplayWorldHit OutdoorInteractionController::translateInspectHitToGameplayWorldHit(
@@ -5227,7 +5229,7 @@ bool OutdoorInteractionController::tryActivateActorInspectEvent(OutdoorGameView 
             }
 
             const std::optional<std::string> newsText =
-                view.data().npcDialogTable().getNewsDialogText(resolution->newsId);
+                view.data().npcDialogTable().getNewsDialogText(resolution->newsId, resolution->newsFromNpcText);
 
             if (!newsText || newsText->empty())
             {
@@ -5236,7 +5238,7 @@ bool OutdoorInteractionController::tryActivateActorInspectEvent(OutdoorGameView 
 
             const GameplayDialogController::Result result = view.m_gameSession.gameplayDialogController().openNpcNews(
                 context, resolution->npcId, resolution->newsId, inspectHit.name, *newsText,
-                resolution->portraitPictureId);
+                resolution->portraitPictureId, resolution->newsFromNpcText);
             pEventRuntimeState->lastActivationResult =
                 "npc news group " + std::to_string(inspectHit.actorGroup) + " engaged";
 

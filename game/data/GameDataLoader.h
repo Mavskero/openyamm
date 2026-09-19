@@ -10,6 +10,7 @@
 #include "game/tables/ClassSkillTable.h"
 #include "game/tables/FaceAnimationTable.h"
 #include "game/tables/HouseTable.h"
+#include "game/tables/HouseServiceTextTable.h"
 #include "game/tables/IconFrameTable.h"
 #include "game/tables/JournalAutonoteTable.h"
 #include "game/tables/JournalHistoryTable.h"
@@ -38,6 +39,7 @@
 #include "game/tables/RaceStartingStatsTable.h"
 #include "game/tables/RosterTable.h"
 #include "game/tables/SpellTable.h"
+#include "game/tables/CombatTextTable.h"
 #include "game/tables/SpellFxTable.h"
 #include "game/tables/TransitionTable.h"
 
@@ -90,6 +92,8 @@ public:
     const MonsterProjectileTable &getMonsterProjectileTable() const;
     const ObjectTable &getObjectTable() const;
     const SpellTable &getSpellTable() const;
+    const CombatTextTable &getCombatTextTable() const;
+    const HouseServiceTextTable &getHouseServiceTextTable() const;
     const ItemTable &getItemTable() const;
     const std::unordered_map<std::string, uint32_t> &getLoadedContentPackageSchemas() const;
     const StandardItemEnchantTable &getStandardItemEnchantTable() const;
@@ -234,6 +238,8 @@ private:
     MonsterProjectileTable m_monsterProjectileTable;
     ObjectTable m_objectTable;
     SpellTable m_spellTable;
+    CombatTextTable m_combatTextTable;
+    HouseServiceTextTable m_houseServiceTextTable;
     ItemTable m_itemTable;
     std::unordered_map<std::string, uint32_t> m_loadedContentPackageSchemas = {{"engine", 1}};
     StandardItemEnchantTable m_standardItemEnchantTable;

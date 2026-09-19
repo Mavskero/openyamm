@@ -428,6 +428,7 @@ private:
     void renderActorPreviewBillboards(
         uint16_t viewId,
         const float *pViewMatrix,
+        float projectionYScale,
         const bx::Vec3 &cameraPosition,
         const std::vector<uint8_t> &visibleSectorMask,
         const IndoorLightingFrame &lightingFrame,

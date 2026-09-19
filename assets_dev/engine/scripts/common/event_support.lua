@@ -983,21 +983,21 @@ function support.setMapMetadata(metadata)
         meta[key] = value
     end
 
-    if #existingOnLoad > 0 then
+    if existingOnLoad ~= meta.onLoad and #existingOnLoad > 0 then
         meta.onLoad = meta.onLoad or {}
         for _, eventId in ipairs(existingOnLoad) do
             table.insert(meta.onLoad, eventId)
         end
     end
 
-    if #existingOnLeave > 0 then
+    if existingOnLeave ~= meta.onLeave and #existingOnLeave > 0 then
         meta.onLeave = meta.onLeave or {}
         for _, eventId in ipairs(existingOnLeave) do
             table.insert(meta.onLeave, eventId)
         end
     end
 
-    if #existingTimers > 0 then
+    if existingTimers ~= meta.timers and #existingTimers > 0 then
         meta.timers = meta.timers or {}
         for _, timer in ipairs(existingTimers) do
             table.insert(meta.timers, timer)
@@ -1094,6 +1094,14 @@ local function registerGlobalHook(hookName, eventId, title, handler)
         handler(evt.GetHookContext())
     end)
     appendHookEvent("global", hookName, eventId)
+end
+
+function support.registerOutdoorStepHook(eventId, title, handler)
+    registerMapHook("outdoorStepHooks", eventId, title, handler)
+end
+
+function support.registerTownPortalHook(eventId, title, handler)
+    registerMapHook("townPortalHooks", eventId, title, handler)
 end
 
 function support.registerNpcEnterHook(eventId, title, handler)
@@ -1470,21 +1478,21 @@ function support.setGlobalMetadata(metadata)
         meta[key] = value
     end
 
-    if #existingOnLoad > 0 then
+    if existingOnLoad ~= meta.onLoad and #existingOnLoad > 0 then
         meta.onLoad = meta.onLoad or {}
         for _, eventId in ipairs(existingOnLoad) do
             table.insert(meta.onLoad, eventId)
         end
     end
 
-    if #existingOnLeave > 0 then
+    if existingOnLeave ~= meta.onLeave and #existingOnLeave > 0 then
         meta.onLeave = meta.onLeave or {}
         for _, eventId in ipairs(existingOnLeave) do
             table.insert(meta.onLeave, eventId)
         end
     end
 
-    if #existingTimers > 0 then
+    if existingTimers ~= meta.timers and #existingTimers > 0 then
         meta.timers = meta.timers or {}
         for _, timer in ipairs(existingTimers) do
             table.insert(meta.timers, timer)
@@ -1589,6 +1597,8 @@ RegisterMapOnLeaveEvent = support.registerMapOnLeaveEvent
 RegisterMapTimerEvent = support.registerMapTimerEvent
 RegisterGlobalOnLoadEvent = support.registerGlobalOnLoadEvent
 RegisterGlobalTimerEvent = support.registerGlobalTimerEvent
+RegisterOutdoorStepHook = support.registerOutdoorStepHook
+RegisterTownPortalHook = support.registerTownPortalHook
 RegisterNpcEnterHook = support.registerNpcEnterHook
 RegisterGlobalNpcEnterHook = support.registerGlobalNpcEnterHook
 RegisterNpcExitHook = support.registerNpcExitHook

@@ -2,6 +2,7 @@
 #include "game/events/EvtEnums.h"
 #include "game/maps/IndoorSceneYml.h"
 #include "game/maps/MapAssetLoader.h"
+#include "game/maps/MapDecorationDirection.h"
 #include "game/maps/MapIdentity.h"
 #include "game/maps/MapPresentation.h"
 #include "game/maps/OutdoorSceneYml.h"
@@ -840,7 +841,7 @@ bool isWorldPrefixedMonsterSpriteName(const std::string &spriteName)
 
 void appendMonsterSpriteFamilies(
     std::unordered_set<std::string> &families,
-    std::unordered_set<std::string> &worldPrefixedSpriteNames,
+    std::unordered_set<std::string> &requiredSpriteNames,
     const MonsterEntry *pMonsterEntry)
 {
     if (pMonsterEntry == nullptr)
@@ -853,24 +854,25 @@ void appendMonsterSpriteFamilies(
         if (const std::optional<std::string> familyRoot = monsterSpriteFamilyRoot(spriteName))
         {
             families.insert(*familyRoot);
+            requiredSpriteNames.insert(toLowerCopy(spriteName));
         }
         else if (isWorldPrefixedMonsterSpriteName(spriteName))
         {
-            worldPrefixedSpriteNames.insert(toLowerCopy(spriteName));
+            requiredSpriteNames.insert(toLowerCopy(spriteName));
         }
     }
 }
 
 void collectSummonMonsterSpriteFamilies(
     std::unordered_set<std::string> &neededMonsterFamilies,
-    std::unordered_set<std::string> &neededWorldPrefixedMonsterSpriteNames,
+    std::unordered_set<std::string> &neededMonsterSpriteNames,
     const MonsterTable &monsterTable)
 {
     for (int16_t monsterId : SummonWispMonsterIds)
     {
         appendMonsterSpriteFamilies(
             neededMonsterFamilies,
-            neededWorldPrefixedMonsterSpriteNames,
+            neededMonsterSpriteNames,
             monsterTable.findById(monsterId));
     }
 }
@@ -878,7 +880,7 @@ void collectSummonMonsterSpriteFamilies(
 template <typename SpawnType>
 void collectSpawnMonsterSpriteFamilies(
     std::unordered_set<std::string> &families,
-    std::unordered_set<std::string> &worldPrefixedSpriteNames,
+    std::unordered_set<std::string> &requiredSpriteNames,
     const MapStatsEntry &map,
     const MonsterTable &monsterTable,
     const std::vector<SpawnType> &spawns)
@@ -892,13 +894,13 @@ void collectSpawnMonsterSpriteFamilies(
             continue;
         }
 
-        appendMonsterSpriteFamilies(families, worldPrefixedSpriteNames, monsterTable.findByInternalName(*monsterName));
+        appendMonsterSpriteFamilies(families, requiredSpriteNames, monsterTable.findByInternalName(*monsterName));
     }
 }
 
 void collectMapDeltaMonsterSpriteFamilies(
     std::unordered_set<std::string> &families,
-    std::unordered_set<std::string> &worldPrefixedSpriteNames,
+    std::unordered_set<std::string> &requiredSpriteNames,
     const MonsterTable &monsterTable,
     const std::optional<MapDeltaData> &mapDeltaData)
 {
@@ -923,13 +925,13 @@ void collectMapDeltaMonsterSpriteFamilies(
             pMonsterEntry = monsterTable.findById(actor.monsterId);
         }
 
-        appendMonsterSpriteFamilies(families, worldPrefixedSpriteNames, pMonsterEntry);
+        appendMonsterSpriteFamilies(families, requiredSpriteNames, pMonsterEntry);
     }
 }
 
 void collectEncounterMonsterSpriteFamilies(
     std::unordered_set<std::string> &families,
-    std::unordered_set<std::string> &worldPrefixedSpriteNames,
+    std::unordered_set<std::string> &requiredSpriteNames,
     const MonsterTable &monsterTable,
     const MapStatsEntry &map)
 {
@@ -966,7 +968,7 @@ void collectEncounterMonsterSpriteFamilies(
 
             appendMonsterSpriteFamilies(
                 families,
-                worldPrefixedSpriteNames,
+                requiredSpriteNames,
                 monsterTable.findById(static_cast<int16_t>(pStats->id)));
         }
     }
@@ -1120,7 +1122,7 @@ std::optional<SpriteFrameTable> loadCommonSpriteFrameTable(
 bool appendMonsterSpriteFrameFamilies(
     const Engine::AssetFileSystem &assetFileSystem,
     const std::unordered_set<std::string> &monsterFamilies,
-    const std::unordered_set<std::string> &worldPrefixedMonsterSpriteNames,
+    const std::unordered_set<std::string> &requiredMonsterSpriteNames,
     SpriteFrameTable &spriteFrameTable,
     MapAssetLoadSharedCache *pSharedCache)
 {
@@ -1131,6 +1133,18 @@ bool appendMonsterSpriteFrameFamilies(
 
     for (const std::string &familyRoot : sortedFamilies)
     {
+        // A merged base can own complete monster animations in its common SFT.
+        // Split family files are needed only for requested animations absent from that table.
+        const bool missingFrames = std::any_of(requiredMonsterSpriteNames.begin(), requiredMonsterSpriteNames.end(),
+            [&](const std::string &name)
+            {
+                return monsterSpriteFamilyRoot(name) == familyRoot
+                    && !spriteFrameTable.findFrameIndexBySpriteName(name);
+            });
+        if (!missingFrames)
+        {
+            continue;
+        }
         const std::optional<std::string> familyContents =
             loadMonsterSpriteFrameFamilyText(assetFileSystem, familyRoot, pSharedCache);
 
@@ -1148,13 +1162,13 @@ bool appendMonsterSpriteFrameFamilies(
         }
     }
 
-    std::unordered_set<std::string> unresolvedWorldPrefixedSprites;
+    std::unordered_set<std::string> unresolvedSprites;
 
-    for (const std::string &spriteName : worldPrefixedMonsterSpriteNames)
+    for (const std::string &spriteName : requiredMonsterSpriteNames)
     {
         if (!spriteFrameTable.findFrameIndexBySpriteName(spriteName))
         {
-            unresolvedWorldPrefixedSprites.insert(spriteName);
+            unresolvedSprites.insert(spriteName);
         }
     }
 
@@ -1163,7 +1177,7 @@ bool appendMonsterSpriteFrameFamilies(
 
     for (const std::string &familyEntry : familyEntries)
     {
-        if (unresolvedWorldPrefixedSprites.empty())
+        if (unresolvedSprites.empty())
         {
             break;
         }
@@ -1197,7 +1211,7 @@ bool appendMonsterSpriteFrameFamilies(
         std::vector<std::string> resolvedSpritesInFamily;
         const std::string normalizedContents = toLowerCopy(*familyContents);
 
-        for (const std::string &spriteName : unresolvedWorldPrefixedSprites)
+        for (const std::string &spriteName : unresolvedSprites)
         {
             const std::string spriteNameNeedle = "sprite_name: \"" + spriteName + "\"";
 
@@ -1221,13 +1235,13 @@ bool appendMonsterSpriteFrameFamilies(
 
         for (const std::string &spriteName : resolvedSpritesInFamily)
         {
-            unresolvedWorldPrefixedSprites.erase(spriteName);
+            unresolvedSprites.erase(spriteName);
         }
     }
 
-    for (const std::string &spriteName : unresolvedWorldPrefixedSprites)
+    for (const std::string &spriteName : unresolvedSprites)
     {
-        std::cerr << "Failed to resolve world-prefixed monster sprite frame: " << spriteName << '\n';
+        std::cerr << "Failed to resolve requested monster sprite frame: " << spriteName << '\n';
     }
 
     return true;
@@ -1236,7 +1250,7 @@ bool appendMonsterSpriteFrameFamilies(
 std::optional<SpriteFrameTable> loadSpriteFrameTable(
     const Engine::AssetFileSystem &assetFileSystem,
     const std::unordered_set<std::string> &monsterFamilies = {},
-    const std::unordered_set<std::string> &worldPrefixedMonsterSpriteNames = {},
+    const std::unordered_set<std::string> &requiredMonsterSpriteNames = {},
     MapAssetLoadSharedCache *pSharedCache = nullptr)
 {
     const std::optional<SpriteFrameTable> commonSpriteFrameTable =
@@ -1252,7 +1266,7 @@ std::optional<SpriteFrameTable> loadSpriteFrameTable(
     if (!appendMonsterSpriteFrameFamilies(
             assetFileSystem,
             monsterFamilies,
-            worldPrefixedMonsterSpriteNames,
+            requiredMonsterSpriteNames,
             spriteFrameTable,
             pSharedCache))
     {
@@ -2189,13 +2203,13 @@ std::optional<DecorationBillboardSet> buildDecorationBillboardSet(
         billboard.x = entity.x;
         billboard.y = entity.y;
         billboard.z = entity.z;
-        billboard.facing = entity.facing;
+        billboard.facing = mapDecorationFacingDegrees(entity.facing, entity.variableSecondary);
         billboard.eventIdPrimary = entity.eventIdPrimary;
         billboard.eventIdSecondary = entity.eventIdSecondary;
         billboard.name = entity.name;
         billboardSet.billboards.push_back(std::move(billboard));
 
-        if (pDecoration->spriteId != 0)
+        if (pDecoration->spriteId != 0 && !hasDecorationFlag(pDecoration->flags, DecorationDescFlag::DontDraw))
         {
             appendSpriteFrameTextures(
                 textureRequests,
@@ -3193,33 +3207,33 @@ std::optional<ActorPreviewBillboardSet> buildActorPreviewBillboardSet(
     ActorPreviewBillboardSet billboardSet = {};
 
     std::unordered_set<std::string> neededMonsterFamilies;
-    std::unordered_set<std::string> neededWorldPrefixedMonsterSpriteNames;
+    std::unordered_set<std::string> neededMonsterSpriteNames;
     collectMapDeltaMonsterSpriteFamilies(
         neededMonsterFamilies,
-        neededWorldPrefixedMonsterSpriteNames,
+        neededMonsterSpriteNames,
         monsterTable,
         mapDeltaData);
     collectSpawnMonsterSpriteFamilies(
         neededMonsterFamilies,
-        neededWorldPrefixedMonsterSpriteNames,
+        neededMonsterSpriteNames,
         map,
         monsterTable,
         spawns);
     collectEncounterMonsterSpriteFamilies(
         neededMonsterFamilies,
-        neededWorldPrefixedMonsterSpriteNames,
+        neededMonsterSpriteNames,
         monsterTable,
         map);
     collectSummonMonsterSpriteFamilies(
         neededMonsterFamilies,
-        neededWorldPrefixedMonsterSpriteNames,
+        neededMonsterSpriteNames,
         monsterTable);
 
     const std::optional<SpriteFrameTable> spriteFrameTable =
         loadSpriteFrameTable(
             assetFileSystem,
             neededMonsterFamilies,
-            neededWorldPrefixedMonsterSpriteNames,
+            neededMonsterSpriteNames,
             pSharedCache);
 
     if (!spriteFrameTable)
@@ -4028,10 +4042,10 @@ bool ensureMonsterSpriteFramesLoaded(
     }
 
     std::unordered_set<std::string> monsterFamilies;
-    std::unordered_set<std::string> worldPrefixedMonsterSpriteNames;
-    appendMonsterSpriteFamilies(monsterFamilies, worldPrefixedMonsterSpriteNames, pMonsterEntry);
+    std::unordered_set<std::string> requiredMonsterSpriteNames;
+    appendMonsterSpriteFamilies(monsterFamilies, requiredMonsterSpriteNames, pMonsterEntry);
 
-    if (monsterFamilies.empty() && worldPrefixedMonsterSpriteNames.empty())
+    if (monsterFamilies.empty() && requiredMonsterSpriteNames.empty())
     {
         return false;
     }
@@ -4039,7 +4053,7 @@ bool ensureMonsterSpriteFramesLoaded(
     if (!appendMonsterSpriteFrameFamilies(
             assetFileSystem,
             monsterFamilies,
-            worldPrefixedMonsterSpriteNames,
+            requiredMonsterSpriteNames,
             spriteFrameTable,
             nullptr))
     {

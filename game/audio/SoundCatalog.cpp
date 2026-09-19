@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <cstdlib>
 #include <functional>
 #include <optional>
@@ -259,8 +260,27 @@ bool SoundCatalog::appendRows(
     SoundScope scope,
     std::string *pErrorMessage)
 {
+    bool orderedMm8 = false;
+    bool hasData = false;
     for (const std::vector<std::string> &row : rows)
     {
+        if (!row.empty() && row[0] == "#SoundCatalogMode")
+        {
+            if (orderedMm8 || hasData || row.size() != 2 || row[1] != "MM8OrderedV1" || scope != SoundScope::Engine)
+            {
+                if (pErrorMessage)
+                {
+                    *pErrorMessage = "invalid MM8 sound catalog mode";
+                }
+                return false;
+            }
+            orderedMm8 = true;
+            continue;
+        }
+        if (orderedMm8 && row == std::vector<std::string>{"Name", "Id", "Type", "Is3D"})
+        {
+            continue;
+        }
         if (row.size() < 2 || row[0].empty() || row[0][0] == '/')
         {
             continue;
@@ -268,6 +288,22 @@ bool SoundCatalog::appendRows(
 
         SoundCatalogEntry entry = {};
         const std::optional<uint32_t> soundId = parseSoundId(row[1]);
+        if (orderedMm8)
+        {
+            uint32_t id = 0;
+            const std::from_chars_result parsed = std::from_chars(row[1].data(), row[1].data() + row[1].size(), id);
+            if (row.size() != 4 || parsed.ec != std::errc() || parsed.ptr != row[1].data() + row[1].size()
+                || (row[2] != "0" && row[2] != "system" && row[2] != "swap" && row[2] != "lock")
+                || (row[3] != "x" && row[3] != "-"))
+            {
+                if (pErrorMessage)
+                {
+                    *pErrorMessage = "invalid MM8 sound catalog row";
+                }
+                return false;
+            }
+            entry.loadType = row[2] == "system" ? 1 : row[2] == "swap" ? 2 : row[2] == "lock" ? 4 : 0;
+        }
         if (!soundId.has_value())
         {
             continue;
@@ -276,11 +312,12 @@ bool SoundCatalog::appendRows(
         entry.name = trimCopy(row[0]);
         entry.soundId = *soundId;
         entry.scope = scope;
-        entry.positional = row.size() > 3 && normalizeComment(row[3]) == "3d";
+        entry.positional = row.size() > 3 && (orderedMm8 ? row[3] == "x" : normalizeComment(row[3]) == "3d");
+        hasData = true;
 
         std::unordered_map<uint32_t, size_t> &entryIndex = entryIndexByScope(scope);
 
-        if (entry.soundId != 0 && entryIndex.find(entry.soundId) != entryIndex.end())
+        if (!orderedMm8 && entry.soundId != 0 && entryIndex.find(entry.soundId) != entryIndex.end())
         {
             if (pErrorMessage != nullptr)
             {
@@ -291,7 +328,11 @@ bool SoundCatalog::appendRows(
             return false;
         }
 
-        entryIndex[entry.soundId] = m_entries.size();
+        if (!orderedMm8 || !entryIndex.contains(entry.soundId))
+        {
+            // The original MM8 loader/player scans from the start and stops at the first matching ID.
+            entryIndex[entry.soundId] = m_entries.size();
+        }
         m_entries.push_back(entry);
     }
 

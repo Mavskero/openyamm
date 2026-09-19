@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+#include <set>
 
 namespace OpenYAMM::Game
 {
@@ -116,6 +117,76 @@ void setActionState(GameplayInputFrame &input, KeyboardAction action, bool value
 }
 } // namespace
 
+TurnBasedCombatRuntime::Snapshot TurnBasedCombatRuntime::snapshot() const
+{
+    Snapshot result;
+    result.active = m_active;
+    result.stage = m_stage;
+    result.queue = m_queue;
+    result.turnInitiative = m_turnInitiative;
+    result.aiTurnTimerTicks = m_aiTurnTimerTicks;
+    result.movementActionPoints = m_movementActionPoints;
+    result.pendingActions = m_pendingActions;
+    result.turnCount = m_turnCount;
+    result.actorActionTimerTicks = m_actorActionTimerTicks;
+    result.movementFinished = m_movementFinished;
+    result.waitingForActorActionResolution = m_waitingForActorActionResolution;
+    result.pendingGameTimeAdvanceMinutes = m_pendingGameTimeAdvanceMinutes;
+    std::copy(std::begin(m_memberTurnRecoverySeconds), std::end(m_memberTurnRecoverySeconds),
+        result.memberTurnRecoverySeconds.begin());
+    return result;
+}
+
+void TurnBasedCombatRuntime::restoreSnapshot(const Snapshot &snapshot)
+{
+    // Input latches and a consumed movement step belong to the previous input frame, not the save.
+    reset();
+    m_active = snapshot.active;
+    m_stage = snapshot.stage;
+    m_queue = snapshot.queue;
+    m_turnInitiative = snapshot.turnInitiative;
+    m_aiTurnTimerTicks = snapshot.aiTurnTimerTicks;
+    m_movementActionPoints = snapshot.movementActionPoints;
+    m_pendingActions = snapshot.pendingActions;
+    m_turnCount = snapshot.turnCount;
+    m_actorActionTimerTicks = snapshot.actorActionTimerTicks;
+    m_movementFinished = snapshot.movementFinished;
+    m_waitingForActorActionResolution = snapshot.waitingForActorActionResolution;
+    m_pendingGameTimeAdvanceMinutes = snapshot.pendingGameTimeAdvanceMinutes;
+    std::copy(snapshot.memberTurnRecoverySeconds.begin(), snapshot.memberTurnRecoverySeconds.end(),
+        std::begin(m_memberTurnRecoverySeconds));
+}
+
+bool TurnBasedCombatRuntime::isValidSnapshot(const Snapshot &snapshot)
+{
+    if (!snapshot.active)
+    {
+        return snapshot == Snapshot{};
+    }
+    const auto validTimer = [](float value) { return std::isfinite(value) && value >= 0.0f; };
+    if (snapshot.stage < TurnBasedCombatStage::Wait || snapshot.stage > TurnBasedCombatStage::Movement
+        || snapshot.turnInitiative < 0 || snapshot.turnInitiative > 100
+        || snapshot.movementActionPoints < 0 || snapshot.movementActionPoints > TurnMovementActionPoints
+        || snapshot.pendingActions < 0 || !validTimer(snapshot.aiTurnTimerTicks)
+        || !validTimer(snapshot.actorActionTimerTicks) || !validTimer(snapshot.pendingGameTimeAdvanceMinutes)
+        || (snapshot.waitingForActorActionResolution && snapshot.stage != TurnBasedCombatStage::Wait))
+    {
+        return false;
+    }
+    std::set<std::pair<QueueEntry::Kind, size_t>> identities;
+    for (const QueueEntry &entry : snapshot.queue)
+    {
+        if ((entry.kind != QueueEntry::Kind::Character && entry.kind != QueueEntry::Kind::Actor)
+            || entry.initiative < 0 || !validTimer(entry.actionRecoverySeconds)
+            || !identities.emplace(entry.kind, entry.id).second)
+        {
+            return false;
+        }
+    }
+    return std::all_of(snapshot.memberTurnRecoverySeconds.begin(), snapshot.memberTurnRecoverySeconds.end(),
+        validTimer);
+}
+
 bool TurnBasedCombatRuntime::active() const
 {
     return m_active;
@@ -161,6 +232,13 @@ bool TurnBasedCombatRuntime::shouldUpdateActorAi(const Party *pParty) const
     }
 
     return false;
+}
+
+ActorAiUpdateMode TurnBasedCombatRuntime::actorAiUpdateMode() const
+{
+    return m_active && m_stage == TurnBasedCombatStage::Wait && m_waitingForActorActionResolution
+        ? ActorAiUpdateMode::FinishCurrentActions
+        : ActorAiUpdateMode::Full;
 }
 
 bool TurnBasedCombatRuntime::frontQueueCharacter(size_t &memberIndex) const
@@ -318,6 +396,10 @@ bool TurnBasedCombatRuntime::update(Party *pParty, IGameplayWorldRuntime *pWorld
     }
 
     removeInvalidEntries(*pParty);
+    if (pWorldRuntime != nullptr)
+    {
+        removeInvalidActorEntries(*pWorldRuntime);
+    }
 
     if (m_stage == TurnBasedCombatStage::Wait)
     {
@@ -342,7 +424,7 @@ bool TurnBasedCombatRuntime::update(Party *pParty, IGameplayWorldRuntime *pWorld
                 pWorldRuntime->stopTurnBasedActorMovement();
             }
 
-            enterAttackStage(pParty);
+            enterAttackStage(pParty, pWorldRuntime);
             GAMEPLAY_DEBUG_TRACE(
                 "turn_based_stage stage=attack reason=actor_actions_resolved " + queueSummary(m_queue));
             return true;
@@ -367,7 +449,7 @@ bool TurnBasedCombatRuntime::update(Party *pParty, IGameplayWorldRuntime *pWorld
                 pWorldRuntime->stopTurnBasedActorMovement();
             }
 
-            enterAttackStage(pParty);
+            enterAttackStage(pParty, pWorldRuntime);
             GAMEPLAY_DEBUG_TRACE(
                 "turn_based_stage stage=attack reason=wait_finished " + queueSummary(m_queue));
         }
@@ -408,10 +490,10 @@ bool TurnBasedCombatRuntime::noteMovementInput(GameplayInputFrame &input)
         return false;
     }
 
-    const bool forwardHeld = input.action(KeyboardAction::Forward).held || input.keyboardHeld[SDL_SCANCODE_W];
-    const bool backwardHeld = input.action(KeyboardAction::Backward).held || input.keyboardHeld[SDL_SCANCODE_S];
-    const bool leftHeld = input.action(KeyboardAction::Left).held || input.keyboardHeld[SDL_SCANCODE_A];
-    const bool rightHeld = input.action(KeyboardAction::Right).held || input.keyboardHeld[SDL_SCANCODE_D];
+    const bool forwardHeld = input.isActionActive(KeyboardAction::Forward) || input.keyboardHeld[SDL_SCANCODE_W];
+    const bool backwardHeld = input.isActionActive(KeyboardAction::Backward) || input.keyboardHeld[SDL_SCANCODE_S];
+    const bool leftHeld = input.isActionActive(KeyboardAction::Left) || input.keyboardHeld[SDL_SCANCODE_A];
+    const bool rightHeld = input.isActionActive(KeyboardAction::Right) || input.keyboardHeld[SDL_SCANCODE_D];
     const bool movementHeld = forwardHeld || backwardHeld || leftHeld || rightHeld;
 
     if (m_stage != TurnBasedCombatStage::Movement)
@@ -698,50 +780,63 @@ void TurnBasedCombatRuntime::rebuildInitialQueue(Party &party, const IGameplayWo
 
     if (pWorldRuntime != nullptr)
     {
-        const size_t actorCount = pWorldRuntime->mapActorCount();
-        const float partyX = pWorldRuntime->partyX();
-        const float partyY = pWorldRuntime->partyY();
-        const float partyZ = pWorldRuntime->partyFootZ();
+        appendNearbyActors(*pWorldRuntime);
+    }
+}
 
-        size_t candidateActors = 0;
-        size_t queuedActors = 0;
-        size_t distantActors = 0;
+void TurnBasedCombatRuntime::appendNearbyActors(const IGameplayWorldRuntime &worldRuntime)
+{
+    const size_t actorCount = worldRuntime.mapActorCount();
+    const float partyX = worldRuntime.partyX();
+    const float partyY = worldRuntime.partyY();
+    const float partyZ = worldRuntime.partyFootZ();
 
-        for (size_t actorIndex = 0; actorIndex < actorCount; ++actorIndex)
+    size_t candidateActors = 0;
+    size_t queuedActors = 0;
+    size_t distantActors = 0;
+
+    for (size_t actorIndex = 0; actorIndex < actorCount; ++actorIndex)
+    {
+        GameplayRuntimeActorState actor = {};
+        if (!worldRuntime.actorRuntimeState(actorIndex, actor)
+            || !actorCanEnterTurnQueue(actor))
         {
-            GameplayRuntimeActorState actor = {};
-            if (actorIndex == 10
-                || !pWorldRuntime->actorRuntimeState(actorIndex, actor)
-                || !actorCanEnterTurnQueue(actor))
-            {
-                continue;
-            }
-
-            ++candidateActors;
-
-            if (!actorIsNearParty(actor, partyX, partyY, partyZ))
-            {
-                ++distantActors;
-                continue;
-            }
-
-            const uint32_t roll = static_cast<uint32_t>((actorIndex * 1103515245u + 12345u) >> 16) % 3u;
-            m_queue.push_back(QueueEntry{
-                .kind = QueueEntry::Kind::Actor,
-                .id = actorIndex,
-                .initiative = 17 + static_cast<int>(roll) * 2,
-            });
-            ++queuedActors;
+            continue;
         }
 
-        GAMEPLAY_DEBUG_TRACE(
-            "turn_based_actor_queue_scan actor_count=" + std::to_string(actorCount)
-            + " candidates=" + std::to_string(candidateActors)
-            + " queued=" + std::to_string(queuedActors)
-            + " distant=" + std::to_string(distantActors)
-            + " party=(" + std::to_string(partyX) + "," + std::to_string(partyY)
-            + "," + std::to_string(partyZ) + ")");
+        ++candidateActors;
+
+        if (!actorIsNearParty(actor, partyX, partyY, partyZ))
+        {
+            ++distantActors;
+            continue;
+        }
+
+        const bool alreadyQueued = std::any_of(m_queue.begin(), m_queue.end(), [actorIndex](const QueueEntry &entry)
+        {
+            return entry.kind == QueueEntry::Kind::Actor && entry.id == actorIndex;
+        });
+        if (alreadyQueued)
+        {
+            continue;
+        }
+
+        const uint32_t roll = static_cast<uint32_t>((actorIndex * 1103515245u + 12345u) >> 16) % 3u;
+        m_queue.push_back(QueueEntry{
+            .kind = QueueEntry::Kind::Actor,
+            .id = actorIndex,
+            .initiative = 17 + static_cast<int>(roll) * 2,
+        });
+        ++queuedActors;
     }
+
+    GAMEPLAY_DEBUG_TRACE(
+        "turn_based_actor_queue_scan actor_count=" + std::to_string(actorCount)
+        + " candidates=" + std::to_string(candidateActors)
+        + " queued=" + std::to_string(queuedActors)
+        + " distant=" + std::to_string(distantActors)
+        + " party=(" + std::to_string(partyX) + "," + std::to_string(partyY)
+        + "," + std::to_string(partyZ) + ")");
 }
 
 std::optional<size_t> TurnBasedCombatRuntime::readyCharacterQueueIndex(const Party *pParty) const
@@ -851,6 +946,24 @@ void TurnBasedCombatRuntime::removeInvalidEntries(const Party &party)
                 return entry.id >= party.members().size() || !memberCanStayInTurnQueue(party.members()[entry.id]);
             }),
         m_queue.end());
+}
+
+void TurnBasedCombatRuntime::removeInvalidActorEntries(const IGameplayWorldRuntime &worldRuntime)
+{
+    const float partyX = worldRuntime.partyX();
+    const float partyY = worldRuntime.partyY();
+    const float partyZ = worldRuntime.partyFootZ();
+    std::erase_if(m_queue, [&](const QueueEntry &entry)
+    {
+        if (entry.kind != QueueEntry::Kind::Actor)
+        {
+            return false;
+        }
+        GameplayRuntimeActorState actor = {};
+        return !worldRuntime.actorRuntimeState(entry.id, actor)
+            || !actorCanEnterTurnQueue(actor)
+            || !actorIsNearParty(actor, partyX, partyY, partyZ);
+    });
 }
 
 void TurnBasedCombatRuntime::advanceAttackQueue(Party *pParty, bool resolveReadyActors)
@@ -973,8 +1086,13 @@ void TurnBasedCombatRuntime::enterWaitStage()
     m_loggedReadyMemberIndex.reset();
 }
 
-void TurnBasedCombatRuntime::enterAttackStage(Party *pParty)
+void TurnBasedCombatRuntime::enterAttackStage(Party *pParty, const IGameplayWorldRuntime *pWorldRuntime)
 {
+    // Actors may approach, spawn or become hostile during the preceding movement/wait phases.
+    if (pWorldRuntime != nullptr)
+    {
+        appendNearbyActors(*pWorldRuntime);
+    }
     m_stage = TurnBasedCombatStage::Attack;
     m_turnInitiative = 100;
     m_actorActionTimerTicks = 0.0f;

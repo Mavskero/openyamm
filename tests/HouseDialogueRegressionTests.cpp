@@ -61,6 +61,13 @@ constexpr uint32_t DreadPirateStanleyNpcId = 108;
 constexpr uint32_t PirateRestHouseId = 236;
 constexpr uint32_t FalseReportItemId = 602;
 constexpr uint32_t DeliverFalseReportQBitId = 117;
+constexpr uint32_t ArionHunterNpcId = 4;
+constexpr uint32_t RavenshoreMerchantHouseId = 354;
+constexpr uint32_t ArionHunterHouseId = 772;
+constexpr uint32_t ElgarBlackmailTopicId = 29;
+constexpr uint32_t ArionBlackmailTopicId = 32;
+constexpr uint32_t ArionBoatsTopicId = 33;
+constexpr uint32_t BlackmailItemId = 742;
 constexpr uint32_t WindlingBoatHouseId = 479;
 constexpr uint32_t SmokeBoatHouseId = 481;
 constexpr uint32_t WindBoatHouseId = 483;
@@ -375,7 +382,7 @@ const OpenYAMM::Tests::RegressionGameData &requireRegressionGameData()
 {
     REQUIRE_MESSAGE(
         OpenYAMM::Tests::regressionGameDataLoaded(),
-        OpenYAMM::Tests::regressionGameDataFailure().c_str());
+        OpenYAMM::Tests::regressionGameDataFailure());
     return OpenYAMM::Tests::regressionGameData();
 }
 
@@ -781,6 +788,112 @@ TEST_CASE("dread pirate stanley false report keeps multiline npc text")
     CHECK(dialogContainsText(resultDialog, "You make me sick!"));
     CHECK_FALSE(harness.party().hasQuestBit(DeliverFalseReportQBitId));
     CHECK_EQ(harness.party().inventoryItemCount(FalseReportItemId), 0);
+}
+
+TEST_CASE("mm8 blackmail topic stays hidden without Fellmoon's letter")
+{
+    const OpenYAMM::Tests::RegressionGameData &gameData = requireRegressionGameData();
+    OpenYAMM::Tests::HouseDialogueTestHarness harness(gameData);
+    harness.party().setNpcTopicOverride(ArionHunterNpcId, 0, ArionBlackmailTopicId);
+    harness.eventRuntimeState().npcTopicOverrides[ArionHunterNpcId][0] = ArionBlackmailTopicId;
+
+    const OpenYAMM::Game::EventDialogContent &dialog =
+        harness.openNpcDialogue(ArionHunterNpcId, ArionHunterHouseId);
+
+    CHECK_FALSE(findActionIndexByKindAndId(
+        dialog,
+        OpenYAMM::Game::EventDialogActionKind::NpcTopic,
+        ArionBlackmailTopicId).has_value());
+    CHECK_EQ(harness.party().inventoryItemCount(BlackmailItemId), 0);
+    CHECK_FALSE(harness.party().hasQuestBit(10));
+    CHECK_FALSE(harness.party().hasQuestBit(284));
+}
+
+TEST_CASE("mm8 blackmail chain consumes the letter and rewards every member only once")
+{
+    const OpenYAMM::Tests::RegressionGameData &gameData = requireRegressionGameData();
+    OpenYAMM::Tests::HouseDialogueTestHarness harness(gameData);
+    setActiveHistoryContinent(harness.eventRuntimeState(), 1);
+    harness.party().setNpcTopicOverride(ElgarFellmoonNpcId, 0, ElgarBlackmailTopicId);
+    harness.eventRuntimeState().npcTopicOverrides[ElgarFellmoonNpcId][0] = ElgarBlackmailTopicId;
+
+    const OpenYAMM::Game::EventDialogContent &elgarDialog =
+        harness.openNpcDialogue(ElgarFellmoonNpcId, RavenshoreMerchantHouseId);
+    const std::optional<size_t> acceptanceIndex = findActionIndexByKindAndId(
+        elgarDialog,
+        OpenYAMM::Game::EventDialogActionKind::NpcTopic,
+        ElgarBlackmailTopicId);
+    REQUIRE(acceptanceIndex.has_value());
+    harness.executeAndPresent(*acceptanceIndex);
+
+    CHECK_EQ(harness.party().inventoryItemCount(BlackmailItemId), 1);
+    CHECK(harness.party().hasQuestBit(9));
+    CHECK(harness.party().hasQuestBit(222));
+    CHECK_EQ(harness.eventRuntimeState().npcGreetingOverrides[ElgarFellmoonNpcId], 11u);
+
+    harness.party().setNpcTopicOverride(ArionHunterNpcId, 0, ArionBlackmailTopicId);
+    harness.eventRuntimeState().npcTopicOverrides[ArionHunterNpcId][0] = ArionBlackmailTopicId;
+    const OpenYAMM::Game::EventDialogContent &arionDialog =
+        harness.openNpcDialogue(ArionHunterNpcId, ArionHunterHouseId);
+    const std::optional<size_t> deliveryIndex = findActionIndexByKindAndId(
+        arionDialog,
+        OpenYAMM::Game::EventDialogActionKind::NpcTopic,
+        ArionBlackmailTopicId);
+    REQUIRE(deliveryIndex.has_value());
+    harness.executeAndPresent(*deliveryIndex);
+
+    CHECK_EQ(harness.party().inventoryItemCount(BlackmailItemId), 0);
+    CHECK(harness.party().hasQuestBit(10));
+    CHECK(harness.party().hasQuestBit(284));
+    CHECK_FALSE(harness.party().hasQuestBit(9));
+    CHECK_FALSE(harness.party().hasQuestBit(222));
+    CHECK_EQ(harness.eventRuntimeState().npcTopicOverrides[ArionHunterNpcId][0], ArionBoatsTopicId);
+    REQUIRE(harness.eventRuntimeState().historyEventTimesByContinent.contains(1));
+    CHECK(harness.eventRuntimeState().historyEventTimesByContinent.at(1).contains(5));
+
+    std::vector<uint32_t> experienceBeforeReward;
+    experienceBeforeReward.reserve(harness.party().memberCount());
+    for (const OpenYAMM::Game::Character &member : harness.party().members())
+    {
+        experienceBeforeReward.push_back(member.experience);
+    }
+
+    const OpenYAMM::Game::EventDialogContent &rewardDialog =
+        harness.openNpcDialogue(ElgarFellmoonNpcId, RavenshoreMerchantHouseId);
+    const std::optional<size_t> rewardIndex = findActionIndexByKindAndId(
+        rewardDialog,
+        OpenYAMM::Game::EventDialogActionKind::NpcTopic,
+        ElgarBlackmailTopicId);
+    REQUIRE(rewardIndex.has_value());
+    harness.executeAndPresent(*rewardIndex);
+
+    for (size_t memberIndex = 0; memberIndex < harness.party().memberCount(); ++memberIndex)
+    {
+        const OpenYAMM::Game::Character *pMember = harness.party().member(memberIndex);
+        REQUIRE(pMember != nullptr);
+        CHECK_EQ(pMember->experience, experienceBeforeReward[memberIndex] + 12000u);
+    }
+    CHECK(harness.party().hasQuestBit(24));
+    CHECK_FALSE(harness.party().hasQuestBit(284));
+    constexpr uint32_t BlackmailAutonoteRawId = (493u << 16) | 0x00e1u;
+    REQUIRE(harness.eventRuntimeState().variables.contains(BlackmailAutonoteRawId));
+    CHECK_NE(harness.eventRuntimeState().variables.at(BlackmailAutonoteRawId), 0);
+
+    const OpenYAMM::Game::EventDialogContent &repeatDialog =
+        harness.openNpcDialogue(ElgarFellmoonNpcId, RavenshoreMerchantHouseId);
+    const std::optional<size_t> repeatIndex = findActionIndexByKindAndId(
+        repeatDialog,
+        OpenYAMM::Game::EventDialogActionKind::NpcTopic,
+        ElgarBlackmailTopicId);
+    REQUIRE(repeatIndex.has_value());
+    harness.executeAndPresent(*repeatIndex);
+    CHECK(harness.party().hasQuestBit(11));
+    for (size_t memberIndex = 0; memberIndex < harness.party().memberCount(); ++memberIndex)
+    {
+        const OpenYAMM::Game::Character *pMember = harness.party().member(memberIndex);
+        REQUIRE(pMember != nullptr);
+        CHECK_EQ(pMember->experience, experienceBeforeReward[memberIndex] + 12000u);
+    }
 }
 
 TEST_CASE("generic actor dialog resolves lizardman portraits")
@@ -2522,10 +2635,10 @@ TEST_CASE("dwi shop service menu structure")
 
     CHECK(dialogHasActionLabel(rootDialog, "Buy Standard"));
     CHECK(dialogHasActionLabel(rootDialog, "Buy Special"));
-    CHECK(dialogHasActionLabel(rootDialog, "Display Equipment"));
+    CHECK(dialogHasActionLabel(rootDialog, "Display Inventory"));
     CHECK(dialogHasActionLabel(rootDialog, "Learn Skills"));
 
-    const std::optional<size_t> equipmentIndex = findActionIndexByLabel(rootDialog, "Display Equipment");
+    const std::optional<size_t> equipmentIndex = findActionIndexByLabel(rootDialog, "Display Inventory");
     REQUIRE(equipmentIndex.has_value());
 
     const OpenYAMM::Game::EventDialogContent &equipmentDialog = harness.executeAndPresent(*equipmentIndex);
@@ -2568,7 +2681,7 @@ TEST_CASE("dwi shop service menu structure")
     CHECK_FALSE(harness.uiController().inventoryNestedOverlay().active);
     CHECK(dialogHasActionLabel(returnedRootDialog, "Buy Standard"));
     CHECK(dialogHasActionLabel(returnedRootDialog, "Buy Special"));
-    CHECK(dialogHasActionLabel(returnedRootDialog, "Display Equipment"));
+    CHECK(dialogHasActionLabel(returnedRootDialog, "Display Inventory"));
     CHECK(dialogHasActionLabel(returnedRootDialog, "Learn Skills"));
 }
 
@@ -3351,13 +3464,38 @@ TEST_CASE("dwi temple skill learning")
     const int initialGold = harness.party().gold();
 
     const OpenYAMM::Game::EventDialogContent &rootDialog = harness.openHouseDialog(TempleHouseId);
-    const std::optional<size_t> learnSkillsIndex = findActionIndexByLabel(rootDialog, "Learn Skills");
+    const std::optional<size_t> learnSkillsIndex = findActionIndexByHouseActionId(
+        rootDialog,
+        OpenYAMM::Game::HouseActionId::OpenLearnSkillsMenu);
 
     REQUIRE(learnSkillsIndex.has_value());
+    CHECK_EQ(
+        rootDialog.actions[*learnSkillsIndex].label,
+        gameData.houseServiceTextTable.format(
+            OpenYAMM::Game::HouseServiceTextTable::Message::TempleLearnSkillsAction));
     const OpenYAMM::Game::EventDialogContent &skillDialog = harness.executeAndPresent(*learnSkillsIndex);
-    const std::optional<size_t> merchantIndex = findActionIndexByLabelPrefix(skillDialog, "Learn Merchant ");
+    const std::optional<size_t> merchantIndex = [&skillDialog]() -> std::optional<size_t>
+    {
+        for (size_t index = 0; index < skillDialog.actions.size(); ++index)
+        {
+            const OpenYAMM::Game::EventDialogAction &action = skillDialog.actions[index];
+
+            if (action.kind == OpenYAMM::Game::EventDialogActionKind::HouseService
+                && action.id == static_cast<uint32_t>(OpenYAMM::Game::HouseActionId::LearnSkill)
+                && action.argument == "Merchant")
+            {
+                return index;
+            }
+        }
+
+        return std::nullopt;
+    }();
 
     REQUIRE(merchantIndex.has_value());
+    const OpenYAMM::Game::SkillInspectEntry *pMerchantDisplay =
+        gameData.characterInspectTable.getSkill("Merchant");
+    REQUIRE(pMerchantDisplay != nullptr);
+    CHECK(skillDialog.actions[*merchantIndex].label.find(pMerchantDisplay->name) != std::string::npos);
     harness.executeAndPresent(*merchantIndex);
 
     const OpenYAMM::Game::Character *pCleric = harness.party().member(1);

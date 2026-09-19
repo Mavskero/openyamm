@@ -42,7 +42,8 @@ public:
         const bx::Vec3 &cameraForward,
         const bx::Vec3 &cameraRight,
         const bx::Vec3 &cameraUp,
-        const float *pViewMatrix);
+        const float *pViewMatrix,
+        float projectionYScale);
 
     static void renderOutdoorSky(
         OutdoorGameView &view,

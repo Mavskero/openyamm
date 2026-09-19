@@ -1,4 +1,8 @@
 /build/
+/build-*/
+/build-*.log
+/local-data/
+/.pytest_cache/
 /build-gprof/
 /out/
 /.idea/

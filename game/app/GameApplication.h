@@ -142,6 +142,11 @@ private:
     friend class HeadlessGameplayDiagnostics;
     friend struct ScenarioGameApplicationAccess;
     friend struct GameApplicationTestAccess;
+    friend struct NewGameSessionTestAccess;
+    friend struct NormalCombatTestAccess;
+    friend struct NormalSpellTestAccess;
+    friend struct IndoorSessionTestAccess;
+    friend struct ApplicationCaptureTestAccess;
 
     bool loadGameData(Engine::AssetFileSystem &assetFileSystem);
     bool ensureCommonGameDataLoaded();
@@ -168,8 +173,8 @@ private:
         const std::function<void(int)> &progressCallback = {});
     bool activateWorldForMap(const MapStatsEntry &map);
     bool activateWorldForMapFileName(const std::string &mapFileName);
-    bool applyCurrentSessionToRuntime(bool initializeView);
-    bool processPendingMapMove();
+    bool applyCurrentSessionToRuntime();
+    bool processPendingMapMove(bool initializeView = true);
     bool processPendingWinGame();
     bool processPendingEventMovie();
     bool processPendingReturnToMainMenu();
@@ -236,6 +241,7 @@ private:
     bool handlePendingInputPromptSdlEvent(const SDL_Event &event);
     bool pendingInputPromptActive() const;
     bool applicationTextInputActive() const;
+    SDL_Rect applicationTextInputArea(int windowWidth, int windowHeight) const;
     void clearPendingInputPromptUi(bool clearStatusBar);
     void updatePendingInputPrompt();
     void finishPendingInputPrompt(bool accepted);

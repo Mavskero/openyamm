@@ -1370,7 +1370,7 @@ GameplayInteractionController::updateWorldInteractionFrame(
     const bool pendingSpellCancelPressed = input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
     const bool keyboardUsePressed = input.action(KeyboardAction::Trigger).held;
     const bool usePressed = input.action(KeyboardAction::Use).held;
-    const bool attackPressed = input.action(KeyboardAction::Attack).held;
+    const bool attackPressed = input.isActionActive(KeyboardAction::Attack);
     const bool leftMousePressed = input.leftMouseButton.held;
     const bool rightMousePressed = input.rightMouseButton.held;
     const bool mouseLookActive = sharedInput.mouseLookPolicy.mouseLookActive;

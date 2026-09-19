@@ -1,4 +1,5 @@
 #include "game/gameplay/GameplayCombatController.h"
+#include "game/tables/CombatTextTable.h"
 
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/GameplayBolsterRuntime.h"
@@ -1193,6 +1194,7 @@ GameplayCombatController::CombatEvent GameplayCombatController::buildPartyProjec
 }
 
 std::string GameplayCombatController::formatPartyAttackStatusText(
+    const CombatTextTable &texts,
     const std::string &attackerName,
     const std::string &targetName,
     const CharacterAttackResult &attack,
@@ -1223,17 +1225,17 @@ std::string GameplayCombatController::formatPartyAttackStatusText(
 
     if (killed)
     {
-        return attackerName + " inflicts " + std::to_string(statusDamage) + " points killing " + targetName;
+        return texts.format(CombatTextTable::Message::Kill, attackerName, targetName, statusDamage);
     }
 
     if (attack.paralyzeTarget)
     {
-        return attackerName + " paralyzes " + targetName;
+        return texts.format(CombatTextTable::Message::Paralyze, attackerName, targetName, statusDamage);
     }
 
     if (attack.stunTarget)
     {
-        return attackerName + " stuns " + targetName;
+        return texts.format(CombatTextTable::Message::Stun, attackerName, targetName, statusDamage);
     }
 
     if (attack.mode == CharacterAttackMode::Bow
@@ -1241,10 +1243,10 @@ std::string GameplayCombatController::formatPartyAttackStatusText(
         || attack.mode == CharacterAttackMode::Blaster
         || attack.mode == CharacterAttackMode::DragonBreath)
     {
-        return attackerName + " shoots " + targetName + " for " + std::to_string(statusDamage) + " points";
+        return texts.format(CombatTextTable::Message::ProjectileHit, attackerName, targetName, statusDamage);
     }
 
-    return attackerName + " hits " + targetName + " for " + std::to_string(statusDamage) + " damage";
+    return texts.format(CombatTextTable::Message::MeleeHit, attackerName, targetName, statusDamage);
 }
 
 void GameplayCombatController::handlePartyAttackPresentation(
@@ -1325,14 +1327,11 @@ void GameplayCombatController::handlePartyAttackPresentation(
         }
     }
 
-    showHitStatus(
-        pRuntime,
-        formatPartyAttackStatusText(
-            attack.attackerName,
-            attack.targetName,
-            attack.attack,
-            attack.killed,
-            attack.appliedDamage));
+    if (pRuntime != nullptr && pRuntime->combatTextTable() != nullptr)
+    {
+        showHitStatus(pRuntime, formatPartyAttackStatusText(*pRuntime->combatTextTable(),
+            attack.attackerName, attack.targetName, attack.attack, attack.killed, attack.appliedDamage));
+    }
 }
 
 void GameplayCombatController::handlePendingCombatEvents(
@@ -1394,9 +1393,11 @@ void GameplayCombatController::handlePendingCombatEvents(
 
                 playSpeechReaction(context.pRuntime, event.sourcePartyMemberIndex, speechId, false);
 
-                showHitStatus(
-                    context.pRuntime,
-                    sourceName + " inflicts " + std::to_string(event.damage) + " points killing " + targetName);
+                if (context.pRuntime != nullptr && context.pRuntime->combatTextTable() != nullptr)
+                {
+                    showHitStatus(context.pRuntime, context.pRuntime->combatTextTable()->format(
+                        CombatTextTable::Message::Kill, sourceName, targetName, event.damage));
+                }
             }
             else
             {
@@ -1406,9 +1407,11 @@ void GameplayCombatController::handlePendingCombatEvents(
                     FaceAnimationId::AttackHit);
                 playSpeechReaction(context.pRuntime, event.sourcePartyMemberIndex, SpeechId::AttackHit, false);
 
-                showHitStatus(
-                    context.pRuntime,
-                    sourceName + " shoots " + targetName + " for " + std::to_string(event.damage) + " points");
+                if (context.pRuntime != nullptr && context.pRuntime->combatTextTable() != nullptr)
+                {
+                    showHitStatus(context.pRuntime, context.pRuntime->combatTextTable()->format(
+                        CombatTextTable::Message::ProjectileHit, sourceName, targetName, event.damage));
+                }
             }
 
             if (event.hit

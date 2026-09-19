@@ -1,0 +1,21 @@
+--- a/src/video/cocoa/SDL_cocoawindow.m
++++ b/src/video/cocoa/SDL_cocoawindow.m
+@@ -1719,14 +1719,10 @@
+ {
+     SDL_MouseID mouseID = SDL_DEFAULT_MOUSE_ID;
+     //const int clicks = (int)[theEvent clickCount];
+-    SDL_Window *focus = SDL_GetKeyboardFocus();
+-
+-    // macOS will send non-left clicks to background windows without raising them, so we need to
+-    //  temporarily adjust the mouse position when this happens, as `mouse` will be tracking
+-    //  the position in the currently-focused window. We don't (currently) send a mousemove
+-    //  event for the background window, this just makes sure the button is reported at the
+-    //  correct position in its own event.
+-    if (focus && ([theEvent window] == ((__bridge SDL_CocoaWindowData *)focus->internal).nswindow)) {
++    // A button event carries its own position, even without a preceding motion
++    // event. Use that position for absolute input in focused and background windows.
++    // Relative mode keeps the captured cursor position used for gameplay aiming.
++    if (mouse->relative_mode) {
+         //SDL_SendMouseButtonClicks(Cocoa_GetEventTimestamp([theEvent timestamp]), window, mouseID, button, down, clicks);
+         SDL_SendMouseButton(Cocoa_GetEventTimestamp([theEvent timestamp]), window, mouseID, button, down);
+     } else {

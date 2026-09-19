@@ -3,6 +3,9 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
+#if defined(__APPLE__)
+#include <SDL3/SDL_metal.h>
+#endif
 
 #include <cstdarg>
 #include <cstdint>
@@ -30,6 +33,8 @@ bgfx::RendererType::Enum selectRendererType(bool useNoopRenderer)
 
 #if defined(__ANDROID__)
     return bgfx::RendererType::OpenGLES;
+#elif defined(__APPLE__)
+    return bgfx::RendererType::Metal;
 #elif defined(_WIN32)
     return bgfx::RendererType::Direct3D11;
 #else
@@ -194,6 +199,23 @@ bool BgfxContext::initialize(SDL_Window *pWindow, int windowWidth, int windowHei
     init.type = selectRendererType(useNoopRenderer);
     init.vendorId = BGFX_PCI_ID_NONE;
     init.platformData = resolvePlatformData(pWindow);
+#if defined(__APPLE__)
+    if (!useNoopRenderer)
+    {
+        m_pMetalView = SDL_Metal_CreateView(pWindow);
+        if (m_pMetalView == nullptr)
+        {
+            std::cerr << "SDL_Metal_CreateView failed: " << SDL_GetError() << '\n';
+            return false;
+        }
+        init.platformData.nwh = SDL_Metal_GetLayer(m_pMetalView);
+        if (init.platformData.nwh == nullptr)
+        {
+            shutdown();
+            return false;
+        }
+    }
+#endif
     init.resolution.width = static_cast<uint32_t>(windowWidth);
     init.resolution.height = static_cast<uint32_t>(windowHeight);
     init.resolution.reset = bgfxResetFlags(verticalSync);
@@ -202,6 +224,7 @@ bool BgfxContext::initialize(SDL_Window *pWindow, int windowWidth, int windowHei
     if (!bgfx::init(init))
     {
         std::cerr << "bgfx::init failed.\n";
+        shutdown();
         return false;
     }
 
@@ -237,12 +260,20 @@ void BgfxContext::resize(SDL_Window *pWindow, int windowWidth, int windowHeight)
 
 void BgfxContext::shutdown()
 {
-    if (!m_isInitialized)
+    if (m_isInitialized)
     {
-        return;
+        // Finish queued uploads before bgfx disables rendering during shutdown.
+        // A setup failure may otherwise leave a Metal blit encoder unclosed.
+        bgfx::frame();
+        bgfx::shutdown();
     }
-
-    bgfx::shutdown();
+#if defined(__APPLE__)
+    if (m_pMetalView != nullptr)
+    {
+        SDL_Metal_DestroyView(m_pMetalView);
+        m_pMetalView = nullptr;
+    }
+#endif
     m_isInitialized = false;
     m_verticalSync = false;
     m_rendererType = bgfx::RendererType::Noop;

@@ -44,47 +44,6 @@ std::string toLowerCopy(const std::string &value)
     return result;
 }
 
-std::optional<int> resolveTerrainDescriptorIndex(
-    const OutdoorMapData &outdoorMapData,
-    int tileIndex,
-    bool remapDirectTilesByMasterTile)
-{
-    static constexpr std::array<int, 3> DirectTileLookupBases = {0, 450, 630};
-
-    // Legacy outdoor local tile ids are laid out as:
-    // [0..90) direct/global ids
-    // [90..126) tileset #1
-    // [126..162) tileset #2
-    // [162..198) tileset #3
-    // [198..234) tileset #4 (road)
-    // [234..256) invalid/pending
-    if (tileIndex < 90)
-    {
-        if (!remapDirectTilesByMasterTile
-            || tileIndex == 0
-            || outdoorMapData.masterTile >= DirectTileLookupBases.size())
-        {
-            return tileIndex;
-        }
-
-        return DirectTileLookupBases[static_cast<size_t>(outdoorMapData.masterTile)] + tileIndex;
-    }
-
-    if (tileIndex >= 234)
-    {
-        return std::nullopt;
-    }
-
-    if (outdoorMapData.masterTile >= DirectTileLookupBases.size())
-    {
-        return tileIndex;
-    }
-
-    const int tilesetIndex = (tileIndex - 90) / 36;
-    const int tilesetOffset = (tileIndex - 90) % 36;
-    return static_cast<int>(outdoorMapData.tileSetLookupIndices[tilesetIndex]) + tilesetOffset;
-}
-
 uint16_t parseUnsigned16(const std::string &value)
 {
     const std::string trimmedValue = trimAsciiWhitespace(value);
@@ -126,6 +85,47 @@ std::string terrainTileDataFileNameForWorld(const std::string &worldId)
 }
 
 } // namespace
+
+std::optional<int> resolveTerrainDescriptorIndex(
+    const OutdoorMapData &outdoorMapData,
+    int tileIndex,
+    bool remapDirectTilesByMasterTile)
+{
+    static constexpr std::array<int, 3> DirectTileLookupBases = {0, 450, 630};
+
+    // Legacy outdoor local tile ids are laid out as:
+    // [0..90) direct/global ids
+    // [90..126) tileset #1
+    // [126..162) tileset #2
+    // [162..198) tileset #3
+    // [198..234) tileset #4 (road)
+    // [234..256) invalid/pending
+    if (tileIndex < 90)
+    {
+        if (!remapDirectTilesByMasterTile
+            || tileIndex == 0
+            || outdoorMapData.masterTile >= DirectTileLookupBases.size())
+        {
+            return tileIndex;
+        }
+
+        return DirectTileLookupBases[static_cast<size_t>(outdoorMapData.masterTile)] + tileIndex;
+    }
+
+    if (tileIndex >= 234)
+    {
+        return std::nullopt;
+    }
+
+    if (outdoorMapData.masterTile >= DirectTileLookupBases.size())
+    {
+        return tileIndex;
+    }
+
+    const int tilesetIndex = (tileIndex - 90) / 36;
+    const int tilesetOffset = (tileIndex - 90) % 36;
+    return static_cast<int>(outdoorMapData.tileSetLookupIndices[tilesetIndex]) + tilesetOffset;
+}
 
 std::string terrainTileDataFileName(uint8_t)
 {

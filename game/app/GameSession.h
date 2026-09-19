@@ -170,10 +170,13 @@ public:
     void clearNamedGlobalVar(const std::string &name);
     void mergeNamedGlobalVarsFromRuntime(const EventRuntimeState &runtimeState);
     void applyNamedGlobalVarsToRuntime(EventRuntimeState &runtimeState) const;
+    void applyHistoryToRuntime(EventRuntimeState &runtimeState) const;
 
     void setOutdoorCameraAngles(float yawRadians, float pitchRadians);
     float outdoorCameraYawRadians() const;
     float outdoorCameraPitchRadians() const;
+    float indoorCameraYawRadians() const;
+    float indoorCameraPitchRadians() const;
 
     const std::optional<std::filesystem::path> &currentSavePath() const;
     void setCurrentSavePath(const std::filesystem::path &path);
@@ -213,11 +216,14 @@ public:
     void captureIndoorRuntimeState(
         const std::string &mapFileName,
         const Party &party,
-        const IndoorSceneRuntime::Snapshot &snapshot
+        const IndoorSceneRuntime::Snapshot &snapshot,
+        float yawRadians,
+        float pitchRadians
     );
 
     std::optional<GameSaveData> buildSaveData() const;
     void restoreFromSaveData(const GameSaveData &saveData);
+    bool restoreTurnBasedCombatFromSaveData(const GameSaveData &saveData);
     void restoreHeldInventoryItemFromSaveData(const GameSaveData &saveData);
 
 private:
@@ -259,6 +265,9 @@ private:
         int movementActionPoints = 0;
         int pendingActions = 0;
     };
+
+    void captureHistoryFromRuntime(const EventRuntimeState &runtimeState);
+    void restoreHistoryFromSaveData(const GameSaveData &saveData);
 
     bool logGameplayUpdatePerformanceDiagnostics(uint32_t currentTick) const;
     void logTurnBasedFrameTraceIfNeeded(
@@ -306,9 +315,12 @@ private:
     std::optional<IndoorSceneRuntime::Snapshot> m_currentIndoorSceneState;
     std::unordered_map<std::string, IndoorSceneRuntime::Snapshot> m_indoorSceneStates;
     std::unordered_map<std::string, int32_t> m_namedGlobalVars;
+    std::unordered_map<uint32_t, std::unordered_map<uint32_t, int32_t>> m_historyEventTimesByContinent;
     float m_gameMinutes = 9.0f * 60.0f;
     float m_outdoorCameraYawRadians = 0.0f;
     float m_outdoorCameraPitchRadians = 0.0f;
+    float m_indoorCameraYawRadians = 0.0f;
+    float m_indoorCameraPitchRadians = 0.15f;
     std::optional<std::filesystem::path> m_currentSavePath;
     std::optional<EventRuntimeState::PendingMapMove> m_pendingMapMove;
     SaveGameToPathCallback m_saveGameToPathCallback;

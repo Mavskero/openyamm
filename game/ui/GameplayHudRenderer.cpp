@@ -1,6 +1,7 @@
 #include "game/ui/GameplayHudRenderer.h"
 
 #include "game/gameplay/GameplayScreenRuntime.h"
+#include "game/gameplay/TurnBasedCombatRuntime.h"
 
 #include <algorithm>
 #include <cmath>
@@ -713,6 +714,22 @@ void GameplayHudRenderer::renderGameplayHud(GameplayScreenRuntime &context, int 
         return;
     }
 
+    const char *pMenuLayoutId = gameplayHudLayout == ActiveGameplayHudLayout::Standard
+        ? "OutdoorStandardButtonOptions"
+        : "OutdoorButtonOptions";
+    const UiLayoutManager::LayoutElement *pMenuLayout = context.findHudLayoutElement(pMenuLayoutId);
+
+    if (pMenuLayout != nullptr && pMenuLayout->visible && !pMenuLayout->labelText.empty())
+    {
+        const std::optional<GameplayResolvedHudLayoutElement> menuButton = resolveLayout(
+            context, pMenuLayoutId, pMenuLayout->width, pMenuLayout->height, width, height);
+
+        if (menuButton)
+        {
+            context.renderLayoutLabel(*pMenuLayout, *menuButton, pMenuLayout->labelText);
+        }
+    }
+
     const UiLayoutManager::LayoutElement *pBottomLeftButtonsLayout =
         context.findHudLayoutElement("OutdoorBottomLeftButtons");
 
@@ -757,6 +774,43 @@ void GameplayHudRenderer::renderGameplayHud(GameplayScreenRuntime &context, int 
         if (bodyPanel)
         {
             context.renderLayoutLabel(*pBodyPanelLayout, *bodyPanel, pBodyPanelLayout->labelText);
+        }
+    }
+
+    const TurnBasedCombatRuntime &turn = context.turnBasedCombatRuntime();
+    if (hudScreenState == GameplayHudScreenState::Gameplay && turn.active())
+    {
+        const UiLayoutManager::LayoutElement *pLayout = context.findHudLayoutElement("OutdoorTurnPhaseLabel");
+        const std::optional<GameplayResolvedHudLayoutElement> rect = pLayout
+            ? resolveLayout(context, pLayout->id.c_str(), pLayout->width, pLayout->height, width, height)
+            : std::nullopt;
+        if (pLayout && rect)
+        {
+            std::string label = "回合制 · ";
+            if (turn.hasPendingActions())
+            {
+                label += "行动结算中";
+            }
+            else if (turn.stage() == TurnBasedCombatStage::Wait)
+            {
+                label += "等待行动";
+            }
+            else if (turn.stage() == TurnBasedCombatStage::Movement)
+            {
+                const int remainingSteps = (turn.movementActionPoints() + 25) / 26;
+                label += "可移动 " + std::to_string(remainingSteps) + " 步";
+            }
+            else
+            {
+                label += "角色行动";
+            }
+            const std::optional<GameplayHudTextureHandle> panel = context.gameplayUiRuntime()
+                .ensureSolidHudTextureLoaded("__turn_phase_background", makeAbgrColor(17, 13, 9, 215));
+            if (panel)
+            {
+                context.submitHudTexturedQuad(*panel, rect->x, rect->y, rect->width, rect->height);
+            }
+            context.renderLayoutLabel(*pLayout, *rect, label);
         }
     }
 }

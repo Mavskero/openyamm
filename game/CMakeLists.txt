@@ -6,6 +6,7 @@ FetchContent_GetProperties(imgui SOURCE_DIR OPENYAMM_IMGUI_SOURCE_DIR)
 FetchContent_GetProperties(bgfx SOURCE_DIR OPENYAMM_BGFX_FETCH_SOURCE_DIR)
 
 add_library(openyamm_game STATIC
+    ui/AppleTextTextureCache.cpp
     app/ScreenManager.cpp
     app/GameInputSystem.cpp
     app/GprofControl.cpp
@@ -28,6 +29,8 @@ add_library(openyamm_game STATIC
     tables/CharacterDollTable.cpp
     tables/ClassMultiplierTable.cpp
     tables/ClassSkillTable.cpp
+    tables/CombatTextTable.cpp
+    tables/HouseServiceTextTable.cpp
     events/EventDialogContent.cpp
     events/EventRuntime.cpp
     events/ScriptedEventProgram.cpp
@@ -181,6 +184,9 @@ add_library(openyamm_game STATIC
     party/SkillData.cpp
     tables/SpeechReactionTable.cpp
     ui/SpellbookUiLayout.cpp
+    ui/CharacterSkillsLayout.cpp
+    ui/CharacterStatLayout.cpp
+    ui/CharacterSkillRows.cpp
     party/SpellSchool.cpp
     tables/SpellTable.cpp
     tables/SpellFxTable.cpp
@@ -240,7 +246,7 @@ set_property(
 
 if (NOT OPENYAMM_RUNTIME_SHADER_PATH STREQUAL "")
     set(openyammBgfxShaderDir "${OPENYAMM_RUNTIME_SHADER_PATH}")
-elseif (ANDROID OR WIN32)
+elseif (ANDROID OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(openyammBgfxShaderDir "runtime/shaders")
 else()
     set(openyammBgfxShaderDir "${OPENYAMM_RUNTIME_SHADER_DIR}")

@@ -46,5 +46,6 @@ private:
     bool m_verticalSync;
     bgfx::RendererType::Enum m_rendererType;
     std::unique_ptr<Callback> m_pCallback;
+    void *m_pMetalView = nullptr;
 };
 }

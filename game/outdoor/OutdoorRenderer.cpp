@@ -533,6 +533,10 @@ std::filesystem::path getShaderPath(bgfx::RendererType::Enum rendererType, const
         rendererDirectory = "essl";
         break;
 
+    case bgfx::RendererType::Metal:
+        rendererDirectory = "metal";
+        break;
+
     default:
         return {};
     }
@@ -3573,7 +3577,8 @@ void OutdoorRenderer::renderWorldPasses(OutdoorGameView &view, uint16_t viewWidt
                                         float aspectRatio, float farClipDistance,
                                         const OutdoorWorldRuntime::AtmosphereState *pAtmosphereState,
                                         const bx::Vec3 &cameraPosition, const bx::Vec3 &cameraForward,
-                                        const bx::Vec3 &cameraRight, const bx::Vec3 &cameraUp, const float *pViewMatrix)
+                                        const bx::Vec3 &cameraRight, const bx::Vec3 &cameraUp, const float *pViewMatrix,
+                                        float projectionYScale)
 {
     float modelMatrix[16] = {};
     bx::mtxIdentity(modelMatrix);
@@ -4239,7 +4244,8 @@ void OutdoorRenderer::renderWorldPasses(OutdoorGameView &view, uint16_t viewWidt
 
     if (view.m_showActors || view.m_showDecorationBillboards)
     {
-        OutdoorBillboardRenderer::renderActorPreviewBillboards(view, MainViewId, pViewMatrix, cameraPosition);
+        OutdoorBillboardRenderer::renderActorPreviewBillboards(
+            view, MainViewId, pViewMatrix, projectionYScale, cameraPosition);
 
         if (view.m_showActors && view.m_showActorCollisionBoxes)
         {

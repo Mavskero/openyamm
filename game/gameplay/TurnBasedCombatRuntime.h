@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -10,6 +11,7 @@ namespace OpenYAMM::Game
 class Party;
 struct GameplayInputFrame;
 class IGameplayWorldRuntime;
+enum class ActorAiUpdateMode : uint8_t;
 
 enum class TurnBasedCombatStage : uint8_t
 {
@@ -34,7 +36,30 @@ public:
         size_t id = 0;
         int initiative = 0;
         float actionRecoverySeconds = 0.0f;
+        bool operator==(const QueueEntry &) const = default;
     };
+
+    struct Snapshot
+    {
+        bool active = false;
+        TurnBasedCombatStage stage = TurnBasedCombatStage::None;
+        std::vector<QueueEntry> queue;
+        int turnInitiative = 100;
+        float aiTurnTimerTicks = 0.0f;
+        int movementActionPoints = 0;
+        int pendingActions = 0;
+        uint32_t turnCount = 0;
+        float actorActionTimerTicks = 0.0f;
+        bool movementFinished = false;
+        bool waitingForActorActionResolution = false;
+        float pendingGameTimeAdvanceMinutes = 0.0f;
+        std::array<float, 5> memberTurnRecoverySeconds = {};
+        bool operator==(const Snapshot &) const = default;
+    };
+
+    Snapshot snapshot() const;
+    void restoreSnapshot(const Snapshot &snapshot);
+    static bool isValidSnapshot(const Snapshot &snapshot);
 
     bool active() const;
     TurnBasedCombatStage stage() const;
@@ -43,6 +68,7 @@ public:
     bool hasPendingActions() const;
     bool playerActionReady(const Party &party) const;
     bool shouldUpdateActorAi(const Party *pParty) const;
+    ActorAiUpdateMode actorAiUpdateMode() const;
     bool frontQueueCharacter(size_t &memberIndex) const;
     const std::vector<QueueEntry> &queue() const;
 
@@ -72,6 +98,8 @@ private:
     static constexpr size_t MaximumTrackedMembers = 5;
 
     void rebuildInitialQueue(Party &party, const IGameplayWorldRuntime *pWorldRuntime);
+    void appendNearbyActors(const IGameplayWorldRuntime &worldRuntime);
+    void removeInvalidActorEntries(const IGameplayWorldRuntime &worldRuntime);
     std::optional<size_t> readyCharacterQueueIndex(const Party *pParty) const;
     bool readyActorQueued() const;
     void sortQueue(Party *pParty);
@@ -79,7 +107,7 @@ private:
     void removeInvalidEntries(const Party &party);
     void advanceAttackQueue(Party *pParty, bool resolveReadyActors);
     void enterWaitStage();
-    void enterAttackStage(Party *pParty);
+    void enterAttackStage(Party *pParty, const IGameplayWorldRuntime *pWorldRuntime);
     void enterMovementStage();
     bool consumeMovementActionPoint();
     void clearMovementLatches();

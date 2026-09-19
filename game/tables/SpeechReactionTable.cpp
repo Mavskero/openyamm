@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <sstream>
 
 namespace OpenYAMM::Game
@@ -170,9 +171,32 @@ bool SpeechReactionTable::loadFromRows(const std::vector<std::vector<std::string
 {
     m_entries.clear();
     m_entryIndexBySpeechId.clear();
+    bool voiceGroupMode = false;
 
     for (const std::vector<std::string> &row : rows)
     {
+        if (!row.empty() && row[0] == "#SpeechReactionMode")
+        {
+            if (voiceGroupMode || !m_entries.empty() || row.size() != 2 || row[1] != "MM8VoiceGroupsV1")
+            {
+                return false;
+            }
+            voiceGroupMode = true;
+            continue;
+        }
+        if (voiceGroupMode && row == std::vector<std::string>{
+            "Event", "Name", "VoiceGroups", "FaceAnimation", "SourceFaceEvent"})
+        {
+            continue;
+        }
+        if (row.empty() || row == std::vector<std::string>{""})
+        {
+            continue;
+        }
+        if (voiceGroupMode && row.size() != 5)
+        {
+            return false;
+        }
         if (row.size() < 3)
         {
             continue;
@@ -182,17 +206,67 @@ bool SpeechReactionTable::loadFromRows(const std::vector<std::vector<std::string
 
         if (!speechId)
         {
+            if (voiceGroupMode)
+            {
+                return false;
+            }
             continue;
         }
 
         SpeechReactionEntry entry = {};
         entry.speechId = *speechId;
         entry.name = row[1];
-        entry.soundTypes = row.size() > 2 ? splitSoundTypes(row[2]) : std::vector<std::string>{};
+        if (voiceGroupMode)
+        {
+            if (entry.name.empty() || m_entryIndexBySpeechId.contains(entry.speechId))
+            {
+                return false;
+            }
+            if (!row[2].empty())
+            {
+                std::stringstream groups(row[2]);
+                std::string token;
+                while (std::getline(groups, token, ','))
+                {
+                    uint32_t group = 0;
+                    const std::from_chars_result parsed =
+                        std::from_chars(token.data(), token.data() + token.size(), group);
+                    if (parsed.ec != std::errc() || parsed.ptr != token.data() + token.size()
+                        || group == 0 || group > 50 || entry.voiceGroups.size() >= 2)
+                    {
+                        return false;
+                    }
+                    entry.voiceGroups.push_back(group);
+                }
+                if (row[2].back() == ',')
+                {
+                    return false;
+                }
+            }
+            if (!row[4].empty())
+            {
+                uint32_t sourceEvent = 0;
+                const std::from_chars_result parsed =
+                    std::from_chars(row[4].data(), row[4].data() + row[4].size(), sourceEvent);
+                if (parsed.ec != std::errc() || parsed.ptr != row[4].data() + row[4].size()
+                    || sourceEvent == 0 || sourceEvent > 109)
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            entry.soundTypes = splitSoundTypes(row[2]);
+        }
 
         if (row.size() > 3 && !row[3].empty())
         {
             entry.faceAnimationId = faceAnimationIdFromName(row[3]);
+            if (voiceGroupMode && !entry.faceAnimationId)
+            {
+                return false;
+            }
         }
 
         m_entryIndexBySpeechId[entry.speechId] = m_entries.size();

@@ -4,6 +4,7 @@
 
 #include <cctype>
 #include <cstdlib>
+#include <limits>
 
 namespace OpenYAMM::Game
 {
@@ -19,12 +20,12 @@ int CharacterDollTypeEntry::mainHandWeaponAnchorY() const
 
 int CharacterDollTypeEntry::offHandWeaponAnchorX() const
 {
-    return leftHandClosedX + offHandOffsetX;
+    return leftHandOpenX + offHandOffsetX;
 }
 
 int CharacterDollTypeEntry::offHandWeaponAnchorY() const
 {
-    return leftHandClosedY + offHandOffsetY;
+    return leftHandOpenY + offHandOffsetY;
 }
 
 namespace
@@ -109,21 +110,31 @@ std::string normalizeAssetName(const std::string &value)
 bool CharacterDollTable::loadCharacterRows(const std::vector<std::vector<std::string>> &rows)
 {
     m_characterEntries.clear();
+    const bool originalPortraitRows = !rows.empty() && rows[0].size() == 27
+        && rows[0][1] == "Paperdoll type" && rows[0][8] == "Helm X" && rows[0][9] == "Helm Y";
 
     for (size_t rowIndex = 1; rowIndex < rows.size(); ++rowIndex)
     {
         const std::vector<std::string> &row = rows[rowIndex];
 
-        if (row.size() < 24)
+        if (row.size() < (originalPortraitRows ? 27u : 24u))
         {
             continue;
         }
 
         CharacterDollEntry entry = {};
 
-        if (!parseUnsigned(row[0], entry.id) || entry.id == 0)
+        if (!parseUnsigned(row[0], entry.id) || (!originalPortraitRows && entry.id == 0))
         {
             continue;
+        }
+        if (originalPortraitRows)
+        {
+            if (entry.id == std::numeric_limits<uint32_t>::max())
+            {
+                return false;
+            }
+            ++entry.id;
         }
 
         parseUnsigned(row[1], entry.dollTypeId);
@@ -137,21 +148,33 @@ bool CharacterDollTable::loadCharacterRows(const std::vector<std::vector<std::st
 
         if (parseSigned(row[7], bodyY))
         {
-            entry.bodyOffsetY = -bodyY;
+            // Original Merge tables already use downward-positive screen coordinates.
+            // The older converted schema stores upward-positive coordinates instead.
+            entry.bodyOffsetY = originalPortraitRows ? bodyY : -bodyY;
         }
 
-        entry.backgroundAsset = normalizeAssetName(row[8]);
-        entry.bodyAsset = normalizeAssetName(row[9]);
-        entry.headAsset = normalizeAssetName(row[10]);
-        entry.leftHandClosedAsset = normalizeAssetName(row[11]);
-        entry.leftHandHoldAsset = normalizeAssetName(row[12]);
-        entry.leftHandOpenAsset = normalizeAssetName(row[13]);
-        entry.rightHandFingersAsset = normalizeAssetName(row[14]);
-        entry.rightHandOpenAsset = normalizeAssetName(row[17]);
-        entry.rightHandHoldAsset = normalizeAssetName(row[18]);
-        entry.facePicturesPrefix = trimAsciiWhitespaceCopy(row[19]);
-        parseUnsigned(row[22], entry.npcPictureId);
-        parseSigned32(row[23], entry.raceId);
+        const size_t offset = originalPortraitRows ? 2 : 0;
+        if (originalPortraitRows)
+        {
+            parseSigned(row[8], entry.helmOffsetX);
+            // Helm offsets add directly to the complex-item picture's screen coordinates.
+            parseSigned(row[9], entry.helmOffsetY);
+        }
+        entry.backgroundAsset = normalizeAssetName(row[8 + offset]);
+        entry.bodyAsset = normalizeAssetName(row[9 + offset]);
+        entry.headAsset = normalizeAssetName(row[10 + offset]);
+        entry.leftHandClosedAsset = normalizeAssetName(row[11 + offset]);
+        entry.leftHandHoldAsset = normalizeAssetName(row[12 + offset]);
+        entry.leftHandOpenAsset = normalizeAssetName(row[13 + offset]);
+        entry.rightHandFingersAsset = normalizeAssetName(row[14 + offset]);
+        entry.rightHandOpenAsset = normalizeAssetName(row[17 + offset]);
+        entry.rightHandHoldAsset = normalizeAssetName(row[18 + offset]);
+        entry.facePicturesPrefix = originalPortraitRows ? normalizeAssetName(row[19 + offset])
+            : trimAsciiWhitespaceCopy(row[19]);
+        parseUnsigned(row[20 + offset], entry.defaultMeleeAttack);
+        parseUnsigned(row[21 + offset], entry.defaultRangedAttack);
+        parseUnsigned(row[22 + offset], entry.npcPictureId);
+        parseSigned32(row[23 + offset], entry.raceId);
         m_characterEntries[entry.id] = std::move(entry);
     }
 
@@ -161,6 +184,8 @@ bool CharacterDollTable::loadCharacterRows(const std::vector<std::vector<std::st
 bool CharacterDollTable::loadDollTypeRows(const std::vector<std::vector<std::string>> &rows)
 {
     m_dollTypeEntries.clear();
+    const bool originalHandOrder = !rows.empty() && rows[0].size() >= 18
+        && rows[0][14] == "LHo X" && rows[0][16] == "LHc X";
 
     for (size_t rowIndex = 1; rowIndex < rows.size(); ++rowIndex)
     {
@@ -193,10 +218,10 @@ bool CharacterDollTable::loadDollTypeRows(const std::vector<std::vector<std::str
             &entry.rightHandClosedY,
             &entry.rightHandFingersX,
             &entry.rightHandFingersY,
-            &entry.leftHandClosedX,
-            &entry.leftHandClosedY,
-            &entry.leftHandOpenX,
-            &entry.leftHandOpenY,
+            originalHandOrder ? &entry.leftHandOpenX : &entry.leftHandClosedX,
+            originalHandOrder ? &entry.leftHandOpenY : &entry.leftHandClosedY,
+            originalHandOrder ? &entry.leftHandClosedX : &entry.leftHandOpenX,
+            originalHandOrder ? &entry.leftHandClosedY : &entry.leftHandOpenY,
             &entry.leftHandFingersX,
             &entry.leftHandFingersY,
             &entry.offHandOffsetX,
@@ -215,7 +240,7 @@ bool CharacterDollTable::loadDollTypeRows(const std::vector<std::vector<std::str
             int y = 0;
             parseSigned(row[8 + index], x);
 
-            if (parseSigned(row[9 + index], y))
+            if (parseSigned(row[9 + index], y) && !originalHandOrder)
             {
                 y = -y;
             }

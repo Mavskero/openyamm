@@ -119,6 +119,8 @@ public:
     void stopAllPlayback();
 
 private:
+    friend struct GameAudioSystemTestAccess;
+
     struct PendingMusicDecodeJob
     {
         int redbookTrack = 0;

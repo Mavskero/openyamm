@@ -126,6 +126,8 @@ public:
     void applyMapReentryReset();
     void prepareTimers();
     bool advanceSimulation(float deltaMilliseconds);
+    // Mechanism motion remains live during turn selection without advancing clocks or map timers.
+    bool advanceMechanisms(float deltaMilliseconds);
     bool activateEvent(
         uint16_t eventId,
         const std::string &sourceKind,

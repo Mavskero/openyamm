@@ -23,6 +23,8 @@ void GameDataRepository::clear()
     m_pMonsterProjectileTable = nullptr;
     m_pObjectTable = nullptr;
     m_pSpellTable = nullptr;
+    m_pCombatTextTable = nullptr;
+    m_pHouseServiceTextTable = nullptr;
     m_pItemTable = nullptr;
     m_pStandardItemEnchantTable = nullptr;
     m_pSpecialItemEnchantTable = nullptr;
@@ -64,11 +66,13 @@ void GameDataRepository::clear()
     m_pMergedNewsProfessionTopicTable = nullptr;
     m_pMergedBolsterMapTable = nullptr;
     m_pMergedBolsterMonsterTable = nullptr;
+    m_pMergedCharacterVoiceTable = nullptr;
     m_pMergedContinentSettingTable = nullptr;
     m_pMergedMonsterPortraitTable = nullptr;
     m_pMergedPotionSettingTable = nullptr;
     m_pMergedReagentSettingTable = nullptr;
     m_pMergedComplexItemPictureTable = nullptr;
+    m_pMergedComplexItemPictureOffsetTable = nullptr;
     m_pMergedTeacherTopicTable = nullptr;
     m_pMergedTeacherAutonoteTable = nullptr;
 }
@@ -80,6 +84,8 @@ void GameDataRepository::bind(const GameDataLoader &loader)
     m_pMonsterProjectileTable = &loader.getMonsterProjectileTable();
     m_pObjectTable = &loader.getObjectTable();
     m_pSpellTable = &loader.getSpellTable();
+    m_pCombatTextTable = &loader.getCombatTextTable();
+    m_pHouseServiceTextTable = &loader.getHouseServiceTextTable();
     m_pItemTable = &loader.getItemTable();
     m_pStandardItemEnchantTable = &loader.getStandardItemEnchantTable();
     m_pSpecialItemEnchantTable = &loader.getSpecialItemEnchantTable();
@@ -122,11 +128,13 @@ void GameDataRepository::bind(const GameDataLoader &loader)
     m_pMergedNewsProfessionTopicTable = &loader.getMergedNewsProfessionTopicTable();
     m_pMergedBolsterMapTable = &loader.getMergedBolsterMapTable();
     m_pMergedBolsterMonsterTable = &loader.getMergedBolsterMonsterTable();
+    m_pMergedCharacterVoiceTable = &loader.getMergedCharacterVoiceTable();
     m_pMergedContinentSettingTable = &loader.getMergedContinentSettingTable();
     m_pMergedMonsterPortraitTable = &loader.getMergedMonsterPortraitTable();
     m_pMergedPotionSettingTable = &loader.getMergedPotionSettingTable();
     m_pMergedReagentSettingTable = &loader.getMergedReagentSettingTable();
     m_pMergedComplexItemPictureTable = &loader.getMergedComplexItemPictureTable();
+    m_pMergedComplexItemPictureOffsetTable = &loader.getMergedComplexItemPictureOffsetTable();
     m_pMergedTeacherTopicTable = &loader.getMergedTeacherTopicTable();
     m_pMergedTeacherAutonoteTable = &loader.getMergedTeacherAutonoteTable();
 }
@@ -134,6 +142,16 @@ void GameDataRepository::bind(const GameDataLoader &loader)
 bool GameDataRepository::isBound() const
 {
     return m_pMapStats != nullptr;
+}
+
+const CombatTextTable &GameDataRepository::combatTextTable() const
+{
+    return requireBound(m_pCombatTextTable);
+}
+
+const HouseServiceTextTable &GameDataRepository::houseServiceTextTable() const
+{
+    return requireBound(m_pHouseServiceTextTable);
 }
 
 const MapStats &GameDataRepository::mapStats() const
@@ -376,6 +394,11 @@ const MergedBolsterMonsterTable &GameDataRepository::mergedBolsterMonsterTable()
     return requireBound(m_pMergedBolsterMonsterTable);
 }
 
+const MergedCharacterVoiceTable &GameDataRepository::mergedCharacterVoiceTable() const
+{
+    return requireBound(m_pMergedCharacterVoiceTable);
+}
+
 const MergedContinentSettingTable &GameDataRepository::mergedContinentSettingTable() const
 {
     return requireBound(m_pMergedContinentSettingTable);
@@ -399,6 +422,11 @@ const MergedReagentSettingTable &GameDataRepository::mergedReagentSettingTable()
 const MergedComplexItemPictureTable &GameDataRepository::mergedComplexItemPictureTable() const
 {
     return requireBound(m_pMergedComplexItemPictureTable);
+}
+
+const MergedComplexItemPictureOffsetTable &GameDataRepository::mergedComplexItemPictureOffsetTable() const
+{
+    return requireBound(m_pMergedComplexItemPictureOffsetTable);
 }
 
 const MergedTeacherTopicTable &GameDataRepository::mergedTeacherTopicTable() const

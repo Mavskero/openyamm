@@ -33,6 +33,9 @@ struct ClassInspectEntry
 class CharacterInspectTable
 {
 public:
+    // Column zero always remains the semantic lookup key. Optional display-name
+    // columns: stats 2, skills 6, classes 3 (class column 2 remains the legacy kind).
+    // Tables without those extensions retain the original English display rules.
     bool loadStatRows(const std::vector<std::vector<std::string>> &rows);
     bool loadSkillRows(const std::vector<std::vector<std::string>> &rows);
     bool loadClassRows(const std::vector<std::vector<std::string>> &rows);

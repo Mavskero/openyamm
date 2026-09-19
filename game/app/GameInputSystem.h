@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstdint>
+#include <deque>
 #include <string>
 
 namespace OpenYAMM::Game
@@ -58,21 +59,29 @@ private:
         float deltaY = 0.0f;
         bool dragThresholdExceeded = false;
         bool dragStartDelivered = false;
+        bool hudPressDelivered = false;
         bool debugConsoleGestureCandidate = false;
         bool debugConsoleGestureTriggered = false;
+    };
+
+    struct MobileHudTap
+    {
+        float startX = 0.0f;
+        float startY = 0.0f;
+        float x = 0.0f;
+        float y = 0.0f;
     };
 
     GameplayInputFrame m_frame = {};
     std::string m_pendingTextInput;
     std::array<uint16_t, SDL_SCANCODE_COUNT> m_pendingKeyboardPressCounts = {};
+    std::deque<SDL_MouseButtonEvent> m_pendingMouseButtons;
+    SDL_MouseButtonFlags m_deliveredMouseButtons = 0;
+    bool m_mouseInputCanceled = false;
     std::array<bool, SDL_SCANCODE_COUNT> m_previousKeyboardHeld = {};
     std::array<bool, KeyboardActionCount> m_previousActionHeld = {};
     std::array<MobileTouchPoint, 8> m_mobileTouches = {};
-    bool m_mobilePendingHudTap = false;
-    float m_mobilePendingHudTapStartX = 0.0f;
-    float m_mobilePendingHudTapStartY = 0.0f;
-    float m_mobilePendingHudTapX = 0.0f;
-    float m_mobilePendingHudTapY = 0.0f;
+    std::deque<MobileHudTap> m_mobilePendingHudTaps;
     bool m_mobilePendingHudRelease = false;
     float m_mobilePendingHudReleaseX = 0.0f;
     float m_mobilePendingHudReleaseY = 0.0f;

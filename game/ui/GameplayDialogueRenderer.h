@@ -1,5 +1,7 @@
 #pragma once
 
+#include "game/ui/GameplayHudCommon.h"
+
 #include <bgfx/bgfx.h>
 
 #include <optional>
@@ -22,12 +24,15 @@ public:
         bool renderAboveHud);
     static bool shouldRenderInCurrentPass(bool renderAboveHud, int hudZThreshold, int zIndex);
     static bool isDialogueFrameSubtree(GameplayScreenRuntime &context, const std::string &layoutId);
+    static std::vector<GameplayUiViewportRect> blackoutBackdropRects(
+        int screenWidth,
+        int screenHeight,
+        const GameplayUiViewportRect &viewport);
     static void renderBlackoutBackdrop(
         GameplayScreenRuntime &context,
         int screenWidth,
         int screenHeight,
-        float viewportX,
-        float viewportWidth);
+        const GameplayUiViewportRect &viewport);
     static void updateHouseShopHoverTopicText(
         GameplayScreenRuntime &context,
         int width,

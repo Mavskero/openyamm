@@ -13,6 +13,20 @@ namespace OpenYAMM::Game
 class UiLayoutManager
 {
 public:
+    struct TextureRegion
+    {
+        std::string source;
+        int sourceWidth = 0;
+        int sourceHeight = 0;
+        int x = 0;
+        int y = 0;
+        int width = 0;
+        int height = 0;
+
+        // Zero rejects a different source shape, out-of-bounds region or non-integral asset scale.
+        int pixelScaleForSource(int physicalWidth, int physicalHeight) const;
+    };
+
     enum class LayoutAnchor
     {
         TopLeft,
@@ -105,6 +119,7 @@ public:
         TextAlignX textAlignX = TextAlignX::Left;
         TextAlignY textAlignY = TextAlignY::Top;
         float textScale = 1.0f;
+        bool textFitHeight = false;
         float textPadX = 0.0f;
         float textPadY = 0.0f;
         std::string notes;
@@ -121,10 +136,13 @@ public:
     static int defaultZIndexForScreen(const std::string &screen);
 
     const std::unordered_map<std::string, LayoutElement> &elements() const;
+    const std::unordered_map<std::string, TextureRegion> &textureRegions() const;
+    const TextureRegion *findTextureRegion(const std::string &name) const;
 
 private:
     std::vector<std::string> m_layoutOrder;
     std::unordered_map<std::string, LayoutElement> m_layoutElements;
+    std::unordered_map<std::string, TextureRegion> m_textureRegions;
     std::unordered_map<std::string, const LayoutElement *> m_layoutElementByLookupId;
     mutable std::unordered_map<std::string, std::vector<std::string>> m_sortedLayoutIdsByScreen;
 };

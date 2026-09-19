@@ -9,6 +9,7 @@
 #include "game/party/Party.h"
 #include "game/items/PriceCalculator.h"
 #include "game/party/SkillData.h"
+#include "game/tables/HouseServiceTextTable.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -23,6 +24,25 @@ namespace
 {
 constexpr int ShopTheftBanDays = 336;
 constexpr int ShopTheftBanMinutesPerDay = 24 * 60;
+
+std::string shopText(
+    const HouseServiceTextTable *pTable,
+    HouseServiceTextTable::Message message,
+    const std::string &fallback,
+    const HouseServiceTextTable::Arguments &arguments = {})
+{
+    if (pTable != nullptr)
+    {
+        const std::string localized = pTable->format(message, arguments);
+
+        if (!localized.empty())
+        {
+            return localized;
+        }
+    }
+
+    return fallback;
+}
 
 std::string shopBanUntilVar(uint32_t houseId)
 {
@@ -1363,7 +1383,8 @@ std::string HouseServiceRuntime::buildBuyHoverText(
     const SpecialItemEnchantTable &specialItemEnchantTable,
     const HouseEntry &houseEntry,
     const InventoryItem &item,
-    int effectiveReputation)
+    int effectiveReputation,
+    const HouseServiceTextTable *pHouseServiceTextTable)
 {
     const ItemDefinition *pItemDefinition = itemTable.get(item.objectDescriptionId);
 
@@ -1386,6 +1407,15 @@ std::string HouseServiceRuntime::buildBuyHoverText(
     const int listedPrice = baseBuyPrice(realValue, houseEntry.priceMultiplier);
     const std::string itemName =
         ItemRuntime::displayName(item, *pItemDefinition, &standardItemEnchantTable, &specialItemEnchantTable);
+
+    if (pHouseServiceTextTable != nullptr)
+    {
+        return shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopBuyHover,
+            "Buy " + itemName + " for " + std::to_string(actualPrice) + " gold.",
+            {.item = itemName, .price = std::to_string(actualPrice)});
+    }
 
     if (!hasMerchantSkillForPhrase(pActiveMember))
     {
@@ -1411,13 +1441,37 @@ std::string HouseServiceRuntime::buildSellHoverText(
     const SpecialItemEnchantTable &specialItemEnchantTable,
     const HouseEntry &houseEntry,
     const InventoryItem &item,
-    int effectiveReputation)
+    int effectiveReputation,
+    const HouseServiceTextTable *pHouseServiceTextTable)
 {
     const ItemDefinition *pItemDefinition = itemTable.get(item.objectDescriptionId);
 
     if (pItemDefinition == nullptr)
     {
         return "Unavailable";
+    }
+
+    const int price = sellPrice(
+        party,
+        itemTable,
+        standardItemEnchantTable,
+        specialItemEnchantTable,
+        houseEntry,
+        item,
+        effectiveReputation);
+    const std::string itemName = itemDisplayName(
+        item,
+        *pItemDefinition,
+        &standardItemEnchantTable,
+        &specialItemEnchantTable);
+
+    if (pHouseServiceTextTable != nullptr)
+    {
+        return shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopSellHover,
+            "Sell " + itemName + " for " + std::to_string(price) + " gold.",
+            {.item = itemName, .price = std::to_string(price)});
     }
 
     return buildSellPhrase(
@@ -1437,7 +1491,8 @@ std::string HouseServiceRuntime::buildIdentifyHoverText(
     const SpecialItemEnchantTable &specialItemEnchantTable,
     const HouseEntry &houseEntry,
     const InventoryItem &item,
-    int effectiveReputation)
+    int effectiveReputation,
+    const HouseServiceTextTable *pHouseServiceTextTable)
 {
     const ItemDefinition *pItemDefinition = itemTable.get(item.objectDescriptionId);
 
@@ -1448,9 +1503,35 @@ std::string HouseServiceRuntime::buildIdentifyHoverText(
 
     if (!supportsIdentify(houseEntry))
     {
-        return "Sorry, I can't identify a "
+        return shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopWrongIdentifyShop,
+            "Sorry, I can't identify a "
             + itemDisplayName(item, *pItemDefinition, &standardItemEnchantTable, &specialItemEnchantTable)
-            + " because I'm a " + merchantProfessionName(houseEntry) + ".";
+            + " because I'm a " + merchantProfessionName(houseEntry) + ".");
+    }
+
+    const int price = PriceCalculator::itemIdentificationPrice(
+        partyMerchantMember(party),
+        item,
+        *pItemDefinition,
+        houseEntry.priceMultiplier,
+        &standardItemEnchantTable,
+        &specialItemEnchantTable,
+        effectiveReputation);
+    const std::string itemName = itemDisplayName(
+        item,
+        *pItemDefinition,
+        &standardItemEnchantTable,
+        &specialItemEnchantTable);
+
+    if (pHouseServiceTextTable != nullptr)
+    {
+        return shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopIdentifyHover,
+            "Identify " + itemName + " for " + std::to_string(price) + " gold.",
+            {.item = itemName, .price = std::to_string(price)});
     }
 
     return buildIdentifyPhrase(
@@ -1470,7 +1551,8 @@ std::string HouseServiceRuntime::buildRepairHoverText(
     const SpecialItemEnchantTable &specialItemEnchantTable,
     const HouseEntry &houseEntry,
     const InventoryItem &item,
-    int effectiveReputation)
+    int effectiveReputation,
+    const HouseServiceTextTable *pHouseServiceTextTable)
 {
     const ItemDefinition *pItemDefinition = itemTable.get(item.objectDescriptionId);
 
@@ -1481,8 +1563,34 @@ std::string HouseServiceRuntime::buildRepairHoverText(
 
     if (!supportsRepair(houseEntry))
     {
-        return "Sorry, I have no idea how to fix a "
-            + itemDisplayName(item, *pItemDefinition, &standardItemEnchantTable, &specialItemEnchantTable) + ".";
+        return shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopWrongRepairShop,
+            "Sorry, I have no idea how to fix a "
+                + itemDisplayName(item, *pItemDefinition, &standardItemEnchantTable, &specialItemEnchantTable) + ".");
+    }
+
+    const int price = PriceCalculator::itemRepairPrice(
+        partyMerchantMember(party),
+        item,
+        *pItemDefinition,
+        houseEntry.priceMultiplier,
+        &standardItemEnchantTable,
+        &specialItemEnchantTable,
+        effectiveReputation);
+    const std::string itemName = itemDisplayName(
+        item,
+        *pItemDefinition,
+        &standardItemEnchantTable,
+        &specialItemEnchantTable);
+
+    if (pHouseServiceTextTable != nullptr)
+    {
+        return shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopRepairHover,
+            "Repair " + itemName + " for " + std::to_string(price) + " gold.",
+            {.item = itemName, .price = std::to_string(price)});
     }
 
     return buildRepairPhrase(
@@ -1506,7 +1614,8 @@ bool HouseServiceRuntime::tryBuyStockItem(
     size_t slotIndex,
     std::string &statusText,
     ShopItemServiceResult *pResult,
-    int effectiveReputation)
+    int effectiveReputation,
+    const HouseServiceTextTable *pHouseServiceTextTable)
 {
     statusText.clear();
 
@@ -1526,7 +1635,10 @@ bool HouseServiceRuntime::tryBuyStockItem(
 
     if (pStock == nullptr || slotIndex >= pStock->size() || (*pStock)[slotIndex].objectDescriptionId == 0)
     {
-        statusText = "Nothing is for sale in that slot.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopNothingForSale,
+            "Nothing is for sale in that slot.");
 
         if (pResult != nullptr)
         {
@@ -1541,7 +1653,10 @@ bool HouseServiceRuntime::tryBuyStockItem(
 
     if (pItemDefinition == nullptr)
     {
-        statusText = "That item is unavailable.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopUnavailable,
+            "That item is unavailable.");
 
         if (pResult != nullptr)
         {
@@ -1562,7 +1677,10 @@ bool HouseServiceRuntime::tryBuyStockItem(
 
     if (party.gold() < price)
     {
-        statusText = "Not enough gold.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::CommonNotEnoughGold,
+            "Not enough gold.");
 
         if (pResult != nullptr)
         {
@@ -1574,7 +1692,10 @@ bool HouseServiceRuntime::tryBuyStockItem(
 
     if (!party.tryGrantInventoryItemStartingAt(party.activeMemberIndex(), item))
     {
-        statusText = "Inventory full.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopInventoryFull,
+            "Inventory full.");
 
         if (pResult != nullptr)
         {
@@ -1586,10 +1707,13 @@ bool HouseServiceRuntime::tryBuyStockItem(
 
     party.addGold(-price);
     (*pStock)[slotIndex] = {};
-    statusText =
-        "Bought "
-        + ItemRuntime::displayName(item, *pItemDefinition, &standardItemEnchantTable, &specialItemEnchantTable)
-        + " for " + std::to_string(price) + " gold.";
+    const std::string itemName =
+        ItemRuntime::displayName(item, *pItemDefinition, &standardItemEnchantTable, &specialItemEnchantTable);
+    statusText = shopText(
+        pHouseServiceTextTable,
+        HouseServiceTextTable::Message::ShopBought,
+        "Bought " + itemName + " for " + std::to_string(price) + " gold.",
+        {.item = itemName, .price = std::to_string(price)});
 
     if (pResult != nullptr)
     {
@@ -1782,7 +1906,8 @@ bool HouseServiceRuntime::trySellInventoryItem(
     uint8_t gridY,
     std::string &statusText,
     ShopItemServiceResult *pResult,
-    int effectiveReputation)
+    int effectiveReputation,
+    const HouseServiceTextTable *pHouseServiceTextTable)
 {
     statusText.clear();
 
@@ -1801,7 +1926,10 @@ bool HouseServiceRuntime::trySellInventoryItem(
 
     if (pItem == nullptr)
     {
-        statusText = "No item there.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopNoItem,
+            "No item there.");
 
         if (pResult != nullptr)
         {
@@ -1813,7 +1941,10 @@ bool HouseServiceRuntime::trySellInventoryItem(
 
     if (!canSellItemToHouse(itemTable, houseEntry, *pItem))
     {
-        statusText = "That item cannot be sold.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopCannotSell,
+            "That item cannot be sold.");
 
         if (pResult != nullptr)
         {
@@ -1827,7 +1958,10 @@ bool HouseServiceRuntime::trySellInventoryItem(
 
     if (pItemDefinition == nullptr)
     {
-        statusText = "That item is unavailable.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopUnavailable,
+            "That item is unavailable.");
 
         if (pResult != nullptr)
         {
@@ -1860,9 +1994,16 @@ bool HouseServiceRuntime::trySellInventoryItem(
     }
 
     party.addGold(price);
-    statusText = "Sold "
-        + itemDisplayName(*pItem, *pItemDefinition, &standardItemEnchantTable, &specialItemEnchantTable)
-        + " for " + std::to_string(price) + " gold.";
+    const std::string itemName = itemDisplayName(
+        removedItem,
+        *pItemDefinition,
+        &standardItemEnchantTable,
+        &specialItemEnchantTable);
+    statusText = shopText(
+        pHouseServiceTextTable,
+        HouseServiceTextTable::Message::ShopSold,
+        "Sold " + itemName + " for " + std::to_string(price) + " gold.",
+        {.item = itemName, .price = std::to_string(price)});
 
     if (pResult != nullptr)
     {
@@ -1884,7 +2025,8 @@ bool HouseServiceRuntime::tryIdentifyInventoryItem(
     std::string &statusText,
     ShopItemServiceResult *pResult,
     int effectiveReputation,
-    const EventRuntimeState *pEventRuntimeState)
+    const EventRuntimeState *pEventRuntimeState,
+    const HouseServiceTextTable *pHouseServiceTextTable)
 {
     statusText.clear();
 
@@ -1903,7 +2045,10 @@ bool HouseServiceRuntime::tryIdentifyInventoryItem(
 
     if (pItem == nullptr)
     {
-        statusText = "No item there.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopNoItem,
+            "No item there.");
 
         if (pResult != nullptr)
         {
@@ -1917,7 +2062,10 @@ bool HouseServiceRuntime::tryIdentifyInventoryItem(
 
     if (pItemDefinition == nullptr)
     {
-        statusText = "That item is unavailable.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopUnavailable,
+            "That item is unavailable.");
 
         if (pResult != nullptr)
         {
@@ -1929,6 +2077,10 @@ bool HouseServiceRuntime::tryIdentifyInventoryItem(
 
     if (!ItemRuntime::requiresIdentification(*pItemDefinition) || pItem->identified)
     {
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopAlreadyIdentified,
+            "That item is already identified.");
         if (pResult != nullptr)
         {
             *pResult = ShopItemServiceResult::AlreadyIdentified;
@@ -1943,6 +2095,10 @@ bool HouseServiceRuntime::tryIdentifyInventoryItem(
 
     if (!houseCanIdentify && !followerCanIdentify)
     {
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopWrongIdentifyShop,
+            "This shop cannot identify that item.");
         if (pResult != nullptr)
         {
             *pResult = ShopItemServiceResult::WrongShop;
@@ -1962,7 +2118,10 @@ bool HouseServiceRuntime::tryIdentifyInventoryItem(
 
     if (party.gold() < price)
     {
-        statusText = "You don't have enough gold";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::CommonNotEnoughGold,
+            "You don't have enough gold");
 
         if (pResult != nullptr)
         {
@@ -1976,7 +2135,10 @@ bool HouseServiceRuntime::tryIdentifyInventoryItem(
 
     if (!party.identifyMemberInventoryItem(memberIndex, gridX, gridY, identifyStatus))
     {
-        statusText = identifyStatus.empty() ? "Identify Failed" : identifyStatus;
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopIdentifyFailed,
+            identifyStatus.empty() ? "Identify Failed" : identifyStatus);
 
         if (pResult != nullptr)
         {
@@ -1987,7 +2149,10 @@ bool HouseServiceRuntime::tryIdentifyInventoryItem(
     }
 
     party.addGold(-price);
-    statusText = "Done!";
+    statusText = shopText(
+        pHouseServiceTextTable,
+        HouseServiceTextTable::Message::ShopIdentifySuccess,
+        "Done!");
 
     if (pResult != nullptr)
     {
@@ -2009,7 +2174,8 @@ bool HouseServiceRuntime::tryRepairInventoryItem(
     std::string &statusText,
     ShopItemServiceResult *pResult,
     int effectiveReputation,
-    const EventRuntimeState *pEventRuntimeState)
+    const EventRuntimeState *pEventRuntimeState,
+    const HouseServiceTextTable *pHouseServiceTextTable)
 {
     statusText.clear();
 
@@ -2028,7 +2194,10 @@ bool HouseServiceRuntime::tryRepairInventoryItem(
 
     if (pItem == nullptr)
     {
-        statusText = "No item there.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopNoItem,
+            "No item there.");
 
         if (pResult != nullptr)
         {
@@ -2042,7 +2211,10 @@ bool HouseServiceRuntime::tryRepairInventoryItem(
 
     if (pItemDefinition == nullptr)
     {
-        statusText = "That item is unavailable.";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopUnavailable,
+            "That item is unavailable.");
 
         if (pResult != nullptr)
         {
@@ -2054,6 +2226,10 @@ bool HouseServiceRuntime::tryRepairInventoryItem(
 
     if (!pItem->broken)
     {
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopNothingToRepair,
+            "That item does not need repair.");
         if (pResult != nullptr)
         {
             *pResult = ShopItemServiceResult::NothingToRepair;
@@ -2068,6 +2244,10 @@ bool HouseServiceRuntime::tryRepairInventoryItem(
 
     if (!houseCanRepair && !followerCanRepair)
     {
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopWrongRepairShop,
+            "This shop cannot repair that item.");
         if (pResult != nullptr)
         {
             *pResult = ShopItemServiceResult::WrongShop;
@@ -2087,7 +2267,10 @@ bool HouseServiceRuntime::tryRepairInventoryItem(
 
     if (party.gold() < price)
     {
-        statusText = "You don't have enough gold";
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::CommonNotEnoughGold,
+            "You don't have enough gold");
 
         if (pResult != nullptr)
         {
@@ -2101,7 +2284,10 @@ bool HouseServiceRuntime::tryRepairInventoryItem(
 
     if (!party.repairMemberInventoryItem(memberIndex, gridX, gridY, repairStatus))
     {
-        statusText = repairStatus.empty() ? "Repair Failed" : repairStatus;
+        statusText = shopText(
+            pHouseServiceTextTable,
+            HouseServiceTextTable::Message::ShopRepairFailed,
+            repairStatus.empty() ? "Repair Failed" : repairStatus);
 
         if (pResult != nullptr)
         {
@@ -2112,7 +2298,10 @@ bool HouseServiceRuntime::tryRepairInventoryItem(
     }
 
     party.addGold(-price);
-    statusText = "Good as New!";
+    statusText = shopText(
+        pHouseServiceTextTable,
+        HouseServiceTextTable::Message::ShopRepairSuccess,
+        "Good as New!");
 
     if (pResult != nullptr)
     {

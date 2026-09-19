@@ -79,6 +79,7 @@ elements:
             text:
               value: "{text}"
               font: Arrus
+              scale: 0.9
               align_x: left
               align_y: top
             notes: Main dialogue text body.

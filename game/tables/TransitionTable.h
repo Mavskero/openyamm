@@ -12,6 +12,7 @@ struct TransitionEntry
     uint32_t id = 0;
     std::string description;
     std::string title;
+    std::string sourceNote;
 };
 
 class TransitionTable

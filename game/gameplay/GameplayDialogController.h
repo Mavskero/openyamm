@@ -18,6 +18,8 @@
 namespace OpenYAMM::Game
 {
 class ClassSkillTable;
+class CharacterInspectTable;
+class HouseServiceTextTable;
 class HouseTable;
 struct MapStatsEntry;
 class NpcDialogTable;
@@ -73,6 +75,8 @@ public:
         const MergedTeacherAutonoteTable *pTeacherAutonoteTable = nullptr;
         bool dialogueHudActive = false;
         const SpellTable *pSpellTable = nullptr;
+        const CharacterInspectTable *pCharacterInspectTable = nullptr;
+        const HouseServiceTextTable *pHouseServiceTextTable = nullptr;
     };
 
     struct Result
@@ -120,7 +124,8 @@ public:
         uint32_t newsId,
         const std::string &titleOverride,
         const std::string &newsText,
-        uint32_t participantPictureId = 0) const;
+        uint32_t participantPictureId = 0,
+        bool newsFromNpcText = false) const;
     CloseDialogRequestResult handleDialogueCloseRequest(Context &context) const;
     bool refreshHouseBankInputDialog(Context &context, bool showCursor) const;
     Result returnToHouseBankMainDialog(Context &context) const;

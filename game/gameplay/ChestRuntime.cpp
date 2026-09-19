@@ -1,6 +1,7 @@
 #include "game/gameplay/ChestRuntime.h"
 
 #include "game/events/EvtEnums.h"
+#include "game/events/EventRuntime.h"
 #include "game/items/ItemEnchantRuntime.h"
 #include "game/items/ItemGenerator.h"
 #include "game/party/Party.h"
@@ -758,6 +759,17 @@ GameplayChestViewState buildMaterializedChestView(
     placeDeferredItems(randomDeferredItems, false);
 
     return view;
+}
+
+void markChestOpened(uint32_t chestId, MapDeltaChest &chest, EventRuntimeState *pEventRuntimeState)
+{
+    constexpr uint32_t opened = static_cast<uint32_t>(EvtChestFlag::Opened);
+    chest.flags |= static_cast<uint16_t>(opened);
+    if (pEventRuntimeState != nullptr)
+    {
+        pEventRuntimeState->chestSetMasks[chestId] |= opened;
+        pEventRuntimeState->chestClearMasks[chestId] &= ~opened;
+    }
 }
 
 bool takeChestItem(GameplayChestViewState &view, size_t itemIndex, GameplayChestItemState &item)

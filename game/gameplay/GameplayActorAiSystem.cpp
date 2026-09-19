@@ -3861,7 +3861,14 @@ ActorAiUpdate updateBackgroundActor(const ActorAiFacts &actor, const ActorAiFram
     }
 
     ActorAiCommandContext standAi(actor);
-    AI_StandOrBored(standAi);
+    if (frame.updateMode == ActorAiUpdateMode::FinishCurrentActions)
+    {
+        AI_Stand(standAi);
+    }
+    else
+    {
+        AI_StandOrBored(standAi);
+    }
     return standAi.finish();
 }
 
@@ -3886,6 +3893,29 @@ ActorAiUpdate updateActor(const ActorAiFacts &actor, const ActorAiFrameFacts &fr
             actorFacts.status.spellEffects = *statusUpdate.state.spellEffects;
             statusContinuation = statusUpdate;
         }
+    }
+
+    if (frame.updateMode == ActorAiUpdateMode::FinishCurrentActions)
+    {
+        // Drain attacks using their existing targets and the normal impact/status rules.
+        // Starting another attack or pursuit here would extend the completed monster phase.
+        ActorAiUpdate update = makeActorUpdate(actorFacts);
+        applyActiveAgingUpdates(actorFacts, frame, statusContinuation, update);
+        applyAttackImpactOutcome(actorFacts, update);
+        ActorAiCommandContext ai(actorFacts, frame);
+        ai.replaceUpdate(update);
+        if (actorFacts.runtime.motionState == ActorAiMotionState::Attacking
+            && update.state.actionSeconds.value_or(actorFacts.runtime.actionSeconds) > 0.0f)
+        {
+            AI_ContinueCurrentAction(ai);
+            ai.clearMovementDirection();
+            ai.clearVelocity();
+        }
+        else
+        {
+            AI_Stand(ai);
+        }
+        return ai.finish();
     }
 
     const std::optional<ActorTargetCandidateFacts> target = chooseTarget(actorFacts, frame);

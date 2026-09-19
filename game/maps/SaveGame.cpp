@@ -1,6 +1,7 @@
 #include "game/maps/SaveGame.h"
 
 #include "game/events/EvtEnums.h"
+#include "game/gameplay/MercenaryRecruitmentRuntime.h"
 #include "game/tables/HouseTable.h"
 #include "game/tables/ItemTable.h"
 
@@ -20,7 +21,9 @@ namespace OpenYAMM::Game
 {
 namespace
 {
-constexpr uint32_t SaveVersion = 83;
+constexpr uint32_t SaveVersion = 85;
+constexpr uint32_t SaveVersionTurnBasedCombat = 85;
+constexpr uint32_t SaveVersionIndoorCamera = 84;
 constexpr uint32_t SaveVersionAttackSpell = 19;
 constexpr uint32_t SaveVersionIndoorCorpseViews = 21;
 constexpr uint32_t SaveVersionIndoorChestViews = 22;
@@ -3183,6 +3186,7 @@ void writeValue(BinaryWriter &writer, const GameplayProjectileService::Projectil
     writeValue(writer, value.sectorId);
     writeValue(writer, value.isSettled);
     writeValue(writer, value.isExpired);
+    writeValue(writer, value.turnBasedPendingAction);
 }
 
 bool readValue(BinaryReader &reader, GameplayProjectileService::ProjectileState &value)
@@ -3227,7 +3231,8 @@ bool readValue(BinaryReader &reader, GameplayProjectileService::ProjectileState 
         && readValue(reader, value.lifetimeTicks)
         && (reader.version() < SaveVersionFullProjectileState || readValue(reader, value.sectorId))
         && (reader.version() < SaveVersionFullProjectileState || readValue(reader, value.isSettled))
-        && readValue(reader, value.isExpired);
+        && readValue(reader, value.isExpired)
+        && (reader.version() < SaveVersionTurnBasedCombat || readValue(reader, value.turnBasedPendingAction));
 }
 
 void writeValue(BinaryWriter &writer, const GameplayProjectileService::ProjectileImpactState &value)
@@ -3543,6 +3548,11 @@ bool readValue(BinaryReader &reader, OutdoorWorldRuntime::Snapshot &value)
         value.hasOutdoorRuntimeSaveParityFields = true;
     }
 
+    if (loaded && value.eventRuntimeState)
+    {
+        migrateLegacyMercenaryRefillState(*value.eventRuntimeState, value.gameMinutes);
+    }
+
     return loaded;
 }
 
@@ -3559,7 +3569,7 @@ void writeValue(BinaryWriter &writer, const IndoorSceneRuntime::Snapshot &value)
 
 bool readValue(BinaryReader &reader, IndoorSceneRuntime::Snapshot &value)
 {
-    return readValue(reader, value.mapDeltaData)
+    const bool loaded = readValue(reader, value.mapDeltaData)
         && readValue(reader, value.eventRuntimeState)
         && (reader.version() < 20 || readValue(reader, value.worldRuntime))
         && (reader.version() < 20 || readValue(reader, value.partyRuntime))
@@ -3567,6 +3577,123 @@ bool readValue(BinaryReader &reader, IndoorSceneRuntime::Snapshot &value)
         && (reader.version() < SaveVersionIndoorSaveLoadParity
             || readValue(reader, value.lastProcessedPartyMoveStateForFaceTriggers))
         && readValue(reader, value.mechanismAccumulatorMilliseconds);
+    if (loaded && value.eventRuntimeState)
+    {
+        migrateLegacyMercenaryRefillState(*value.eventRuntimeState, value.worldRuntime.gameMinutes);
+    }
+    return loaded;
+}
+
+void writeValue(BinaryWriter &writer, const TurnBasedCombatRuntime::QueueEntry &value)
+{
+    writeValue(writer, value.kind);
+    writeValue(writer, static_cast<uint64_t>(value.id));
+    writeValue(writer, value.initiative);
+    writeValue(writer, value.actionRecoverySeconds);
+}
+
+bool readValue(BinaryReader &reader, TurnBasedCombatRuntime::QueueEntry &value)
+{
+    uint64_t id = 0;
+    if (!readValue(reader, value.kind) || !readValue(reader, id) || id > std::numeric_limits<size_t>::max()
+        || !readValue(reader, value.initiative) || !readValue(reader, value.actionRecoverySeconds))
+    {
+        return false;
+    }
+    value.id = static_cast<size_t>(id);
+    return true;
+}
+
+void writeValue(BinaryWriter &writer, const TurnBasedCombatRuntime::Snapshot &value)
+{
+    writeValue(writer, value.active);
+    writeValue(writer, value.stage);
+    writeValue(writer, value.queue);
+    writeValue(writer, value.turnInitiative);
+    writeValue(writer, value.aiTurnTimerTicks);
+    writeValue(writer, value.movementActionPoints);
+    writeValue(writer, value.pendingActions);
+    writeValue(writer, value.turnCount);
+    writeValue(writer, value.actorActionTimerTicks);
+    writeValue(writer, value.movementFinished);
+    writeValue(writer, value.waitingForActorActionResolution);
+    writeValue(writer, value.pendingGameTimeAdvanceMinutes);
+    for (float recovery : value.memberTurnRecoverySeconds)
+    {
+        writeValue(writer, recovery);
+    }
+}
+
+bool readValue(BinaryReader &reader, TurnBasedCombatRuntime::Snapshot &value)
+{
+    if (!readValue(reader, value.active)
+        || !readValue(reader, value.stage)
+        || !readValue(reader, value.queue)
+        || !readValue(reader, value.turnInitiative)
+        || !readValue(reader, value.aiTurnTimerTicks)
+        || !readValue(reader, value.movementActionPoints)
+        || !readValue(reader, value.pendingActions)
+        || !readValue(reader, value.turnCount)
+        || !readValue(reader, value.actorActionTimerTicks)
+        || !readValue(reader, value.movementFinished)
+        || !readValue(reader, value.waitingForActorActionResolution)
+        || !readValue(reader, value.pendingGameTimeAdvanceMinutes))
+    {
+        return false;
+    }
+    for (float &recovery : value.memberTurnRecoverySeconds)
+    {
+        if (!readValue(reader, recovery))
+        {
+            return false;
+        }
+    }
+    return TurnBasedCombatRuntime::isValidSnapshot(value);
+}
+
+bool validateSavedTurnBasedCombat(const GameSaveData &data, std::string &error)
+{
+    const TurnBasedCombatRuntime::Snapshot &turn = data.turnBasedCombat;
+    if (!TurnBasedCombatRuntime::isValidSnapshot(turn))
+    {
+        error = "invalid turn-based combat state";
+        return false;
+    }
+    if (!turn.active)
+    {
+        return true;
+    }
+    const bool outdoor = data.currentSceneKind == SceneKind::Outdoor && data.hasOutdoorRuntimeState;
+    const bool indoor = data.currentSceneKind == SceneKind::Indoor && data.hasIndoorSceneState;
+    if (!outdoor && !indoor)
+    {
+        error = "turn-based combat has no saved world";
+        return false;
+    }
+    const size_t actorCount = outdoor ? data.outdoorWorld.mapActors.size()
+        : data.indoorScene.worldRuntime.mapActorAiStates.size();
+    for (const TurnBasedCombatRuntime::QueueEntry &entry : turn.queue)
+    {
+        const size_t count = entry.kind == TurnBasedCombatRuntime::QueueEntry::Kind::Character
+            ? data.party.members.size() : actorCount;
+        if (entry.id >= count)
+        {
+            error = "turn-based queue references an unavailable combatant";
+            return false;
+        }
+    }
+    const auto &projectiles = outdoor ? data.outdoorWorld.projectiles
+        : data.indoorScene.worldRuntime.projectileState.projectiles;
+    const size_t pending = std::count_if(projectiles.begin(), projectiles.end(), [](const auto &projectile)
+    {
+        return projectile.turnBasedPendingAction && !projectile.isExpired && !projectile.isSettled;
+    });
+    if (pending != static_cast<size_t>(turn.pendingActions))
+    {
+        error = "turn-based pending actions do not match saved projectiles";
+        return false;
+    }
+    return true;
 }
 
 void writeValue(BinaryWriter &writer, const GameSaveData &value)
@@ -3585,6 +3712,8 @@ void writeValue(BinaryWriter &writer, const GameSaveData &value)
     writeValue(writer, value.savedGameMinutes);
     writeValue(writer, value.outdoorCameraYawRadians);
     writeValue(writer, value.outdoorCameraPitchRadians);
+    writeValue(writer, value.indoorCameraYawRadians);
+    writeValue(writer, value.indoorCameraPitchRadians);
     writeValue(writer, value.heldInventoryItemActive);
     writeValue(writer, value.heldInventoryItem);
     writeValue(writer, value.heldInventoryItemGrabCellOffsetX);
@@ -3594,6 +3723,7 @@ void writeValue(BinaryWriter &writer, const GameSaveData &value)
     writeValue(writer, value.requiredContentPackages);
     writeValue(writer, value.saveName);
     writeValue(writer, value.previewBmp);
+    writeValue(writer, value.turnBasedCombat);
 }
 
 bool readValue(BinaryReader &reader, GameSaveData &value)
@@ -3612,6 +3742,8 @@ bool readValue(BinaryReader &reader, GameSaveData &value)
         && readValue(reader, value.savedGameMinutes)
         && readValue(reader, value.outdoorCameraYawRadians)
         && readValue(reader, value.outdoorCameraPitchRadians)
+        && (reader.version() < SaveVersionIndoorCamera || readValue(reader, value.indoorCameraYawRadians))
+        && (reader.version() < SaveVersionIndoorCamera || readValue(reader, value.indoorCameraPitchRadians))
         && (reader.version() < SaveVersionHeldCursorItem || readValue(reader, value.heldInventoryItemActive))
         && (reader.version() < SaveVersionHeldCursorItem || readValue(reader, value.heldInventoryItem))
         && (reader.version() < SaveVersionHeldCursorItem
@@ -3623,7 +3755,8 @@ bool readValue(BinaryReader &reader, GameSaveData &value)
         && (reader.version() < SaveVersionRequiredContentPackages
             || readValue(reader, value.requiredContentPackages))
         && readValue(reader, value.saveName)
-        && readValue(reader, value.previewBmp);
+        && readValue(reader, value.previewBmp)
+        && (reader.version() < SaveVersionTurnBasedCombat || readValue(reader, value.turnBasedCombat));
 }
 }
 
@@ -3992,6 +4125,10 @@ bool validateRequiredContentPackages(
 
 bool saveGameDataToPath(const std::filesystem::path &path, const GameSaveData &data, std::string &error)
 {
+    if (!validateSavedTurnBasedCombat(data, error))
+    {
+        return false;
+    }
     BinaryWriter writer;
     writer.writeBytes(SaveMagic, sizeof(SaveMagic));
     writer.write(SaveVersion);
@@ -4086,6 +4223,11 @@ std::optional<GameSaveData> loadGameDataFromPath(const std::filesystem::path &pa
         return std::nullopt;
     }
 
+    if (!validateSavedTurnBasedCombat(data, error))
+    {
+        return std::nullopt;
+    }
+    // Versions through 84 never stored a turn; they explicitly retain their former realtime load behavior.
     migrateLegacyConsumedCorpseMarkers(data, version);
 
     return data;

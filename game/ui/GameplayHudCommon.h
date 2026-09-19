@@ -172,7 +172,8 @@ public:
         const std::string &textureName,
         int &width,
         int &height,
-        GameplayHudBitmapTransparencyMode transparencyMode = GameplayHudBitmapTransparencyMode::HudColorKey);
+        GameplayHudBitmapTransparencyMode transparencyMode = GameplayHudBitmapTransparencyMode::HudColorKey,
+        const UiLayoutManager::TextureRegion *pRegion = nullptr);
     static std::optional<std::vector<uint8_t>> loadSpriteBitmapPixelsBgraCached(
         const Engine::AssetFileSystem *pAssetFileSystem,
         GameplayAssetLoadCache &cache,
@@ -191,7 +192,8 @@ public:
         const std::string &textureName,
         std::vector<GameplayHudTextureData> &textures,
         std::unordered_map<std::string, size_t> &textureIndexByName,
-        GameplayHudBitmapTransparencyMode transparencyMode = GameplayHudBitmapTransparencyMode::HudColorKey);
+        GameplayHudBitmapTransparencyMode transparencyMode = GameplayHudBitmapTransparencyMode::HudColorKey,
+        const UiLayoutManager::TextureRegion *pRegion = nullptr);
     static std::optional<GameplayHudTextureHandle> ensureDynamicHudTexture(
         const std::string &textureName,
         int width,

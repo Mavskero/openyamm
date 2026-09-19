@@ -53,6 +53,12 @@ struct MergedNpcProfessionEntry
     bool recruit = false;
     uint32_t joinTextId = 0;
     uint32_t descriptionTextId = 0;
+    std::string localizedProfession;
+
+    const std::string &displayName() const
+    {
+        return localizedProfession.empty() ? profession : localizedProfession;
+    }
 };
 
 struct MergedNpcBtbEntry
@@ -95,6 +101,8 @@ struct MergedNewsTopicEntry
     uint32_t ownerId = 0;
     uint32_t topicTextId = 0;
     uint32_t newsTextId = 0;
+    bool topicFromNpcTable = false;
+    bool textFromNpcTable = false;
 };
 
 struct MergedPotionSettingEntry
@@ -241,6 +249,8 @@ struct MergedComplexItemPictureEntry
     uint32_t itemId = 0;
     std::string notes;
     std::vector<MergedPoint> points;
+    bool complex = false;
+    std::vector<MergedPoint> collarPoints;
 };
 
 struct MergedContinentSettingEntry
@@ -351,6 +361,7 @@ struct MergedTownPortalDestination
 struct MergedTownPortalSwitchGroup
 {
     std::string name;
+    // Historical engine name: the source value is SwitchBit, a party QBit, not an NPC topic ID.
     uint32_t topicId = 0;
     std::vector<MergedTownPortalDestination> destinations;
 };
@@ -416,10 +427,12 @@ class MergedTeacherTopicTable
 {
 public:
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
+    bool hasCompleteDefinitions() const;
     const MergedTeacherTopicEntry *get(uint32_t topicId) const;
     const std::vector<MergedTeacherTopicEntry> &entries() const;
 
 private:
+    bool m_completeDefinitions = false;
     std::vector<MergedTeacherTopicEntry> m_entries;
     std::unordered_map<uint32_t, size_t> m_entryIndicesByTopicId;
 };
@@ -584,9 +597,15 @@ public:
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::vector<MergedCharacterVoiceEntry> &entries() const;
     std::vector<uint32_t> soundIdsForTypes(uint32_t voiceSetId, const std::vector<std::string> &soundTypes) const;
+    std::optional<uint32_t> selectSoundIdForGroups(
+        uint32_t voiceSetId, const std::vector<uint32_t> &groups, uint32_t seed) const;
+    // nullopt keeps legacy selection behavior; an empty vector is an explicit empty availability set.
+    std::optional<std::vector<uint32_t>> availableVoiceIds(
+        uint32_t sourcePortraitId, int32_t raceId, uint32_t sexId) const;
 
 private:
     std::vector<MergedCharacterVoiceEntry> m_entries;
+    std::array<std::vector<bool>, 6> m_availability;
 };
 
 class MergedClassStartingStatTable
@@ -604,6 +623,7 @@ class MergedComplexItemPictureOffsetTable
 public:
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::vector<MergedComplexItemPictureOffsetEntry> &entries() const;
+    const MergedComplexItemPictureOffsetEntry *get(uint32_t sourcePortraitId, uint32_t itemId) const;
 
 private:
     std::vector<MergedComplexItemPictureOffsetEntry> m_entries;
@@ -615,6 +635,9 @@ public:
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const MergedComplexItemPictureEntry *get(uint32_t itemId) const;
     const std::vector<MergedComplexItemPictureEntry> &entries() const;
+    std::optional<MergedPoint> resolvePoint(uint32_t itemId, uint32_t dollTypeId,
+        const MergedComplexItemPictureOffsetTable &offsets, std::optional<uint32_t> sourcePortraitId = std::nullopt,
+        bool collar = false) const;
 
 private:
     std::vector<MergedComplexItemPictureEntry> m_entries;

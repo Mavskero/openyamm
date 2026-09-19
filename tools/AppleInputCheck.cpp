@@ -1,0 +1,788 @@
+#include "game/app/GameInputSystem.h"
+#include "game/app/GameSession.h"
+#include "game/gameplay/GameplayOverlayInputController.h"
+#include "game/gameplay/GameplayInteractionController.h"
+#include "game/gameplay/GameplayScreenController.h"
+#include "game/ui/Utf8Text.h"
+#include "game/ui/GameplayOverlayAdapters.h"
+#include "game/ui/CharacterSkillsLayout.h"
+#include "game/gameplay/GameplayPartyOverlayInputController.h"
+#include "tests/PartySpellTestHarness.h"
+#include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+
+int main()
+{
+    using namespace OpenYAMM::Game;
+    if (!SDL_Init(SDL_INIT_EVENTS))
+    {
+        return 2;
+    }
+    try
+    {
+        GameInputSystem input;
+        GameSettings settings = GameSettings::createDefault();
+        const auto require = [](bool condition, const std::string &message)
+        {
+            if (!condition)
+            {
+                throw std::runtime_error(message);
+            }
+        };
+        const auto finger = [&](SDL_EventType type, SDL_FingerID id, float x, float y)
+        {
+            SDL_Event event = {};
+            event.type = type;
+            event.tfinger.fingerID = id;
+            event.tfinger.x = x;
+            event.tfinger.y = y;
+            event.tfinger.timestamp = SDL_GetTicksNS();
+            input.handleSdlEvent(event);
+        };
+        const auto update = [&](bool block = false, bool touchEnabled = true)
+        {
+            input.updateFromEngineInput(1440, 1000, 0, settings, block, touchEnabled, true, false, false);
+        };
+        finger(SDL_EVENT_FINGER_DOWN, 1, 0.2f, 0.6f);
+        update();
+        finger(SDL_EVENT_FINGER_MOTION, 1, 0.2f, 0.4f);
+        update();
+        require(input.frame().action(KeyboardAction::Forward).held, "Touch joystick did not move forward");
+        finger(SDL_EVENT_FINGER_DOWN, 2, 0.75f, 0.4f);
+        update();
+        finger(SDL_EVENT_FINGER_MOTION, 2, 0.80f, 0.42f);
+        update();
+        require(input.frame().action(KeyboardAction::Forward).held
+            && std::abs(input.frame().relativeMouseX - 72.0f) < 0.01f,
+            "Simultaneous camera and movement touch failed");
+        finger(SDL_EVENT_FINGER_CANCELED, 1, 0.2f, 0.4f);
+        finger(SDL_EVENT_FINGER_UP, 2, 0.80f, 0.42f);
+        update();
+        require(!input.frame().action(KeyboardAction::Forward).held && input.frame().relativeMouseX == 0,
+            "Canceled/released fingers left input held");
+        finger(SDL_EVENT_FINGER_DOWN, 3, 0.2f, 0.6f);
+        update();
+        finger(SDL_EVENT_FINGER_MOTION, 3, 0.2f, 0.4f);
+        update(true);
+        require(!input.frame().action(KeyboardAction::Forward).held, "Blocked gameplay still moved");
+        finger(SDL_EVENT_FINGER_CANCELED, 3, 0.2f, 0.4f);
+        update();
+        finger(SDL_EVENT_FINGER_DOWN, 4, 0.7f, 0.3f);
+        finger(SDL_EVENT_FINGER_UP, 4, 0.7f, 0.3f);
+        update(false, false);
+        require(input.frame().leftMouseButton.pressed && std::abs(input.frame().pointerX - 1008.0f) < 0.01f,
+            "Menu tap was not translated into a scaled pointer click");
+        update(false, false);
+        require(input.frame().leftMouseButton.released, "Menu tap did not release");
+        finger(SDL_EVENT_FINGER_DOWN, 50, 0.70f, 0.30f);
+        finger(SDL_EVENT_FINGER_UP, 50, 0.70f, 0.30f);
+        finger(SDL_EVENT_FINGER_DOWN, 51, 0.75f, 0.32f);
+        finger(SDL_EVENT_FINGER_UP, 51, 0.75f, 0.32f);
+        for (int tapIndex = 0; tapIndex < 2; ++tapIndex)
+        {
+            const float expectedX = (tapIndex == 0 ? 0.70f : 0.75f) * 1440.0f;
+            update(false, false);
+            require(input.frame().leftMouseButton.pressed
+                && std::abs(input.frame().pointerX - expectedX) < 0.01f,
+                "Batched touch taps lost their press order or position");
+            update(false, false);
+            require(input.frame().leftMouseButton.released
+                && std::abs(input.frame().pointerX - expectedX) < 0.01f,
+                "Batched touch taps lost their release order or position");
+        }
+        finger(SDL_EVENT_FINGER_DOWN, 52, 0.65f, 0.30f);
+        update(false, false);
+        require(input.frame().leftMouseButton.pressed, "Cannot begin held HUD touch");
+        finger(SDL_EVENT_FINGER_UP, 52, 0.65f, 0.30f);
+        finger(SDL_EVENT_FINGER_DOWN, 53, 0.80f, 0.32f);
+        update(false, false);
+        require(input.frame().leftMouseButton.released
+            && std::abs(input.frame().pointerX - 0.65f * 1440.0f) < 0.01f,
+            "New HUD touch hid the preceding release");
+        update(false, false);
+        require(input.frame().leftMouseButton.pressed, "New HUD touch did not follow the release");
+        finger(SDL_EVENT_FINGER_UP, 53, 0.80f, 0.32f);
+        update(false, false);
+        require(input.frame().leftMouseButton.released, "Second held HUD touch did not release");
+        finger(SDL_EVENT_FINGER_DOWN, 54, 0.7f, 0.3f);
+        finger(SDL_EVENT_FINGER_CANCELED, 54, 0.7f, 0.3f);
+        update(false, false);
+        require(!input.frame().leftMouseButton.held, "Canceled between-frame tap created a click");
+        finger(SDL_EVENT_FINGER_DOWN, 55, 0.7f, 0.3f);
+        finger(SDL_EVENT_FINGER_UP, 55, 0.7f, 0.3f);
+        SDL_Event touchFocusLost = {};
+        touchFocusLost.type = SDL_EVENT_WINDOW_FOCUS_LOST;
+        input.handleSdlEvent(touchFocusLost);
+        update(false, false);
+        update(false, false);
+        require(!input.frame().leftMouseButton.held, "Focus loss replayed a queued touch tap");
+        finger(SDL_EVENT_FINGER_DOWN, 56, 0.7f, 0.3f);
+        finger(SDL_EVENT_FINGER_UP, 56, 0.7f, 0.3f);
+        update(true, false);
+        update(false, false);
+        require(!input.frame().leftMouseButton.held, "Blocked touch replayed when input resumed");
+        SDL_Event key = {};
+        key.type = SDL_EVENT_KEY_DOWN;
+        key.key.scancode = SDL_SCANCODE_W;
+        input.handleSdlEvent(key);
+        key.key.repeat = true;
+        input.handleSdlEvent(key);
+        update();
+        require(input.frame().scancodePressCount(SDL_SCANCODE_W) == 1, "Keyboard press/repeat handling failed");
+        require(input.frame().action(KeyboardAction::Forward).pressed
+            && !input.frame().action(KeyboardAction::Forward).held, "Short key tap was lost or left held");
+        update();
+        require(!input.frame().action(KeyboardAction::Forward).pressed, "Short key tap repeated next frame");
+
+        GameSession session;
+        GameplayScreenRuntime &runtime = session.gameplayScreenRuntime();
+        runtime.bindSettings(&settings);
+        {
+            GameSession skillsSession;
+            const std::filesystem::path layoutPath = std::filesystem::path(__FILE__).parent_path().parent_path()
+                / "assets_dev/engine/ui/gameplay/character.yml";
+            std::ifstream layoutFile(layoutPath);
+            require(layoutFile.good(), "Cannot open authored character layout");
+            const std::string layoutText{std::istreambuf_iterator<char>(layoutFile), std::istreambuf_iterator<char>()};
+            require(skillsSession.gameplayUiRuntime().layoutManager().loadLayoutText("character-skills", layoutText),
+                "Cannot load authored character layout");
+            GameplayScreenRuntime &skillsRuntime = skillsSession.gameplayScreenRuntime();
+            for (const std::array<int, 2> size : {std::array{640, 480}, std::array{1210, 834}, std::array{2420, 1668}})
+            {
+                skillsRuntime.characterScreen().skillScrollOffset = 0;
+                const CharacterSkillLayout top = layoutCharacterSkillRows(
+                    skillsRuntime, size[0], size[1], 14, {10, 9, 5, 16});
+                require(top.rowHeight == 18 && top.maximumScroll > 0,
+                    "Crowded skills must scroll without shrinking their readable rows");
+                const std::optional<GameplayResolvedHudLayoutElement> region =
+                    skillsRuntime.resolveHudLayoutElement("CharacterSkillsMiscListRegion", size[0], size[1], 0, 0);
+                require(region.has_value(), "Cannot resolve final skill section");
+                GameplayResolvedHudLayoutElement last = *region;
+                last.y += 15 * top.rowHeight * last.scale;
+                last.height = top.rowHeight * last.scale;
+                const GameplayResolvedHudLayoutElement originalLast = last;
+                require(!top.placeVisible(last), "Offscreen skill row must not render or receive upgrade clicks");
+                skillsRuntime.characterScreen().skillScrollOffset = 10000;
+                const CharacterSkillLayout bottom = layoutCharacterSkillRows(
+                    skillsRuntime, size[0], size[1], 14, {10, 9, 5, 16});
+                require(bottom.scrollOffset == bottom.maximumScroll && bottom.rowHeight == top.rowHeight,
+                    "Overscroll must clamp without changing font size");
+                last = originalLast;
+                require(bottom.placeVisible(last)
+                    && last.y + last.height <= bottom.viewport.y + bottom.viewport.height + 0.01f,
+                    "Scrolling must expose the last skill above the tabs");
+                require(!bottom.contains(last.x, bottom.viewport.y + bottom.viewport.height + 1),
+                    "Skill scroll input must exclude the tabs");
+                const CharacterSkillLayout shortList = layoutCharacterSkillRows(
+                    skillsRuntime, size[0], size[1], 14, {2, 1, 1, 1});
+                require(shortList.rowHeight == top.rowHeight && shortList.maximumScroll == 0
+                    && shortList.scrollOffset == 0, "Ordinary characters must keep the same readable font and reset scroll");
+            }
+            PartySeed skillSeed = Party::createDefaultSeed();
+            skillSeed.members.resize(1);
+            skillSeed.members.front().skillPoints = 100;
+            for (auto &[name, skill] : skillSeed.members.front().skills)
+            {
+                skill.level = 1;
+            }
+            Party skillParty;
+            skillParty.seed(skillSeed);
+            OpenYAMM::Tests::PartySpellTestWorldRuntime skillWorld;
+            skillWorld.bindParty(&skillParty);
+            skillsSession.bindActiveWorldRuntime(&skillWorld);
+            GameDataRepository skillData;
+            skillsSession.bindDataRepository(&skillData);
+            skillsRuntime.bindSettings(&settings);
+            skillsRuntime.characterScreen().open = true;
+            skillsRuntime.characterScreen().page = GameplayUiController::CharacterPage::Skills;
+            GameplayInputFrame scroll = {};
+            scroll.screenWidth = 1210;
+            scroll.screenHeight = 834;
+            CharacterSkillLayout page = layoutCharacterSkillRows(skillsRuntime, 1210, 834, 11, {10, 9, 5, 16});
+            scroll.pointerX = page.viewport.x + page.viewport.width / 2;
+            scroll.pointerY = page.viewport.y + page.viewport.height / 2;
+            scroll.mouseWheelDelta = -100;
+            GameplayPartyOverlayInputController::handleCharacterOverlayInput(skillsRuntime, scroll);
+            require(skillsRuntime.characterScreen().skillScrollOffset == page.maximumScroll,
+                "Real character controller did not clamp wheel scroll to the last skill");
+            page = layoutCharacterSkillRows(skillsRuntime, 1210, 834, 11, {10, 9, 5, 16});
+            const std::optional<GameplayResolvedHudLayoutElement> misc =
+                skillsRuntime.resolveHudLayoutElement("CharacterSkillsMiscListRegion", 1210, 834, 0, 0);
+            require(misc.has_value(), "Cannot resolve scrolled skill target");
+            GameplayResolvedHudLayoutElement last = *misc;
+            last.y += 15 * page.rowHeight * last.scale;
+            last.height = page.rowHeight * last.scale;
+            require(page.placeVisible(last), "Last skill must be clickable after scrolling");
+            GameplayInputFrame click = {};
+            click.screenWidth = 1210;
+            click.screenHeight = 834;
+            click.pointerX = last.x + 10;
+            click.pointerY = last.y + last.height / 2;
+            click.leftMouseButton = {true, true, false};
+            GameplayPartyOverlayInputController::handleCharacterOverlayInput(skillsRuntime, click);
+            click.leftMouseButton = {false, false, true};
+            GameplayPartyOverlayInputController::handleCharacterOverlayInput(skillsRuntime, click);
+            require(skillParty.activeMember()->findSkill("VampireAbility")->level == 2
+                && skillParty.activeMember()->findSkill("Regeneration")->level == 1
+                && skillParty.activeMember()->skillPoints == 98,
+                "Scrolled skill click must upgrade exactly the visible canonical skill");
+            GameplayInputFrame drag = {};
+            drag.screenWidth = 1210;
+            drag.screenHeight = 834;
+            drag.leftMouseButton.held = true;
+            drag.mobileTouchDragStarted = true;
+            drag.mobileTouchDragActive = true;
+            drag.mobileTouchDragStartX = scroll.pointerX;
+            drag.mobileTouchDragStartY = page.viewport.y + 10;
+            drag.pointerX = drag.mobileTouchDragStartX;
+            drag.pointerY = drag.mobileTouchDragStartY + (page.maximumScroll + 20) * page.viewport.scale;
+            GameplayPartyOverlayInputController::handleCharacterOverlayInput(skillsRuntime, drag);
+            drag.mobileTouchDragStarted = false;
+            drag.mobileTouchDragActive = false;
+            drag.mobileTouchDragReleased = true;
+            drag.leftMouseButton.held = false;
+            GameplayPartyOverlayInputController::handleCharacterOverlayInput(skillsRuntime, drag);
+            require(skillsRuntime.characterScreen().skillScrollOffset == 0
+                && !skillsRuntime.characterScreen().skillDragActive && skillParty.activeMember()->skillPoints == 98,
+                "Touch scrolling must return to the top without spending skill points");
+        }
+        require(!runtime.mobileInspectControlAvailable(),
+            "An absent mobile inspect button still captures the classic character tabs");
+        {
+            GameSession mobileSession;
+            require(mobileSession.gameplayUiRuntime().layoutManager().loadLayoutText("mobile-inspect", R"(
+screen: OutdoorHud
+elements:
+  - id: OutdoorMobileInspectButton
+    anchor: top_left
+    width: 80
+    height: 80
+    interactive: true
+    children:
+      - id: OutdoorMobileInspectButtonIcon
+        anchor: top_left
+        width: 42
+        height: 64
+        asset:
+          default: magnif-b
+)"), "Cannot prepare mobile inspect layout");
+            require(mobileSession.gameplayScreenRuntime().mobileInspectControlAvailable(),
+                "The authored mobile inspect control was disabled");
+        }
+        const auto menuFrame = [&]()
+        {
+            GameplayStandardUiHotkeyConfig config = {};
+            config.pInputFrame = &input.frame();
+            config.pKeyboardState = input.frame().keyboardState();
+            GameplayInputController::handleStandardUiHotkeys(runtime, config);
+            GameplayOverlayInputController::handleMenuOverlayInput(runtime, input.frame());
+        };
+        const auto escapeTap = [&]()
+        {
+            SDL_Event event = {};
+            event.type = SDL_EVENT_KEY_DOWN;
+            event.key.scancode = SDL_SCANCODE_ESCAPE;
+            input.handleSdlEvent(event);
+            event.type = SDL_EVENT_KEY_UP;
+            input.handleSdlEvent(event);
+        };
+        escapeTap();
+        update();
+        menuFrame();
+        require(runtime.menuScreenState().active, "Escape tap did not open the game menu");
+        update();
+        menuFrame();
+        require(runtime.menuScreenState().active, "Opening Escape also closed the menu");
+        escapeTap();
+        update();
+        menuFrame();
+        require(!runtime.menuScreenState().active, "Second Escape tap did not close the menu");
+        update();
+        menuFrame();
+        require(!runtime.menuScreenState().active, "Closing Escape reopened the menu");
+        escapeTap();
+        update(true);
+        menuFrame();
+        require(!runtime.menuScreenState().active, "Blocked Escape opened the game menu");
+        const auto mouse = [&](SDL_EventType type, uint8_t button, float x, float y,
+            SDL_MouseID source = 0)
+        {
+            SDL_Event event = {};
+            event.type = type;
+            event.button.which = source;
+            event.button.button = button;
+            event.button.x = x;
+            event.button.y = y;
+            input.handleSdlEvent(event);
+        };
+        const auto click = [&](uint8_t button, float downX, float downY, float upX, float upY)
+        {
+            mouse(SDL_EVENT_MOUSE_BUTTON_DOWN, button, downX, downY);
+            mouse(SDL_EVENT_MOUSE_BUTTON_UP, button, upX, upY);
+        };
+        click(SDL_BUTTON_LEFT, 100, 120, 200, 240);
+        update();
+        require(input.frame().leftMouseButton.pressed && input.frame().pointerX == 100
+            && input.frame().pointerY == 120, "Mouse down edge or position was lost");
+        update();
+        require(input.frame().leftMouseButton.released && input.frame().pointerX == 200
+            && input.frame().pointerY == 240, "Mouse release edge or position was lost");
+        update();
+        require(!input.frame().leftMouseButton.held && !input.frame().leftMouseButton.pressed
+            && !input.frame().leftMouseButton.released, "Completed click repeated or stayed held");
+
+        click(SDL_BUTTON_LEFT, 10, 20, 10, 20);
+        click(SDL_BUTTON_LEFT, 30, 40, 30, 40);
+        for (int edge = 0; edge < 4; ++edge)
+        {
+            update();
+            require(input.frame().leftMouseButton.held == (edge % 2 == 0)
+                && input.frame().pointerX == (edge < 2 ? 10 : 30), "Rapid clicks lost edge order/positions");
+        }
+        settings.keyboard.setBinding(KeyboardAction::Attack, mouseButtonInputBinding(SDL_BUTTON_RIGHT));
+        click(SDL_BUTTON_RIGHT, 10, 20, 10, 20);
+        update();
+        require(input.frame().rightMouseButton.pressed && input.frame().action(KeyboardAction::Attack).pressed,
+            "Quick right click did not reach its configured game action");
+        update();
+        require(input.frame().rightMouseButton.released && input.frame().action(KeyboardAction::Attack).released,
+            "Right click action did not release");
+        click(SDL_BUTTON_MIDDLE, 10, 20, 10, 20);
+        update();
+        require(input.frame().middleMouseButton.pressed, "Quick middle click was lost");
+        update();
+        require(input.frame().middleMouseButton.released, "Middle click did not release");
+        click(SDL_BUTTON_LEFT, 10, 20, 10, 20);
+        update(true);
+        update();
+        require(!input.frame().leftMouseButton.held, "Blocked click replayed after input was unblocked");
+        click(SDL_BUTTON_LEFT, 10, 20, 10, 20);
+        input.suppressMouseButtonsUntilReleased();
+        update();
+        require(!input.frame().leftMouseButton.held, "Screen transition replayed a pending click");
+        mouse(SDL_EVENT_MOUSE_BUTTON_DOWN, SDL_BUTTON_LEFT, 10, 20, SDL_TOUCH_MOUSEID);
+        mouse(SDL_EVENT_MOUSE_BUTTON_UP, SDL_BUTTON_LEFT, 10, 20, SDL_TOUCH_MOUSEID);
+        update();
+        require(!input.frame().leftMouseButton.held, "SDL touch mouse emulation duplicated a touch");
+
+        GameSession hudSession;
+        GameplayScreenRuntime &hudRuntime = hudSession.gameplayScreenRuntime();
+        hudRuntime.bindSettings(&settings);
+        require(hudSession.gameplayUiRuntime().layoutManager().loadLayoutText("touch-hud", R"(
+screen: OutdoorHud
+elements:
+  - id: OutdoorStandardButtonOptions
+    anchor: top_left
+    offset_x: 520
+    offset_y: 5
+    width: 60
+    height: 24
+    interactive: true
+  - id: OutdoorButtonOptions
+    anchor: top_left
+    offset_x: 520
+    offset_y: 5
+    width: 60
+    height: 24
+    interactive: true
+)"), "Cannot prepare gameplay menu target");
+        const auto hudMenu = hudRuntime.resolveHudLayoutElement("OutdoorStandardButtonOptions", 1440, 1000, 60, 24);
+        require(hudMenu.has_value(), "Cannot resolve gameplay menu target");
+        const float hudX = hudMenu->x + hudMenu->width / 2;
+        const float hudY = hudMenu->y + hudMenu->height / 2;
+        const auto hudFrame = [&](bool blocked = false)
+        {
+            const GameplayInputFrame &frame = input.frame();
+            GameplayStandardUiInputConfig config = {};
+            config.pInputFrame = &frame;
+            config.width = frame.screenWidth;
+            config.height = frame.screenHeight;
+            config.pointerX = frame.pointerX;
+            config.pointerY = frame.pointerY;
+            config.leftButtonPressed = frame.leftMouseButton.held;
+            config.allowGameplayPointerInput = false;
+            config.blockHudButtonInput = blocked;
+            GameplayScreenController::handleStandardUiInput(hudRuntime, config);
+        };
+        click(SDL_BUTTON_LEFT, hudX, hudY, hudX, hudY);
+        update();
+        hudFrame();
+        update();
+        hudFrame();
+        require(!hudRuntime.menuScreenState().active, "Mouse-look mode unexpectedly enabled mouse HUD clicks");
+        finger(SDL_EVENT_FINGER_DOWN, 41, hudX / 1440, hudY / 1000);
+        finger(SDL_EVENT_FINGER_UP, 41, hudX / 1440, hudY / 1000);
+        update();
+        hudFrame();
+        require(!hudRuntime.menuScreenState().active, "Touch menu activated before release");
+        update();
+        hudFrame();
+        require(hudRuntime.menuScreenState().active, "Mouse-look mode blocked a touch on the real HUD menu");
+        hudRuntime.closeMenuOverlay();
+        update();
+        require(!input.frame().pointerFromTouch, "Touch pointer ownership leaked into the next mouse frame");
+        finger(SDL_EVENT_FINGER_DOWN, 42, hudX / 1440, hudY / 1000);
+        finger(SDL_EVENT_FINGER_UP, 42, hudX / 1440, hudY / 1000);
+        update();
+        hudFrame(true);
+        update();
+        hudFrame(true);
+        require(!hudRuntime.menuScreenState().active, "Touch bypassed the modal HUD input block");
+
+        require(session.gameplayUiRuntime().layoutManager().loadLayoutText("input-menu", R"(
+screen: Menu
+elements:
+  - id: MenuButtonReturn
+    anchor: top_left
+    offset_x: 100
+    offset_y: 100
+    width: 100
+    height: 40
+    interactive: true
+)"), "Cannot prepare menu button layout");
+        const auto returnButton = runtime.resolveHudLayoutElement("MenuButtonReturn", 1440, 1000, 100, 40);
+        require(returnButton.has_value(), "Cannot resolve menu button target");
+        const float buttonX = returnButton->x + returnButton->width / 2;
+        const float buttonY = returnButton->y + returnButton->height / 2;
+        escapeTap();
+        update();
+        menuFrame();
+        require(runtime.menuScreenState().active, "Cannot open menu for mouse checks");
+        click(SDL_BUTTON_LEFT, buttonX, buttonY, buttonX, buttonY);
+        update();
+        menuFrame();
+        require(runtime.menuScreenState().active, "Menu activated on mouse down instead of release");
+        update();
+        menuFrame();
+        require(!runtime.menuScreenState().active, "Quick click failed to activate the real menu controller");
+        escapeTap();
+        update();
+        menuFrame();
+        click(SDL_BUTTON_LEFT, buttonX, buttonY, -10, -10);
+        update();
+        menuFrame();
+        update();
+        menuFrame();
+        require(runtime.menuScreenState().active, "Drag release outside the button activated it");
+        click(SDL_BUTTON_LEFT, buttonX, buttonY, buttonX, buttonY);
+        update();
+        menuFrame();
+        SDL_Event focusLost = {};
+        focusLost.type = SDL_EVENT_WINDOW_FOCUS_LOST;
+        input.handleSdlEvent(focusLost);
+        update();
+        menuFrame();
+        update();
+        menuFrame();
+        require(runtime.menuScreenState().active, "Focus loss activated/replayed a pending click");
+        click(SDL_BUTTON_LEFT, buttonX, buttonY, buttonX, buttonY);
+        update();
+        menuFrame();
+        update();
+        menuFrame();
+        require(!runtime.menuScreenState().active, "Mouse input did not recover after cancellation");
+
+        const auto keyTap = [&](SDL_Scancode scancode)
+        {
+            SDL_Event event = {};
+            event.type = SDL_EVENT_KEY_DOWN;
+            event.key.scancode = scancode;
+            input.handleSdlEvent(event);
+            event.type = SDL_EVENT_KEY_UP;
+            input.handleSdlEvent(event);
+        };
+        PartySeed seed = {};
+        Character member = {};
+        member.name = "Input check";
+        member.health = 100;
+        member.maxHealth = 100;
+        seed.members.push_back(member);
+        Party party;
+        party.seed(seed);
+        OpenYAMM::Tests::PartySpellTestWorldRuntime world;
+        world.bindParty(&party);
+        session.bindActiveWorldRuntime(&world);
+
+        settings.keyboard.setBinding(KeyboardAction::Attack, keyboardInputBinding(SDL_SCANCODE_F));
+        struct AttackWorld : OpenYAMM::Tests::PartySpellTestWorldRuntime
+        {
+            bool worldInspectModeActive() const override { return true; }
+        } attackWorld;
+        attackWorld.bindParty(&party);
+        GameSession attackSession;
+        attackSession.bindActiveWorldRuntime(&attackWorld);
+        GameplayScreenRuntime &attackRuntime = attackSession.gameplayScreenRuntime();
+        attackRuntime.bindSettings(&settings);
+        const auto worldFrame = [&](const GameplayInputFrame &frame, bool blocked = false)
+        {
+            return GameplayInteractionController::updateWorldInteractionFrame(
+                attackSession.gameplayScreenState(), attackSession.overlayInteractionState(), attackRuntime,
+                attackSession.gameplaySpellService(), frame, {}, blocked);
+        };
+        keyTap(settings.keyboard.keyboardBinding(KeyboardAction::Attack));
+        update();
+        require(input.frame().action(KeyboardAction::Attack).pressed
+            && !input.frame().action(KeyboardAction::Attack).held,
+            "Completed Attack tap was not preserved as an edge");
+        require(worldFrame(input.frame()).attackAttempted,
+            "World interaction discarded a between-frame Attack tap");
+        update();
+        require(!worldFrame(input.frame()).attackAttempted,
+            "Completed Attack tap repeated on an empty frame");
+        keyTap(settings.keyboard.keyboardBinding(KeyboardAction::Attack));
+        update();
+        require(!worldFrame(input.frame(), true).attackAttempted,
+            "Blocked world accepted an Attack tap");
+        update();
+        require(!worldFrame(input.frame()).attackAttempted,
+            "Blocked Attack tap replayed after the modal closed");
+        GameplayInputFrame heldAttack;
+        heldAttack.actions[keyboardActionIndex(KeyboardAction::Attack)].held = true;
+        require(worldFrame(heldAttack).attackAttempted, "Held Attack no longer starts an attack");
+        require(!worldFrame(heldAttack).attackAttempted, "Held Attack ignored the repeat debounce");
+        worldFrame({});
+        heldAttack.rightMouseButton.held = true;
+        require(!worldFrame(heldAttack).attackAttempted, "Inspect pause accepted an attack");
+        worldFrame({});
+        std::cout << "World attack input passed: transient tap, release, modal cancellation, hold and inspect.\n";
+
+        const auto restFrame = [&]()
+        {
+            GameplayStandardUiHotkeyConfig config = {};
+            config.pInputFrame = &input.frame();
+            config.pKeyboardState = input.frame().keyboardState();
+            config.canOpenRest = true;
+            GameplayInputController::handleStandardUiHotkeys(runtime, config);
+        };
+        keyTap(settings.keyboard.keyboardBinding(KeyboardAction::Rest));
+        update();
+        restFrame();
+        require(runtime.restScreenState().active, "Short Rest tap did not open the real rest controller");
+        runtime.closeRestOverlay();
+        update();
+        restFrame();
+        require(!runtime.restScreenState().active, "Completed Rest tap reopened the overlay");
+
+        const auto sharedHotkeyFrame = [&](bool allowed = true)
+        {
+            GameplaySharedGameplayHotkeyConfig config = {};
+            config.pInputFrame = &input.frame();
+            config.pKeyboardState = input.frame().keyboardState();
+            config.canToggleAlwaysRun = allowed;
+            GameplayInputController::handleSharedGameplayHotkeys(runtime, config);
+        };
+        const bool previousAlwaysRun = runtime.mutableSettings().alwaysRun;
+        keyTap(settings.keyboard.keyboardBinding(KeyboardAction::AlwaysRun));
+        update();
+        sharedHotkeyFrame();
+        require(runtime.mutableSettings().alwaysRun != previousAlwaysRun, "Short Always Run tap was lost");
+        update();
+        sharedHotkeyFrame();
+        require(runtime.mutableSettings().alwaysRun != previousAlwaysRun, "Always Run tap toggled twice");
+
+        TurnBasedCombatRuntime &combat = runtime.turnBasedCombatRuntime();
+        for (SDL_Scancode scancode : {settings.keyboard.keyboardBinding(KeyboardAction::Combat), SDL_SCANCODE_KP_ENTER})
+        {
+            keyTap(scancode);
+            update();
+            sharedHotkeyFrame(false);
+            require(!combat.active(), "Blocked Combat tap enabled turn-based combat");
+            update();
+            sharedHotkeyFrame();
+            keyTap(scancode);
+            update();
+            sharedHotkeyFrame();
+            require(combat.active(), "Short Combat tap did not enter turn-based combat");
+            combat.update(&party, &world, 0.6f);
+            require(combat.stage() == TurnBasedCombatStage::Attack, "Combat did not reach player attack phase");
+            update();
+            sharedHotkeyFrame();
+            require(combat.active(), "Completed Combat tap toggled off again");
+            keyTap(scancode);
+            update();
+            sharedHotkeyFrame();
+            require(!combat.active(), "Second Combat tap did not leave turn-based combat");
+            update();
+            sharedHotkeyFrame();
+        }
+
+        require(combat.begin(party, nullptr), "Cannot begin movement input check");
+        keyTap(settings.keyboard.keyboardBinding(KeyboardAction::Forward));
+        update();
+        GameplayInputFrame movementFrame = input.frame();
+        require(!combat.noteMovementInput(movementFrame)
+            && !movementFrame.isActionActive(KeyboardAction::Forward),
+            "Short movement tap escaped the turn-based wait phase");
+        combat.update(&party, nullptr, 0.6f);
+        require(combat.applyPlayerAction(party, 0, 5.0f), "Cannot complete player action for movement check");
+        combat.update(&party, nullptr, 0.016f);
+        require(combat.stage() == TurnBasedCombatStage::Movement, "Cannot enter movement phase");
+        for (int step = 0; step < 5; ++step)
+        {
+            keyTap(settings.keyboard.keyboardBinding(KeyboardAction::Forward));
+            update();
+            movementFrame = input.frame();
+            require(!movementFrame.action(KeyboardAction::Forward).held
+                && combat.noteMovementInput(movementFrame) && movementFrame.turnBasedMovementStep,
+                "Short movement tap did not produce an allowed movement step");
+            require(combat.movementActionPoints() == 130 - 26 * (step + 1),
+                "Short movement tap spent the wrong number of action points");
+            update();
+            movementFrame = input.frame();
+            require(!combat.noteMovementInput(movementFrame), "Completed movement tap spent a second step");
+        }
+        keyTap(settings.keyboard.keyboardBinding(KeyboardAction::Forward));
+        update();
+        movementFrame = input.frame();
+        require(!combat.noteMovementInput(movementFrame)
+            && !movementFrame.isActionActive(KeyboardAction::Forward),
+            "Short movement tap bypassed exhausted action points");
+        combat.end(&party);
+        session.bindActiveWorldRuntime(nullptr);
+
+        keyTap(SDL_SCANCODE_W);
+        SDL_Event pendingText = {};
+        pendingText.type = SDL_EVENT_TEXT_INPUT;
+        pendingText.text.text = "canceled";
+        input.handleSdlEvent(pendingText);
+        input.handleSdlEvent(focusLost);
+        update();
+        require(!input.frame().isActionActive(KeyboardAction::Forward) && input.frame().textInput.empty(),
+            "Focus loss replayed pending movement or text");
+        SDL_Event focusGained = {};
+        focusGained.type = SDL_EVENT_WINDOW_FOCUS_GAINED;
+        input.handleSdlEvent(focusGained);
+        keyTap(SDL_SCANCODE_W);
+        update();
+        require(input.frame().isActionActive(KeyboardAction::Forward), "Keyboard did not recover after focus gain");
+        update();
+        GameplayUiController::SaveGameScreenState &saveScreen = runtime.saveGameScreenState();
+        saveScreen.active = true;
+        saveScreen.slots.resize(1);
+        saveScreen.slots[0].fileLabel = "Empty";
+        require(session.gameplayUiRuntime().layoutManager().loadLayoutText("save-touch", R"(
+screen: SaveGame
+elements:
+  - id: SaveGameSlotRow0
+    anchor: top_left
+    offset_x: 100
+    offset_y: 100
+    width: 200
+    height: 40
+    interactive: true
+)"), "Cannot prepare save slot input layout");
+        const auto saveSlot = runtime.resolveHudLayoutElement("SaveGameSlotRow0", 1440, 1000, 200, 40);
+        require(saveSlot.has_value(), "Cannot resolve the save slot");
+        const float saveX = (saveSlot->x + saveSlot->width / 2.0f) / 1440.0f;
+        const float saveY = (saveSlot->y + saveSlot->height / 2.0f) / 1000.0f;
+        for (SDL_FingerID id : {60, 61})
+        {
+            finger(SDL_EVENT_FINGER_DOWN, id, saveX, saveY);
+            finger(SDL_EVENT_FINGER_UP, id, saveX, saveY);
+        }
+        for (int frameIndex = 0; frameIndex < 4; ++frameIndex)
+        {
+            update(false, false);
+            GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+            require(saveScreen.editActive == (frameIndex == 3),
+                "Real save controller did not enter editing on the second completed touch tap");
+        }
+        saveScreen.editBuffer.clear();
+        const auto textInput = [&](const char *pText)
+        {
+            SDL_Event event = {};
+            event.type = SDL_EVENT_TEXT_INPUT;
+            event.text.text = pText;
+            input.handleSdlEvent(event);
+            update();
+            GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        };
+        textInput("新索匹格镇 MM678");
+        require(saveScreen.editBuffer == "新索匹格镇 MM678", "Save controller rejected Chinese input");
+        textInput("𠀀");
+        require(saveScreen.editBuffer == "新索匹格镇 MM678𠀀",
+            "Supplementary input was not appended: " + saveScreen.editBuffer);
+        key = {};
+        key.type = SDL_EVENT_KEY_DOWN;
+        key.key.scancode = SDL_SCANCODE_BACKSPACE;
+        input.handleSdlEvent(key);
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        require(saveScreen.editBuffer == "新索匹格镇 MM678",
+            "Backspace split a supplementary UTF-8 character: actual=" + saveScreen.editBuffer
+                + " presses=" + std::to_string(input.frame().scancodePressCount(SDL_SCANCODE_BACKSPACE)));
+        saveScreen.editBuffer.clear();
+        for (int i = 0; i < 29; ++i)
+        {
+            saveScreen.editBuffer += "中";
+        }
+        textInput("文𠀀A");
+        require(utf8CharacterCount(saveScreen.editBuffer) == 30 && saveScreen.editBuffer.ends_with("文"),
+            "Save name limit counted bytes or split UTF-8");
+        saveScreen.editBuffer.clear();
+        textInput("A\nB\tC");
+        require(saveScreen.editBuffer == "ABC", "Save label accepted control characters");
+        textInput("\xe4\xb8");
+        require(saveScreen.editBuffer == "ABC", "Save controller accepted a truncated UTF-8 sequence");
+        for (const char *pInvalid : {"\xc0\xaf", "\xed\xa0\x80", "\xf4\x90\x80\x80"})
+        {
+            textInput(pInvalid);
+            require(saveScreen.editBuffer == "ABC", "Save controller accepted noncanonical Unicode");
+        }
+        struct SaveInputAdapter final : IGameplayOverlaySceneAdapter
+        {
+            GameplayUiController::SaveGameScreenState &state;
+            std::string committedName;
+
+            explicit SaveInputAdapter(GameplayUiController::SaveGameScreenState &saveState) : state(saveState)
+            {
+            }
+            float gameplayCameraYawRadians() const override
+            {
+                return 0.0f;
+            }
+            void executeActiveDialogAction() override
+            {
+            }
+            bool tryCastSpellRequest(const PartySpellCastRequest &, const std::string &) override
+            {
+                return false;
+            }
+            bool trySaveToSelectedGameSlot() override
+            {
+                committedName = state.slots[state.selectedIndex].fileLabel;
+                return true;
+            }
+        } saveAdapter(saveScreen);
+        runtime.bindSceneAdapter(&saveAdapter);
+        saveScreen.editBuffer = "连";
+        SDL_Event committedText = {};
+        committedText.type = SDL_EVENT_TEXT_INPUT;
+        committedText.text.text = "续";
+        input.handleSdlEvent(committedText);
+        keyTap(SDL_SCANCODE_RETURN);
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        require(saveAdapter.committedName == "连续", "Return saved before the same-frame IME text was applied");
+        runtime.clearSceneAdapter(&saveAdapter);
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        escapeTap();
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        require(!saveScreen.active, "Short Escape did not close the save overlay");
+        std::cout << "Touch, short movement/rest/combat input, focus, real menu clicks "
+            "and Chinese save editing passed\n";
+        SDL_Quit();
+        return 0;
+    }
+    catch (const std::exception &error)
+    {
+        std::cerr << error.what() << '\n';
+        SDL_Quit();
+        return 1;
+    }
+}

@@ -21,6 +21,7 @@ struct GenericActorDialogResolution
 {
     uint32_t npcId = 0;
     uint32_t newsId = 0;
+    bool newsFromNpcText = false;
     uint32_t portraitPictureId = 0;
     bool opensNpcTalk = false;
     bool generatedNpc = false;

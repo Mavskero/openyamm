@@ -1,14 +1,57 @@
 #include "doctest/doctest.h"
 
 #include "game/gameplay/GameplayInputFrame.h"
+#include "game/gameplay/GameplayActorAiSystem.h"
 #include "game/gameplay/TurnBasedCombatRuntime.h"
 #include "game/party/Party.h"
+#include "game/maps/SaveGame.h"
+
+#include <fstream>
+#include <limits>
 #include "tests/PartySpellTestHarness.h"
 
 namespace OpenYAMM::Tests
 {
 namespace
 {
+class MutableTurnWorld : public PartySpellTestWorldRuntime
+{
+public:
+    std::vector<std::optional<Game::GameplayRuntimeActorState>> actors;
+
+    size_t mapActorCount() const override
+    {
+        return actors.size();
+    }
+
+    bool actorRuntimeState(size_t index, Game::GameplayRuntimeActorState &state) const override
+    {
+        if (index >= actors.size() || !actors[index])
+        {
+            return false;
+        }
+        state = *actors[index];
+        return true;
+    }
+};
+
+Game::GameplayRuntimeActorState nearbyHostile()
+{
+    Game::GameplayRuntimeActorState actor;
+    actor.hostileToParty = true;
+    actor.preciseX = 128.0f;
+    actor.radius = 32;
+    return actor;
+}
+
+bool hasQueuedActor(const Game::TurnBasedCombatRuntime &runtime, size_t id)
+{
+    return std::any_of(runtime.queue().begin(), runtime.queue().end(), [id](const auto &entry)
+    {
+        return entry.kind == Game::TurnBasedCombatRuntime::QueueEntry::Kind::Actor && entry.id == id;
+    });
+}
+
 OpenYAMM::Game::Party makeTurnBasedParty(size_t memberCount = 2)
 {
     OpenYAMM::Game::PartySeed seed = {};
@@ -27,6 +70,77 @@ OpenYAMM::Game::Party makeTurnBasedParty(size_t memberCount = 2)
     return party;
 }
 } // namespace
+
+TEST_CASE("turn based queue includes all nearby hostile actor indices")
+{
+    Game::Party party = makeTurnBasedParty(1);
+    MutableTurnWorld world;
+    world.bindParty(&party);
+    world.actors.assign(12, nearbyHostile());
+    Game::TurnBasedCombatRuntime runtime;
+    REQUIRE(runtime.begin(party, &world));
+    for (size_t index = 0; index < world.actors.size(); ++index)
+    {
+        CAPTURE(index);
+        CHECK(hasQueuedActor(runtime, index));
+    }
+}
+
+TEST_CASE("turn based queue removes defeated unavailable friendly and distant actors")
+{
+    Game::Party party = makeTurnBasedParty(1);
+    MutableTurnWorld world;
+    world.bindParty(&party);
+    world.actors.push_back(nearbyHostile());
+    Game::TurnBasedCombatRuntime runtime;
+    REQUIRE(runtime.begin(party, &world));
+    runtime.update(&party, &world, 0.6f);
+    REQUIRE(hasQueuedActor(runtime, 0));
+    SUBCASE("defeated")
+    {
+        world.actors[0]->isDead = true;
+    }
+    SUBCASE("unavailable")
+    {
+        world.actors[0].reset();
+    }
+    SUBCASE("friendly")
+    {
+        world.actors[0]->hostileToParty = false;
+    }
+    SUBCASE("distant")
+    {
+        world.actors[0]->preciseX = 6000.0f;
+    }
+    runtime.update(&party, &world, 0.016f);
+    CHECK_FALSE(hasQueuedActor(runtime, 0));
+    CHECK(runtime.canBeginPlayerAction(party));
+}
+
+TEST_CASE("turn based queue discovers an approaching hostile at the next attack phase without duplicates")
+{
+    Game::Party party = makeTurnBasedParty(1);
+    MutableTurnWorld world;
+    world.bindParty(&party);
+    world.actors.push_back(nearbyHostile());
+    world.actors[0]->preciseX = 6000.0f;
+    Game::TurnBasedCombatRuntime runtime;
+    REQUIRE(runtime.begin(party, &world));
+    REQUIRE_FALSE(hasQueuedActor(runtime, 0));
+    world.actors[0]->preciseX = 256.0f;
+    runtime.update(&party, &world, 0.6f);
+    CHECK(hasQueuedActor(runtime, 0));
+    REQUIRE(runtime.applyPlayerAction(party, 0, 5.0f));
+    REQUIRE(runtime.stage() == Game::TurnBasedCombatStage::Movement);
+    REQUIRE(runtime.finishMovementPhase());
+    runtime.update(&party, &world, 0.016f);
+    runtime.update(&party, &world, 0.6f);
+    CHECK(hasQueuedActor(runtime, 0));
+    CHECK_EQ(std::count_if(runtime.queue().begin(), runtime.queue().end(), [](const auto &entry)
+    {
+        return entry.kind == Game::TurnBasedCombatRuntime::QueueEntry::Kind::Actor && entry.id == 0;
+    }), 1);
+}
 
 TEST_CASE("turn based runtime enters attack after OE wait and exposes first character action")
 {
@@ -131,6 +245,12 @@ TEST_CASE("turn based runtime keeps actor AI live while resolving already-starte
 
     CHECK(runtime.stage() == OpenYAMM::Game::TurnBasedCombatStage::Wait);
     CHECK(runtime.shouldUpdateActorAi(&party));
+    CHECK(runtime.actorAiUpdateMode() == Game::ActorAiUpdateMode::FinishCurrentActions);
+    Game::TurnBasedCombatRuntime restored;
+    restored.restoreSnapshot(runtime.snapshot());
+    CHECK(restored.actorAiUpdateMode() == Game::ActorAiUpdateMode::FinishCurrentActions);
+    restored.end(&party);
+    CHECK(restored.actorAiUpdateMode() == Game::ActorAiUpdateMode::Full);
     CHECK_EQ(world.stopTurnBasedActorMovementCount(), 0);
 
     world.setTurnBasedActorActionInProgress(false);
@@ -139,6 +259,7 @@ TEST_CASE("turn based runtime keeps actor AI live while resolving already-starte
     CHECK(runtime.stage() == OpenYAMM::Game::TurnBasedCombatStage::Attack);
     CHECK(runtime.canBeginPlayerAction(party));
     CHECK_EQ(world.stopTurnBasedActorMovementCount(), 1);
+    CHECK(runtime.actorAiUpdateMode() == Game::ActorAiUpdateMode::Full);
 }
 
 TEST_CASE("turn based runtime pending actions block player actions until resolved")
@@ -346,3 +467,334 @@ TEST_CASE("turn based runtime keeps movement phase open until explicit movement 
     CHECK(runtime.stage() == OpenYAMM::Game::TurnBasedCombatStage::Wait);
 }
 } // namespace OpenYAMM::Tests
+
+namespace OpenYAMM::Tests
+{
+TEST_CASE("turn save resumes remaining wait and recovery without restarting the round")
+{
+    Game::Party party = makeTurnBasedParty(2);
+    Game::TurnBasedCombatRuntime uninterrupted;
+    REQUIRE(uninterrupted.begin(party, nullptr));
+    uninterrupted.update(&party, nullptr, 0.2f);
+    Game::TurnBasedCombatRuntime restored;
+    restored.restoreSnapshot(uninterrupted.snapshot());
+    CHECK(restored.snapshot() == uninterrupted.snapshot());
+    Game::Party restoredParty = party;
+    for (int frame = 0; frame < 40; ++frame)
+    {
+        uninterrupted.update(&party, nullptr, 0.025f);
+        restored.update(&restoredParty, nullptr, 0.025f);
+        REQUIRE(restored.snapshot() == uninterrupted.snapshot());
+        if (uninterrupted.canBeginPlayerAction(party))
+        {
+            size_t member = 0;
+            REQUIRE(uninterrupted.frontQueueCharacter(member));
+            uninterrupted.storeMemberTurnRecovery(member, 3.25f);
+            restored.storeMemberTurnRecovery(member, 3.25f);
+            CHECK(uninterrupted.applyPlayerAction(party, member, 1.0f)
+                == restored.applyPlayerAction(restoredParty, member, 1.0f));
+        }
+    }
+    CHECK(restored.snapshot() == uninterrupted.snapshot());
+    CHECK(restored.consumePendingGameTimeAdvanceMinutes() == uninterrupted.consumePendingGameTimeAdvanceMinutes());
+    restored.end(&restoredParty);
+    uninterrupted.end(&party);
+    CHECK(restoredParty.members()[0].recoverySecondsRemaining == party.members()[0].recoverySecondsRemaining);
+    CHECK(restoredParty.members()[1].recoverySecondsRemaining == party.members()[1].recoverySecondsRemaining);
+}
+
+TEST_CASE("turn save preserves spent movement and resets only previous input latches")
+{
+    Game::Party party = makeTurnBasedParty(1);
+    Game::TurnBasedCombatRuntime runtime;
+    REQUIRE(runtime.begin(party, nullptr));
+    runtime.update(&party, nullptr, 0.6f);
+    REQUIRE(runtime.applyPlayerAction(party, 0, 5.0f));
+    REQUIRE(runtime.stage() == Game::TurnBasedCombatStage::Movement);
+    Game::GameplayInputFrame input;
+    input.actions[Game::keyboardActionIndex(Game::KeyboardAction::Forward)].held = true;
+    input.actions[Game::keyboardActionIndex(Game::KeyboardAction::Forward)].pressed = true;
+    REQUIRE(runtime.noteMovementInput(input));
+    const int spent = runtime.movementActionPoints();
+    REQUIRE(spent == 104);
+    Game::TurnBasedCombatRuntime restored;
+    restored.restoreSnapshot(runtime.snapshot());
+    CHECK(restored.movementActionPoints() == spent);
+    CHECK(restored.movementDeltaSecondsForFrame(0.016f) == 0.0f);
+    CHECK(restored.consumePendingGameTimeAdvanceMinutes() == runtime.consumePendingGameTimeAdvanceMinutes());
+    CHECK(restored.consumePendingGameTimeAdvanceMinutes() == 0.0f);
+    REQUIRE(restored.noteMovementInput(input));
+    CHECK(restored.movementActionPoints() == 78);
+}
+
+TEST_CASE("turn save pending projectile blocks actions until its one resolution")
+{
+    Game::Party party = makeTurnBasedParty(1);
+    Game::TurnBasedCombatRuntime runtime;
+    REQUIRE(runtime.begin(party, nullptr));
+    runtime.update(&party, nullptr, 0.6f);
+    REQUIRE(runtime.playerActionReady(party));
+    runtime.registerPendingAction();
+    Game::TurnBasedCombatRuntime restored;
+    restored.restoreSnapshot(runtime.snapshot());
+    CHECK_FALSE(restored.playerActionReady(party));
+    CHECK_FALSE(restored.applyPlayerAction(party, 0, 1.0f));
+    restored.update(&party, nullptr, 1.0f);
+    CHECK(restored.pendingActions() == 1);
+    restored.resolvePendingAction();
+    CHECK(restored.playerActionReady(party));
+    restored.resolvePendingAction();
+    CHECK(restored.pendingActions() == 0);
+}
+
+TEST_CASE("turn save binary retains indoor and outdoor projectile pending marker")
+{
+    Game::Party party = makeTurnBasedParty(1);
+    Game::TurnBasedCombatRuntime runtime;
+    REQUIRE(runtime.begin(party, nullptr));
+    runtime.update(&party, nullptr, 0.2f);
+    runtime.registerPendingAction();
+    Game::GameSaveData data;
+    data.party = party.snapshot();
+    data.mapFileName = "turn_save_fixture";
+    data.turnBasedCombat = runtime.snapshot();
+    Game::GameplayProjectileService::ProjectileState projectile;
+    projectile.projectileId = 42;
+    projectile.turnBasedPendingAction = true;
+    projectile.spellId = 2;
+    projectile.x = 12.75f;
+    projectile.velocityX = 512.0f;
+    SUBCASE("outdoor")
+    {
+        data.hasOutdoorRuntimeState = true;
+        data.outdoorWorld.projectiles.push_back(projectile);
+    }
+    SUBCASE("indoor")
+    {
+        data.currentSceneKind = Game::SceneKind::Indoor;
+        data.hasIndoorSceneState = true;
+        data.indoorScene.worldRuntime.projectileState.projectiles.push_back(projectile);
+    }
+    const auto path = std::filesystem::temp_directory_path() / "openyamm_turn_snapshot_roundtrip.oysav";
+    std::string error;
+    REQUIRE_MESSAGE(Game::saveGameDataToPath(path, data, error), error);
+    const auto loaded = Game::loadGameDataFromPath(path, error);
+    REQUIRE_MESSAGE(loaded.has_value(), error);
+    CHECK(loaded->turnBasedCombat == data.turnBasedCombat);
+    const auto &actual = data.currentSceneKind == Game::SceneKind::Outdoor ? loaded->outdoorWorld.projectiles
+        : loaded->indoorScene.worldRuntime.projectileState.projectiles;
+    REQUIRE(actual.size() == 1);
+    CHECK(actual[0].turnBasedPendingAction);
+    CHECK(actual[0].projectileId == 42);
+    CHECK(actual[0].x == 12.75f);
+    CHECK(actual[0].velocityX == 512.0f);
+    std::filesystem::resize_file(path, std::filesystem::file_size(path) - 1);
+    CHECK_FALSE(Game::loadGameDataFromPath(path, error));
+    std::filesystem::remove(path);
+}
+
+TEST_CASE("turn save rejects inconsistent state before replacing a valid save")
+{
+    Game::Party party = makeTurnBasedParty(1);
+    Game::TurnBasedCombatRuntime runtime;
+    REQUIRE(runtime.begin(party, nullptr));
+    Game::GameSaveData data;
+    data.party = party.snapshot();
+    data.hasOutdoorRuntimeState = true;
+    data.turnBasedCombat = runtime.snapshot();
+    const auto path = std::filesystem::temp_directory_path() / "openyamm_turn_invalid_state.oysav";
+    std::string error;
+    REQUIRE(Game::saveGameDataToPath(path, data, error));
+    const auto original = data.turnBasedCombat;
+    SUBCASE("invalid stage") { data.turnBasedCombat.stage = static_cast<Game::TurnBasedCombatStage>(255); }
+    SUBCASE("nonfinite timer") { data.turnBasedCombat.aiTurnTimerTicks = std::numeric_limits<float>::infinity(); }
+    SUBCASE("negative pending") { data.turnBasedCombat.pendingActions = -1; }
+    SUBCASE("missing pending projectile") { data.turnBasedCombat.pendingActions = 1; }
+    SUBCASE("duplicate combatant") { data.turnBasedCombat.queue.push_back(data.turnBasedCombat.queue.front()); }
+    SUBCASE("missing combatant") { data.turnBasedCombat.queue.front().id = 1; }
+    SUBCASE("invalid movement points") { data.turnBasedCombat.movementActionPoints = 131; }
+    SUBCASE("nonfinite member recovery")
+    {
+        data.turnBasedCombat.memberTurnRecoverySeconds[0] = std::numeric_limits<float>::quiet_NaN();
+    }
+    CHECK_FALSE(Game::saveGameDataToPath(path, data, error));
+    const auto preserved = Game::loadGameDataFromPath(path, error);
+    REQUIRE(preserved.has_value());
+    CHECK(preserved->turnBasedCombat == original);
+    std::filesystem::remove(path);
+}
+}
+
+namespace OpenYAMM::Tests
+{
+namespace
+{
+Game::ActorAiFacts resolutionActor(size_t index)
+{
+    Game::ActorAiFacts actor;
+    actor.actorIndex = index;
+    actor.actorId = uint32_t(index + 1);
+    actor.identity.actorId = actor.actorId;
+    actor.identity.hostilityType = 4;
+    actor.world.active = true;
+    actor.status.hostileToParty = true;
+    actor.status.hasDetectedParty = true;
+    actor.stats.currentHp = 20;
+    actor.stats.maxHp = 20;
+    actor.stats.radius = 32;
+    actor.stats.height = 128;
+    actor.stats.moveSpeed = 200;
+    actor.stats.attack1Damage.bonus = 3;
+    actor.movement.position = {100.0f, 0.0f, 0.0f};
+    actor.movement.movementAllowed = true;
+    actor.movement.effectiveMoveSpeed = 200.0f;
+    actor.target.currentKind = Game::ActorAiTargetKind::Party;
+    actor.target.currentPosition = {0.0f, 0.0f, 64.0f};
+    actor.target.currentDistance = 100.0f;
+    actor.target.currentEdgeDistance = 36.0f;
+    actor.target.currentCanSense = true;
+    actor.target.partyCanSenseActor = true;
+    return actor;
+}
+
+Game::ActorAiFrameFacts resolutionFrame()
+{
+    Game::ActorAiFrameFacts frame;
+    frame.updateMode = Game::ActorAiUpdateMode::FinishCurrentActions;
+    frame.deltaSeconds = 0.125f;
+    frame.fixedStepSeconds = 0.125f;
+    frame.party.collisionRadius = 32.0f;
+    frame.party.collisionHeight = 128.0f;
+    return frame;
+}
+}
+
+TEST_CASE("turn based actor resolution prevents new attacks and pursuit")
+{
+    Game::ActorAiFrameFacts frame = resolutionFrame();
+    Game::ActorAiFacts actor = resolutionActor(0);
+    SUBCASE("ready melee attacker") {}
+    SUBCASE("ready ranged attacker")
+    {
+        actor.stats.attackConstraints.attack1IsRanged = true;
+    }
+    SUBCASE("pursuing distant enemy")
+    {
+        actor.runtime.motionState = Game::ActorAiMotionState::Pursuing;
+        actor.runtime.animationState = Game::ActorAiAnimationState::Walking;
+        actor.target.currentDistance = 1500.0f;
+        actor.target.currentEdgeDistance = 1400.0f;
+    }
+    SUBCASE("previous impact already delivered")
+    {
+        actor.runtime.motionState = Game::ActorAiMotionState::Attacking;
+        actor.runtime.attackImpactTriggered = true;
+    }
+    frame.activeActors.push_back(actor);
+    const Game::ActorAiFrameResult result = Game::GameplayActorAiSystem().updateActors(frame);
+    REQUIRE_EQ(result.actorUpdates.size(), 1);
+    const Game::ActorAiUpdate &update = result.actorUpdates.front();
+    CHECK(update.state.motionState.value_or(actor.runtime.motionState) == Game::ActorAiMotionState::Standing);
+    CHECK_FALSE(update.attackRequest.has_value());
+    CHECK_FALSE(update.movementIntent.applyMovement);
+    CHECK_EQ(update.state.attackDecisionCount.value_or(actor.runtime.attackDecisionCount), 0);
+    CHECK(result.projectileRequests.empty());
+    CHECK(result.audioRequests.empty());
+}
+
+TEST_CASE("turn based actor resolution completes existing melee and ranged impacts once")
+{
+    Game::ActorAiFrameFacts frame = resolutionFrame();
+    Game::ActorAiFacts actor = resolutionActor(0);
+    actor.runtime.motionState = Game::ActorAiMotionState::Attacking;
+    actor.runtime.animationState = Game::ActorAiAnimationState::AttackMelee;
+    actor.runtime.actionSeconds = 0.1f;
+    SUBCASE("melee") {}
+    SUBCASE("ranged")
+    {
+        actor.stats.attackConstraints.attack1IsRanged = true;
+        actor.runtime.animationState = Game::ActorAiAnimationState::AttackRanged;
+    }
+    frame.activeActors = {actor, resolutionActor(1)};
+    const Game::GameplayActorAiSystem system;
+    const Game::ActorAiFrameResult result = system.updateActors(frame);
+    REQUIRE_EQ(result.actorUpdates.size(), 2);
+    const Game::ActorAiUpdate &update = result.actorUpdates[0];
+    REQUIRE(update.attackRequest.has_value());
+    CHECK_EQ(update.attackRequest->damage, 3);
+    CHECK(update.state.attackImpactTriggered.value_or(false));
+    CHECK_EQ(result.projectileRequests.size(), actor.stats.attackConstraints.attack1IsRanged ? 1 : 0);
+    CHECK(result.actorUpdates[1].state.motionState.value_or(Game::ActorAiMotionState::Standing)
+        == Game::ActorAiMotionState::Standing);
+    CHECK_FALSE(result.actorUpdates[1].attackRequest.has_value());
+    actor.runtime.motionState = update.state.motionState.value_or(actor.runtime.motionState);
+    actor.runtime.actionSeconds = update.state.actionSeconds.value_or(actor.runtime.actionSeconds);
+    actor.runtime.attackImpactTriggered = update.state.attackImpactTriggered.value_or(false);
+    frame.activeActors[0] = actor;
+    const Game::ActorAiFrameResult repeated = system.updateActors(frame);
+    for (const Game::ActorAiUpdate &next : repeated.actorUpdates)
+    {
+        CHECK_FALSE(next.attackRequest.has_value());
+        CHECK(next.state.motionState.value_or(Game::ActorAiMotionState::Standing)
+            == Game::ActorAiMotionState::Standing);
+    }
+    CHECK(repeated.projectileRequests.empty());
+}
+
+TEST_CASE("turn based actor resolution advances unfinished attacks without early damage")
+{
+    Game::ActorAiFrameFacts frame = resolutionFrame();
+    Game::ActorAiFacts actor = resolutionActor(0);
+    actor.runtime.motionState = Game::ActorAiMotionState::Attacking;
+    actor.runtime.actionSeconds = 0.5f;
+    frame.activeActors.push_back(actor);
+    const Game::ActorAiFrameResult result = Game::GameplayActorAiSystem().updateActors(frame);
+    const Game::ActorAiUpdate &update = result.actorUpdates.front();
+    CHECK(update.state.motionState.value_or(actor.runtime.motionState) == Game::ActorAiMotionState::Attacking);
+    CHECK_EQ(update.state.actionSeconds.value_or(-1.0f), doctest::Approx(0.375f));
+    CHECK_FALSE(update.attackRequest.has_value());
+}
+
+TEST_CASE("turn based actor resolution preserves death and paralysis cancellation")
+{
+    Game::ActorAiFrameFacts frame = resolutionFrame();
+    Game::ActorAiFacts actor = resolutionActor(0);
+    actor.runtime.motionState = Game::ActorAiMotionState::Attacking;
+    actor.runtime.actionSeconds = 0.1f;
+    SUBCASE("killed")
+    {
+        actor.stats.currentHp = 0;
+    }
+    SUBCASE("paralyzed")
+    {
+        actor.status.spellEffects.paralyzeRemainingSeconds = 2.0f;
+    }
+    frame.activeActors.push_back(actor);
+    const Game::ActorAiFrameResult result = Game::GameplayActorAiSystem().updateActors(frame);
+    const Game::ActorAiUpdate &update = result.actorUpdates.front();
+    CHECK(update.state.motionState.value_or(actor.runtime.motionState) != Game::ActorAiMotionState::Attacking);
+    CHECK_FALSE(update.attackRequest.has_value());
+}
+}
+
+namespace OpenYAMM::Tests
+{
+TEST_CASE("ordinary actor updates still start ready attacks after resolution ends")
+{
+    Game::ActorAiFrameFacts frame = resolutionFrame();
+    frame.updateMode = Game::ActorAiUpdateMode::Full;
+    Game::ActorAiFacts actor = resolutionActor(0);
+    SUBCASE("melee") {}
+    SUBCASE("ranged")
+    {
+        actor.stats.attackConstraints.attack1IsRanged = true;
+    }
+    frame.activeActors.push_back(actor);
+    const Game::ActorAiFrameResult result = Game::GameplayActorAiSystem().updateActors(frame);
+    REQUIRE_EQ(result.actorUpdates.size(), 1);
+    CHECK(result.actorUpdates.front().state.motionState.value_or(actor.runtime.motionState)
+        == Game::ActorAiMotionState::Attacking);
+    CHECK_FALSE(result.actorUpdates.front().attackRequest.has_value());
+    CHECK_FALSE(result.audioRequests.empty());
+}
+}

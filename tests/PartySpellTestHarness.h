@@ -371,9 +371,10 @@ public:
         (void)allowWorldInput;
     }
 
-    void updateActorAi(float deltaSeconds) override
+    void updateActorAi(float deltaSeconds, Game::ActorAiUpdateMode mode = Game::ActorAiUpdateMode::Full) override
     {
         (void)deltaSeconds;
+        (void)mode;
     }
 
     bool turnBasedActorActionInProgress() const override

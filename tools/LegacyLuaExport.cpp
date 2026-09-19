@@ -3474,7 +3474,7 @@ bool formatReadableConditionInstruction(
                 return false;
             }
 
-            condition = "evt._IsNpcInParty(" + std::to_string(instruction.arguments[0]) + ")";
+            condition = "evt.CanPlayerAct(" + std::to_string(instruction.arguments[0]) + ")";
             comment = std::nullopt;
             return true;
 
@@ -9104,7 +9104,7 @@ void emitNormalInstruction(
             {
                 emitIndentedLineWithComment(
                     stream,
-                    "if evt._IsNpcInParty(" + std::to_string(instruction.arguments[0]) + ") then return "
+                    "if evt.CanPlayerAct(" + std::to_string(instruction.arguments[0]) + ") then return "
                     + std::to_string(*instruction.jumpTargetStep) + " end",
                     std::nullopt,
                     2);
@@ -11050,7 +11050,16 @@ void emitNormalEventFunction(
     const LegacyLuaEvent directEvent = directEventWithoutSyntheticTriggerContinuations(event, sourceEvent);
     if (isHintOnlyLegacyEvent(sourceEvent))
     {
-        emitHintOnlyEventRegistration(stream, registerFunction, directEvent.eventId, title, hint);
+        if (hint && !hint->empty())
+        {
+            emitHintOnlyEventRegistration(stream, registerFunction, directEvent.eventId, title, hint);
+        }
+        else
+        {
+            // An absent legacy hint still describes an inert event. Registering nil without a hint
+            // loses its identity entirely, so preserve the event explicitly without inventing text.
+            emitEventRegistrationHeader(stream, noOpFunction, directEvent.eventId, title, hint);
+        }
         return;
     }
 

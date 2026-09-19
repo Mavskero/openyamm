@@ -1,0 +1,20 @@
+--- a/src/renderer_mtl.cpp
++++ b/src/renderer_mtl.cpp
+@@ -784,10 +784,13 @@
+ 				g_caps.formats[TextureFormat::RGBA32F] &= ~(BGFX_CAPS_FORMAT_TEXTURE_FRAMEBUFFER_MSAA);
+ 			}
+ 
+-			s_textureFormat[TextureFormat::D24S8].m_fmt = m_device->isDepth24Stencil8PixelFormatSupported()
+-				? MTL::PixelFormatDepth24Unorm_Stencil8
+-				: MTL::PixelFormatDepth32Float_Stencil8
+-				;
++			if (BX_ENABLED(BX_PLATFORM_OSX) )
++			{
++				s_textureFormat[TextureFormat::D24S8].m_fmt = m_device->isDepth24Stencil8PixelFormatSupported()
++					? MTL::PixelFormatDepth24Unorm_Stencil8
++					: MTL::PixelFormatDepth32Float_Stencil8
++					;
++			}
+ 
+ 			if (BX_ENABLED(BX_PLATFORM_OSX) )
+ 			{

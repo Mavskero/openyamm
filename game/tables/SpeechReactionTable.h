@@ -15,6 +15,8 @@ struct SpeechReactionEntry
     SpeechId speechId = SpeechId::None;
     std::string name;
     std::vector<std::string> soundTypes;
+    // Original one-based voice groups, each containing exactly two variant slots.
+    std::vector<uint32_t> voiceGroups;
     std::optional<FaceAnimationId> faceAnimationId;
 };
 

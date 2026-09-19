@@ -42,9 +42,11 @@ uint32_t generatedMercenaryNpcIdForRosterId(uint32_t rosterId);
 std::optional<uint32_t> findMercenaryRecruitmentHouseId(
     const MapStatsEntry &map,
     const HouseTable &houseTable);
+void migrateLegacyMercenaryRefillState(EventRuntimeState &runtimeState, float savedGameMinutes);
 bool refreshMercenaryRecruitmentForCurrentMap(
     const MapStatsEntry &map,
     Party &party,
     EventRuntimeState &runtimeState,
-    const MercenaryRecruitmentTables &tables);
+    const MercenaryRecruitmentTables &tables,
+    float gameMinutes);
 }

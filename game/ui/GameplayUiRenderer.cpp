@@ -744,12 +744,14 @@ void GameplayUiRenderer::renderGameplayHudArt(GameplayScreenRuntime &context, in
     const float partyStripHeight = resolvedPartyStrip->height;
     const float portraitWidth = faceMask->width * uiScale;
     const float portraitHeight = faceMask->height * uiScale;
+    const UiLayoutManager::TextureRegion *pBasebarRegion = useGameplayWideHud
+        ? context.gameplayUiRuntime().layoutManager().findTextureRegion(pBasebarLayout->primaryAsset) : nullptr;
     const size_t displayedMemberCount = members.size();
     float renderedBasebarX = basebarX;
     float renderedBasebarWidth = basebarWidth;
     float portraitStartX = partyStripX + partyStripWidth * (20.0f / 471.0f);
     float portraitY = partyStripY + partyStripHeight * (23.0f / 92.0f);
-    const float portraitDeltaX = partyStripWidth * (94.0f / 471.0f);
+    const float portraitDeltaX = pBasebarRegion != nullptr ? basebarWidth / 5.0f : partyStripWidth * (94.0f / 471.0f);
     std::vector<GameplayHudBatchQuad> queuedHudQuads;
     queuedHudQuads.reserve(256);
     const auto flushQueuedHudQuads =
@@ -775,7 +777,7 @@ void GameplayUiRenderer::renderGameplayHudArt(GameplayScreenRuntime &context, in
         const float portraitGroupWidth =
             portraitWidth + static_cast<float>(displayedMemberCount - 1) * portraitDeltaX;
         portraitStartX = basebarCenterX - portraitGroupWidth * 0.5f;
-        portraitY -= 15.0f * uiScale;
+        portraitY -= (pBasebarRegion != nullptr ? pBasebarRegion->y : 15.0f) * uiScale;
     }
 
     const PointerRenderInput pointerInput = pointerRenderInput(context);
@@ -1613,8 +1615,9 @@ void GameplayUiRenderer::renderGameplayHudArt(GameplayScreenRuntime &context, in
         }
 
         const int arrowIndex = outdoorMinimapArrowIndex(context.gameplayCameraYawRadians());
-        const std::optional<GameplayHudTextureHandle> arrowTexture =
-            context.gameplayUiRuntime().ensureHudTextureLoaded("MAPDIR" + std::to_string(arrowIndex + 1));
+        const std::optional<std::string> arrowName = context.gameplayUiRuntime().minimapArrowTextureName(arrowIndex);
+        const std::optional<GameplayHudTextureHandle> arrowTexture = arrowName
+            ? context.gameplayUiRuntime().ensureHudTextureLoaded(*arrowName) : std::nullopt;
 
         if (arrowTexture)
         {

@@ -1,5 +1,6 @@
 #include "doctest/doctest.h"
 
+#include "engine/AssetScaleTier.h"
 #include "game/events/EventRuntime.h"
 #include "game/events/EventDialogContent.h"
 #include "game/events/ISceneEventContext.h"
@@ -19,6 +20,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <filesystem>
@@ -412,9 +414,11 @@ public:
         (void)allowWorldInput;
     }
 
-    void updateActorAi(float deltaSeconds) override
+    void updateActorAi(float deltaSeconds,
+        OpenYAMM::Game::ActorAiUpdateMode mode = OpenYAMM::Game::ActorAiUpdateMode::Full) override
     {
         (void)deltaSeconds;
+        (void)mode;
     }
 
     void updateWorld(float deltaSeconds) override
@@ -7747,6 +7751,193 @@ TEST_CASE("mm6 new sorpigal dragonsand exit keeps destination map name")
     CHECK_EQ(runtimeState.pendingMapMove->x, 12808);
     CHECK_EQ(runtimeState.pendingMapMove->y, 6832);
     CHECK_EQ(runtimeState.pendingMapMove->z, 64);
+}
+
+TEST_CASE("mm6 Goblinwatch quest and password preserve the authored event lifecycle")
+{
+    REQUIRE_MESSAGE(
+        OpenYAMM::Tests::regressionGameDataLoaded(),
+        OpenYAMM::Tests::regressionGameDataFailure());
+    const OpenYAMM::Tests::RegressionGameData &gameData = OpenYAMM::Tests::regressionGameData();
+    REQUIRE(gameData.globalEventProgram.has_value());
+
+    OpenYAMM::Game::Party party = {};
+    party.setItemTable(&gameData.itemTable);
+    party.setClassMultiplierTable(&gameData.classMultiplierTable);
+    party.setClassSkillTable(&gameData.classSkillTable);
+    party.seed(createRegressionPartySeed());
+
+    OpenYAMM::Game::EventRuntime globalEventRuntime = {};
+    OpenYAMM::Game::EventRuntimeState globalState = {};
+    REQUIRE(globalEventRuntime.executeEventById(
+        std::nullopt,
+        gameData.globalEventProgram,
+        1316,
+        globalState,
+        &party));
+    party.applyEventRuntimeState(globalState);
+
+    CHECK(party.hasQuestBit(1107));
+    CHECK_EQ(party.inventoryItemCount(2109), 1);
+    CHECK_EQ(globalState.npcTopicOverrides[1076][0], 1317u);
+
+    const int goldBeforeRejectedTurnIn = party.gold();
+    std::vector<uint32_t> experienceBeforeRejectedTurnIn;
+    for (const OpenYAMM::Game::Character &member : party.members())
+    {
+        experienceBeforeRejectedTurnIn.push_back(member.experience);
+    }
+
+    REQUIRE(globalEventRuntime.executeEventById(
+        std::nullopt,
+        gameData.globalEventProgram,
+        1317,
+        globalState,
+        &party));
+    CHECK_EQ(party.gold(), goldBeforeRejectedTurnIn);
+    CHECK(party.hasQuestBit(1107));
+    CHECK_EQ(globalState.npcTopicOverrides[1076][0], 1317u);
+    REQUIRE_FALSE(globalState.messages.empty());
+    CHECK(globalState.messages.back().find("加油干吧") != std::string::npos);
+    for (size_t memberIndex = 0; memberIndex < party.memberCount(); ++memberIndex)
+    {
+        const OpenYAMM::Game::Character *pMember = party.member(memberIndex);
+        REQUIRE(pMember != nullptr);
+        CHECK_EQ(pMember->experience, experienceBeforeRejectedTurnIn[memberIndex]);
+        CHECK_FALSE(party.hasAward(memberIndex, 95));
+    }
+
+    REQUIRE(party.tryGrantItem(2163));
+    const int goldBeforeReward = party.gold();
+    std::vector<uint32_t> experienceBeforeReward;
+    for (const OpenYAMM::Game::Character &member : party.members())
+    {
+        experienceBeforeReward.push_back(member.experience);
+    }
+
+    REQUIRE(globalEventRuntime.executeEventById(
+        std::nullopt,
+        gameData.globalEventProgram,
+        1317,
+        globalState,
+        &party));
+    CHECK_EQ(party.gold(), goldBeforeReward + 2000);
+    CHECK_FALSE(party.hasQuestBit(1107));
+    CHECK_EQ(party.inventoryItemCount(2163), 1);
+    CHECK_EQ(globalState.npcTopicOverrides[1076][0], 1318u);
+    CHECK_EQ(globalState.npcHouseOverrides[1081], 0u);
+    CHECK_EQ(globalState.npcHouseOverrides[828], 1463u);
+    for (size_t memberIndex = 0; memberIndex < party.memberCount(); ++memberIndex)
+    {
+        const OpenYAMM::Game::Character *pMember = party.member(memberIndex);
+        REQUIRE(pMember != nullptr);
+        CHECK_EQ(pMember->experience, experienceBeforeReward[memberIndex] + 2000);
+        CHECK(party.hasAward(memberIndex, 95));
+    }
+
+    const char *pRuntimeRoot = std::getenv("OPENYAMM_REGRESSION_RUNTIME_ROOT");
+    REQUIRE_MESSAGE(pRuntimeRoot != nullptr, "Goblinwatch regression needs runtime root");
+    REQUIRE_MESSAGE(*pRuntimeRoot != '\0', "Goblinwatch regression needs a non-empty runtime root");
+    const std::filesystem::path runtimeRoot = pRuntimeRoot;
+    OpenYAMM::Engine::AssetFileSystem assetFileSystem = {};
+    REQUIRE(assetFileSystem.initialize(runtimeRoot, runtimeRoot, OpenYAMM::Engine::AssetScaleTier::X1));
+
+    const std::optional<std::string> supportLua =
+        assetFileSystem.readTextFile("Data/scripts/common/event_support.lua");
+    const std::optional<std::string> oute3Lua =
+        assetFileSystem.readTextFile("Data/scripts/maps/oute3.lua");
+    const std::optional<std::string> goblinwatchLua =
+        assetFileSystem.readTextFile("Data/scripts/maps/6d01.lua");
+    REQUIRE(supportLua.has_value());
+    REQUIRE(oute3Lua.has_value());
+    REQUIRE(goblinwatchLua.has_value());
+
+    std::string error;
+    const std::optional<OpenYAMM::Game::ScriptedEventProgram> oute3Program =
+        OpenYAMM::Game::ScriptedEventProgram::loadFromLuaText(
+            *supportLua + "\n\n" + *oute3Lua,
+            "@Data/scripts/maps/oute3.lua",
+            OpenYAMM::Game::ScriptedEventScope::Map,
+            error);
+    REQUIRE_MESSAGE(oute3Program.has_value(), error.c_str());
+    const std::optional<OpenYAMM::Game::ScriptedEventProgram> goblinwatchProgram =
+        OpenYAMM::Game::ScriptedEventProgram::loadFromLuaText(
+            *supportLua + "\n\n" + *goblinwatchLua,
+            "@Data/scripts/maps/6d01.lua",
+            OpenYAMM::Game::ScriptedEventScope::Map,
+            error);
+    REQUIRE_MESSAGE(goblinwatchProgram.has_value(), error.c_str());
+
+    OpenYAMM::Game::Party entryParty = {};
+    entryParty.setItemTable(&gameData.itemTable);
+    entryParty.seed(createRegressionPartySeed());
+    OpenYAMM::Game::EventRuntimeState entryState = {};
+    OpenYAMM::Game::EventRuntime entryRuntime = {};
+    REQUIRE(entryRuntime.executeEventById(oute3Program, std::nullopt, 101, entryState, &entryParty));
+    CHECK_FALSE(entryParty.hasQuestBit(1324));
+    CHECK_FALSE(entryState.pendingMapMove.has_value());
+    REQUIRE_FALSE(entryState.statusMessages.empty());
+
+    REQUIRE(entryParty.tryGrantItem(2109));
+    REQUIRE(entryRuntime.executeEventById(oute3Program, std::nullopt, 101, entryState, &entryParty));
+    entryParty.applyEventRuntimeState(entryState);
+    CHECK(entryParty.hasQuestBit(1324));
+    CHECK_EQ(entryParty.inventoryItemCount(2109), 0);
+    const OpenYAMM::Game::EventRuntimeState::PendingMapMove *pFirstEntryMove = pendingMapMove(entryState);
+    REQUIRE(pFirstEntryMove != nullptr);
+    CHECK_EQ(pFirstEntryMove->mapName, std::optional<std::string>("6d01.blv"));
+
+    entryState.pendingMapMove.reset();
+    entryState.pendingDialogueContext.reset();
+    REQUIRE(entryRuntime.executeEventById(oute3Program, std::nullopt, 101, entryState, &entryParty));
+    const OpenYAMM::Game::EventRuntimeState::PendingMapMove *pReentryMove = pendingMapMove(entryState);
+    REQUIRE(pReentryMove != nullptr);
+    CHECK_EQ(pReentryMove->mapName, std::optional<std::string>("6d01.blv"));
+
+    OpenYAMM::Game::EventRuntimeState passwordState = {};
+    OpenYAMM::Game::EventRuntime passwordRuntime = {};
+    REQUIRE(passwordRuntime.executeEventById(
+        goblinwatchProgram,
+        std::nullopt,
+        25,
+        passwordState,
+        &entryParty));
+    CHECK_EQ(passwordState.mapVars[7], 1u);
+    REQUIRE(passwordState.mechanisms.contains(59));
+    CHECK_EQ(
+        passwordState.mechanisms[59].state,
+        static_cast<uint16_t>(OpenYAMM::Game::EvtMechanismState::Closing));
+
+    REQUIRE(passwordRuntime.executeEventById(
+        goblinwatchProgram,
+        std::nullopt,
+        34,
+        passwordState,
+        &entryParty));
+    for (size_t mapVarIndex = 2; mapVarIndex <= 14; ++mapVarIndex)
+    {
+        CHECK_EQ(passwordState.mapVars[mapVarIndex], 0u);
+    }
+    CHECK_EQ(passwordState.textureOverrides[2007], "t1swdd");
+
+    constexpr std::array<uint16_t, 6> NilbogEvents = {32, 27, 30, 20, 33, 25};
+    constexpr std::array<size_t, 6> NilbogMapVars = {13, 9, 12, 2, 14, 7};
+    for (size_t inputIndex = 0; inputIndex < NilbogEvents.size(); ++inputIndex)
+    {
+        REQUIRE(passwordRuntime.executeEventById(
+            goblinwatchProgram,
+            std::nullopt,
+            NilbogEvents[inputIndex],
+            passwordState,
+            &entryParty));
+        CHECK_EQ(passwordState.mapVars[NilbogMapVars[inputIndex]], 1u);
+    }
+    CHECK_EQ(passwordState.textureOverrides[2000], "t1swdu");
+    CHECK_EQ(passwordState.textureOverrides[2002], "t1swdu");
+    CHECK_EQ(passwordState.textureOverrides[2005], "t1swdu");
+    CHECK_EQ(passwordState.textureOverrides[2007], "t1swdu");
+    CHECK_EQ(passwordState.textureOverrides[2011], "t1swdu");
+    CHECK_EQ(passwordState.textureOverrides[1999], "t1swdu");
 }
 
 TEST_CASE("d19 blv MoveNPC updates party global npc house overrides")

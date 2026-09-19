@@ -32,6 +32,8 @@ struct NpcTopicEntry
     uint32_t id = 0;
     uint32_t textId = 0;
     std::string topic;
+    // Original semantic label retained when a localized table supplies display text.
+    std::string baseTopic;
     std::string notes;
     std::string owner;
     SpecialKind specialKind = SpecialKind::None;
@@ -102,7 +104,7 @@ public:
     std::optional<std::string> getText(uint32_t textId) const;
     std::optional<std::string> getNewsTopic(uint32_t newsId) const;
     std::optional<std::string> getNewsText(uint32_t newsId) const;
-    std::optional<std::string> getNewsDialogText(uint32_t textId) const;
+    std::optional<std::string> getNewsDialogText(uint32_t textId, bool fromNpcText = false) const;
     std::optional<uint32_t> getNewsIdForGroup(uint32_t groupId) const;
     std::optional<RosterJoinOffer> getRosterJoinOfferForTopic(uint32_t topicId) const;
     std::optional<GuildMembershipOffer> getGuildMembershipOfferForTopic(uint32_t topicId) const;

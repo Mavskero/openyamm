@@ -404,6 +404,7 @@ void GameplayUiController::closeSpellbook()
 {
     State &state = resolvedState();
     state.spellbook.active = false;
+    state.spellbook.inspectSelected = false;
     state.spellbook.selectedSpellId = 0;
     state.spellInspectOverlay = {};
 }

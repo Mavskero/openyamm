@@ -14,6 +14,7 @@ struct InventoryItem;
 struct ItemDefinition;
 class ItemTable;
 class IGameplayWorldRuntime;
+class HouseServiceTextTable;
 class Party;
 class StandardItemEnchantTable;
 class SpecialItemEnchantTable;
@@ -82,7 +83,8 @@ public:
         const SpecialItemEnchantTable &specialItemEnchantTable,
         const HouseEntry &houseEntry,
         const InventoryItem &item,
-        int effectiveReputation = 0);
+        int effectiveReputation = 0,
+        const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
     static std::string buildSellHoverText(
         const Party &party,
         const ItemTable &itemTable,
@@ -90,7 +92,8 @@ public:
         const SpecialItemEnchantTable &specialItemEnchantTable,
         const HouseEntry &houseEntry,
         const InventoryItem &item,
-        int effectiveReputation = 0);
+        int effectiveReputation = 0,
+        const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
     static std::string buildIdentifyHoverText(
         const Party &party,
         const ItemTable &itemTable,
@@ -98,7 +101,8 @@ public:
         const SpecialItemEnchantTable &specialItemEnchantTable,
         const HouseEntry &houseEntry,
         const InventoryItem &item,
-        int effectiveReputation = 0);
+        int effectiveReputation = 0,
+        const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
     static std::string buildRepairHoverText(
         const Party &party,
         const ItemTable &itemTable,
@@ -106,7 +110,8 @@ public:
         const SpecialItemEnchantTable &specialItemEnchantTable,
         const HouseEntry &houseEntry,
         const InventoryItem &item,
-        int effectiveReputation = 0);
+        int effectiveReputation = 0,
+        const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
     static bool tryBuyStockItem(
         Party &party,
         const ItemTable &itemTable,
@@ -118,7 +123,8 @@ public:
         size_t slotIndex,
         std::string &statusText,
         ShopItemServiceResult *pResult = nullptr,
-        int effectiveReputation = 0);
+        int effectiveReputation = 0,
+        const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
     static bool tryStealStockItem(
         Party &party,
         IGameplayWorldRuntime &worldRuntime,
@@ -145,7 +151,8 @@ public:
         uint8_t gridY,
         std::string &statusText,
         ShopItemServiceResult *pResult = nullptr,
-        int effectiveReputation = 0);
+        int effectiveReputation = 0,
+        const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
     static bool tryIdentifyInventoryItem(
         Party &party,
         const ItemTable &itemTable,
@@ -158,7 +165,8 @@ public:
         std::string &statusText,
         ShopItemServiceResult *pResult = nullptr,
         int effectiveReputation = 0,
-        const EventRuntimeState *pEventRuntimeState = nullptr);
+        const EventRuntimeState *pEventRuntimeState = nullptr,
+        const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
     static bool tryRepairInventoryItem(
         Party &party,
         const ItemTable &itemTable,
@@ -171,6 +179,7 @@ public:
         std::string &statusText,
         ShopItemServiceResult *pResult = nullptr,
         int effectiveReputation = 0,
-        const EventRuntimeState *pEventRuntimeState = nullptr);
+        const EventRuntimeState *pEventRuntimeState = nullptr,
+        const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
 };
 }

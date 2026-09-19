@@ -1,6 +1,7 @@
 #include "game/indoor/IndoorGameView.h"
 
 #include "engine/BgfxContext.h"
+#include "engine/WindowPointer.h"
 #include "game/app/GameSession.h"
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/GameplayDialogContextBuilder.h"
@@ -978,12 +979,12 @@ std::string generatedActorDisplayTitle(
     const MergedNpcProfessionEntry *pProfession =
         gameSession.data().mergedNpcProfessionTable().get(resolution.generatedProfessionId);
 
-    if (pProfession == nullptr || pProfession->profession.empty())
+    if (pProfession == nullptr || pProfession->displayName().empty())
     {
         return resolution.generatedName;
     }
 
-    return resolution.generatedName + " the " + pProfession->profession;
+    return resolution.generatedName + " (" + pProfession->displayName() + ")";
 }
 }
 
@@ -1027,7 +1028,8 @@ bool IndoorGameView::initialize(
                 .pStandardItemEnchantTable = &data.standardItemEnchantTable(),
                 .pSpecialItemEnchantTable = &data.specialItemEnchantTable(),
                 .pSpellTable = &data.spellTable(),
-            });
+            },
+            sceneRuntime.worldRuntime().gameMinutes());
     }
 
     const EventRuntimeState *pEventRuntimeState = pMutableEventRuntimeState;
@@ -1796,7 +1798,7 @@ bool IndoorGameView::activateMapActorDialogue(size_t actorIndex)
     }
 
     const std::optional<std::string> newsText =
-        m_gameSession.data().npcDialogTable().getNewsDialogText(resolution->newsId);
+        m_gameSession.data().npcDialogTable().getNewsDialogText(resolution->newsId, resolution->newsFromNpcText);
 
     if (!newsText || newsText->empty())
     {
@@ -1812,7 +1814,7 @@ bool IndoorGameView::activateMapActorDialogue(size_t actorIndex)
             resolution->newsId,
             inspectState.displayName,
             *newsText,
-            resolution->portraitPictureId);
+            resolution->portraitPictureId, resolution->newsFromNpcText);
     pEventRuntimeState->lastActivationResult =
         "npc news group " + std::to_string(actor.group) + " engaged";
     presentPendingDialog(result, result.allowNpcFallbackContent);
@@ -2118,6 +2120,15 @@ void IndoorGameView::syncGameplayMouseLookMode(SDL_Window *pWindow, bool enabled
     const bool windowFocused = windowHasInputFocus(pWindow);
     const bool effectiveEnabled = enabled && windowFocused;
 
+    if (Engine::hasLockedMenuPointer(pWindow))
+    {
+        if (Engine::setLockedPointerMouseLook(pWindow, effectiveEnabled))
+        {
+            m_gameSession.requestRelativeMouseMotionReset();
+        }
+        return;
+    }
+
     if (pWindow != nullptr && SDL_GetWindowRelativeMouseMode(pWindow) != effectiveEnabled)
     {
         if (effectiveEnabled)
@@ -2129,7 +2140,7 @@ void IndoorGameView::syncGameplayMouseLookMode(SDL_Window *pWindow, bool enabled
         {
             int windowWidth = 0;
             int windowHeight = 0;
-            SDL_GetWindowSizeInPixels(pWindow, &windowWidth, &windowHeight);
+            SDL_GetWindowSize(pWindow, &windowWidth, &windowHeight);
 
             if (windowWidth > 0 && windowHeight > 0)
             {
@@ -2204,19 +2215,11 @@ void IndoorGameView::syncCursorToGameplayCrosshair(SDL_Window *pWindow)
 
     int windowWidth = 0;
     int windowHeight = 0;
-    SDL_GetWindowSizeInPixels(pWindow, &windowWidth, &windowHeight);
+    SDL_GetWindowSize(pWindow, &windowWidth, &windowHeight);
 
     if (windowWidth <= 0 || windowHeight <= 0)
     {
-        const GameplayInputFrame *pInputFrame = m_gameSession.currentGameplayInputFrame();
-
-        if (pInputFrame == nullptr || pInputFrame->screenWidth <= 0 || pInputFrame->screenHeight <= 0)
-        {
-            return;
-        }
-
-        windowWidth = pInputFrame->screenWidth;
-        windowHeight = pInputFrame->screenHeight;
+        return;
     }
 
     SDL_WarpMouseInWindow(
@@ -2385,7 +2388,7 @@ void IndoorGameView::updateItemInspectOverlayState(int width, int height, const 
         return;
     }
 
-    if (GameplayScreenController::updateRenderedHudItemInspectOverlay(screenRuntime, width, height, false))
+    if (GameplayScreenController::updateRenderedHudItemInspectOverlay(screenRuntime, width, height, true))
     {
         GameplayScreenController::applySharedItemInspectSkillInteraction(screenRuntime);
         return;
@@ -2491,7 +2494,9 @@ GameplayDialogController::Context IndoorGameView::buildDialogContext(EventRuntim
         &m_gameSession.data().mergedContinentSettingTable(),
         &m_gameSession.data().mergedTeacherTopicTable(),
         &m_gameSession.data().mergedTeacherAutonoteTable(),
-        &m_gameSession.data().spellTable());
+        &m_gameSession.data().spellTable(),
+        &m_gameSession.data().characterInspectTable(),
+        &m_gameSession.data().houseServiceTextTable());
 }
 
 } // namespace OpenYAMM::Game

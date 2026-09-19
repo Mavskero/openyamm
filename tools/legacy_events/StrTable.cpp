@@ -5,6 +5,26 @@
 
 namespace OpenYAMM::Game
 {
+bool StrTable::loadFromNullSeparatedBytes(const std::vector<uint8_t> &bytes)
+{
+    m_entries.clear();
+    size_t start = 0;
+    for (size_t index = 0; index < bytes.size(); ++index)
+    {
+        if (bytes[index] == 0)
+        {
+            m_entries.emplace_back(bytes.begin() + start, bytes.begin() + index);
+            start = index + 1;
+        }
+    }
+    if (start != bytes.size())
+    {
+        m_entries.clear();
+        return false;
+    }
+    return true;
+}
+
 bool StrTable::loadFromBytes(const std::vector<uint8_t> &bytes)
 {
     m_entries.clear();

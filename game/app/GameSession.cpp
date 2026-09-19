@@ -233,6 +233,8 @@ void GameSession::clear()
     m_turnBasedFrameTraceState = {};
     m_gameplayUiRuntime.clear();
     m_gameplayScreenRuntime.clearTransientBindings();
+    m_gameplayScreenRuntime.resetTownPortalContact();
+    m_gameplayScreenRuntime.resetDimensionDoor();
     m_overlayInteractionState = {};
     m_previousKeyboardState.fill(0);
     m_pActiveWorldRuntime = nullptr;
@@ -248,9 +250,12 @@ void GameSession::clear()
     m_currentIndoorSceneState.reset();
     m_indoorSceneStates.clear();
     m_namedGlobalVars.clear();
+    m_historyEventTimesByContinent.clear();
     m_gameMinutes = 9.0f * 60.0f;
     m_outdoorCameraYawRadians = 0.0f;
     m_outdoorCameraPitchRadians = 0.0f;
+    m_indoorCameraYawRadians = 0.0f;
+    m_indoorCameraPitchRadians = 0.15f;
     m_currentSavePath.reset();
     m_pendingMapMove.reset();
     m_framePerformanceDiagnosticsEnabled = false;
@@ -300,6 +305,10 @@ const std::string &GameSession::currentMapFileName() const
 
 void GameSession::setCurrentMapFileName(const std::string &mapFileName)
 {
+    if (m_currentMapFileName != mapFileName)
+    {
+        m_gameplayScreenRuntime.resetDimensionDoor();
+    }
     m_currentMapFileName = mapFileName;
     m_mm9QuestMarkerCache.clear();
     ++m_mm9QuestMarkerMapRevision;
@@ -307,6 +316,10 @@ void GameSession::setCurrentMapFileName(const std::string &mapFileName)
 
 void GameSession::setCurrentMapFileName(std::string &&mapFileName)
 {
+    if (m_currentMapFileName != mapFileName)
+    {
+        m_gameplayScreenRuntime.resetDimensionDoor();
+    }
     m_currentMapFileName = std::move(mapFileName);
     m_mm9QuestMarkerCache.clear();
     ++m_mm9QuestMarkerMapRevision;
@@ -703,6 +716,7 @@ void GameSession::updateGameplay(
         }
     };
 
+    m_gameplayScreenRuntime.updateDimensionDoor();
     bindCurrentGameplayInputFrame(&input);
     m_sharedInputFrameResult = {};
 
@@ -836,9 +850,12 @@ void GameSession::updateGameplay(
         bool turnBasedMovementStep = false;
         if (m_turnBasedCombatRuntime.active() && !rightMouseInspectPauseActive)
         {
-            turnBasedMovementStep = m_turnBasedCombatRuntime.noteMovementInput(worldInput);
-            worldMovementDeltaSeconds = m_turnBasedCombatRuntime.movementDeltaSecondsForFrame(deltaSeconds);
-            if (!turnBasedMovementStep && pWorldRuntime->partyNeedsTurnBasedPhysicsUpdate())
+            // Charge a step only when the same input is allowed to move the party. Menus,
+            // journals and targeting overlays must not spend movement points while paused.
+            turnBasedMovementStep = allowWorldMovementInput && m_turnBasedCombatRuntime.noteMovementInput(worldInput);
+            worldMovementDeltaSeconds = allowWorldMovementInput
+                ? m_turnBasedCombatRuntime.movementDeltaSecondsForFrame(deltaSeconds) : 0.0f;
+            if (allowWorldMovementInput && !turnBasedMovementStep && pWorldRuntime->partyNeedsTurnBasedPhysicsUpdate())
             {
                 worldInput.turnBasedPhysicsStep = true;
                 worldMovementDeltaSeconds = deltaSeconds;
@@ -899,7 +916,7 @@ void GameSession::updateGameplay(
             }
 
             const uint64_t actorAiBeginTickCount = collectPerformanceDiagnostics ? SDL_GetTicksNS() : 0;
-            pWorldRuntime->updateActorAi(deltaSeconds);
+            pWorldRuntime->updateActorAi(deltaSeconds, m_turnBasedCombatRuntime.actorAiUpdateMode());
             recordDiagnostics(
                 m_gameplayUpdatePerformanceDiagnostics.actorAiNanoseconds,
                 m_lastGameplayUpdateFramePerformanceDiagnostics.actorAiNanoseconds,
@@ -1080,6 +1097,7 @@ void GameSession::clearSharedInputFrameResult()
 
 void GameSession::consumePendingGameplayAudioRequests()
 {
+    m_gameplayScreenRuntime.updateDimensionDoor();
     m_gameplayScreenRuntime.consumePendingEventRuntimeAudioRequests();
 }
 
@@ -1228,7 +1246,9 @@ void GameSession::setCurrentOutdoorWorldState(const OutdoorWorldRuntime::Snapsho
     if (m_currentOutdoorWorldState->eventRuntimeState)
     {
         mergeNamedGlobalVarsFromRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
+        captureHistoryFromRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
         applyNamedGlobalVarsToRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
+        applyHistoryToRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
     }
 }
 
@@ -1239,7 +1259,9 @@ void GameSession::setCurrentOutdoorWorldState(OutdoorWorldRuntime::Snapshot &&sn
     if (m_currentOutdoorWorldState->eventRuntimeState)
     {
         mergeNamedGlobalVarsFromRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
+        captureHistoryFromRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
         applyNamedGlobalVarsToRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
+        applyHistoryToRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
     }
 }
 
@@ -1260,7 +1282,9 @@ void GameSession::storeOutdoorWorldState(const std::string &mapFileName, const O
     if (normalizedSnapshot.eventRuntimeState)
     {
         mergeNamedGlobalVarsFromRuntime(*normalizedSnapshot.eventRuntimeState);
+        captureHistoryFromRuntime(*normalizedSnapshot.eventRuntimeState);
         applyNamedGlobalVarsToRuntime(*normalizedSnapshot.eventRuntimeState);
+        applyHistoryToRuntime(*normalizedSnapshot.eventRuntimeState);
     }
     m_outdoorWorldStates[mapFileName] = normalizedSnapshot;
 }
@@ -1277,7 +1301,9 @@ void GameSession::setCurrentIndoorSceneState(const IndoorSceneRuntime::Snapshot 
     if (m_currentIndoorSceneState->eventRuntimeState)
     {
         mergeNamedGlobalVarsFromRuntime(*m_currentIndoorSceneState->eventRuntimeState);
+        captureHistoryFromRuntime(*m_currentIndoorSceneState->eventRuntimeState);
         applyNamedGlobalVarsToRuntime(*m_currentIndoorSceneState->eventRuntimeState);
+        applyHistoryToRuntime(*m_currentIndoorSceneState->eventRuntimeState);
     }
 }
 
@@ -1288,7 +1314,9 @@ void GameSession::setCurrentIndoorSceneState(IndoorSceneRuntime::Snapshot &&snap
     if (m_currentIndoorSceneState->eventRuntimeState)
     {
         mergeNamedGlobalVarsFromRuntime(*m_currentIndoorSceneState->eventRuntimeState);
+        captureHistoryFromRuntime(*m_currentIndoorSceneState->eventRuntimeState);
         applyNamedGlobalVarsToRuntime(*m_currentIndoorSceneState->eventRuntimeState);
+        applyHistoryToRuntime(*m_currentIndoorSceneState->eventRuntimeState);
     }
 }
 
@@ -1309,7 +1337,9 @@ void GameSession::storeIndoorSceneState(const std::string &mapFileName, const In
     if (normalizedSnapshot.eventRuntimeState)
     {
         mergeNamedGlobalVarsFromRuntime(*normalizedSnapshot.eventRuntimeState);
+        captureHistoryFromRuntime(*normalizedSnapshot.eventRuntimeState);
         applyNamedGlobalVarsToRuntime(*normalizedSnapshot.eventRuntimeState);
+        applyHistoryToRuntime(*normalizedSnapshot.eventRuntimeState);
     }
     m_indoorSceneStates[mapFileName] = normalizedSnapshot;
 }
@@ -1359,6 +1389,83 @@ void GameSession::applyNamedGlobalVarsToRuntime(EventRuntimeState &runtimeState)
     }
 }
 
+void GameSession::captureHistoryFromRuntime(const EventRuntimeState &runtimeState)
+{
+    // A live runtime receives the session history before its map scripts run. Replace each
+    // represented continent so explicit History clears survive subsequent map visits.
+    for (const auto &[continent, events] : runtimeState.historyEventTimesByContinent)
+    {
+        m_historyEventTimesByContinent[continent] = events;
+    }
+    if (!runtimeState.historyEventTimesByContinent.contains(1) && !runtimeState.historyEventTimes.empty())
+    {
+        m_historyEventTimesByContinent[1] = runtimeState.historyEventTimes;
+    }
+}
+
+void GameSession::applyHistoryToRuntime(EventRuntimeState &runtimeState) const
+{
+    for (const auto &[continent, events] : m_historyEventTimesByContinent)
+    {
+        runtimeState.historyEventTimesByContinent[continent] = events;
+    }
+    const auto legacy = runtimeState.historyEventTimesByContinent.find(1);
+    runtimeState.historyEventTimes = legacy != runtimeState.historyEventTimesByContinent.end()
+        ? legacy->second : std::unordered_map<uint32_t, int32_t>{};
+}
+
+void GameSession::restoreHistoryFromSaveData(const GameSaveData &saveData)
+{
+    m_historyEventTimesByContinent.clear();
+    // Older saves stored history separately in each visited map. Migrate the saved
+    // occurrences once, retaining their earliest recorded dates. New saves carry the
+    // same session history in every snapshot, including any explicitly cleared entries.
+    const auto collectEvents = [this](uint32_t continent, const auto &events)
+    {
+        auto &destination = m_historyEventTimesByContinent[normalizedHistoryContinentId(continent)];
+        for (const auto &[event, time] : events)
+        {
+            const auto [entry, inserted] = destination.try_emplace(event, time);
+            if (!inserted)
+            {
+                entry->second = std::min(entry->second, time);
+            }
+        }
+    };
+    const auto collectSnapshot = [&](const auto &snapshot)
+    {
+        if (!snapshot.eventRuntimeState)
+        {
+            return;
+        }
+        const EventRuntimeState &state = *snapshot.eventRuntimeState;
+        for (const auto &[continent, events] : state.historyEventTimesByContinent)
+        {
+            collectEvents(continent, events);
+        }
+        if (!state.historyEventTimesByContinent.contains(1))
+        {
+            collectEvents(1, state.historyEventTimes);
+        }
+    };
+    if (saveData.hasOutdoorRuntimeState)
+    {
+        collectSnapshot(saveData.outdoorWorld);
+    }
+    if (saveData.hasIndoorSceneState)
+    {
+        collectSnapshot(saveData.indoorScene);
+    }
+    for (const auto &[map, snapshot] : saveData.outdoorWorldStates)
+    {
+        collectSnapshot(snapshot);
+    }
+    for (const auto &[map, snapshot] : saveData.indoorSceneStates)
+    {
+        collectSnapshot(snapshot);
+    }
+}
+
 void GameSession::setOutdoorCameraAngles(float yawRadians, float pitchRadians)
 {
     m_outdoorCameraYawRadians = yawRadians;
@@ -1373,6 +1480,16 @@ float GameSession::outdoorCameraYawRadians() const
 float GameSession::outdoorCameraPitchRadians() const
 {
     return m_outdoorCameraPitchRadians;
+}
+
+float GameSession::indoorCameraYawRadians() const
+{
+    return m_indoorCameraYawRadians;
+}
+
+float GameSession::indoorCameraPitchRadians() const
+{
+    return m_indoorCameraPitchRadians;
 }
 
 const std::optional<std::filesystem::path> &GameSession::currentSavePath() const
@@ -1488,7 +1605,9 @@ void GameSession::captureOutdoorRuntimeState(
     if (normalizedWorldSnapshot.eventRuntimeState)
     {
         mergeNamedGlobalVarsFromRuntime(*normalizedWorldSnapshot.eventRuntimeState);
+        captureHistoryFromRuntime(*normalizedWorldSnapshot.eventRuntimeState);
         applyNamedGlobalVarsToRuntime(*normalizedWorldSnapshot.eventRuntimeState);
+        applyHistoryToRuntime(*normalizedWorldSnapshot.eventRuntimeState);
     }
     m_currentOutdoorWorldState = normalizedWorldSnapshot;
     m_outdoorWorldStates[mapFileName] = normalizedWorldSnapshot;
@@ -1499,7 +1618,9 @@ void GameSession::captureOutdoorRuntimeState(
 void GameSession::captureIndoorRuntimeState(
     const std::string &mapFileName,
     const Party &party,
-    const IndoorSceneRuntime::Snapshot &snapshot)
+    const IndoorSceneRuntime::Snapshot &snapshot,
+    float yawRadians,
+    float pitchRadians)
 {
     m_currentSceneKind = SceneKind::Indoor;
     m_currentMapFileName = mapFileName;
@@ -1511,10 +1632,14 @@ void GameSession::captureIndoorRuntimeState(
     if (normalizedSnapshot.eventRuntimeState)
     {
         mergeNamedGlobalVarsFromRuntime(*normalizedSnapshot.eventRuntimeState);
+        captureHistoryFromRuntime(*normalizedSnapshot.eventRuntimeState);
         applyNamedGlobalVarsToRuntime(*normalizedSnapshot.eventRuntimeState);
+        applyHistoryToRuntime(*normalizedSnapshot.eventRuntimeState);
     }
     m_currentIndoorSceneState = normalizedSnapshot;
     m_indoorSceneStates[mapFileName] = normalizedSnapshot;
+    m_indoorCameraYawRadians = yawRadians;
+    m_indoorCameraPitchRadians = pitchRadians;
 }
 
 std::optional<GameSaveData> GameSession::buildSaveData() const
@@ -1540,6 +1665,13 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
     saveData.party = m_partyState->snapshot();
     saveData.namedGlobalVars = m_namedGlobalVars;
     saveData.savedGameMinutes = m_gameMinutes;
+    saveData.turnBasedCombat = m_turnBasedCombatRuntime.snapshot();
+    if (saveData.turnBasedCombat.active && m_pActiveWorldRuntime != nullptr)
+    {
+        // A save may occur between projectile creation and the next pending-action synchronization.
+        saveData.turnBasedCombat.pendingActions =
+            static_cast<int>(m_pActiveWorldRuntime->turnBasedPendingWorldActionCount());
+    }
 
     if (m_outdoorPartyState && m_currentOutdoorWorldState)
     {
@@ -1550,6 +1682,7 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
         if (saveData.outdoorWorld.eventRuntimeState)
         {
             applyNamedGlobalVarsToRuntime(*saveData.outdoorWorld.eventRuntimeState);
+            applyHistoryToRuntime(*saveData.outdoorWorld.eventRuntimeState);
         }
     }
 
@@ -1560,6 +1693,7 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
         if (worldState.eventRuntimeState)
         {
             applyNamedGlobalVarsToRuntime(*worldState.eventRuntimeState);
+            applyHistoryToRuntime(*worldState.eventRuntimeState);
         }
     }
 
@@ -1571,6 +1705,7 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
         if (saveData.indoorScene.eventRuntimeState)
         {
             applyNamedGlobalVarsToRuntime(*saveData.indoorScene.eventRuntimeState);
+            applyHistoryToRuntime(*saveData.indoorScene.eventRuntimeState);
         }
     }
 
@@ -1581,11 +1716,14 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
         if (sceneState.eventRuntimeState)
         {
             applyNamedGlobalVarsToRuntime(*sceneState.eventRuntimeState);
+            applyHistoryToRuntime(*sceneState.eventRuntimeState);
         }
     }
 
     saveData.outdoorCameraYawRadians = m_outdoorCameraYawRadians;
     saveData.outdoorCameraPitchRadians = m_outdoorCameraPitchRadians;
+    saveData.indoorCameraYawRadians = m_indoorCameraYawRadians;
+    saveData.indoorCameraPitchRadians = m_indoorCameraPitchRadians;
 
     const GameplayUiController::HeldInventoryItemState &heldItem = m_gameplayUiController.heldInventoryItem();
     saveData.heldInventoryItemActive = heldItem.active;
@@ -1603,7 +1741,10 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
 
 void GameSession::restoreFromSaveData(const GameSaveData &saveData)
 {
+    m_gameplayScreenRuntime.resetTownPortalContact();
+    m_gameplayScreenRuntime.resetDimensionDoor();
     m_turnBasedCombatRuntime.reset();
+    m_turnBasedPendingWorldActions = 0;
     m_partyState = buildConfiguredParty(saveData.party, data());
     restoreHeldInventoryItemFromSaveData(saveData);
 
@@ -1626,6 +1767,7 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
     m_gameMinutes = std::max(0.0f, saveData.savedGameMinutes);
     m_namedGlobalVars = saveData.namedGlobalVars;
     const bool collectLegacyNamedGlobalVars = m_namedGlobalVars.empty();
+    restoreHistoryFromSaveData(saveData);
 
     if (m_gameMinutes <= 0.0f)
     {
@@ -1655,6 +1797,7 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
                 mergeNamedGlobalVarsFromRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
             }
             applyNamedGlobalVarsToRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
+            applyHistoryToRuntime(*m_currentOutdoorWorldState->eventRuntimeState);
         }
     }
 
@@ -1669,6 +1812,7 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
                 mergeNamedGlobalVarsFromRuntime(*worldState.eventRuntimeState);
             }
             applyNamedGlobalVarsToRuntime(*worldState.eventRuntimeState);
+            applyHistoryToRuntime(*worldState.eventRuntimeState);
         }
     }
 
@@ -1690,6 +1834,7 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
                 mergeNamedGlobalVarsFromRuntime(*m_currentIndoorSceneState->eventRuntimeState);
             }
             applyNamedGlobalVarsToRuntime(*m_currentIndoorSceneState->eventRuntimeState);
+            applyHistoryToRuntime(*m_currentIndoorSceneState->eventRuntimeState);
         }
     }
 
@@ -1704,6 +1849,7 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
                 mergeNamedGlobalVarsFromRuntime(*sceneState.eventRuntimeState);
             }
             applyNamedGlobalVarsToRuntime(*sceneState.eventRuntimeState);
+            applyHistoryToRuntime(*sceneState.eventRuntimeState);
         }
     }
 
@@ -1714,7 +1860,29 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
 
     m_outdoorCameraYawRadians = saveData.outdoorCameraYawRadians;
     m_outdoorCameraPitchRadians = saveData.outdoorCameraPitchRadians;
+    m_indoorCameraYawRadians = saveData.indoorCameraYawRadians;
+    m_indoorCameraPitchRadians = saveData.indoorCameraPitchRadians;
     m_pendingMapMove.reset();
+}
+
+bool GameSession::restoreTurnBasedCombatFromSaveData(const GameSaveData &saveData)
+{
+    // Rebind only after the world and projectiles exist: switching scenes ends the old turn runtime.
+    const TurnBasedCombatRuntime::Snapshot &turn = saveData.turnBasedCombat;
+    if (!TurnBasedCombatRuntime::isValidSnapshot(turn))
+    {
+        return false;
+    }
+    const size_t pending = turn.active && m_pActiveWorldRuntime != nullptr
+        ? m_pActiveWorldRuntime->turnBasedPendingWorldActionCount() : 0;
+    if ((turn.active && m_pActiveWorldRuntime == nullptr) || pending != static_cast<size_t>(turn.pendingActions))
+    {
+        return false;
+    }
+    m_turnBasedCombatRuntime.restoreSnapshot(turn);
+    m_turnBasedPendingWorldActions = pending;
+    m_turnBasedFrameTraceState = {};
+    return true;
 }
 
 void GameSession::restoreHeldInventoryItemFromSaveData(const GameSaveData &saveData)

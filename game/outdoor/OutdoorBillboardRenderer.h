@@ -44,6 +44,7 @@ public:
         OutdoorGameView &view,
         uint16_t viewId,
         const float *pViewMatrix,
+        float projectionYScale,
         const bx::Vec3 &cameraPosition);
     static void renderRuntimeWorldItems(
         OutdoorGameView &view,

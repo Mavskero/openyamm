@@ -1,3 +1,4 @@
+#include "game/ui/CharacterEquipmentLayout.h"
 #include "game/gameplay/GameplayPartyOverlayInputController.h"
 
 #include "game/debug/GameplayDebugTrace.h"
@@ -14,6 +15,8 @@
 #include "game/party/SkillData.h"
 #include "game/tables/MergedBaseTables.h"
 #include "game/ui/GameplayHudCommon.h"
+#include "game/ui/CharacterSkillsLayout.h"
+#include "game/ui/CharacterSkillRows.h"
 #include "game/ui/SpellbookUiLayout.h"
 #include "game/StringUtils.h"
 
@@ -36,8 +39,6 @@ namespace
 constexpr uint64_t PartyPortraitDoubleClickWindowMs = 500;
 constexpr uint64_t CharacterDismissConfirmWindowMs = 2000;
 constexpr float MaxUiScale = 8.0f;
-constexpr uint32_t DaderossLetterDeliveredQBit = 4;
-constexpr uint32_t EmeraldIslandFinishedQBit = 519;
 
 void latchGameplayMenuEscape(GameplayScreenRuntime &context)
 {
@@ -93,51 +94,6 @@ struct UtilityOverlayLayout
     float tabWidth = 0.0f;
     float tabHeight = 0.0f;
     float tabGap = 0.0f;
-};
-
-struct CharacterSkillUiRow
-{
-    std::string canonicalName;
-    std::string label;
-    std::string level;
-    bool upgradeable = false;
-    bool interactive = false;
-};
-
-struct CharacterSkillUiData
-{
-    std::vector<CharacterSkillUiRow> weaponRows;
-    std::vector<CharacterSkillUiRow> magicRows;
-    std::vector<CharacterSkillUiRow> armorRows;
-    std::vector<CharacterSkillUiRow> miscRows;
-};
-
-struct DimensionDoorLanding
-{
-    std::string mapName;
-    int32_t x = 0;
-    int32_t y = 0;
-    int32_t z = 0;
-    std::optional<int32_t> directionDegrees;
-    bool useMapStartPosition = false;
-};
-
-constexpr const char *WeaponSkillNames[] = {
-    "Axe", "Bow", "Throwing", "Dagger", "Mace", "Spear", "Staff", "Sword", "Unarmed", "Blaster",
-};
-
-constexpr const char *MagicSkillNames[] = {
-    "FireMagic", "AirMagic", "WaterMagic", "EarthMagic", "SpiritMagic",
-    "MindMagic", "BodyMagic", "LightMagic", "DarkMagic",
-};
-
-constexpr const char *ArmorSkillNames[] = {
-    "LeatherArmor", "ChainArmor", "PlateArmor", "Shield", "Dodging",
-};
-
-constexpr const char *MiscSkillNames[] = {
-    "Alchemy", "Armsmaster", "Bodybuilding", "IdentifyItem", "IdentifyMonster", "Learning",
-    "DisarmTraps", "Meditation", "Merchant", "Perception", "RepairItem", "Stealing",
 };
 
 bool isJewelryOverlayEquipmentSlot(EquipmentSlot slot)
@@ -262,23 +218,6 @@ size_t maxLloydBeaconSlots(const Character *pCharacter)
     }
 }
 
-bool isTownPortalDestinationUnlocked(
-    const Party *pParty,
-    const GameplayTownPortalDestination &destination)
-{
-    if (destination.unlockQBitId == 0)
-    {
-        return true;
-    }
-
-    if (pParty == nullptr)
-    {
-        return false;
-    }
-
-    return pParty->hasQuestBit(destination.unlockQBitId);
-}
-
 bool isTownPortalOverlayMode(GameplayUiController::UtilitySpellOverlayMode mode)
 {
     return mode == GameplayUiController::UtilitySpellOverlayMode::TownPortal
@@ -288,15 +227,6 @@ bool isTownPortalOverlayMode(GameplayUiController::UtilitySpellOverlayMode mode)
 bool isDimensionDoorOverlayMode(GameplayUiController::UtilitySpellOverlayMode mode)
 {
     return mode == GameplayUiController::UtilitySpellOverlayMode::DimensionDoor;
-}
-
-void applyDimensionDoorCastOverrides(PartySpellCastRequest &request)
-{
-    request.skillLevelOverride = 10;
-    request.skillMasteryOverride = SkillMastery::Grandmaster;
-    request.spendMana = false;
-    request.applyRecovery = false;
-    request.utilityMapMoveUseFullscreenLoading = true;
 }
 
 void applyUtilitySpellOverlayCastOverrides(
@@ -310,88 +240,6 @@ void applyUtilitySpellOverlayCastOverrides(
     request.bypassRequiredMastery = overlay.bypassRequiredMastery;
     request.bypassGameplayCasterValidation = overlay.bypassGameplayCasterValidation;
     request.bypassTownPortalFailureChecks = overlay.bypassTownPortalFailureChecks;
-}
-
-std::optional<DimensionDoorLanding> resolveDimensionDoorLanding(
-    const Party *pParty,
-    const GameplayTownPortalDestination &destination)
-{
-    if (destination.id == "TPGlobal:0")
-    {
-        if (pParty != nullptr && pParty->hasQuestBit(DaderossLetterDeliveredQBit))
-        {
-            return DimensionDoorLanding{
-                "out02.odm",
-                10296,
-                -12283,
-                1,
-                0,
-                false};
-        }
-
-        return DimensionDoorLanding{
-            "out01.odm",
-            0,
-            0,
-            0,
-            std::nullopt,
-            true};
-    }
-
-    if (destination.id == "TPGlobal:2")
-    {
-        if (pParty != nullptr && pParty->hasQuestBit(EmeraldIslandFinishedQBit))
-        {
-            return DimensionDoorLanding{
-                "7out02.odm",
-                -16832,
-                12512,
-                372,
-                0,
-                false};
-        }
-
-        return DimensionDoorLanding{
-            "7out01.odm",
-            12552,
-            800,
-            193,
-            90,
-            false};
-    }
-
-    if (destination.id == "TPGlobal:4")
-    {
-        return DimensionDoorLanding{
-            "oute3.odm",
-            -9728,
-            -11319,
-            160,
-            90,
-            false};
-    }
-
-    return std::nullopt;
-}
-
-void applyDimensionDoorLandingOverride(
-    PartySpellCastRequest &request,
-    const Party *pParty,
-    const GameplayTownPortalDestination &destination)
-{
-    const std::optional<DimensionDoorLanding> landing = resolveDimensionDoorLanding(pParty, destination);
-
-    if (!landing.has_value())
-    {
-        return;
-    }
-
-    request.utilityMapMoveMapName = landing->mapName;
-    request.utilityMapMoveX = landing->x;
-    request.utilityMapMoveY = landing->y;
-    request.utilityMapMoveZ = landing->z;
-    request.utilityMapMoveDirectionDegrees = landing->directionDegrees;
-    request.utilityMapMoveUseMapStartPosition = landing->useMapStartPosition;
 }
 
 std::optional<std::pair<int, int>> computeHeldInventoryPlacement(
@@ -493,140 +341,6 @@ const CharacterDollEntry *resolveCharacterDollEntry(
     }
 
     return pCharacterDollTable->getCharacter(1);
-}
-
-std::string skillPageMasteryDisplayName(SkillMastery mastery)
-{
-    const std::string displayName = masteryDisplayName(mastery);
-
-    if (displayName == "Grandmaster")
-    {
-        return "Grand";
-    }
-
-    return displayName;
-}
-
-void appendCharacterSkillUiRows(
-    const Character &character,
-    std::vector<CharacterSkillUiRow> &rows,
-    std::unordered_set<std::string> &shownSkillNames,
-    const char *const *pSkillNames,
-    size_t skillCount,
-    bool allowUpgradeInteraction)
-{
-    for (size_t skillIndex = 0; skillIndex < skillCount; ++skillIndex)
-    {
-        const std::string canonicalName = pSkillNames[skillIndex];
-        const CharacterSkill *pSkill = character.findSkillByCanonicalName(canonicalName);
-
-        if (pSkill == nullptr)
-        {
-            continue;
-        }
-
-        CharacterSkillUiRow row = {};
-        row.canonicalName = canonicalName;
-        row.label = displaySkillName(pSkill->name);
-
-        if (pSkill->mastery != SkillMastery::None && pSkill->mastery != SkillMastery::Normal)
-        {
-            row.label += " " + skillPageMasteryDisplayName(pSkill->mastery);
-        }
-
-        row.level = std::to_string(pSkill->level);
-        row.upgradeable = character.skillPoints > pSkill->level;
-        row.interactive = row.upgradeable && allowUpgradeInteraction;
-        rows.push_back(std::move(row));
-        shownSkillNames.insert(canonicalName);
-    }
-}
-
-CharacterSkillUiData buildCharacterSkillUiData(const Character *pCharacter, bool allowUpgradeInteraction)
-{
-    CharacterSkillUiData data = {};
-
-    if (pCharacter == nullptr)
-    {
-        return data;
-    }
-
-    std::unordered_set<std::string> shownSkillNames;
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.weaponRows,
-        shownSkillNames,
-        WeaponSkillNames,
-        std::size(WeaponSkillNames),
-        allowUpgradeInteraction);
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.magicRows,
-        shownSkillNames,
-        MagicSkillNames,
-        std::size(MagicSkillNames),
-        allowUpgradeInteraction);
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.armorRows,
-        shownSkillNames,
-        ArmorSkillNames,
-        std::size(ArmorSkillNames),
-        allowUpgradeInteraction);
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.miscRows,
-        shownSkillNames,
-        MiscSkillNames,
-        std::size(MiscSkillNames),
-        allowUpgradeInteraction);
-
-    std::vector<CharacterSkillUiRow> extraMiscRows;
-
-    for (const auto &[ignoredSkillName, skill] : pCharacter->skills)
-    {
-        const std::string &canonicalName = ignoredSkillName;
-
-        if (shownSkillNames.contains(canonicalName))
-        {
-            continue;
-        }
-
-        CharacterSkillUiRow row = {};
-        row.canonicalName = canonicalName;
-        row.label = displaySkillName(skill.name);
-
-        if (skill.mastery != SkillMastery::None && skill.mastery != SkillMastery::Normal)
-        {
-            row.label += " " + skillPageMasteryDisplayName(skill.mastery);
-        }
-
-        row.level = std::to_string(skill.level);
-        row.upgradeable = pCharacter->skillPoints > skill.level;
-        row.interactive = row.upgradeable && allowUpgradeInteraction;
-        extraMiscRows.push_back(std::move(row));
-    }
-
-    std::sort(
-        extraMiscRows.begin(),
-        extraMiscRows.end(),
-        [](const CharacterSkillUiRow &left, const CharacterSkillUiRow &right)
-        {
-            return left.label < right.label;
-        });
-
-    data.miscRows.insert(data.miscRows.end(), extraMiscRows.begin(), extraMiscRows.end());
-    return data;
-}
-
-void setCharacterSkillRegionHeight(
-    std::unordered_map<std::string, float> &runtimeHeightOverrides,
-    float skillRowHeight,
-    const char *pLayoutId,
-    size_t rowCount)
-{
-    runtimeHeightOverrides[toLowerCopy(pLayoutId)] =
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, rowCount));
 }
 
 uint32_t equippedItemId(const CharacterEquipment &equipment, EquipmentSlot slot)
@@ -773,9 +487,8 @@ void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
             return;
         }
 
-        const Party *pParty = context.partyReadOnly();
         const auto findTownPortalTarget =
-            [&context, screenWidth, screenHeight, pParty](
+            [&context, screenWidth, screenHeight](
                 float pointerX,
                 float pointerY) -> GameplayUtilitySpellPointerTarget
             {
@@ -799,76 +512,15 @@ void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
                     }
                 }
 
-                const GameplayScreenRuntime::HudLayoutElement *pBackgroundLayout =
-                    context.findHudLayoutElement("TownPortalBackground");
-
-                if (pBackgroundLayout == nullptr || !pBackgroundLayout->visible)
+                const GameplayUtilitySpellPointerTarget pressed = context.interactionState().utilitySpellPressedTarget;
+                const std::optional<size_t> pressedIndex = context.interactionState().utilitySpellClickLatch
+                    && pressed.type == GameplayUtilitySpellPointerTargetType::TownPortalDestination
+                    ? std::optional<size_t>(pressed.index) : std::nullopt;
+                const std::optional<size_t> index = context.resolveTownPortalDestinationAtPoint(
+                    screenWidth, screenHeight, pointerX, pointerY, pressedIndex);
+                if (index)
                 {
-                    return {};
-                }
-
-                const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> backgroundResolved =
-                    context.resolveHudLayoutElement(
-                        "TownPortalBackground",
-                        screenWidth,
-                        screenHeight,
-                        pBackgroundLayout->width,
-                        pBackgroundLayout->height);
-
-                if (!backgroundResolved.has_value())
-                {
-                    return {};
-                }
-
-                const float townPortalScale = backgroundResolved->width / 640.0f;
-
-                for (size_t destinationIndex = 0;
-                     destinationIndex < context.townPortalDestinations().size();
-                     ++destinationIndex)
-                {
-                    const GameplayTownPortalDestination &destination =
-                        context.townPortalDestinations()[destinationIndex];
-
-                    if (!isTownPortalDestinationUnlocked(pParty, destination))
-                    {
-                        continue;
-                    }
-
-                    const int32_t hitX = destination.hitWidth != 0 ? destination.hitX : destination.iconX;
-                    const int32_t hitY = destination.hitHeight != 0 ? destination.hitY : destination.iconY;
-                    uint32_t hitWidth = destination.hitWidth != 0 ? destination.hitWidth : destination.iconWidth;
-                    uint32_t hitHeight = destination.hitHeight != 0 ? destination.hitHeight : destination.iconHeight;
-
-                    if (hitWidth == 0 || hitHeight == 0)
-                    {
-                        int textureWidth = 0;
-                        int textureHeight = 0;
-
-                        if (!context.gameplayUiRuntime().ensureHudTextureDimensions(
-                                destination.iconTextureName,
-                                textureWidth,
-                                textureHeight))
-                        {
-                            continue;
-                        }
-
-                        hitWidth = static_cast<uint32_t>(textureWidth);
-                        hitHeight = static_cast<uint32_t>(textureHeight);
-                    }
-
-                    const GameplayScreenRuntime::ResolvedHudLayoutElement resolved = {
-                        backgroundResolved->x + static_cast<float>(hitX) * townPortalScale,
-                        backgroundResolved->y + static_cast<float>(hitY) * townPortalScale,
-                        static_cast<float>(hitWidth) * townPortalScale,
-                        static_cast<float>(hitHeight) * townPortalScale,
-                        townPortalScale};
-
-                    if (!context.isPointerInsideResolvedElement(resolved, pointerX, pointerY))
-                    {
-                        continue;
-                    }
-
-                    return {GameplayUtilitySpellPointerTargetType::TownPortalDestination, destinationIndex};
+                    return {GameplayUtilitySpellPointerTargetType::TownPortalDestination, *index};
                 }
 
                 return {};
@@ -897,7 +549,7 @@ void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
             context.interactionState().utilitySpellPressedTarget,
             noneTarget,
             findTownPortalTarget,
-            [&context, &resolveSpellName, pParty](const GameplayUtilitySpellPointerTarget &target)
+            [&context, &resolveSpellName](const GameplayUtilitySpellPointerTarget &target)
             {
                 if (target.type == GameplayUtilitySpellPointerTargetType::Close)
                 {
@@ -930,8 +582,19 @@ void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
                 request.utilityStatusText = destination.label;
                 if (isDimensionDoorOverlayMode(context.utilitySpellOverlayReadOnly().mode))
                 {
-                    applyDimensionDoorCastOverrides(request);
-                    applyDimensionDoorLandingOverride(request, pParty, destination);
+                    request.utilityMapMoveUseFullscreenLoading = true;
+                    // Original cross-map loading substitutes Map Start for TPGlobal's zero transform.
+                    // A same-map Town Portal instead assigns its coordinates directly.
+                    request.utilityMapMoveUseMapStartPosition =
+                        toLowerCopy(destination.mapName) != toLowerCopy(context.currentMapFileName());
+                    if (request.utilityMapMoveUseMapStartPosition)
+                    {
+                        request.utilityMapMoveDirectionDegrees.reset();
+                    }
+                    else
+                    {
+                        request.utilityMapMoveLookAngleDegrees = 0;
+                    }
                 }
                 context.tryCastSpellRequest(request, resolveSpellName());
             });
@@ -1284,6 +947,16 @@ void GameplayPartyOverlayInputController::handleSpellbookOverlayInput(
     GameplayScreenRuntime &context,
     const GameplayInputFrame &input)
 {
+    if (context.spellbook().inspectSelected && (input.leftMouseButton.pressed
+        || input.keyboardHeld[SDL_SCANCODE_ESCAPE]))
+    {
+        context.spellbook().inspectSelected = false;
+        context.spellInspectOverlay() = {};
+        context.interactionState().spellbookPressedTarget = {};
+        context.interactionState().spellbookClickLatch = input.leftMouseButton.held;
+        context.interactionState().closeOverlayLatch = input.keyboardHeld[SDL_SCANCODE_ESCAPE];
+        return;
+    }
     const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
@@ -1378,6 +1051,17 @@ void GameplayPartyOverlayInputController::handleSpellbookOverlayInput(
             const GameplaySpellbookPointerTarget closeTarget =
                 resolveSimpleButtonTarget("SpellbookCloseButton", GameplaySpellbookPointerTargetType::CloseButton);
 
+            for (const auto &[pId, type] : {
+                std::pair{"SpellbookCastButton", GameplaySpellbookPointerTargetType::CastButton},
+                std::pair{"SpellbookInspectButton", GameplaySpellbookPointerTargetType::InspectButton}})
+            {
+                const GameplaySpellbookPointerTarget target = resolveSimpleButtonTarget(pId, type);
+                if (target.type != GameplaySpellbookPointerTargetType::None)
+                {
+                    return target;
+                }
+            }
+
             if (closeTarget.type != GameplaySpellbookPointerTargetType::None)
             {
                 return closeTarget;
@@ -1456,6 +1140,38 @@ void GameplayPartyOverlayInputController::handleSpellbookOverlayInput(
         findSpellbookPointerTarget,
         [&context](const GameplaySpellbookPointerTarget &target)
         {
+            if (target.type != GameplaySpellbookPointerTargetType::SpellButton)
+            {
+                context.interactionState().lastSpellbookClickedSpellId = 0;
+                context.interactionState().lastSpellbookSpellClickTicks = 0;
+            }
+            const auto castSelectedSpell = [&context]()
+            {
+                const uint32_t spellId = context.spellbook().selectedSpellId;
+                const SpellEntry *pSpell = context.spellTable() != nullptr
+                    ? context.spellTable()->findById(static_cast<int>(spellId)) : nullptr;
+                const Party *pParty = context.partyReadOnly();
+                if (pSpell == nullptr || pParty == nullptr || !context.activeMemberKnowsSpell(spellId))
+                {
+                    context.setStatusBarEvent("Spell not learned");
+                    return;
+                }
+                if (context.tryCastSpellFromMember(pParty->activeMemberIndex(), spellId, pSpell->name))
+                {
+                    context.closeSpellbookOverlay();
+                }
+            };
+            if (target.type == GameplaySpellbookPointerTargetType::CastButton)
+            {
+                castSelectedSpell();
+                return;
+            }
+            if (target.type == GameplaySpellbookPointerTargetType::InspectButton)
+            {
+                context.spellbook().inspectSelected =
+                    context.activeMemberKnowsSpell(context.spellbook().selectedSpellId);
+                return;
+            }
             if (target.type == GameplaySpellbookPointerTargetType::SchoolButton)
             {
                 const SpellbookSchoolUiDefinition *pDefinition = findSpellbookSchoolUiDefinition(target.school);
@@ -1490,25 +1206,7 @@ void GameplayPartyOverlayInputController::handleSpellbookOverlayInput(
 
                 if (isDoubleClick)
                 {
-                    if (!context.activeMemberKnowsSpell(target.spellId))
-                    {
-                        context.setStatusBarEvent("Spell not learned");
-                        return;
-                    }
-
-                    const SpellEntry *pSpellEntry =
-                        context.spellTable() != nullptr
-                            ? context.spellTable()->findById(static_cast<int>(target.spellId))
-                            : nullptr;
-                    const std::string spellName =
-                        pSpellEntry != nullptr && !pSpellEntry->name.empty()
-                            ? pSpellEntry->name
-                            : ("Spell " + std::to_string(target.spellId));
-                    const size_t casterMemberIndex =
-                        context.partyReadOnly() != nullptr ? context.partyReadOnly()->activeMemberIndex() : 0;
-
-                    context.tryCastSpellFromMember(casterMemberIndex, target.spellId, spellName);
-                    context.closeSpellbookOverlay();
+                    castSelectedSpell();
                 }
 
                 return;
@@ -1714,23 +1412,16 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
         pActiveCharacterDollEntry != nullptr && pCharacterDollTable != nullptr
             ? pCharacterDollTable->getDollType(pActiveCharacterDollEntry->dollTypeId)
             : nullptr;
-    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(pActiveCharacter, !isReadOnlyAdventurersInnView);
+    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(
+        pActiveCharacter, context.characterInspectTable(), !isReadOnlyAdventurersInnView);
     const std::optional<GameplayHudFontHandle> skillRowFont = context.findHudFont("Lucida");
-    const float skillRowHeight =
+    const float naturalSkillRowHeight =
         skillRowFont.has_value() ? static_cast<float>(std::max(1, skillRowFont->fontHeight - 3)) : 11.0f;
-    context.clearHudLayoutRuntimeHeightOverrides();
-    context.setHudLayoutRuntimeHeightOverride(
-        "CharacterSkillsWeaponsListRegion",
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, skillUiData.weaponRows.size())));
-    context.setHudLayoutRuntimeHeightOverride(
-        "CharacterSkillsMagicListRegion",
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, skillUiData.magicRows.size())));
-    context.setHudLayoutRuntimeHeightOverride(
-        "CharacterSkillsArmorListRegion",
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, skillUiData.armorRows.size())));
-    context.setHudLayoutRuntimeHeightOverride(
-        "CharacterSkillsMiscListRegion",
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, skillUiData.miscRows.size())));
+    const CharacterSkillLayout skillLayout = layoutCharacterSkillRows(
+        context, screenWidth, screenHeight, naturalSkillRowHeight,
+        {skillUiData.weaponRows.size(), skillUiData.magicRows.size(),
+         skillUiData.armorRows.size(), skillUiData.miscRows.size()});
+    const float skillRowHeight = skillLayout.rowHeight;
 
     const bool closePressed =
         (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE])
@@ -1813,6 +1504,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
          screenWidth,
          screenHeight,
          skillRowHeight,
+         &skillLayout,
          &skillUiData,
          pParty,
          isReadOnlyAdventurersInnView,
@@ -2172,6 +1864,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                 {"CharacterDollHelmetSlot", EquipmentSlot::Helm, false},
                 {"CharacterDollBeltSlot", EquipmentSlot::Belt, false},
                 {"CharacterDollCloakSlot", EquipmentSlot::Cloak, false},
+                {"CharacterDollCloakCollar", EquipmentSlot::Cloak, false},
+                {"CharacterDollCloakCollarFront", EquipmentSlot::Cloak, false},
                 {"CharacterDollBootsSlot", EquipmentSlot::Boots, false},
                 {"CharacterDollAmuletSlot", EquipmentSlot::Amulet, true},
                 {"CharacterDollGauntletsSlot", EquipmentSlot::Gauntlets, true},
@@ -2219,7 +1913,12 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                         *pItemDefinition,
                         dollTypeId,
                         hasRightHandWeapon,
-                        target.slot);
+                        target.slot,
+                        characterEquipmentPicturePart(pLayout->id));
+                    if (dynamicTextureName.empty())
+                    {
+                        continue;
+                    }
                     const std::optional<GameplayHudTextureHandle> texture =
                         context.gameplayUiRuntime().ensureItemIconTextureLoaded(dynamicTextureName);
 
@@ -2233,7 +1932,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                             pActiveCharacterDollType,
                             target.slot,
                             screenWidth,
-                            screenHeight);
+                            screenHeight,
+                            characterEquipmentPicturePart(pLayout->id));
                     }
                 }
 
@@ -2366,7 +2066,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             if (context.characterScreenReadOnly().page == GameplayUiController::CharacterPage::Skills)
             {
                 const auto findSkillRowTarget =
-                    [&context, screenWidth, screenHeight, pointerX, pointerY, skillRowHeight](
+                    [&context, screenWidth, screenHeight, pointerX, pointerY, skillRowHeight, &skillLayout](
                         const char *pRegionId,
                         const char *pLevelHeaderId,
                         const std::vector<CharacterSkillUiRow> &rows) -> GameplayCharacterPointerTarget
@@ -2416,7 +2116,14 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                                 continue;
                             }
 
-                            const float rowY = resolvedRegion->y + static_cast<float>(rowIndex) * rowHeightPixels;
+                            GameplayResolvedHudLayoutElement rowRect = {resolvedRegion->x,
+                                resolvedRegion->y + static_cast<float>(rowIndex) * rowHeightPixels,
+                                rowWidth, rowHeightPixels, resolvedRegion->scale};
+                            if (!skillLayout.placeVisible(rowRect))
+                            {
+                                continue;
+                            }
+                            const float rowY = rowRect.y;
 
                             if (pointerX >= resolvedRegion->x
                                 && pointerX < resolvedRegion->x + rowWidth
@@ -2534,6 +2241,14 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             float activationX,
             float activationY)
         {
+            if (target.type != GameplayCharacterPointerTargetType::AdventurersInnPortrait)
+            {
+                // An intervening button activation ends the portrait double-click sequence.
+                // Hiring also replaces the character occupying the selected roster index.
+                context.interactionState().lastAdventurersInnPortraitClickedIndex.reset();
+                context.interactionState().lastAdventurersInnPortraitClickTicks = 0;
+            }
+
             const bool isInventorySpellTargetMode =
                 context.utilitySpellOverlayReadOnly().active
                 && context.utilitySpellOverlayReadOnly().mode == GameplayUiController::UtilitySpellOverlayMode::InventoryTarget;
@@ -3226,6 +2941,48 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
         };
 
     GameplayOverlayInteractionState &interactionState = context.interactionState();
+
+    GameplayUiController::CharacterScreenState &screen = context.characterScreen();
+    if (screen.open && screen.page == GameplayUiController::CharacterPage::Skills)
+    {
+        const auto clearSkillClick = [&interactionState]()
+        {
+            interactionState.characterClickLatch = false;
+            interactionState.characterPressedTarget = {};
+        };
+        if (input.mouseWheelDelta != 0 && skillLayout.contains(mouseX, mouseY))
+        {
+            screen.skillScrollOffset = std::clamp(screen.skillScrollOffset
+                - input.mouseWheelDelta * skillRowHeight * 3.0f, 0.0f, skillLayout.maximumScroll);
+            clearSkillClick();
+            return;
+        }
+        if (input.mobileTouchDragStarted)
+        {
+            screen.skillDragActive = skillLayout.contains(input.mobileTouchDragStartX, input.mobileTouchDragStartY);
+            screen.skillDragStartOffset = screen.skillScrollOffset;
+        }
+        if (screen.skillDragActive && (input.mobileTouchDragActive || input.mobileTouchDragReleased))
+        {
+            screen.skillScrollOffset = std::clamp(screen.skillDragStartOffset
+                + (input.mobileTouchDragStartY - mouseY) / skillLayout.viewport.scale,
+                0.0f, skillLayout.maximumScroll);
+            if (input.mobileTouchDragReleased)
+            {
+                screen.skillDragActive = false;
+            }
+            clearSkillClick();
+            return;
+        }
+        if (!input.leftMouseButton.held)
+        {
+            screen.skillDragActive = false;
+        }
+    }
+    else
+    {
+        screen.skillDragActive = false;
+    }
 
     if (input.mobileTouchDragStarted)
     {

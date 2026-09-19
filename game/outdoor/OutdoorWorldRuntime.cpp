@@ -4861,6 +4861,11 @@ void OutdoorWorldRuntime::activateChestView(uint32_t chestId)
         return;
     }
 
+    markChestOpened(chestId, m_chests[chestId], eventRuntimeState());
+    if (chestId < m_openedChests.size())
+    {
+        m_openedChests[chestId] = true;
+    }
     const bool cached = m_materializedChestViews[chestId].has_value();
 
     if (!cached)
@@ -4868,6 +4873,7 @@ void OutdoorWorldRuntime::activateChestView(uint32_t chestId)
         m_materializedChestViews[chestId] = buildChestView(chestId);
     }
 
+    m_materializedChestViews[chestId]->flags = m_chests[chestId].flags;
     m_activeChestView = *m_materializedChestViews[chestId];
 
     if (EventRuntimeState *pEventRuntimeState = eventRuntimeState())
@@ -6743,8 +6749,6 @@ void OutdoorWorldRuntime::updateWorldMovement(
     float deltaSeconds,
     bool allowWorldInput)
 {
-    (void)allowWorldInput;
-
     if (m_pInteractionView == nullptr)
     {
         return;
@@ -6765,11 +6769,27 @@ void OutdoorWorldRuntime::updateWorldMovement(
         m_lastWorldMovementFrameDiagnostics = {};
     }
 
+    const float previousX = partyX();
+    const float previousY = partyY();
     OutdoorGameplayInputController::updateCameraFromInput(
         *m_pInteractionView,
         input,
         deltaSeconds,
         pPerformanceDiagnostics);
+
+    if (allowWorldInput && deltaSeconds > 0.0f && m_pPartyRuntime != nullptr)
+    {
+        const OutdoorMoveState &moveState = m_pPartyRuntime->movementState();
+        const float dx = partyX() - previousX;
+        const float dy = partyY() - previousY;
+        if (!moveState.airborne && moveState.supportKind == OutdoorSupportKind::Terrain
+            && dx * dx + dy * dy > 0.0001f)
+        {
+            executeOutdoorStepHook(
+                static_cast<int>(std::floor(partyX() / 512.0f + 64.0f)),
+                static_cast<int>(std::floor(64.0f - partyY() / 512.0f)));
+        }
+    }
 
     if (pPerformanceDiagnostics != nullptr)
     {
@@ -6784,13 +6804,13 @@ const GameplayWorldMovementFrameDiagnostics *OutdoorWorldRuntime::lastWorldMovem
     return m_lastWorldMovementFrameDiagnostics.collected ? &m_lastWorldMovementFrameDiagnostics : nullptr;
 }
 
-void OutdoorWorldRuntime::updateActorAi(float deltaSeconds)
+void OutdoorWorldRuntime::updateActorAi(float deltaSeconds, ActorAiUpdateMode mode)
 {
     if (!m_actorAiUpdateQueued)
     {
         if (deltaSeconds > 0.0f)
         {
-            updateMapActors(deltaSeconds, partyX(), partyY(), partyFootZ());
+            updateMapActors(deltaSeconds, partyX(), partyY(), partyFootZ(), mode);
         }
 
         return;
@@ -6807,7 +6827,7 @@ void OutdoorWorldRuntime::updateActorAi(float deltaSeconds)
     m_queuedActorAiPartyY = 0.0f;
     m_queuedActorAiPartyZ = 0.0f;
 
-    updateMapActors(queuedDeltaSeconds, partyX, partyY, partyZ);
+    updateMapActors(queuedDeltaSeconds, partyX, partyY, partyZ, mode);
 }
 
 void OutdoorWorldRuntime::updateTurnBasedPausedActorAnimations(float deltaSeconds)
@@ -10909,7 +10929,8 @@ void OutdoorWorldRuntime::updateMm9FoundPlayerEvents(
     }
 }
 
-void OutdoorWorldRuntime::updateMapActors(float deltaSeconds, float partyX, float partyY, float partyZ)
+void OutdoorWorldRuntime::updateMapActors(float deltaSeconds, float partyX, float partyY, float partyZ,
+    ActorAiUpdateMode mode)
 {
     if (deltaSeconds <= 0.0f || m_pMonsterTable == nullptr)
     {
@@ -10936,8 +10957,9 @@ void OutdoorWorldRuntime::updateMapActors(float deltaSeconds, float partyX, floa
         }
 
         const std::vector<bool> activeActorMask = selectOutdoorActiveActors(partyX, partyY, partyZ);
-        const ActorAiFrameFacts actorAiFacts =
+        ActorAiFrameFacts actorAiFacts =
             collectOutdoorActorAiFrameFacts(ActorUpdateStepSeconds, partyX, partyY, partyZ, activeActorMask);
+        actorAiFacts.updateMode = mode;
         const GameplayActorAiSystem actorAiSystem = {};
         const ActorAiFrameResult actorAiResult = actorAiSystem.updateActors(actorAiFacts);
         if (traceActorAiThisFrame)
@@ -13973,8 +13995,6 @@ void OutdoorWorldRuntime::applyEventRuntimeState(bool syncPersistentHostilityMas
         {
             if (attemptOpenChest(chestId, openedChestRequest.openedByTelekinesis))
             {
-                m_openedChests[chestId] = true;
-                m_chests[chestId].flags |= static_cast<uint16_t>(EvtChestFlag::Opened);
                 activateChestView(chestId);
             }
         }
@@ -19311,16 +19331,6 @@ bool OutdoorWorldRuntime::activateTelekinesisTarget(const GameplayWorldHit &hit)
 
         if (attemptOpenChest(chestId, true))
         {
-            if (chestId < m_openedChests.size())
-            {
-                m_openedChests[chestId] = true;
-            }
-
-            if (chestId < m_chests.size())
-            {
-                m_chests[chestId].flags |= static_cast<uint16_t>(EvtChestFlag::Opened);
-            }
-
             activateChestView(chestId);
             return true;
         }

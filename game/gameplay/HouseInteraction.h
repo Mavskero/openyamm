@@ -13,7 +13,9 @@
 namespace OpenYAMM::Game
 {
 class Party;
+class CharacterInspectTable;
 class ClassSkillTable;
+class HouseServiceTextTable;
 class NpcDialogTable;
 
 enum class HouseServiceType : uint32_t
@@ -128,7 +130,9 @@ HouseShopGoodbyeResult resolveHouseShopGoodbyeResult(
     bool shopBanned,
     int partyGold);
 bool isHouseOpenAtGameMinute(const HouseEntry &houseEntry, float currentGameMinutes);
-std::string buildClosedStatusText(const HouseEntry &houseEntry);
+std::string buildClosedStatusText(
+    const HouseEntry &houseEntry,
+    const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
 bool isBoatHouse(const HouseEntry &houseEntry);
 uint32_t arcomageDeckItemId();
 const char *arcomageDeckRequiredMessage();
@@ -140,7 +144,8 @@ std::vector<std::string> buildHouseServiceInfoLines(
     const HouseEntry &houseEntry,
     const Party *pParty,
     const ClassSkillTable *pClassSkillTable,
-    DialogueMenuId menuId
+    DialogueMenuId menuId,
+    const HouseServiceTextTable *pHouseServiceTextTable = nullptr
 );
 
 std::vector<HouseActionOption> buildHouseActionOptions(
@@ -149,7 +154,9 @@ std::vector<HouseActionOption> buildHouseActionOptions(
     const ClassSkillTable *pClassSkillTable,
     const IGameplayWorldRuntime *pWorldRuntime,
     float currentGameMinutes,
-    DialogueMenuId menuId
+    DialogueMenuId menuId,
+    const CharacterInspectTable *pCharacterInspectTable = nullptr,
+    const HouseServiceTextTable *pHouseServiceTextTable = nullptr
 );
 
 HouseActionResult performHouseAction(
@@ -158,6 +165,8 @@ HouseActionResult performHouseAction(
     Party &party,
     const ClassSkillTable *pClassSkillTable,
     IGameplayWorldRuntime *pWorldRuntime,
-    const NpcDialogTable *pNpcDialogTable = nullptr
+    const NpcDialogTable *pNpcDialogTable = nullptr,
+    const CharacterInspectTable *pCharacterInspectTable = nullptr,
+    const HouseServiceTextTable *pHouseServiceTextTable = nullptr
 );
 }

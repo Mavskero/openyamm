@@ -49,7 +49,7 @@ bool isActionNewlyPressed(
     return isActionNewlyPressed(context, action, pKeyboardState);
 }
 
-bool isActionHeld(
+bool isActionActive(
     GameplayScreenRuntime &context,
     KeyboardAction action,
     const GameplayInputFrame *pInputFrame,
@@ -57,20 +57,20 @@ bool isActionHeld(
 {
     if (pInputFrame != nullptr)
     {
-        return pInputFrame->action(action).held;
+        return pInputFrame->isActionActive(action);
     }
 
     return context.mutableSettings().keyboard.isPressed(action, pKeyboardState);
 }
 
-bool isScancodeHeld(
+bool isScancodeActive(
     SDL_Scancode scancode,
     const GameplayInputFrame *pInputFrame,
     const bool *pKeyboardState)
 {
     if (pInputFrame != nullptr)
     {
-        return pInputFrame->isScancodeHeld(scancode);
+        return pInputFrame->isScancodeHeld(scancode) || pInputFrame->scancodePressCount(scancode) != 0;
     }
 
     return pKeyboardState != nullptr
@@ -79,11 +79,13 @@ bool isScancodeHeld(
         && pKeyboardState[scancode];
 }
 
-bool isEscapeNewlyPressed(GameplayScreenRuntime &context, const bool *pKeyboardState)
+bool isEscapeNewlyPressed(
+    GameplayScreenRuntime &context, const GameplayInputFrame *pInputFrame, const bool *pKeyboardState)
 {
-    return pKeyboardState != nullptr
+    return (pInputFrame != nullptr && pInputFrame->scancodePressCount(SDL_SCANCODE_ESCAPE) != 0)
+        || (pKeyboardState != nullptr
         && pKeyboardState[SDL_SCANCODE_ESCAPE]
-        && context.previousKeyboardState()[SDL_SCANCODE_ESCAPE] == 0;
+        && context.previousKeyboardState()[SDL_SCANCODE_ESCAPE] == 0);
 }
 
 bool closeActiveLootViewFromEscape(GameplayScreenRuntime &context, IGameplayWorldRuntime &worldRuntime)
@@ -173,6 +175,11 @@ void GameplayInputController::handleStandardUiHotkeys(
     GameplayScreenRuntime &context,
     const GameplayStandardUiHotkeyConfig &config)
 {
+    // This latch belongs to the shared Escape gesture, including transitions between overlays.
+    if (!isScancodeActive(SDL_SCANCODE_ESCAPE, config.pInputFrame, config.pKeyboardState))
+    {
+        context.interactionState().closeOverlayLatch = false;
+    }
     IGameplayWorldRuntime *pWorldRuntime = context.worldRuntime();
     const bool hasActiveLootView =
         pWorldRuntime != nullptr
@@ -214,7 +221,7 @@ void GameplayInputController::handleStandardUiHotkeys(
         && !houseShopActive
         && !houseBankInputActive;
 
-    if (isEscapeNewlyPressed(context, config.pKeyboardState))
+    if (isEscapeNewlyPressed(context, config.pInputFrame, config.pKeyboardState))
     {
         if (pWorldRuntime != nullptr && closeActiveLootViewFromEscape(context, *pWorldRuntime))
         {
@@ -274,7 +281,8 @@ void GameplayInputController::handleStandardUiHotkeys(
 
     if (config.pKeyboardState != nullptr)
     {
-        const bool escapePressed = config.pKeyboardState[SDL_SCANCODE_ESCAPE];
+        const bool escapePressed = config.pKeyboardState[SDL_SCANCODE_ESCAPE]
+            || (config.pInputFrame != nullptr && config.pInputFrame->scancodePressCount(SDL_SCANCODE_ESCAPE) != 0);
         const bool turnBasedActive = context.turnBasedCombatRuntime().active();
 
         if (canToggleMenu)
@@ -295,7 +303,7 @@ void GameplayInputController::handleStandardUiHotkeys(
 
         if (canOpenRestFromGameplay && turnBasedActive)
         {
-            if (isActionHeld(context, KeyboardAction::Rest, config.pInputFrame, config.pKeyboardState))
+            if (isActionActive(context, KeyboardAction::Rest, config.pInputFrame, config.pKeyboardState))
             {
                 if (!context.interactionState().restToggleLatch)
                 {
@@ -311,7 +319,7 @@ void GameplayInputController::handleStandardUiHotkeys(
         }
         else if (canOpenRestFromGameplay)
         {
-            if (isActionHeld(context, KeyboardAction::Rest, config.pInputFrame, config.pKeyboardState))
+            if (isActionActive(context, KeyboardAction::Rest, config.pInputFrame, config.pKeyboardState))
             {
                 if (!context.interactionState().restToggleLatch)
                 {
@@ -481,7 +489,7 @@ void GameplayInputController::handleSharedGameplayHotkeys(
     }
 
     if (config.canToggleAlwaysRun
-        && isActionHeld(context, KeyboardAction::AlwaysRun, config.pInputFrame, config.pKeyboardState))
+        && isActionActive(context, KeyboardAction::AlwaysRun, config.pInputFrame, config.pKeyboardState))
     {
         if (!context.interactionState().alwaysRunToggleLatch)
         {
@@ -503,8 +511,8 @@ void GameplayInputController::handleSharedGameplayHotkeys(
     }
 
     const bool combatKeyHeld =
-        isActionHeld(context, KeyboardAction::Combat, config.pInputFrame, config.pKeyboardState)
-        || isScancodeHeld(SDL_SCANCODE_KP_ENTER, config.pInputFrame, config.pKeyboardState);
+        isActionActive(context, KeyboardAction::Combat, config.pInputFrame, config.pKeyboardState)
+        || isScancodeActive(SDL_SCANCODE_KP_ENTER, config.pInputFrame, config.pKeyboardState);
     const bool combatPressed =
         config.canToggleAlwaysRun
         && combatKeyHeld;
@@ -747,7 +755,7 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
 
         const bool isQuickCastPressed =
             quickCastButtonRequested
-            || isActionHeld(context, KeyboardAction::CastReady, config.pInputFrame, config.pKeyboardState);
+            || isActionActive(context, KeyboardAction::CastReady, config.pInputFrame, config.pKeyboardState);
 
         const GameplayActionController::QuickCastActionDecision quickCastDecision =
             GameplayActionController::updateQuickCastAction(

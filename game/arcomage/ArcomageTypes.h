@@ -45,6 +45,7 @@ enum class ArcomageCondition : uint8_t
 
 struct ArcomageEffectBundle
 {
+    bool swapWalls = false;
     bool playAgain = false;
     int extraDraw = 0;
     int playerQuarry = 0;
@@ -89,6 +90,8 @@ struct ArcomageCardDefinition
     int needGems = 0;
     int needRecruits = 0;
     bool discardable = true;
+    // Marked MM8 tables carry complete effects; legacy tables use named special-card handlers.
+    bool usesMm8BinaryEffects = false;
     ArcomageCondition condition = ArcomageCondition::AlwaysPrimary;
     ArcomageEffectBundle primary = {};
     ArcomageEffectBundle secondary = {};

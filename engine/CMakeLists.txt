@@ -11,6 +11,16 @@ add_library(openyamm_engine
     TextTable.cpp
 )
 
+if (APPLE)
+    target_sources(openyamm_engine PRIVATE AppleText.mm ApplePointer.mm)
+    set_source_files_properties(AppleText.mm ApplePointer.mm PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
+    target_link_libraries(openyamm_engine PUBLIC "-framework Foundation" "-framework CoreText"
+        "-framework CoreGraphics")
+    if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+        target_link_libraries(openyamm_engine PUBLIC "-framework UIKit" "-framework QuartzCore")
+    endif()
+endif()
+
 target_include_directories(openyamm_engine
     PUBLIC
         ${CMAKE_SOURCE_DIR}

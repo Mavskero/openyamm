@@ -11,6 +11,7 @@ class StrTable
 {
 public:
     bool loadFromBytes(const std::vector<uint8_t> &bytes);
+    bool loadFromNullSeparatedBytes(const std::vector<uint8_t> &bytes);
     const std::vector<std::string> &getEntries() const;
     std::optional<std::string> get(size_t index) const;
 

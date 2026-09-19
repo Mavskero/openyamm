@@ -173,7 +173,19 @@ bool openDimensionDoorOverlay(GameplayScreenRuntime &runtime)
 {
     const Party *pParty = runtime.partyReadOnly();
     const size_t casterMemberIndex = pParty != nullptr ? pParty->activeMemberIndex() : 0;
-    return runtime.openDimensionDoorOverlay(casterMemberIndex, spellIdValue(SpellId::TownPortal));
+    runtime.activateDimensionDoor(DimensionDoorActivationSource::ItemScroll);
+    if (!runtime.openDimensionDoorOverlay(casterMemberIndex, spellIdValue(SpellId::TownPortal)))
+    {
+        return false;
+    }
+
+    // Item 190 uses the original direct GM10 cast, independently of a learned Town Portal spell.
+    GameplayUiController::UtilitySpellOverlayState &overlay = runtime.utilitySpellOverlay();
+    overlay.skillLevelOverride = 10;
+    overlay.skillMasteryOverride = SkillMastery::Grandmaster;
+    overlay.spendMana = false;
+    overlay.applyRecovery = false;
+    return true;
 }
 
 bool connectorStoneRechargeReady(const EventRuntimeState &eventRuntimeState, int32_t currentMinutes)

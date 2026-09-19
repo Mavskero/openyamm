@@ -4,6 +4,7 @@
 #include "game/tables/MergedBaseTables.h"
 
 #include <cstdlib>
+#include <charconv>
 #include <iostream>
 #include <string>
 #include <unordered_set>
@@ -120,6 +121,76 @@ bool isDataRow(const std::vector<std::string> &row)
     }
 
     return true;
+}
+
+bool validBinaryCardRow(const std::vector<std::string> &row)
+{
+    if (row.size() != 70)
+    {
+        return false;
+    }
+    for (size_t column = 0; column < row.size(); ++column)
+    {
+        if (column == 1)
+        {
+            continue;
+        }
+        int value = 0;
+        const std::string &text = row[column];
+        const std::from_chars_result parsed = std::from_chars(text.data(), text.data() + text.size(), value);
+        if (parsed.ec != std::errc() || parsed.ptr != text.data() + text.size())
+        {
+            return false;
+        }
+        if (column == 0 && (value < 0 || value >= ArcomageLibrary::CardCount))
+        {
+            return false;
+        }
+        if (column == 2 && (value < 0 || value > 113))
+        {
+            return false;
+        }
+        if (column == 3 && (value < 1 || value > 3))
+        {
+            return false;
+        }
+        if (column >= 4 && column <= 9 && (value < 0 || value > 127))
+        {
+            return false;
+        }
+        if ((column == 10 || column == 12 || column == 41) && value != 0 && value != 1)
+        {
+            return false;
+        }
+        // MM8 25 means player tower > enemy wall. Legacy OpenYAMM assigns that meaning to 21.
+        if (column == 11 && !(value >= 0 && value <= 20) && value != 25)
+        {
+            return false;
+        }
+        if (column >= 12 && (value < -128 || value > 127))
+        {
+            return false;
+        }
+        if ((column == 13 || column == 42) && value < 0)
+        {
+            return false;
+        }
+        // This version of the binary profile supports the observed player-wall swap sentinel.
+        if (column >= 14 && value == 98 && column != 21 && column != 50)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void decodeBinaryWallEffect(ArcomageEffectBundle &bundle)
+{
+    if (bundle.playerWall == 98)
+    {
+        bundle.playerWall = 0;
+        bundle.swapWalls = true;
+    }
 }
 }
 
@@ -242,12 +313,30 @@ bool ArcomageLoader::loadRules(const std::vector<std::vector<std::string>> &rows
 bool ArcomageLoader::loadCards(const std::vector<std::vector<std::string>> &rows)
 {
     std::unordered_set<uint32_t> seenCardIds;
+    bool binaryEffects = false;
+    bool hasMode = false;
 
     for (const std::vector<std::string> &row : rows)
     {
+        if (!row.empty() && row[0] == "#ArcomageCardMode")
+        {
+            if (hasMode || !seenCardIds.empty() || row.size() != 2 || row[1] != "MM8BinaryV1")
+            {
+                std::cerr << "Invalid Arcomage card mode\n";
+                return false;
+            }
+            hasMode = true;
+            binaryEffects = true;
+            continue;
+        }
         if (!isDataRow(row))
         {
             continue;
+        }
+        if (binaryEffects && !validBinaryCardRow(row))
+        {
+            std::cerr << "Invalid MM8 binary Arcomage card row\n";
+            return false;
         }
 
         ArcomageCardDefinition card = {};
@@ -262,7 +351,9 @@ bool ArcomageLoader::loadCards(const std::vector<std::vector<std::string>> &rows
         card.needGems = intAt(row, 8);
         card.needRecruits = intAt(row, 9);
         card.discardable = intAt(row, 10, 1) != 0;
-        card.condition = conditionAt(row, 11);
+        card.usesMm8BinaryEffects = binaryEffects;
+        card.condition = binaryEffects && intAt(row, 11) == 25
+            ? ArcomageCondition::TowerGreaterThanEnemyWall : conditionAt(row, 11);
 
         card.primary.playAgain = intAt(row, 12) != 0;
         card.primary.extraDraw = intAt(row, 13);
@@ -323,6 +414,12 @@ bool ArcomageLoader::loadCards(const std::vector<std::vector<std::string>> &rows
         card.secondary.bothBuildings = intAt(row, 67);
         card.secondary.bothWall = intAt(row, 68);
         card.secondary.bothTower = intAt(row, 69);
+
+        if (binaryEffects)
+        {
+            decodeBinaryWallEffect(card.primary);
+            decodeBinaryWallEffect(card.secondary);
+        }
 
         if (card.name.empty() || !seenCardIds.insert(card.id).second)
         {

@@ -47,6 +47,7 @@ struct CharacterDollTypeEntry
 
 struct CharacterDollEntry
 {
+    // OpenYAMM character identity is one based; the original portrait/Face index is id - 1.
     uint32_t id = 0;
     uint32_t dollTypeId = 0;
     uint32_t defaultClassId = 0;
@@ -55,6 +56,8 @@ struct CharacterDollEntry
     bool availableAtStart = false;
     int bodyOffsetX = 0;
     int bodyOffsetY = 0;
+    int helmOffsetX = 0;
+    int helmOffsetY = 0;
     std::string backgroundAsset;
     std::string bodyAsset;
     std::string headAsset;
@@ -65,6 +68,8 @@ struct CharacterDollEntry
     std::string rightHandOpenAsset;
     std::string rightHandHoldAsset;
     std::string facePicturesPrefix;
+    uint32_t defaultMeleeAttack = 0;
+    uint32_t defaultRangedAttack = 0;
     uint32_t npcPictureId = 0;
     int32_t raceId = -1;
 };

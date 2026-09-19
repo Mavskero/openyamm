@@ -397,6 +397,7 @@ struct ActorAiUpdate
 
 struct ActorAiFrameFacts
 {
+    ActorAiUpdateMode updateMode = ActorAiUpdateMode::Full;
     float deltaSeconds = 0.0f;
     float fixedStepSeconds = 0.0f;
     ActorPartyFacts party = {};

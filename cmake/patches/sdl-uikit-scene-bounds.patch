@@ -1,0 +1,18 @@
+--- a/src/video/uikit/SDL_uikitvideo.m
++++ b/src/video/uikit/SDL_uikitvideo.m
+@@ -226,6 +226,15 @@
+      * is used on an iPad. */
+     if (data != nil && data.uiwindow != nil) {
+         frame = data.uiwindow.bounds;
++        /* OpenYAMM: a scene owns the window's current geometry. Do not apply
++         * the legacy iOS 10 orientation workaround to its bounds: the global
++         * status-bar orientation can be Unknown after revealing iPad Dock,
++         * even while this scene remains in landscape. */
++        if (@available(iOS 13.0, tvOS 13.0, *)) {
++            if (data.uiwindow.windowScene != nil) {
++                return frame;
++            }
++        }
+     }
+ 
+ #ifndef SDL_PLATFORM_TVOS

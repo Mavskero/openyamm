@@ -886,7 +886,8 @@ void queuePortraitFxRequest(
     EventRuntimeState &runtimeState,
     PortraitFxEventKind kind,
     const Party *pParty,
-    const std::vector<size_t> &targetMemberIndices)
+    const std::vector<size_t> &targetMemberIndices,
+    PortraitFxAction action = PortraitFxAction::Default)
 {
     if (kind == PortraitFxEventKind::None)
     {
@@ -900,28 +901,29 @@ void queuePortraitFxRequest(
         return;
     }
 
-    for (EventRuntimeState::PortraitFxRequest &request : runtimeState.portraitFxRequests)
+    // Coalesce only adjacent identical effects. Set/Add/Set must retain its
+    // order because each operation can select a different portrait animation.
+    if (!runtimeState.portraitFxRequests.empty())
     {
-        if (request.kind != kind)
+        EventRuntimeState::PortraitFxRequest &request = runtimeState.portraitFxRequests.back();
+        if (request.kind == kind && request.action == action)
         {
-            continue;
-        }
-
-        for (size_t memberIndex : memberIndices)
-        {
-            if (std::find(request.memberIndices.begin(), request.memberIndices.end(), memberIndex)
-                == request.memberIndices.end())
+            for (size_t memberIndex : memberIndices)
             {
-                request.memberIndices.push_back(memberIndex);
+                if (std::find(request.memberIndices.begin(), request.memberIndices.end(), memberIndex)
+                    == request.memberIndices.end())
+                {
+                    request.memberIndices.push_back(memberIndex);
+                }
             }
+            return;
         }
-
-        return;
     }
 
     EventRuntimeState::PortraitFxRequest request = {};
     request.kind = kind;
     request.memberIndices = memberIndices;
+    request.action = action;
     runtimeState.portraitFxRequests.push_back(std::move(request));
 
     if (const std::optional<SoundId> soundId = soundIdForPortraitFxEvent(kind))
@@ -2777,7 +2779,8 @@ void EventRuntime::setVariableValue(
     int32_t value,
     Party *pParty,
     const std::vector<size_t> &targetMemberIndices,
-    const ISceneEventContext *pSceneEventContext
+    const ISceneEventContext *pSceneEventContext,
+    PortraitFxAction action
 )
 {
     const EvtVariable variableId = static_cast<EvtVariable>(variable.tag);
@@ -2811,11 +2814,13 @@ void EventRuntime::setVariableValue(
 
         if (value > previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices,
+                action);
         }
         else if (value < previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                action);
         }
 
         return;
@@ -2853,7 +2858,8 @@ void EventRuntime::setVariableValue(
 
             if (value != 0 && !changedMemberIndices.empty())
             {
-                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, changedMemberIndices);
+                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, changedMemberIndices,
+                    action);
             }
 
             return;
@@ -2880,7 +2886,8 @@ void EventRuntime::setVariableValue(
 
         if (normalizedValue != 0 && previousValue == 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AutoNote, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AutoNote, pParty, targetMemberIndices,
+                action);
         }
 
         return;
@@ -2941,7 +2948,8 @@ void EventRuntime::setVariableValue(
 
         if (!changedMemberIndices.empty())
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, changedMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, changedMemberIndices,
+                action);
         }
 
         return;
@@ -2961,11 +2969,13 @@ void EventRuntime::setVariableValue(
 
         if (value > previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices,
+                action);
         }
         else if (value < previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                action);
         }
 
         return;
@@ -3017,11 +3027,13 @@ void EventRuntime::setVariableValue(
 
         if (value > previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices,
+                action);
         }
         else if (value < previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                action);
         }
 
         return;
@@ -3040,11 +3052,13 @@ void EventRuntime::setVariableValue(
 
         if (value > previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices,
+                action);
         }
         else if (value < previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                action);
         }
 
         return;
@@ -3072,11 +3086,13 @@ void EventRuntime::setVariableValue(
 
         if (value > previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices,
+                action);
         }
         else if (value < previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                action);
         }
 
         return;
@@ -3114,11 +3130,13 @@ void EventRuntime::setVariableValue(
 
         if (value > previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices,
+                action);
         }
         else if (value < previousValue)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                action);
         }
 
         if ((variable.kind == VariableKind::BaseStat || variable.kind == VariableKind::BaseResistance)
@@ -3196,11 +3214,13 @@ void EventRuntime::setVariableValue(
         {
             if (value > previousValue)
             {
-                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices);
+                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices,
+                    action);
             }
             else if (value < previousValue)
             {
-                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                    action);
             }
         }
 
@@ -3262,7 +3282,8 @@ void EventRuntime::setVariableValue(
 
         if (!learnedMemberIndices.empty())
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, learnedMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, learnedMemberIndices,
+                action);
         }
 
         return;
@@ -3307,7 +3328,8 @@ void EventRuntime::setVariableValue(
 
         if (changed && isPoisonOrDiseaseCondition(*condition))
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::Disease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::Disease, pParty, targetMemberIndices,
+                action);
         }
 
         return;
@@ -3475,7 +3497,8 @@ void EventRuntime::setVariableValue(
         if (variable.kind == VariableKind::QBits
             && shouldQueueQuestBitFx(pParty, variable.rawId, previousValue, normalizedValue))
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, targetMemberIndices,
+                action);
         }
 
         return;
@@ -3590,7 +3613,8 @@ void EventRuntime::addVariableValue(
 
         if (changed && isPoisonOrDiseaseCondition(*condition))
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::Disease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::Disease, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
 
         return;
@@ -3609,7 +3633,8 @@ void EventRuntime::addVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
 
         return;
@@ -3637,7 +3662,8 @@ void EventRuntime::addVariableValue(
 
             if (value > 0 && !changedMemberIndices.empty())
             {
-                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, changedMemberIndices);
+                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, changedMemberIndices,
+                    PortraitFxAction::Add);
             }
 
             return;
@@ -3659,7 +3685,8 @@ void EventRuntime::addVariableValue(
 
         if (updatedValue != 0 && previousValue == 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AutoNote, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AutoNote, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
 
         return;
@@ -3667,7 +3694,9 @@ void EventRuntime::addVariableValue(
 
     if (variable.kind == VariableKind::History)
     {
-        const int32_t updatedValue = previousValue != 0 ? previousValue : (value != 0 ? 1 : 0);
+        // Legacy Add History records the event occurrence; its numeric operand is unused.
+        // Original MM7 departure and other map scripts normally pass zero here.
+        const int32_t updatedValue = 1;
         runtimeState.variables[variable.rawId] = updatedValue;
         std::unordered_map<uint32_t, int32_t> &historyTimes =
             mutableHistoryEventTimesForActiveContinent(runtimeState);
@@ -3683,7 +3712,8 @@ void EventRuntime::addVariableValue(
 
     if (variable.kind == VariableKind::ClassId)
     {
-        setVariableValue(runtimeState, variable, value, pParty, targetMemberIndices, pSceneEventContext);
+        setVariableValue(runtimeState, variable, value, pParty, targetMemberIndices, pSceneEventContext,
+            PortraitFxAction::Add);
         return;
     }
 
@@ -3701,11 +3731,13 @@ void EventRuntime::addVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
         else if (value < 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
 
         return;
@@ -3744,11 +3776,13 @@ void EventRuntime::addVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
         else if (value < 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
 
         return;
@@ -3767,11 +3801,13 @@ void EventRuntime::addVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
         else if (value < 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
 
         return;
@@ -3790,11 +3826,13 @@ void EventRuntime::addVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
         else if (value < 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
 
         return;
@@ -3833,11 +3871,13 @@ void EventRuntime::addVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatIncrease, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
         else if (value < 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
 
         if ((variable.kind == VariableKind::BaseStat || variable.kind == VariableKind::BaseResistance)
@@ -3980,11 +4020,13 @@ void EventRuntime::addVariableValue(
 
             if (value > 0)
             {
-                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices);
+                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::AwardGain, pParty, targetMemberIndices,
+                    PortraitFxAction::Add);
             }
             else if (value < 0)
             {
-                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                    PortraitFxAction::Add);
             }
 
             return;
@@ -4024,7 +4066,8 @@ void EventRuntime::addVariableValue(
         if (variable.kind == VariableKind::QBits
             && shouldQueueQuestBitFx(pParty, variable.rawId, previousValue, normalizedValue))
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::QuestComplete, pParty, targetMemberIndices,
+                PortraitFxAction::Add);
         }
 
         return;
@@ -4143,7 +4186,8 @@ void EventRuntime::subtractVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Subtract);
         }
 
         return;
@@ -4192,7 +4236,8 @@ void EventRuntime::subtractVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Subtract);
         }
 
         return;
@@ -4231,7 +4276,8 @@ void EventRuntime::subtractVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Subtract);
         }
 
         return;
@@ -4250,7 +4296,8 @@ void EventRuntime::subtractVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Subtract);
         }
 
         return;
@@ -4269,7 +4316,8 @@ void EventRuntime::subtractVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Subtract);
         }
 
         return;
@@ -4308,7 +4356,8 @@ void EventRuntime::subtractVariableValue(
 
         if (value > 0)
         {
-            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+            queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                PortraitFxAction::Subtract);
         }
 
         return;
@@ -4434,7 +4483,8 @@ void EventRuntime::subtractVariableValue(
 
             if (value > 0)
             {
-                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices);
+                queuePortraitFxRequest(runtimeState, PortraitFxEventKind::StatDecrease, pParty, targetMemberIndices,
+                    PortraitFxAction::Subtract);
             }
 
             return;
@@ -4535,6 +4585,8 @@ struct LuaScopeProgram
     std::vector<uint16_t> monsterKilledHookEventIds;
     std::vector<uint16_t> monsterDamageHookEventIds;
     std::vector<uint16_t> chestOpenHookEventIds;
+    std::vector<uint16_t> outdoorStepHookEventIds;
+    std::vector<uint16_t> townPortalHookEventIds;
     std::vector<uint16_t> inventoryOpenHookEventIds;
 };
 
@@ -4577,28 +4629,27 @@ void prepareRuntimeStateForEventExecution(
     const ISceneEventContext *pSceneEventContext,
     bool clearPendingOutputs)
 {
-    runtimeState.lastAffectedMechanismIds.clear();
-    runtimeState.openedChestIds.clear();
-    runtimeState.openedChestRequests.clear();
-    runtimeState.grantedItems.clear();
-    runtimeState.grantedItemIds.clear();
-    runtimeState.clearHeldItemRequest = false;
-    runtimeState.removedItemIds.clear();
-    runtimeState.grantedAwardIds.clear();
-    runtimeState.removedAwardIds.clear();
-
     if (clearPendingOutputs)
     {
+        runtimeState.lastAffectedMechanismIds.clear();
+        runtimeState.openedChestIds.clear();
+        runtimeState.openedChestRequests.clear();
+        runtimeState.grantedItems.clear();
+        runtimeState.grantedItemIds.clear();
+        runtimeState.clearHeldItemRequest = false;
+        runtimeState.removedItemIds.clear();
+        runtimeState.grantedAwardIds.clear();
+        runtimeState.removedAwardIds.clear();
         runtimeState.pendingDialogueContext.reset();
         runtimeState.pendingMapMove.reset();
         runtimeState.pendingMovie.reset();
         runtimeState.pendingReturnToMainMenu = false;
         runtimeState.pendingInputPrompt.reset();
+        runtimeState.pendingSounds.clear();
+        runtimeState.actorHostilityRequests.clear();
+        runtimeState.actorGroupHostilityRequests.clear();
     }
 
-    runtimeState.pendingSounds.clear();
-    runtimeState.actorHostilityRequests.clear();
-    runtimeState.actorGroupHostilityRequests.clear();
     syncTimeVariablesFromSceneContext(runtimeState, pSceneEventContext);
 }
 
@@ -4928,6 +4979,14 @@ int luaGetPartyPosition(lua_State *pLuaState)
     const LuaExecutionContext *pExecutionContext = executionContextFromLua(pLuaState);
     const ISceneEventContext *pSceneEventContext = readonlySceneEventContext(pExecutionContext);
     const IGameplayWorldRuntime *pWorldRuntime = dynamic_cast<const IGameplayWorldRuntime *>(pSceneEventContext);
+
+    if (lua_toboolean(pLuaState, 1))
+    {
+        lua_pushnumber(pLuaState, pWorldRuntime != nullptr ? pWorldRuntime->partyX() : 0.0);
+        lua_pushnumber(pLuaState, pWorldRuntime != nullptr ? pWorldRuntime->partyY() : 0.0);
+        lua_pushnumber(pLuaState, pWorldRuntime != nullptr ? pWorldRuntime->partyFootZ() : 0.0);
+        return 3;
+    }
 
     lua_pushinteger(pLuaState, pWorldRuntime != nullptr ? std::lround(pWorldRuntime->partyX()) : 0);
     lua_pushinteger(pLuaState, pWorldRuntime != nullptr ? std::lround(pWorldRuntime->partyY()) : 0);
@@ -5728,6 +5787,10 @@ int luaGetHookContext(lua_State *pLuaState)
     lua_setfield(pLuaState, -2, "houseActionId");
     lua_pushinteger(pLuaState, pContext->gameplayActionId);
     lua_setfield(pLuaState, -2, "actionId");
+    lua_pushinteger(pLuaState, pContext->tileX);
+    lua_setfield(pLuaState, -2, "tileX");
+    lua_pushinteger(pLuaState, pContext->tileY);
+    lua_setfield(pLuaState, -2, "tileY");
     lua_pushinteger(pLuaState, pContext->boundaryEdge);
     lua_setfield(pLuaState, -2, "boundaryEdge");
     lua_pushinteger(pLuaState, pContext->chestId);
@@ -6016,6 +6079,13 @@ int luaSetOutdoorFog(lua_State *pLuaState)
         pRuntimeState->outdoorFogStrongDistanceOverride.reset();
     }
 
+    return 0;
+}
+
+int luaActivateDimensionDoor(lua_State *pLuaState)
+{
+    EventRuntimeState *pRuntimeState = writableRuntimeState(pLuaState);
+    ++pRuntimeState->pendingDimensionDoorActivations;
     return 0;
 }
 
@@ -8264,6 +8334,7 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "SetRain", luaSetRain);
     registerLuaFunction(pLuaState, "SetOutdoorSky", luaSetOutdoorSky);
     registerLuaFunction(pLuaState, "SetOutdoorFog", luaSetOutdoorFog);
+    registerLuaFunction(pLuaState, "ActivateDimensionDoor", luaActivateDimensionDoor);
     registerLuaFunction(pLuaState, "OpenDimensionDoor", luaOpenDimensionDoor);
     registerLuaFunction(pLuaState, "ClearDimensionDoorOverlay", luaClearDimensionDoorOverlay);
     registerLuaFunction(pLuaState, "SetTexture", luaSetTexture);
@@ -8420,6 +8491,8 @@ void releaseScopeProgram(Engine::LuaStateOwner &lua, LuaScopeProgram &scopeProgr
     scopeProgram.monsterKilledHookEventIds.clear();
     scopeProgram.monsterDamageHookEventIds.clear();
     scopeProgram.chestOpenHookEventIds.clear();
+    scopeProgram.outdoorStepHookEventIds.clear();
+    scopeProgram.townPortalHookEventIds.clear();
     scopeProgram.inventoryOpenHookEventIds.clear();
 }
 
@@ -8532,6 +8605,8 @@ LuaScopeProgram buildScopeProgram(
     scopeProgram.monsterKilledHookEventIds = readMetaEventIdArray(session.lua, scopeName, "monsterKilledHooks");
     scopeProgram.monsterDamageHookEventIds = readMetaEventIdArray(session.lua, scopeName, "monsterDamageHooks");
     scopeProgram.chestOpenHookEventIds = readMetaEventIdArray(session.lua, scopeName, "chestOpenHooks");
+    scopeProgram.outdoorStepHookEventIds = readMetaEventIdArray(session.lua, scopeName, "outdoorStepHooks");
+    scopeProgram.townPortalHookEventIds = readMetaEventIdArray(session.lua, scopeName, "townPortalHooks");
     scopeProgram.inventoryOpenHookEventIds = readMetaEventIdArray(session.lua, scopeName, "inventoryOpenHooks");
 
     return scopeProgram;
@@ -8884,7 +8959,7 @@ bool EventRuntime::executeOnLoadEvents(
     executionContext.pRuntimeState = &runtimeState;
     executionContext.pParty = pParty;
     executionContext.pSceneEventContext = pSceneEventContext;
-    // Some maps queue first-entry UI from an early on-load handler and run setup handlers afterwards.
+    // Map-entry handlers form one batch; later setup handlers must retain earlier rewards and UI requests.
     executionContext.preservePendingOutputsOnBegin = true;
 
     for (uint16_t eventId : m_luaSessionCache->globalScope.onLoadEventIds)
@@ -9338,6 +9413,10 @@ const std::vector<uint16_t> &hookEventIdsForKind(
             return scopeProgram.monsterDamageHookEventIds;
         case EventRuntimeHookKind::ChestOpen:
             return scopeProgram.chestOpenHookEventIds;
+        case EventRuntimeHookKind::OutdoorStep:
+            return scopeProgram.outdoorStepHookEventIds;
+        case EventRuntimeHookKind::TownPortal:
+            return scopeProgram.townPortalHookEventIds;
         case EventRuntimeHookKind::InventoryOpen:
             return scopeProgram.inventoryOpenHookEventIds;
     }
@@ -9389,6 +9468,12 @@ bool scriptedProgramHasHook(
 
         case EventRuntimeHookKind::MonsterDamage:
             return !program->monsterDamageHookEventIds().empty();
+
+        case EventRuntimeHookKind::TownPortal:
+            return !program->townPortalHookEventIds().empty();
+
+        case EventRuntimeHookKind::OutdoorStep:
+            return !program->outdoorStepHookEventIds().empty();
 
         default:
             return true;

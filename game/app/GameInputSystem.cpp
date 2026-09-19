@@ -1,4 +1,5 @@
 #include "game/app/GameInputSystem.h"
+#include "engine/WindowPointer.h"
 
 #include "game/app/MobileJoystickDirection.h"
 
@@ -77,6 +78,41 @@ void suppressButtonWhileHeld(bool physicalHeld, bool &logicalHeld, bool &suppres
 
 void GameInputSystem::handleSdlEvent(const SDL_Event &event)
 {
+    if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
+    {
+        suppressMouseButtonsUntilReleased();
+        m_mouseInputCanceled = true;
+        m_pendingKeyboardPressCounts.fill(0);
+        m_pendingTextInput.clear();
+        resetRelativeMouseMotion();
+        return;
+    }
+
+    if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED)
+    {
+        resetRelativeMouseMotion();
+        return;
+    }
+
+    if ((event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_UP)
+        && event.button.which != SDL_TOUCH_MOUSEID
+        && event.button.button >= SDL_BUTTON_LEFT && event.button.button <= SDL_BUTTON_RIGHT)
+    {
+        if (!m_mouseInputCanceled)
+        {
+            if (m_pendingMouseButtons.size() < 256)
+            {
+                m_pendingMouseButtons.push_back(event.button);
+            }
+            else
+            {
+                suppressMouseButtonsUntilReleased();
+                m_mouseInputCanceled = true;
+            }
+        }
+        return;
+    }
+
     if (event.type == SDL_EVENT_TEXT_INPUT)
     {
         if (event.text.text != nullptr)
@@ -92,6 +128,26 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         && event.key.scancode > SDL_SCANCODE_UNKNOWN
         && event.key.scancode < SDL_SCANCODE_COUNT)
     {
+#if defined(__APPLE__)
+        const bool pasteModifier = (event.key.mod & SDL_KMOD_GUI) != 0;
+#else
+        const bool pasteModifier = (event.key.mod & SDL_KMOD_CTRL) != 0;
+#endif
+        SDL_Window *pWindow = SDL_GetWindowFromID(event.key.windowID);
+        if (pWindow == nullptr)
+        {
+            pWindow = SDL_GetKeyboardFocus();
+        }
+        if (pasteModifier && event.key.scancode == SDL_SCANCODE_V
+            && pWindow != nullptr && SDL_TextInputActive(pWindow))
+        {
+            char *pClipboard = SDL_GetClipboardText();
+            if (pClipboard != nullptr)
+            {
+                m_pendingTextInput += pClipboard;
+                SDL_free(pClipboard);
+            }
+        }
         uint16_t &pressCount = m_pendingKeyboardPressCounts[event.key.scancode];
 
         if (pressCount < std::numeric_limits<uint16_t>::max())
@@ -100,7 +156,7 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         }
     }
 
-#if defined(__ANDROID__)
+    // SDL finger events use the same normalized coordinates on iPad and Android.
     const auto findTouch =
         [this](SDL_FingerID fingerId) -> MobileTouchPoint *
         {
@@ -180,7 +236,7 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                 pTouch->role = MobileTouchRole::DebugConsoleGesture;
                 pTouch->debugConsoleGestureTriggered = true;
                 pTouch->dragThresholdExceeded = false;
-                m_mobilePendingHudTap = false;
+                m_mobilePendingHudTaps.clear();
                 m_mobilePendingHudRelease = false;
                 m_mobilePendingCameraTap = false;
                 m_mobileJumpDoubleTapGesture.cancel();
@@ -197,6 +253,18 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
 
         if (pTouch != nullptr)
         {
+            if (event.type == SDL_EVENT_FINGER_CANCELED)
+            {
+                if (pTouch->role == MobileTouchRole::Hud && pTouch->hudPressDelivered)
+                {
+                    m_mobilePendingHudRelease = true;
+                    m_mobilePendingHudReleaseX = -1.0f;
+                    m_mobilePendingHudReleaseY = -1.0f;
+                }
+                *pTouch = {};
+                return;
+            }
+
             const bool completedHudDrag =
                 event.type == SDL_EVENT_FINGER_UP
                 && pTouch->dragThresholdExceeded
@@ -211,9 +279,9 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                 m_mobilePendingHudDragReleaseX = event.tfinger.x;
                 m_mobilePendingHudDragReleaseY = event.tfinger.y;
                 m_mobilePendingHudRelease = false;
-                m_mobilePendingHudTap = false;
+                m_mobilePendingHudTaps.clear();
             }
-            else if (pTouch->role == MobileTouchRole::Hud)
+            else if (pTouch->role == MobileTouchRole::Hud && pTouch->hudPressDelivered)
             {
                 m_mobilePendingHudRelease = true;
                 m_mobilePendingHudReleaseX = event.tfinger.x;
@@ -235,21 +303,23 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                     m_mobilePendingCameraTapY = event.tfinger.y;
                 }
             }
-            else if (pTouch->role == MobileTouchRole::None)
+            else if (pTouch->role == MobileTouchRole::None || pTouch->role == MobileTouchRole::Hud)
             {
-                m_mobilePendingHudTap = true;
-                m_mobilePendingHudTapStartX = pTouch->startX;
-                m_mobilePendingHudTapStartY = pTouch->startY;
-                m_mobilePendingHudTapX = event.tfinger.x;
-                m_mobilePendingHudTapY = event.tfinger.y;
+                if (m_mobilePendingHudTaps.size() < 256)
+                {
+                    m_mobilePendingHudTaps.push_back(
+                        {pTouch->startX, pTouch->startY, event.tfinger.x, event.tfinger.y});
+                }
+                else
+                {
+                    suppressMouseButtonsUntilReleased();
+                    m_mouseInputCanceled = true;
+                }
             }
 
             *pTouch = {};
         }
     }
-#else
-    (void)event;
-#endif
 }
 
 bool GameInputSystem::consumeMobileDebugConsoleToggleRequested()
@@ -298,8 +368,73 @@ void GameInputSystem::updateFromEngineInput(
     float pointerX = 0.0f;
     float pointerY = 0.0f;
     const SDL_MouseButtonFlags mouseButtons = SDL_GetMouseState(&pointerX, &pointerY);
+    SDL_Window *pPointerWindow = SDL_GetMouseFocus();
+    const bool cancelMouseInput = m_mouseInputCanceled;
+    m_mouseInputCanceled = false;
+    if (blockGameplayInput || cancelMouseInput)
+    {
+        m_mobilePendingHudTaps.clear();
+        m_mobilePendingHudRelease = false;
+        m_mobilePendingHudDragRelease = false;
+        m_mobilePendingCameraTap = false;
+        m_mobileJumpDoubleTapGesture.cancel();
+        m_mobileTouches = {};
+        m_pendingMouseButtons.clear();
+        m_deliveredMouseButtons = mouseButtons;
+    }
+    else if (!m_pendingMouseButtons.empty())
+    {
+        // The UI activates on a held-to-released transition. Deliver each actual
+        // button edge with its own position, including clicks completed between frames.
+        const SDL_MouseButtonEvent event = m_pendingMouseButtons.front();
+        m_pendingMouseButtons.pop_front();
+        const SDL_MouseButtonFlags mask = SDL_BUTTON_MASK(event.button);
+        if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+        {
+            m_deliveredMouseButtons |= mask;
+        }
+        else
+        {
+            m_deliveredMouseButtons &= ~mask;
+            if (event.button == SDL_BUTTON_LEFT)
+            {
+                m_suppressLeftMouseButtonUntilReleased = false;
+            }
+            else if (event.button == SDL_BUTTON_RIGHT)
+            {
+                m_suppressRightMouseButtonUntilReleased = false;
+            }
+            else if (event.button == SDL_BUTTON_MIDDLE)
+            {
+                m_suppressMiddleMouseButtonUntilReleased = false;
+            }
+        }
+        pointerX = event.x;
+        pointerY = event.y;
+        if (SDL_Window *pEventWindow = SDL_GetWindowFromID(event.windowID))
+        {
+            pPointerWindow = pEventWindow;
+        }
+    }
+    else
+    {
+        m_deliveredMouseButtons = mouseButtons;
+    }
     m_frame.pointerX = pointerX;
     m_frame.pointerY = pointerY;
+
+    // SDL mouse positions are window points; the game UI uses drawable pixels.
+    if (pPointerWindow != nullptr)
+    {
+        int pointWidth = 0;
+        int pointHeight = 0;
+        SDL_GetWindowSize(pPointerWindow, &pointWidth, &pointHeight);
+        if (pointWidth > 0 && pointHeight > 0 && screenWidth > 0 && screenHeight > 0)
+        {
+            m_frame.pointerX *= static_cast<float>(screenWidth) / static_cast<float>(pointWidth);
+            m_frame.pointerY *= static_cast<float>(screenHeight) / static_cast<float>(pointHeight);
+        }
+    }
 
 #if !defined(__ANDROID__)
     SDL_Window *pMouseLookWindow = SDL_GetMouseFocus();
@@ -309,9 +444,13 @@ void GameInputSystem::updateFromEngineInput(
         pMouseLookWindow = SDL_GetKeyboardFocus();
     }
 
-    if (settings.controlScheme == ControlScheme::Modern
-        && pMouseLookWindow != nullptr
+    const bool relativeMouseCaptured = pMouseLookWindow != nullptr
         && SDL_GetWindowRelativeMouseMode(pMouseLookWindow)
+        && Engine::windowMouseLookActive(pMouseLookWindow)
+        && (SDL_GetWindowFlags(pMouseLookWindow) & SDL_WINDOW_INPUT_FOCUS) != 0;
+
+    if (settings.controlScheme == ControlScheme::Modern
+        && relativeMouseCaptured
         && screenWidth > 0
         && screenHeight > 0)
     {
@@ -328,16 +467,19 @@ void GameInputSystem::updateFromEngineInput(
     m_frame.relativeMouseY = 0.0f;
 #else
     const float mouseSensitivityScale = static_cast<float>(std::clamp(settings.mouseSensitivity, 0, 100)) / 100.0f;
-    m_frame.relativeMouseX = blockGameplayInput ? 0.0f : relativeMouseX * mouseSensitivityScale;
-    m_frame.relativeMouseY = blockGameplayInput ? 0.0f : relativeMouseY * mouseSensitivityScale;
+    // Drain absolute/menu motion too, but only captured motion can steer the camera.
+    const bool acceptRelativeMouse = relativeMouseCaptured && !blockGameplayInput && !cancelMouseInput;
+    m_frame.relativeMouseX = acceptRelativeMouse ? relativeMouseX * mouseSensitivityScale : 0.0f;
+    m_frame.relativeMouseY = acceptRelativeMouse ? relativeMouseY * mouseSensitivityScale : 0.0f;
 #endif
 
     const bool physicalLeftMouseButtonHeld = (mouseButtons & SDL_BUTTON_LMASK) != 0;
     const bool physicalRightMouseButtonHeld = (mouseButtons & SDL_BUTTON_RMASK) != 0;
     const bool physicalMiddleMouseButtonHeld = (mouseButtons & SDL_BUTTON_MMASK) != 0;
-    bool leftMouseButtonHeld = !blockGameplayInput && physicalLeftMouseButtonHeld;
-    bool rightMouseButtonHeld = !blockGameplayInput && physicalRightMouseButtonHeld;
-    bool middleMouseButtonHeld = !blockGameplayInput && physicalMiddleMouseButtonHeld;
+    const bool acceptMouseInput = !blockGameplayInput && !cancelMouseInput;
+    bool leftMouseButtonHeld = acceptMouseInput && (m_deliveredMouseButtons & SDL_BUTTON_LMASK) != 0;
+    bool rightMouseButtonHeld = acceptMouseInput && (m_deliveredMouseButtons & SDL_BUTTON_RMASK) != 0;
+    bool middleMouseButtonHeld = acceptMouseInput && (m_deliveredMouseButtons & SDL_BUTTON_MMASK) != 0;
 
     suppressButtonWhileHeld(
         physicalLeftMouseButtonHeld,
@@ -377,7 +519,6 @@ void GameInputSystem::updateFromEngineInput(
         actionHeld[keyboardActionIndex(definition.action)] = held;
     }
 
-#if defined(__ANDROID__)
     const bool useMobileGameplayTouchControls = mobileGameplayTouchControlsEnabled && !blockGameplayInput;
     const bool useMobileJumpGesture = useMobileGameplayTouchControls && mobileJumpGestureEnabled;
     const auto setMobileActionHeld =
@@ -522,7 +663,7 @@ void GameInputSystem::updateFromEngineInput(
             }
         }
 
-        m_mobilePendingHudTap = false;
+        m_mobilePendingHudTaps.clear();
         m_mobilePendingHudRelease = false;
         m_mobilePendingHudDragRelease = false;
         m_mobilePendingCameraTap = false;
@@ -595,6 +736,7 @@ void GameInputSystem::updateFromEngineInput(
 
     bool hasNonHudMobileTouch = false;
     bool hasHudTouch = false;
+    MobileTouchPoint *pHudTouch = nullptr;
     bool hasInspectTargetTouch = false;
     float hudTouchX = 0.0f;
     float hudTouchY = 0.0f;
@@ -618,7 +760,7 @@ void GameInputSystem::updateFromEngineInput(
                     touch.role == MobileTouchRole::FlyUp ? KeyboardAction::FlyUp : KeyboardAction::FlyDown);
             }
         }
-        else if (touch.role == MobileTouchRole::Movement)
+        else if (touch.role == MobileTouchRole::Movement && useMobileGameplayTouchControls)
         {
             hasNonHudMobileTouch = true;
             const float startX = touch.startX * static_cast<float>(screenWidth);
@@ -686,7 +828,7 @@ void GameInputSystem::updateFromEngineInput(
                     break;
             }
         }
-        else if (touch.role == MobileTouchRole::Camera)
+        else if (touch.role == MobileTouchRole::Camera && useMobileGameplayTouchControls)
         {
             hasNonHudMobileTouch = true;
             m_frame.relativeMouseX += touch.deltaX * static_cast<float>(screenWidth);
@@ -711,6 +853,7 @@ void GameInputSystem::updateFromEngineInput(
         else if (touch.role == MobileTouchRole::Hud && !hasHudTouch)
         {
             hasHudTouch = true;
+            pHudTouch = &touch;
             hudTouchX = touch.x * static_cast<float>(screenWidth);
             hudTouchY = touch.y * static_cast<float>(screenHeight);
 
@@ -745,6 +888,7 @@ void GameInputSystem::updateFromEngineInput(
     {
         if (hasInspectTargetTouch)
         {
+            m_frame.pointerFromTouch = true;
             m_frame.pointerX = inspectTargetX;
             m_frame.pointerY = inspectTargetY;
         }
@@ -754,6 +898,7 @@ void GameInputSystem::updateFromEngineInput(
     }
     else if (pendingHudDragIsUiGesture)
     {
+        m_frame.pointerFromTouch = true;
         m_frame.pointerX = m_mobilePendingHudDragReleaseX * static_cast<float>(screenWidth);
         m_frame.pointerY = m_mobilePendingHudDragReleaseY * static_cast<float>(screenHeight);
         m_frame.mobileTouchDragStarted = !m_mobilePendingHudDragStartDelivered;
@@ -767,34 +912,37 @@ void GameInputSystem::updateFromEngineInput(
     {
         m_mobilePendingHudDragRelease = false;
     }
-    else if (hasHudTouch)
-    {
-        m_frame.pointerX = hudTouchX;
-        m_frame.pointerY = hudTouchY;
-        leftMouseButtonHeld = true;
-        m_mobilePendingHudRelease = false;
-    }
-    else if (m_mobilePendingHudTap)
-    {
-        if (!useMobileGameplayTouchControls
-            || touchStartsInHudZone(m_mobilePendingHudTapStartX, m_mobilePendingHudTapStartY))
-        {
-            m_frame.pointerX = m_mobilePendingHudTapX * static_cast<float>(screenWidth);
-            m_frame.pointerY = m_mobilePendingHudTapY * static_cast<float>(screenHeight);
-            leftMouseButtonHeld = true;
-            m_mobilePendingHudRelease = true;
-            m_mobilePendingHudReleaseX = m_mobilePendingHudTapX;
-            m_mobilePendingHudReleaseY = m_mobilePendingHudTapY;
-        }
-
-        m_mobilePendingHudTap = false;
-    }
     else if (m_mobilePendingHudRelease)
     {
+        m_frame.pointerFromTouch = true;
         m_frame.pointerX = m_mobilePendingHudReleaseX * static_cast<float>(screenWidth);
         m_frame.pointerY = m_mobilePendingHudReleaseY * static_cast<float>(screenHeight);
         leftMouseButtonHeld = false;
         m_mobilePendingHudRelease = false;
+    }
+    else if (!m_mobilePendingHudTaps.empty())
+    {
+        const MobileHudTap tap = m_mobilePendingHudTaps.front();
+        m_mobilePendingHudTaps.pop_front();
+        if (!useMobileGameplayTouchControls
+            || touchStartsInHudZone(tap.startX, tap.startY))
+        {
+            m_frame.pointerFromTouch = true;
+            m_frame.pointerX = tap.x * static_cast<float>(screenWidth);
+            m_frame.pointerY = tap.y * static_cast<float>(screenHeight);
+            leftMouseButtonHeld = true;
+            m_mobilePendingHudRelease = true;
+            m_mobilePendingHudReleaseX = tap.x;
+            m_mobilePendingHudReleaseY = tap.y;
+        }
+    }
+    else if (hasHudTouch)
+    {
+        m_frame.pointerFromTouch = true;
+        m_frame.pointerX = hudTouchX;
+        m_frame.pointerY = hudTouchY;
+        leftMouseButtonHeld = true;
+        pHudTouch->hudPressDelivered = true;
     }
     else if (m_mobilePendingCameraTap)
     {
@@ -825,12 +973,18 @@ void GameInputSystem::updateFromEngineInput(
     {
         leftMouseButtonHeld = false;
     }
-#else
-    static_cast<void>(mobileGameplayTouchControlsEnabled);
-    static_cast<void>(mobileJumpGestureEnabled);
-    static_cast<void>(mobileFlightControlsEnabled);
-    static_cast<void>(mobileInspectControlEnabled);
-#endif
+
+    if (cancelMouseInput)
+    {
+        m_frame.pointerFromTouch = false;
+        // A canceled drag must release outside every UI target, never activate a
+        // previously pressed button when focus is lost or the event queue overflows.
+        m_frame.pointerX = -1.0f;
+        m_frame.pointerY = -1.0f;
+        leftMouseButtonHeld = false;
+        rightMouseButtonHeld = false;
+        middleMouseButtonHeld = false;
+    }
 
     m_frame.leftMouseButton = buildButtonState(leftMouseButtonHeld, m_previousLeftMouseButtonHeld);
     m_frame.rightMouseButton = buildButtonState(rightMouseButtonHeld, m_previousRightMouseButtonHeld);
@@ -839,6 +993,12 @@ void GameInputSystem::updateFromEngineInput(
     for (size_t actionIndex = 0; actionIndex < actionHeld.size(); ++actionIndex)
     {
         m_frame.actions[actionIndex] = buildButtonState(actionHeld[actionIndex], m_previousActionHeld[actionIndex]);
+        const InputBinding binding = settings.keyboard.binding(static_cast<KeyboardAction>(actionIndex));
+        if (binding.kind == InputBindingKind::Keyboard && m_frame.scancodePressCount(binding.scancode) != 0)
+        {
+            // A down/up pair can arrive between rendered frames. Preserve its press without inventing a held key.
+            m_frame.actions[actionIndex].pressed = true;
+        }
     }
 
     m_previousKeyboardHeld = m_frame.keyboardHeld;
@@ -862,6 +1022,8 @@ void GameInputSystem::resetRelativeMouseMotion()
 
 void GameInputSystem::suppressMouseButtonsUntilReleased()
 {
+    m_pendingMouseButtons.clear();
+    m_deliveredMouseButtons = 0;
     m_suppressLeftMouseButtonUntilReleased = true;
     m_suppressRightMouseButtonUntilReleased = true;
     m_suppressMiddleMouseButtonUntilReleased = true;

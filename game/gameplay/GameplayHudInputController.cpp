@@ -165,6 +165,12 @@ void GameplayHudInputController::activatePartyPortrait(
         return;
     }
 
+    const Party *pParty = context.partyReadOnly();
+    if (pParty == nullptr || pParty->member(memberIndex) == nullptr)
+    {
+        return;
+    }
+
     const uint64_t nowTicks = SDL_GetTicks();
     const bool isGameplayInventoryDoubleClick =
         config.requireGameplayReady
@@ -191,6 +197,9 @@ void GameplayHudInputController::activatePartyPortrait(
     }
 
     const bool selected = context.trySelectPartyMember(memberIndex, config.requireGameplayReady);
+    // A member who cannot act still needs a remembered first click for inventory inspection.
+    context.interactionState().lastPartyPortraitClickTicks = nowTicks;
+    context.interactionState().lastPartyPortraitClickedIndex = memberIndex;
 
     if (!selected && !isGameplayInventoryDoubleClick)
     {
@@ -211,8 +220,6 @@ void GameplayHudInputController::activatePartyPortrait(
         context.openChestTransferInventoryOverlay();
     }
 
-    context.interactionState().lastPartyPortraitClickTicks = nowTicks;
-    context.interactionState().lastPartyPortraitClickedIndex = memberIndex;
 }
 
 void GameplayHudInputController::handlePartyPortraitInput(

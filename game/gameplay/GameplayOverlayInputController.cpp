@@ -1,4 +1,5 @@
 #include "game/gameplay/GameplayOverlayInputController.h"
+#include "game/ui/Utf8Text.h"
 
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/GameplayInputFrame.h"
@@ -87,37 +88,6 @@ constexpr std::array<SaveGameKeyBinding, 39> SaveGameEditBindings = {{
     {SDL_SCANCODE_SPACE, ' ', ' '}, {SDL_SCANCODE_MINUS, '-', '_'}, {SDL_SCANCODE_APOSTROPHE, '\'', '"'}
 }};
 
-bool isSaveGameTextInputCharacter(char character)
-{
-    for (const SaveGameKeyBinding &binding : SaveGameEditBindings)
-    {
-        if (character == binding.lower || character == binding.upper)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void appendSaveGameTextInput(std::string &buffer, const std::string &textInput)
-{
-    static constexpr size_t MaximumSaveGameTextLength = 30;
-
-    for (const char character : textInput)
-    {
-        if (buffer.size() >= MaximumSaveGameTextLength)
-        {
-            break;
-        }
-
-        if (isSaveGameTextInputCharacter(character))
-        {
-            buffer.push_back(character);
-        }
-    }
-}
-
 void resetSaveGameEditInputState(GameplayOverlayInteractionState &state)
 {
     state.saveGameEditKeyLatches.fill(false);
@@ -133,7 +103,10 @@ bool eraseSaveGameEditCharacter(GameplayUiController::SaveGameScreenState &saveG
         return false;
     }
 
-    saveGameScreen.editBuffer.pop_back();
+    if (!eraseLastUtf8Character(saveGameScreen.editBuffer))
+    {
+        return false;
+    }
     saveGameScreen.errorText.clear();
     return true;
 }
@@ -999,7 +972,8 @@ bool GameplayOverlayInputController::handleMenuOverlayInput(
         return false;
     }
 
-    const bool closePressed = pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE];
+    const bool closePressed = input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0
+        || (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE]);
 
     if (closePressed)
     {
@@ -1925,13 +1899,23 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
         return false;
     }
 
-    const bool escapePressed =
-        pKeyboardState != nullptr
-        && pKeyboardState[SDL_SCANCODE_ESCAPE];
-    const bool commitPressed =
-        pKeyboardState != nullptr
-        && saveGameScreen.editActive
-        && pKeyboardState[SDL_SCANCODE_RETURN];
+    const bool escapePressed = input.scancodePressCount(SDL_SCANCODE_ESCAPE) > 0
+        || (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE]);
+    const bool commitPressed = saveGameScreen.editActive
+        && (input.scancodePressCount(SDL_SCANCODE_RETURN) > 0
+            || (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_RETURN]));
+
+    if (saveGameScreen.editActive && !escapePressed)
+    {
+        // IME commit and Return can arrive in one frame. Apply the committed
+        // Unicode text before checking the final name and creating the save.
+        const std::string textBeforeAppend = saveGameScreen.editBuffer;
+        appendUtf8Label(saveGameScreen.editBuffer, input.textInput, 30);
+        if (saveGameScreen.editBuffer != textBeforeAppend)
+        {
+            saveGameScreen.errorText.clear();
+        }
+    }
 
     if (escapePressed)
     {
@@ -1963,14 +1947,6 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
 
     if (saveGameScreen.editActive && pKeyboardState != nullptr)
     {
-        const std::string textBeforeAppend = saveGameScreen.editBuffer;
-        appendSaveGameTextInput(saveGameScreen.editBuffer, input.textInput);
-
-        if (saveGameScreen.editBuffer != textBeforeAppend)
-        {
-            saveGameScreen.errorText.clear();
-        }
-
         const bool shiftPressed =
             pKeyboardState[SDL_SCANCODE_LSHIFT] || pKeyboardState[SDL_SCANCODE_RSHIFT];
 
@@ -1983,9 +1959,10 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
             {
                 if (input.textInput.empty()
                     && !view.interactionState().saveGameEditKeyLatches[bindingIndex]
-                    && saveGameScreen.editBuffer.size() < 30)
+                    && (SDL_GetKeyboardFocus() == nullptr || !SDL_TextInputActive(SDL_GetKeyboardFocus())))
                 {
-                    saveGameScreen.editBuffer.push_back(shiftPressed ? binding.upper : binding.lower);
+                    appendUtf8Label(saveGameScreen.editBuffer,
+                        std::string(1, shiftPressed ? binding.upper : binding.lower), 30);
                     saveGameScreen.errorText.clear();
                     view.interactionState().saveGameEditKeyLatches[bindingIndex] = true;
                 }
@@ -3280,7 +3257,8 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                             slotIndex,
                             statusText,
                             &serviceResult,
-                            effectiveReputationForView(view));
+                            effectiveReputationForView(view),
+                            view.houseServiceTextTable());
                     }
 
                     if (!statusText.empty())
@@ -3365,7 +3343,8 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                     gridY,
                     statusText,
                     &serviceResult,
-                    effectiveReputationForView(view));
+                    effectiveReputationForView(view),
+                    view.houseServiceTextTable());
             }
             else if (view.inventoryNestedOverlay().mode
                 == GameplayUiController::InventoryNestedOverlayMode::ShopIdentify)
@@ -3382,7 +3361,8 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                     statusText,
                     &serviceResult,
                     effectiveReputationForView(view),
-                    view.worldRuntime() != nullptr ? view.worldRuntime()->eventRuntimeState() : nullptr);
+                    view.worldRuntime() != nullptr ? view.worldRuntime()->eventRuntimeState() : nullptr,
+                    view.houseServiceTextTable());
             }
             else if (view.inventoryNestedOverlay().mode
                 == GameplayUiController::InventoryNestedOverlayMode::ShopRepair)
@@ -3399,7 +3379,8 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                     statusText,
                     &serviceResult,
                     effectiveReputationForView(view),
-                    view.worldRuntime() != nullptr ? view.worldRuntime()->eventRuntimeState() : nullptr);
+                    view.worldRuntime() != nullptr ? view.worldRuntime()->eventRuntimeState() : nullptr,
+                    view.houseServiceTextTable());
             }
 
             const size_t activeMemberIndex = view.partyReadOnly()->activeMemberIndex();

@@ -124,7 +124,8 @@ bool isTeacherHintTopicRow(const std::vector<std::string> &row)
 
 bool isRosterJoinTopicLabel(const NpcTopicEntry &entry)
 {
-    return entry.topic == "Roster Join Event" || entry.topic == "Join";
+    const std::string &label = entry.baseTopic.empty() ? entry.topic : entry.baseTopic;
+    return label == "Roster Join Event" || label == "Join";
 }
 
 std::optional<NpcDialogTable::RosterJoinOffer> buildRosterJoinOffer(
@@ -412,6 +413,10 @@ bool NpcDialogTable::loadTopicsFromRows(const std::vector<std::vector<std::strin
     m_topicsById.clear();
     m_rosterJoinOffersByTopicId.clear();
     m_guildMembershipOffersByTopicId.clear();
+    const bool hasBaseTopic = std::any_of(rows.begin(), rows.end(), [](const std::vector<std::string> &row)
+    {
+        return row.size() > 7 && row[0] == "#" && row[7] == "Base Topic";
+    });
 
     for (const std::vector<std::string> &row : rows)
     {
@@ -430,6 +435,7 @@ bool NpcDialogTable::loadTopicsFromRows(const std::vector<std::vector<std::strin
         NpcTopicEntry entry = {};
         entry.id = id;
         entry.topic = row[1];
+        entry.baseTopic = hasBaseTopic && row.size() > 7 ? row[7] : "";
         entry.notes = row.size() > 3 ? row[3] : "";
         entry.owner = row.size() > 5 ? row[5] : "";
 
@@ -467,7 +473,10 @@ void NpcDialogTable::resolveSpecialTopics(const RosterTable &rosterTable)
         if (rosterJoinOffer)
         {
             entry.specialKind = NpcTopicEntry::SpecialKind::RosterJoinOffer;
-            entry.topic = "Join";
+            if (entry.baseTopic.empty() || entry.topic == entry.baseTopic)
+            {
+                entry.topic = "Join";
+            }
             m_rosterJoinOffersByTopicId[topicId] = *rosterJoinOffer;
             continue;
         }
@@ -777,8 +786,13 @@ std::optional<std::string> NpcDialogTable::getNewsTopic(uint32_t newsId) const
     return topicIt->second;
 }
 
-std::optional<std::string> NpcDialogTable::getNewsDialogText(uint32_t textId) const
+std::optional<std::string> NpcDialogTable::getNewsDialogText(uint32_t textId, bool fromNpcText) const
 {
+    if (fromNpcText)
+    {
+        return getText(textId);
+    }
+
     const std::optional<std::string> newsText = getNewsText(textId);
 
     if (newsText)

@@ -44,10 +44,13 @@ public:
     const std::vector<uint16_t> &onLeaveEventIds() const;
     const std::vector<uint16_t> &monsterKilledHookEventIds() const;
     const std::vector<uint16_t> &monsterDamageHookEventIds() const;
+    const std::vector<uint16_t> &townPortalHookEventIds() const;
+    const std::vector<uint16_t> &outdoorStepHookEventIds() const;
     const std::vector<std::string> &textureNames() const;
     const std::vector<std::string> &spriteNames() const;
     const std::vector<uint32_t> &castSpellIds() const;
     const std::vector<TimerTrigger> &timerTriggers() const;
+    const std::unordered_map<std::string, uint16_t> &outdoorModelEvents() const;
     bool hasEvent(uint16_t eventId) const;
     bool isHintOnlyEvent(uint16_t eventId) const;
     std::optional<std::string> getHint(uint16_t eventId) const;
@@ -72,6 +75,9 @@ private:
     std::vector<uint16_t> m_onLeaveEventIds;
     std::vector<uint16_t> m_monsterKilledHookEventIds;
     std::vector<uint16_t> m_monsterDamageHookEventIds;
+    std::vector<uint16_t> m_townPortalHookEventIds;
+    std::vector<uint16_t> m_outdoorStepHookEventIds;
+    std::unordered_map<std::string, uint16_t> m_outdoorModelEvents;
     std::unordered_map<uint16_t, std::string> m_hints;
     std::unordered_map<uint16_t, std::string> m_summaries;
     std::unordered_map<uint16_t, std::vector<uint32_t>> m_openedChestIdsByEventId;

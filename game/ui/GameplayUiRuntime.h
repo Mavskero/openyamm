@@ -9,6 +9,7 @@
 #include "game/tables/FaceAnimationTable.h"
 #include "game/tables/PortraitFxEventTable.h"
 #include "game/ui/GameplayHudCommon.h"
+#include "game/ui/AppleTextTextureCache.h"
 #include "game/ui/GameplayUiController.h"
 #include "game/ui/UiLayoutManager.h"
 
@@ -163,7 +164,7 @@ public:
     GameplayHudScreenState renderedInspectableHudScreenState() const;
     void setRenderedInspectableHudScreenState(GameplayHudScreenState state);
     bool ensureTownPortalDestinationsLoaded(const std::string &currentMapFileName);
-    bool ensureDimensionDoorDestinationsLoaded(uint32_t dayIndex, bool crossContinentsUnlocked);
+    bool ensureDimensionDoorDestinationsLoaded(uint32_t dayIndex);
     const std::string &townPortalBackgroundTextureName() const;
     const std::vector<GameplayTownPortalDestination> &townPortalDestinations() const;
 
@@ -203,6 +204,7 @@ public:
         float fallbackWidth,
         float fallbackHeight) const;
     std::optional<GameplayHudTextureHandle> ensureHudTextureLoaded(const std::string &textureName);
+    std::optional<std::string> minimapArrowTextureName(size_t directionIndex);
     std::optional<GameplayHudTextureHandle> ensureItemIconTextureLoaded(const std::string &textureName);
     std::optional<std::string> iconAnimationFrameTextureName(
         const std::string &animationName,
@@ -347,6 +349,8 @@ private:
 
     const Engine::AssetFileSystem *m_pAssetFileSystem = nullptr;
     std::string m_assetWorldId;
+    bool m_minimapArrowsLoaded = false;
+    std::vector<std::string> m_minimapArrowTextures;
     Engine::AssetScaleTier m_uiAssetScaleTier = Engine::AssetScaleTier::X1;
     Engine::AssetScaleTier m_iconAssetScaleTier = Engine::AssetScaleTier::X1;
     Engine::AssetScaleTier m_fontAssetScaleTier = Engine::AssetScaleTier::X1;
@@ -372,6 +376,9 @@ private:
     std::unordered_map<std::string, size_t> m_hudTextureIndexByName;
     std::unordered_map<std::string, std::string> m_dynamicHudTextureContentSignatures;
     std::vector<GameplayHudFontData> m_hudFontHandles;
+#if defined(__APPLE__)
+    mutable AppleTextTextureCache m_utf8TextTextures;
+#endif
     std::vector<GameplayHudFontColorTextureData> m_hudFontColorTextureHandles;
     std::vector<GameplayHudTextureColorTextureData> m_hudTextureColorTextureHandles;
     std::unordered_map<std::string, float> m_hudLayoutRuntimeWidthOverrides;

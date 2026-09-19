@@ -255,7 +255,7 @@ void GameplayFxService::consumePendingPortraitEventFxRequest(
         return;
     }
 
-    uiRuntime.triggerPortraitFxAnimation(pEntry->animationName, request.memberIndices);
+    uiRuntime.triggerPortraitFxAnimation(pEntry->animationForAction(request.action), request.memberIndices);
 
     if (pEntry->faceAnimationId.has_value())
     {

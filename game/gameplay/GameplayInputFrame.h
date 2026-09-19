@@ -24,6 +24,7 @@ struct GameplayInputFrame
     float mouseWheelDelta = 0.0f;
     float pointerX = 0.0f;
     float pointerY = 0.0f;
+    bool pointerFromTouch = false;
     float relativeMouseX = 0.0f;
     float relativeMouseY = 0.0f;
     std::string textInput;
@@ -69,6 +70,13 @@ struct GameplayInputFrame
     const GameplayButtonInputState &action(KeyboardAction keyboardAction) const
     {
         return actions[keyboardActionIndex(keyboardAction)];
+    }
+
+    bool isActionActive(KeyboardAction keyboardAction) const
+    {
+        // A tap completed between frames still contributes one frame of input.
+        const GameplayButtonInputState &state = action(keyboardAction);
+        return state.held || state.pressed;
     }
 };
 } // namespace OpenYAMM::Game

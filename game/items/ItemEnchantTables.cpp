@@ -596,7 +596,10 @@ bool StandardItemEnchantTable::load(const std::vector<std::vector<std::string>> 
         }
 
         StandardItemEnchantEntry entry = {};
-        entry.kind = parseStandardEnchantKind(statName);
+        // Converted tables keep the source mechanics key outside the original
+        // sixteen columns so localized labels cannot change an item's effect.
+        const std::string baseStat = getCell(row, 16);
+        entry.kind = parseStandardEnchantKind(baseStat.empty() ? statName : baseStat);
         entry.statName = statName;
         entry.suffix = suffix;
 
@@ -642,7 +645,9 @@ bool SpecialItemEnchantTable::load(const std::vector<std::vector<std::string>> &
         }
 
         SpecialItemEnchantEntry entry = {};
-        entry.kind = parseSpecialEnchantKind(suffix);
+        const std::string baseSuffix = getCell(row, 20);
+        const std::string &effectKey = baseSuffix.empty() ? suffix : baseSuffix;
+        entry.kind = parseSpecialEnchantKind(effectKey);
         entry.name = name;
         entry.suffix = suffix;
 
@@ -655,7 +660,7 @@ bool SpecialItemEnchantTable::load(const std::vector<std::vector<std::string>> &
         const std::string rarityText = getCell(row, 15);
         entry.rarityLevel = rarityText.empty() ? 0 : rarityText[0];
         entry.description = getCell(row, 16);
-        entry.displayAsPrefix = !toLowerCopy(entry.suffix).starts_with("of ");
+        entry.displayAsPrefix = !toLowerCopy(effectKey).starts_with("of ");
         m_entries.push_back(std::move(entry));
     }
 

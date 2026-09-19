@@ -22,6 +22,8 @@ public:
     {
         size_t clipCount = 0;
         size_t sampleBytes = 0;
+        size_t transientSampleBytes = 0;
+        size_t evictedClipCount = 0;
     };
 
     struct ListenerState
@@ -54,6 +56,8 @@ public:
     bool registerClip(const std::string &virtualPath, std::vector<float> samples, uint32_t frameCount = 0);
     bool releaseClip(const std::string &virtualPath);
     CacheStats cacheStats() const;
+    // Applies to on-demand WAVs. Explicit preloads, registered clips and active instances are protected.
+    void setTransientCacheLimit(size_t sampleBytes);
     uint64_t playClip(const std::string &virtualPath, const PlaybackOptions &options);
     void stopClip(uint64_t instanceId);
     void pauseClip(uint64_t instanceId);
@@ -65,11 +69,15 @@ public:
     void update(const ListenerState &listenerState);
 
 private:
+    friend struct AudioSystemTestAccess;
+
     struct AudioClip
     {
         std::string virtualPath;
         std::vector<float> samples;
         uint32_t frameCount = 0;
+        bool pinned = false;
+        uint64_t lastUseSerial = 0;
     };
 
     struct PlayingInstance
@@ -92,7 +100,8 @@ private:
     static constexpr int MixChunkFrames = 1024;
     static constexpr int TargetQueuedBytes = MixChunkFrames * OutputChannels * sizeof(float) * 3;
 
-    std::shared_ptr<AudioClip> loadClip(const std::string &virtualPath);
+    std::shared_ptr<AudioClip> loadClip(const std::string &virtualPath, bool pinned = false);
+    void trimClipCache();
     bool hasMixableInstances() const;
     void mixNextChunk(const ListenerState &listenerState);
     static void calculateStereoGains(
@@ -105,6 +114,9 @@ private:
     SDL_AudioStream *m_pAudioStream = nullptr;
     SDL_AudioSpec m_outputSpec = {};
     uint64_t m_nextInstanceId = 1;
+    uint64_t m_cacheUseSerial = 0;
+    size_t m_transientCacheLimit = 64 * 1024 * 1024;
+    size_t m_cacheEvictions = 0;
     std::unordered_map<std::string, std::shared_ptr<AudioClip>> m_clipCache;
     std::unordered_set<std::string> m_playbackCacheMissWarningPaths;
     std::vector<PlayingInstance> m_playingInstances;

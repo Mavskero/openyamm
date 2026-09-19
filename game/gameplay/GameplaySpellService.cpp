@@ -20,6 +20,20 @@ bool isUtilitySelectionRequest(const PartySpellCastRequest &request)
         || request.targetEquipmentSlot.has_value();
 }
 
+void preserveUtilitySpellCastContext(
+    GameplayScreenRuntime &runtime,
+    const PartySpellCastRequest &request)
+{
+    GameplayUiController::UtilitySpellOverlayState &overlay = runtime.utilitySpellOverlay();
+    overlay.skillLevelOverride = request.skillLevelOverride;
+    overlay.skillMasteryOverride = request.skillMasteryOverride;
+    overlay.spendMana = request.spendMana;
+    overlay.applyRecovery = request.applyRecovery;
+    overlay.bypassRequiredMastery = request.bypassRequiredMastery;
+    overlay.bypassGameplayCasterValidation = request.bypassGameplayCasterValidation;
+    overlay.bypassTownPortalFailureChecks = request.bypassTownPortalFailureChecks;
+}
+
 bool isFollowupSpellUiActive(
     const GameplayScreenState &screenState,
     const GameplayScreenRuntime &runtime)
@@ -688,6 +702,7 @@ bool GameplaySpellService::tryOpenSelectionUi(
             GameplayUiController::UtilitySpellOverlayMode::InventoryTarget,
             request.spellId,
             request.casterMemberIndex);
+        preserveUtilitySpellCastContext(runtime, request);
         runtime.setStatusBarEvent("Select item for " + spellName, 4.0f);
         return true;
     }
@@ -701,12 +716,25 @@ bool GameplaySpellService::tryOpenSelectionUi(
 
     if (isSpellId(request.spellId, SpellId::TownPortal))
     {
-        if (runtime.shouldTownPortalCastOpenDimensionDoor())
+        if (runtime.tryRunTownPortalHook())
         {
-            runtime.openDimensionDoorOverlay(
+            return true;
+        }
+        const bool dimensionDoorEligible = runtime.shouldTownPortalCastOpenDimensionDoor();
+        if (runtime.tryInterruptTownPortalForVerdant(dimensionDoorEligible))
+        {
+            return true;
+        }
+
+        if (dimensionDoorEligible)
+        {
+            if (runtime.openDimensionDoorOverlay(
                 request.casterMemberIndex,
                 request.spellId,
-                "You feel high magic presence here.");
+                "You feel high magic presence here."))
+            {
+                preserveUtilitySpellCastContext(runtime, request);
+            }
             return true;
         }
 
@@ -720,6 +748,7 @@ bool GameplaySpellService::tryOpenSelectionUi(
             GameplayUiController::UtilitySpellOverlayMode::TownPortal,
             request.spellId,
             request.casterMemberIndex);
+        preserveUtilitySpellCastContext(runtime, request);
         runtime.resetUtilitySpellOverlayInteractionState();
         runtime.setStatusBarEvent("Choose Town Portal destination", 4.0f);
         return true;
@@ -735,6 +764,7 @@ bool GameplaySpellService::tryOpenSelectionUi(
             request.spellId,
             request.casterMemberIndex,
             lloydsBeaconHasRecallableBeacon(pCaster));
+        preserveUtilitySpellCastContext(runtime, request);
         runtime.resetUtilitySpellOverlayInteractionState();
         runtime.setStatusBarEvent("Set or recall beacon", 4.0f);
         return true;

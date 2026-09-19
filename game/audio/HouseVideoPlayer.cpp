@@ -77,10 +77,25 @@ std::unique_ptr<Engine::AssetReadStream> openVideoClipStream(
 
     for (size_t index = 0; index < candidateCount; ++index)
     {
-        const std::string virtualPath = std::string(candidateDirectories[index]) + "/" + videoStem + ".ogv";
-        std::unique_ptr<Engine::AssetReadStream> pStream = assetFileSystem.openReadStream(virtualPath);
+        for (const char *pExtension : {".ogv", ".smk", ".bik"})
+        {
+            const std::string virtualPath = std::string(candidateDirectories[index]) + "/" + videoStem + pExtension;
+            std::unique_ptr<Engine::AssetReadStream> pStream = assetFileSystem.openReadStream(virtualPath);
 
-        if (pStream != nullptr && pStream->length() > 0)
+            if (pStream != nullptr)
+            {
+                return pStream;
+            }
+        }
+    }
+
+    // Native VID import keeps the original, flat filename namespace. A clip may
+    // serve both a house and an event; it needs only one unchanged payload.
+    for (const char *pExtension : {".smk", ".bik"})
+    {
+        std::unique_ptr<Engine::AssetReadStream> pStream =
+            assetFileSystem.openReadStream("Videos/" + videoStem + pExtension);
+        if (pStream != nullptr)
         {
             return pStream;
         }
@@ -875,6 +890,28 @@ struct HouseVideoPlayer::StreamingSession
         double iterationVideoEndSeconds = 0.0;
         size_t iterationAudioFrameCount = 0;
 
+        // Smacker house clips can contain about a second of audio beyond the
+        // picture timeline. Retaining that tail on every loop freezes the last
+        // image and gradually separates the audio clock from the next picture.
+        // One-shot cutscenes still play their complete audio tail.
+        const std::optional<size_t> loopAudioFrameLimit = loopPlayback && containerDurationSeconds > 0
+            ? std::optional<size_t>(static_cast<size_t>(std::llround(
+                containerDurationSeconds * HouseVideoAudioFrequency))) : std::nullopt;
+        const auto queueAudioSamples = [&](std::vector<float> samples)
+        {
+            size_t frameCount = samples.size() / HouseVideoAudioChannels;
+            if (loopAudioFrameLimit)
+            {
+                frameCount = std::min(frameCount, *loopAudioFrameLimit
+                    - std::min(*loopAudioFrameLimit, iterationAudioFrameCount));
+                samples.resize(frameCount * HouseVideoAudioChannels);
+            }
+            iterationAudioFrameCount += frameCount;
+            const double audioEndSeconds = loopOffsetSeconds
+                + static_cast<double>(iterationAudioFrameCount) / HouseVideoAudioFrequency;
+            return enqueueAudioChunk(DecodedAudioChunk{std::move(samples)}, frameCount, audioEndSeconds);
+        };
+
         while (!stopRequested.load())
         {
             const auto handleVideoFrame = [&](const AVFrame &frame)
@@ -946,14 +983,7 @@ struct HouseVideoPlayer::StreamingSession
                     return false;
                 }
 
-                const size_t convertedFrameCount = samples->size() / HouseVideoAudioChannels;
-                iterationAudioFrameCount += convertedFrameCount;
-                const double audioEndSeconds = loopOffsetSeconds
-                    + static_cast<double>(iterationAudioFrameCount) / HouseVideoAudioFrequency;
-                return enqueueAudioChunk(
-                    DecodedAudioChunk{std::move(*samples)},
-                    convertedFrameCount,
-                    audioEndSeconds);
+                return queueAudioSamples(std::move(*samples));
             };
 
             while (!stopRequested.load()
@@ -1083,14 +1113,7 @@ struct HouseVideoPlayer::StreamingSession
 
                     samples.resize(
                         static_cast<size_t>(convertedFrameCount) * static_cast<size_t>(HouseVideoAudioChannels));
-                    iterationAudioFrameCount += static_cast<size_t>(convertedFrameCount);
-                    const double audioEndSeconds = loopOffsetSeconds
-                        + static_cast<double>(iterationAudioFrameCount) / HouseVideoAudioFrequency;
-
-                    if (!enqueueAudioChunk(
-                            DecodedAudioChunk{std::move(samples)},
-                            static_cast<size_t>(convertedFrameCount),
-                            audioEndSeconds))
+                    if (!queueAudioSamples(std::move(samples)))
                     {
                         return;
                     }
@@ -1106,6 +1129,27 @@ struct HouseVideoPlayer::StreamingSession
                 iterationVideoDuration,
                 fallbackFrameDuration
             });
+
+            if (loopPlayback && streamHasAudio)
+            {
+                const size_t targetAudioFrames = static_cast<size_t>(
+                    std::llround(iterationDuration * HouseVideoAudioFrequency));
+                // A shorter track needs silence up to the next picture loop;
+                // otherwise queued audio time would run ahead of video time.
+                while (iterationAudioFrameCount < targetAudioFrames && !stopRequested.load())
+                {
+                    const size_t frames = std::min<size_t>(HouseVideoAudioFrequency / 10,
+                        targetAudioFrames - iterationAudioFrameCount);
+                    iterationAudioFrameCount += frames;
+                    if (!enqueueAudioChunk(
+                            DecodedAudioChunk{std::vector<float>(frames * HouseVideoAudioChannels, 0.0f)}, frames,
+                            loopOffsetSeconds + double(iterationAudioFrameCount) / HouseVideoAudioFrequency)
+                        || !waitForDecodeWindow())
+                    {
+                        return;
+                    }
+                }
+            }
 
             {
                 std::lock_guard<std::mutex> lock(queueMutex);

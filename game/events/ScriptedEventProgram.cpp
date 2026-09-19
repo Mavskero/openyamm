@@ -468,6 +468,13 @@ std::vector<ScriptedEventProgram::TimerTrigger> readTimerTriggers(
                     readOptionalStringField(pLuaState, timerTableIndex, "scheduleKind").value_or("relative");
                 timer.scheduleKind = timerScheduleKindFromString(scheduleKind);
 
+                timer.startHour = static_cast<int>(
+                    readOptionalUnsignedField(pLuaState, timerTableIndex, "startHour").value_or(0));
+                timer.startMinute = static_cast<int>(
+                    readOptionalUnsignedField(pLuaState, timerTableIndex, "startMinute").value_or(0));
+                timer.startSecond = static_cast<int>(
+                    readOptionalUnsignedField(pLuaState, timerTableIndex, "startSecond").value_or(0));
+
                 if (timer.origin == ScriptedEventTimerOrigin::Legacy)
                 {
                     if (timer.scheduleKind == ScriptedEventTimerScheduleKind::Relative)
@@ -493,13 +500,6 @@ std::vector<ScriptedEventProgram::TimerTrigger> readTimerTriggers(
                     {
                         timer.intervalHalfMinutes = static_cast<uint16_t>(*intervalHalfMinutes);
                     }
-
-                    timer.startHour = static_cast<int>(
-                        readOptionalUnsignedField(pLuaState, timerTableIndex, "startHour").value_or(0));
-                    timer.startMinute = static_cast<int>(
-                        readOptionalUnsignedField(pLuaState, timerTableIndex, "startMinute").value_or(0));
-                    timer.startSecond = static_cast<int>(
-                        readOptionalUnsignedField(pLuaState, timerTableIndex, "startSecond").value_or(0));
                 }
                 else
                 {
@@ -557,6 +557,10 @@ bool ScriptedEventProgram::populateMetadataFromLua(
         readIntegerArrayFromField<uint16_t>(pLuaState, -1, "monsterKilledHooks", true);
     program.m_monsterDamageHookEventIds =
         readIntegerArrayFromField<uint16_t>(pLuaState, -1, "monsterDamageHooks", true);
+    program.m_outdoorStepHookEventIds =
+        readIntegerArrayFromField<uint16_t>(pLuaState, -1, "outdoorStepHooks", true);
+    program.m_townPortalHookEventIds =
+        readIntegerArrayFromField<uint16_t>(pLuaState, -1, "townPortalHooks", true);
     program.m_hints = readStringMapFromField(pLuaState, -1, "hint");
     program.m_summaries = readStringMapFromField(pLuaState, -1, "title");
 
@@ -571,6 +575,25 @@ bool ScriptedEventProgram::populateMetadataFromLua(
     program.m_spriteNames = readStringArrayFromField(pLuaState, -1, "spriteNames");
     program.m_castSpellIds = readIntegerArrayFromField<uint32_t>(pLuaState, -1, "castSpellIds");
     program.m_timerTriggers = readTimerTriggers(pLuaState, -1, scope);
+    lua_getfield(pLuaState, -1, "outdoorModelEvents");
+    if (lua_istable(pLuaState, -1))
+    {
+        lua_pushnil(pLuaState);
+        while (lua_next(pLuaState, -2))
+        {
+            if (lua_type(pLuaState, -2) != LUA_TSTRING || !lua_isinteger(pLuaState, -1)
+                || lua_tointeger(pLuaState, -1) <= 0 || lua_tointeger(pLuaState, -1) > 65535)
+            {
+                error = "Invalid outdoor model event metadata";
+                lua_pop(pLuaState, 3);
+                return false;
+            }
+            program.m_outdoorModelEvents.emplace(lua_tostring(pLuaState, -2),
+                static_cast<uint16_t>(lua_tointeger(pLuaState, -1)));
+            lua_pop(pLuaState, 1);
+        }
+    }
+    lua_pop(pLuaState, 1);
     lua_pop(pLuaState, 3);
     return true;
 }
@@ -683,6 +706,21 @@ const std::vector<uint32_t> &ScriptedEventProgram::castSpellIds() const
 const std::vector<ScriptedEventProgram::TimerTrigger> &ScriptedEventProgram::timerTriggers() const
 {
     return m_timerTriggers;
+}
+
+const std::vector<uint16_t> &ScriptedEventProgram::outdoorStepHookEventIds() const
+{
+    return m_outdoorStepHookEventIds;
+}
+
+const std::vector<uint16_t> &ScriptedEventProgram::townPortalHookEventIds() const
+{
+    return m_townPortalHookEventIds;
+}
+
+const std::unordered_map<std::string, uint16_t> &ScriptedEventProgram::outdoorModelEvents() const
+{
+    return m_outdoorModelEvents;
 }
 
 bool ScriptedEventProgram::hasEvent(uint16_t eventId) const

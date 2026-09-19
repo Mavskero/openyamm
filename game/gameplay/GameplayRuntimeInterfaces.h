@@ -23,6 +23,12 @@ struct GameplayMinimapMarkerState;
 struct GameplayInputFrame;
 struct PartySpellCastResult;
 
+enum class ActorAiUpdateMode : uint8_t
+{
+    Full,
+    FinishCurrentActions,
+};
+
 struct GameplayWorldUiRenderState
 {
     bool canRenderHudOverlays = false;
@@ -537,7 +543,7 @@ public:
     {
         (void)enabled;
     }
-    virtual void updateActorAi(float deltaSeconds) = 0;
+    virtual void updateActorAi(float deltaSeconds, ActorAiUpdateMode mode = ActorAiUpdateMode::Full) = 0;
     virtual void updateTurnBasedPausedActorAnimations(float deltaSeconds)
     {
         (void)deltaSeconds;
@@ -574,6 +580,22 @@ public:
     {
         (void)kind;
         return false;
+    }
+    bool executeOutdoorStepHook(int tileX, int tileY)
+    {
+        EventRuntimeState *pState = eventRuntimeState();
+        if (pState == nullptr)
+        {
+            return false;
+        }
+        const std::optional<EventRuntimeState::ActiveHookContext> previous = pState->activeHookContext;
+        pState->activeHookContext = EventRuntimeState::ActiveHookContext{};
+        pState->activeHookContext->kind = EventRuntimeHookKind::OutdoorStep;
+        pState->activeHookContext->tileX = tileX;
+        pState->activeHookContext->tileY = tileY;
+        const bool executed = executeEventHooks(EventRuntimeHookKind::OutdoorStep);
+        pState->activeHookContext = previous;
+        return executed;
     }
     virtual const std::optional<ScriptedEventProgram> *globalEventProgram() const = 0;
     virtual const MapDeltaData *mapDeltaData() const

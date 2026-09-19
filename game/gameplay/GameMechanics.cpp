@@ -2089,7 +2089,7 @@ void GameMechanics::refreshCharacterBaseResources(
     }
     else
     {
-        character.health = std::clamp(character.health, 0, currentMaxHealth);
+        character.health = std::min(character.health, currentMaxHealth);
     }
 
     if (restoreCurrentToMaximum || wasAtMaxSpellPoints)

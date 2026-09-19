@@ -155,3 +155,28 @@ TEST_CASE("ImageAssetLoader decodes indexed PCX and applies the teal transparenc
     CHECK(image->pixels[6] == 10);
     CHECK(image->pixels[7] == 255);
 }
+
+TEST_CASE("ImageAssetLoader keys the original item index without erasing matching nonzero colors")
+{
+    std::vector<uint8_t> bytes = makeTwoPixelIndexedBmp();
+    for (size_t offset : {54u, 58u})
+    {
+        bytes[offset] = 216;
+        bytes[offset + 1] = 0;
+        bytes[offset + 2] = 252;
+    }
+    OpenYAMM::Engine::ImageDecodeOptions options = {};
+    options.applyPaletteZeroTransparencyKey = true;
+    options.applyMagentaTransparencyKey = true;
+    options.applyTealTransparencyKey = true;
+    const std::optional<OpenYAMM::Engine::ImagePixelsBgra> image =
+        OpenYAMM::Engine::decodeImagePixelsBgra(bytes, "item-with-duplicate-colors.bmp", options);
+    REQUIRE(image.has_value());
+    CHECK(image->pixels == std::vector<uint8_t>{216, 0, 252, 0, 216, 0, 252, 255});
+
+    options.applyPaletteZeroTransparencyKey = false;
+    const std::optional<OpenYAMM::Engine::ImagePixelsBgra> opaqueImage =
+        OpenYAMM::Engine::decodeImagePixelsBgra(bytes, "opaque-background.bmp", options);
+    REQUIRE(opaqueImage.has_value());
+    CHECK(opaqueImage->pixels == std::vector<uint8_t>{216, 0, 252, 255, 216, 0, 252, 255});
+}

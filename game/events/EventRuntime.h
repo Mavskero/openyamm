@@ -78,6 +78,8 @@ enum class EventRuntimeHookKind : uint8_t
     MonsterDamage,
     ChestOpen,
     InventoryOpen,
+    OutdoorStep,
+    TownPortal,
 };
 
 struct RuntimeMechanismState
@@ -129,6 +131,7 @@ struct EventRuntimeState
         int32_t z = 0;
         std::optional<std::string> mapName;
         std::optional<int32_t> directionDegrees;
+        std::optional<int32_t> lookAngleDegrees;
         bool useMapStartPosition = false;
         bool useFullscreenLoading = false;
         std::string traceSourceKind;
@@ -151,6 +154,7 @@ struct EventRuntimeState
         std::optional<uint32_t> sourceActorIndex;
         uint32_t hostHouseId = 0;
         uint32_t newsId = 0;
+        bool newsFromNpcText = false;
         uint32_t participantPictureId = 0;
         std::optional<std::string> titleOverride;
         std::optional<PendingMapMove> transitionMapMove;
@@ -278,6 +282,7 @@ struct EventRuntimeState
     {
         PortraitFxEventKind kind = PortraitFxEventKind::None;
         std::vector<size_t> memberIndices;
+        PortraitFxAction action = PortraitFxAction::Default;
     };
 
     struct SpellFxRequest
@@ -402,6 +407,8 @@ struct EventRuntimeState
         uint32_t menuId = 0;
         uint32_t houseActionId = 0;
         uint32_t gameplayActionId = 0;
+        int tileX = 0;
+        int tileY = 0;
         uint32_t boundaryEdge = 0;
         uint32_t chestId = 0;
         uint32_t heldItemId = 0;
@@ -487,6 +494,7 @@ struct EventRuntimeState
     std::unordered_set<uint32_t> unavailableNpcIds;
     std::vector<HiredNpcFollower> hiredNpcFollowers;
     bool pendingDimensionDoorOverlay = false;
+    uint32_t pendingDimensionDoorActivations = 0;
     DialogueRuntimeState dialogueState;
     std::array<uint8_t, 125> decorVars = {};
     std::optional<ActiveDecorationContext> activeDecorationContext;
@@ -714,7 +722,8 @@ public:
         int32_t value,
         Party *pParty,
         const std::vector<size_t> &targetMemberIndices,
-        const ISceneEventContext *pSceneEventContext = nullptr
+        const ISceneEventContext *pSceneEventContext = nullptr,
+        PortraitFxAction action = PortraitFxAction::Set
     );
     static void addVariableValue(
         EventRuntimeState &runtimeState,

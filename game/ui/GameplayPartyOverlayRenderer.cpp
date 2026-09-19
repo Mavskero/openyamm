@@ -1,3 +1,4 @@
+#include "game/ui/CharacterEquipmentLayout.h"
 #include "game/ui/GameplayPartyOverlayRenderer.h"
 
 #include "game/gameplay/GameMechanics.h"
@@ -15,12 +16,20 @@
 #include "game/tables/RosterTable.h"
 #include "game/tables/SpellTable.h"
 #include "game/ui/GameplayHudCommon.h"
+#include "game/ui/CharacterSkillsLayout.h"
+#include "game/ui/CharacterSkillRows.h"
+#include "game/ui/CharacterStatLayout.h"
 #include "game/ui/GameplayJournalMapUi.h"
 #include "game/party/SkillData.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/ui/SpellbookUiLayout.h"
 #include "game/StringUtils.h"
 #include "game/ui/KeyboardScreenLayout.h"
+#include "game/ui/Utf8Text.h"
+
+#if defined(__APPLE__)
+#include "engine/AppleText.h"
+#endif
 
 #include <SDL3/SDL.h>
 #include <bx/math.h>
@@ -38,6 +47,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -1404,22 +1414,6 @@ struct InventoryItemScreenRect
     float height = 0.0f;
 };
 
-struct CharacterSkillUiRow
-{
-    std::string canonicalName;
-    std::string label;
-    std::string level;
-    bool upgradeable = false;
-};
-
-struct CharacterSkillUiData
-{
-    std::vector<CharacterSkillUiRow> weaponRows;
-    std::vector<CharacterSkillUiRow> magicRows;
-    std::vector<CharacterSkillUiRow> armorRows;
-    std::vector<CharacterSkillUiRow> miscRows;
-};
-
 constexpr size_t AdventurersInnVisibleRows = 4;
 constexpr size_t AdventurersInnVisibleColumns = 2;
 constexpr size_t AdventurersInnVisibleCount = AdventurersInnVisibleRows * AdventurersInnVisibleColumns;
@@ -1773,54 +1767,6 @@ std::string npcPortraitTextureName(uint32_t pictureId)
     return buffer;
 }
 
-constexpr const char *WeaponSkillNames[] = {
-    "Axe",
-    "Bow",
-    "Throwing",
-    "Dagger",
-    "Mace",
-    "Spear",
-    "Staff",
-    "Sword",
-    "Unarmed",
-    "Blaster",
-};
-
-constexpr const char *MagicSkillNames[] = {
-    "FireMagic",
-    "AirMagic",
-    "WaterMagic",
-    "EarthMagic",
-    "SpiritMagic",
-    "MindMagic",
-    "BodyMagic",
-    "LightMagic",
-    "DarkMagic",
-};
-
-constexpr const char *ArmorSkillNames[] = {
-    "LeatherArmor",
-    "ChainArmor",
-    "PlateArmor",
-    "Shield",
-    "Dodging",
-};
-
-constexpr const char *MiscSkillNames[] = {
-    "Alchemy",
-    "Armsmaster",
-    "Bodybuilding",
-    "IdentifyItem",
-    "IdentifyMonster",
-    "Learning",
-    "DisarmTraps",
-    "Meditation",
-    "Merchant",
-    "Perception",
-    "RepairItem",
-    "Stealing",
-};
-
 InventoryGridMetrics computeInventoryGridMetrics(
     float x,
     float y,
@@ -1952,7 +1898,8 @@ std::optional<EquipmentSlot> characterEquipmentSlotForLayoutId(const std::string
         return EquipmentSlot::Belt;
     }
 
-    if (normalized == "characterdollcloakslot")
+    if (normalized == "characterdollcloakslot" || normalized == "characterdollcloakcollar"
+        || normalized == "characterdollcloakcollarfront")
     {
         return EquipmentSlot::Cloak;
     }
@@ -2107,123 +2054,6 @@ const CharacterDollEntry *resolveCharacterDollEntry(
     return pCharacterDollTable->getCharacter(1);
 }
 
-std::string skillPageMasteryDisplayName(SkillMastery mastery)
-{
-    const std::string displayName = masteryDisplayName(mastery);
-
-    if (displayName == "Grandmaster")
-    {
-        return "Grand";
-    }
-
-    return displayName;
-}
-
-void appendCharacterSkillUiRows(
-    const Character &character,
-    std::vector<CharacterSkillUiRow> &rows,
-    std::unordered_set<std::string> &shownSkillNames,
-    const char *const *pSkillNames,
-    size_t skillCount)
-{
-    for (size_t skillIndex = 0; skillIndex < skillCount; ++skillIndex)
-    {
-        const std::string canonicalName = pSkillNames[skillIndex];
-        const CharacterSkill *pSkill = character.findSkillByCanonicalName(canonicalName);
-
-        if (pSkill == nullptr)
-        {
-            continue;
-        }
-
-        CharacterSkillUiRow row = {};
-        row.canonicalName = canonicalName;
-        row.label = displaySkillName(pSkill->name);
-
-        if (pSkill->mastery != SkillMastery::None && pSkill->mastery != SkillMastery::Normal)
-        {
-            row.label += " " + skillPageMasteryDisplayName(pSkill->mastery);
-        }
-
-        row.level = std::to_string(pSkill->level);
-        row.upgradeable = character.skillPoints > pSkill->level;
-        rows.push_back(std::move(row));
-        shownSkillNames.insert(canonicalName);
-    }
-}
-
-CharacterSkillUiData buildCharacterSkillUiData(const Character *pCharacter)
-{
-    CharacterSkillUiData data = {};
-
-    if (pCharacter == nullptr)
-    {
-        return data;
-    }
-
-    std::unordered_set<std::string> shownSkillNames;
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.weaponRows,
-        shownSkillNames,
-        WeaponSkillNames,
-        std::size(WeaponSkillNames));
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.magicRows,
-        shownSkillNames,
-        MagicSkillNames,
-        std::size(MagicSkillNames));
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.armorRows,
-        shownSkillNames,
-        ArmorSkillNames,
-        std::size(ArmorSkillNames));
-    appendCharacterSkillUiRows(
-        *pCharacter,
-        data.miscRows,
-        shownSkillNames,
-        MiscSkillNames,
-        std::size(MiscSkillNames));
-
-    std::vector<CharacterSkillUiRow> extraMiscRows;
-
-    for (const auto &[ignoredSkillName, skill] : pCharacter->skills)
-    {
-        const std::string &canonicalName = ignoredSkillName;
-
-        if (shownSkillNames.contains(canonicalName))
-        {
-            continue;
-        }
-
-        CharacterSkillUiRow row = {};
-        row.canonicalName = canonicalName;
-        row.label = displaySkillName(skill.name);
-
-        if (skill.mastery != SkillMastery::None && skill.mastery != SkillMastery::Normal)
-        {
-            row.label += " " + skillPageMasteryDisplayName(skill.mastery);
-        }
-
-        row.level = std::to_string(skill.level);
-        row.upgradeable = pCharacter->skillPoints > skill.level;
-        extraMiscRows.push_back(std::move(row));
-    }
-
-    std::sort(
-        extraMiscRows.begin(),
-        extraMiscRows.end(),
-        [](const CharacterSkillUiRow &left, const CharacterSkillUiRow &right)
-        {
-            return left.label < right.label;
-        });
-
-    data.miscRows.insert(data.miscRows.end(), extraMiscRows.begin(), extraMiscRows.end());
-    return data;
-}
-
 bool isBodyEquipmentVisualSlot(EquipmentSlot slot)
 {
     switch (slot)
@@ -2290,16 +2120,6 @@ bool isVisibleInCharacterDollOverlay(EquipmentSlot slot, bool jewelryOverlayOpen
 bool usesAlternateCloakBeltEquippedVariant(EquipmentSlot slot)
 {
     return slot == EquipmentSlot::Cloak || slot == EquipmentSlot::Belt;
-}
-
-void setCharacterSkillRegionHeight(
-    std::unordered_map<std::string, float> &runtimeHeightOverrides,
-    float skillRowHeight,
-    const char *pLayoutId,
-    size_t rowCount)
-{
-    runtimeHeightOverrides[toLowerCopy(pLayoutId)] =
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, rowCount));
 }
 
 std::string formatMonsterDamageText(const MonsterTable::MonsterStatsEntry::DamageProfile &damage)
@@ -4666,7 +4486,22 @@ void GameplayPartyOverlayRenderer::renderUtilitySpellOverlay(GameplayScreenRunti
     }
 
     setupHudProjection(width, height);
-    renderViewportParchmentSidePanels(context, width, height);
+    const GameplayUiController::UtilitySpellOverlayMode mode = context.utilitySpellOverlayReadOnly().mode;
+    if (mode == GameplayUiController::UtilitySpellOverlayMode::TownPortal
+        || mode == GameplayUiController::UtilitySpellOverlayMode::DimensionDoor)
+    {
+        // The original portal artwork fills a 4:3 canvas; cover the remaining screen around that canvas.
+        const std::optional<GameplayHudTextureHandle> backdrop =
+            context.gameplayUiRuntime().ensureSolidHudTextureLoaded("__portal_backdrop", 0xff000000u);
+        if (backdrop)
+        {
+            context.submitHudTexturedQuad(*backdrop, 0.0f, 0.0f, float(width), float(height));
+        }
+    }
+    else
+    {
+        renderViewportParchmentSidePanels(context, width, height);
+    }
 
     const PointerRenderInput pointerInput = pointerRenderInput(context);
     const float mouseX = pointerInput.mouseX;
@@ -4729,6 +4564,11 @@ void GameplayPartyOverlayRenderer::renderUtilitySpellOverlay(GameplayScreenRunti
 
         const GameplayUtilitySpellPointerTarget pressedTarget =
             context.interactionState().utilitySpellPressedTarget;
+        const std::optional<size_t> pressedIndex = isLeftMousePressed
+            && pressedTarget.type == GameplayUtilitySpellPointerTargetType::TownPortalDestination
+            ? std::optional<size_t>(pressedTarget.index) : std::nullopt;
+        const std::optional<size_t> hoveredDestination =
+            context.resolveTownPortalDestinationAtPoint(width, height, mouseX, mouseY, pressedIndex);
 
         for (size_t destinationIndex = 0; destinationIndex < context.townPortalDestinations().size(); ++destinationIndex)
         {
@@ -4757,30 +4597,14 @@ void GameplayPartyOverlayRenderer::renderUtilitySpellOverlay(GameplayScreenRunti
                 static_cast<float>(iconWidth) * townPortalScale,
                 static_cast<float>(iconHeight) * townPortalScale,
                 townPortalScale};
-            const int32_t hitX = destination.hitWidth != 0 ? destination.hitX : destination.iconX;
-            const int32_t hitY = destination.hitHeight != 0 ? destination.hitY : destination.iconY;
-            const uint32_t hitWidth = destination.hitWidth != 0 ? destination.hitWidth : iconWidth;
-            const uint32_t hitHeight = destination.hitHeight != 0 ? destination.hitHeight : iconHeight;
-            const GameplayScreenRuntime::ResolvedHudLayoutElement hitResolved = {
-                backgroundResolved->x + static_cast<float>(hitX) * townPortalScale,
-                backgroundResolved->y + static_cast<float>(hitY) * townPortalScale,
-                static_cast<float>(hitWidth) * townPortalScale,
-                static_cast<float>(hitHeight) * townPortalScale,
-                townPortalScale};
-
-            const bool isHovered = context.isPointerInsideResolvedElement(hitResolved, mouseX, mouseY);
+            const bool isHovered = hoveredDestination && *hoveredDestination == destinationIndex;
 
             if (hoveredDestinationLabel.empty() && isHovered)
             {
                 hoveredDestinationLabel = destination.label;
             }
 
-            const bool isPressed =
-                isLeftMousePressed
-                && pressedTarget.type == GameplayUtilitySpellPointerTargetType::TownPortalDestination
-                && pressedTarget.index == destinationIndex;
-
-            if (!isHovered && !isPressed)
+            if (!isHovered)
             {
                 continue;
             }
@@ -5428,6 +5252,39 @@ void GameplayPartyOverlayRenderer::renderSpellbookOverlay(GameplayScreenRuntime 
 
     renderLayoutPrimaryAsset(pSchoolDefinition->pPageLayoutId);
 
+    const auto renderTextButton =
+        [&context, width, height, mouseX, mouseY, isLeftMousePressed](const std::string &id,
+            const std::string &label, bool selected = false) -> bool
+        {
+            const GameplayScreenRuntime::HudLayoutElement *pLayout = context.findHudLayoutElement(id);
+            // Text is an explicit authored presentation, not a substitute for a missing declared image.
+            if (pLayout == nullptr || pLayout->fontName.empty() || !pLayout->primaryAsset.empty())
+            {
+                return false;
+            }
+            const auto rect = context.resolveHudLayoutElement(id, width, height, pLayout->width, pLayout->height);
+            if (!rect)
+            {
+                return true;
+            }
+            const bool hovered = context.isPointerInsideResolvedElement(*rect, mouseX, mouseY);
+            const uint32_t color = selected ? makeAbgrColor(231, 184, 93)
+                : hovered ? makeAbgrColor(248, 222, 163) : makeAbgrColor(237, 215, 172);
+            const auto border = context.gameplayUiRuntime().ensureSolidHudTextureLoaded(
+                "__spellbook_border", makeAbgrColor(106, 73, 38));
+            const auto fill = context.gameplayUiRuntime().ensureSolidHudTextureLoaded(
+                "__spellbook_fill_" + std::to_string(color), color);
+            if (border && fill)
+            {
+                context.submitHudTexturedQuad(*border, rect->x, rect->y, rect->width, rect->height);
+                const float inset = rect->scale * (hovered && isLeftMousePressed ? 2.0f : 1.0f);
+                context.submitHudTexturedQuad(*fill, rect->x + inset, rect->y + inset,
+                    rect->width - inset * 2.0f, rect->height - inset * 2.0f);
+            }
+            context.renderLayoutLabel(*pLayout, *rect, label.empty() ? pLayout->labelText : label);
+            return true;
+        };
+
     bool hasAnySpellbookSchool = false;
 
     for (const SpellbookSchoolUiDefinition &definition : spellbookSchoolUiDefinitions())
@@ -5443,6 +5300,11 @@ void GameplayPartyOverlayRenderer::renderSpellbookOverlay(GameplayScreenRuntime 
     {
         if (!context.activeMemberHasSpellbookSchool(definition.school)
             && !(definition.school == GameplayUiController::SpellbookSchool::Fire && !hasAnySpellbookSchool))
+        {
+            continue;
+        }
+
+        if (renderTextButton(definition.pButtonLayoutId, {}, definition.school == spellbook.school))
         {
             continue;
         }
@@ -5543,9 +5405,31 @@ void GameplayPartyOverlayRenderer::renderSpellbookOverlay(GameplayScreenRuntime 
             }
         };
 
-    renderInteractiveButton("SpellbookCloseButton");
-    renderInteractiveButton("SpellbookQuickCastButton");
-    renderInteractiveButton("SpellbookAttackCastButton");
+    for (const char *pId : {"SpellbookCloseButton", "SpellbookQuickCastButton", "SpellbookAttackCastButton",
+             "SpellbookCastButton", "SpellbookInspectButton"})
+    {
+        std::string label;
+        const Party *pParty = context.partyReadOnly();
+        const Character *pMember = pParty != nullptr ? pParty->activeMember() : nullptr;
+        const SpellEntry *pSelected = context.spellTable() != nullptr
+            ? context.spellTable()->findById(spellbook.selectedSpellId) : nullptr;
+        if (pMember != nullptr && pSelected != nullptr)
+        {
+            if (std::string_view(pId) == "SpellbookQuickCastButton" && pMember->quickSpellName == pSelected->name)
+            {
+                label = "清除快捷";
+            }
+            else if (std::string_view(pId) == "SpellbookAttackCastButton"
+                && pMember->attackSpellName == pSelected->name)
+            {
+                label = "清除攻击";
+            }
+        }
+        if (!renderTextButton(pId, label))
+        {
+            renderInteractiveButton(pId);
+        }
+    }
 
     for (uint32_t spellOffset = 0; spellOffset < pSchoolDefinition->spellCount; ++spellOffset)
     {
@@ -5558,6 +5442,11 @@ void GameplayPartyOverlayRenderer::renderSpellbookOverlay(GameplayScreenRuntime 
         }
 
         const std::string layoutId = spellbookSpellLayoutId(spellbook.school, spellOrdinal);
+        const SpellEntry *pSpell = context.spellTable() != nullptr ? context.spellTable()->findById(spellId) : nullptr;
+        if (pSpell != nullptr && renderTextButton(layoutId, pSpell->name, spellbook.selectedSpellId == spellId))
+        {
+            continue;
+        }
         const GameplayScreenRuntime::HudLayoutElement *pLayout = context.findHudLayoutElement(layoutId);
 
         if (pLayout == nullptr)
@@ -5714,9 +5603,20 @@ void GameplayPartyOverlayRenderer::renderSpellbookOverlay(GameplayScreenRuntime 
             context.renderHudFontLayer(*font, textTexture, text, textX, textY, fontScale);
         };
 
+    const bool textPresentation = context.findHudLayoutElement("SpellbookCastButton") != nullptr;
     renderSpellbookTopLabel(
         "SpellbookSelectLabel",
-        hasSelectedSpell ? "Select " + pSelectedSpell->name : std::string());
+        hasSelectedSpell ? (textPresentation ? "已选：" : "Select ") + pSelectedSpell->name
+            : (textPresentation ? "选择法术" : std::string()));
+    if (textPresentation)
+    {
+        const auto *pInstructions = context.findHudLayoutElement("SpellbookInstructions");
+        const auto instructions = resolveSpellbookLayout("SpellbookInstructions");
+        if (pInstructions != nullptr && instructions)
+        {
+            context.renderLayoutLabel(*pInstructions, *instructions, pInstructions->labelText);
+        }
+    }
     renderSpellbookTopLabel(
         "SpellbookCasterName",
         pActiveMember != nullptr ? pActiveMember->name : std::string());
@@ -8349,23 +8249,15 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
         }
     }
 
-    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(pCharacter);
+    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(pCharacter, context.characterInspectTable());
     const std::optional<GameplayHudFontHandle> skillRowFont = context.findHudFont("Lucida");
-    const float skillRowHeight =
+    const float naturalSkillRowHeight =
         skillRowFont.has_value() ? static_cast<float>(std::max(1, skillRowFont->fontHeight - 3)) : 11.0f;
-    context.clearHudLayoutRuntimeHeightOverrides();
-    context.setHudLayoutRuntimeHeightOverride(
-        "CharacterSkillsWeaponsListRegion",
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, skillUiData.weaponRows.size())));
-    context.setHudLayoutRuntimeHeightOverride(
-        "CharacterSkillsMagicListRegion",
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, skillUiData.magicRows.size())));
-    context.setHudLayoutRuntimeHeightOverride(
-        "CharacterSkillsArmorListRegion",
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, skillUiData.armorRows.size())));
-    context.setHudLayoutRuntimeHeightOverride(
-        "CharacterSkillsMiscListRegion",
-        skillRowHeight * static_cast<float>(std::max<size_t>(1, skillUiData.miscRows.size())));
+    const CharacterSkillLayout skillLayout = layoutCharacterSkillRows(
+        context, width, height, naturalSkillRowHeight,
+        {skillUiData.weaponRows.size(), skillUiData.magicRows.size(),
+         skillUiData.armorRows.size(), skillUiData.miscRows.size()});
+    const float skillRowHeight = skillLayout.rowHeight;
 
     const uint32_t skillPointsValueColorAbgr =
         pCharacter != nullptr && pCharacter->skillPoints > 0
@@ -8675,6 +8567,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                         continue;
                     }
 
+                    const EquipmentPicturePart picturePart = characterEquipmentPicturePart(pLayout->id);
                     const bool hasRightHandWeapon = pCharacter->equipment.mainHand != 0;
                     const uint32_t dollTypeId = pCharacterDollType->id;
                     const std::string textureName =
@@ -8682,7 +8575,12 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                             *pItemDefinition,
                             dollTypeId,
                             hasRightHandWeapon,
-                            *slot);
+                            *slot,
+                            picturePart);
+                    if (textureName.empty())
+                    {
+                        continue;
+                    }
                     const std::optional<GameplayHudTextureHandle> itemTexture =
                         context.gameplayUiRuntime().ensureItemIconTextureLoaded(textureName);
 
@@ -8700,7 +8598,8 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                             pCharacterDollType,
                             *slot,
                             width,
-                            height);
+                            height,
+                            picturePart);
 
                     if (!iconRect.has_value())
                     {
@@ -9027,6 +8926,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             context.renderHudFontLayer(*font, baseTexture, value.baseText, textX, textY, fontScale);
         };
 
+    bool paperdollCompositeSubmitted = false;
     for (const std::string &layoutId : orderedCharacterLayoutIds)
     {
         const UiLayoutManager::LayoutElement *pLayout = context.findHudLayoutElement(layoutId);
@@ -9040,7 +8940,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             continue;
         }
 
-        const std::optional<GameplayResolvedHudLayoutElement> resolved =
+        std::optional<GameplayResolvedHudLayoutElement> resolved =
             context.resolveHudLayoutElement(layoutId, width, height, pLayout->width, pLayout->height);
 
         if (!resolved.has_value())
@@ -9049,6 +8949,11 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
         }
 
         const std::string normalizedLayoutId = toLowerCopy(pLayout->id);
+
+        if (isCharacterSkillContentHeader(normalizedLayoutId) && !skillLayout.placeVisible(*resolved))
+        {
+            continue;
+        }
 
         if (isAdventurersInnRoster)
         {
@@ -9103,6 +9008,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
 
                 if (compositeTexture.has_value())
                 {
+                    paperdollCompositeSubmitted = true;
                     context.submitHudTexturedQuad(
                         *compositeTexture,
                         nativePaperdollResolved->x,
@@ -9138,7 +9044,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
 
         if (normalizedLayoutId == "characterdollbody" && pCharacterDollEntry != nullptr)
         {
-            if (nativePaperdollComposite.has_value())
+            if (paperdollCompositeSubmitted)
             {
                 continue;
             }
@@ -9157,7 +9063,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             && pCharacterDollEntry != nullptr
             && pCharacterDollType != nullptr)
         {
-            if (nativePaperdollComposite.has_value())
+            if (paperdollCompositeSubmitted)
             {
                 continue;
             }
@@ -9176,7 +9082,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             && pCharacterDollEntry != nullptr
             && pCharacterDollType != nullptr)
         {
-            if (nativePaperdollComposite.has_value())
+            if (paperdollCompositeSubmitted)
             {
                 continue;
             }
@@ -9216,7 +9122,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             && pCharacterDollType != nullptr
             && (pMainHandItem != nullptr || offHandWeaponGripAbove))
         {
-            if (nativePaperdollComposite.has_value())
+            if (paperdollCompositeSubmitted)
             {
                 continue;
             }
@@ -9303,10 +9209,16 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
 
             if (pItemDefinition != nullptr && !pItemDefinition->iconName.empty())
             {
+                const EquipmentPicturePart picturePart = characterEquipmentPicturePart(pLayout->id);
                 const bool hasRightHandWeapon = pCharacter->equipment.mainHand != 0;
                 const uint32_t dollTypeId = pCharacterDollType != nullptr ? pCharacterDollType->id : 0;
                 const std::string textureName =
-                    context.resolveEquippedItemHudTextureName(*pItemDefinition, dollTypeId, hasRightHandWeapon, *slot);
+                    context.resolveEquippedItemHudTextureName(
+                        *pItemDefinition, dollTypeId, hasRightHandWeapon, *slot, picturePart);
+                if (textureName.empty())
+                {
+                    continue;
+                }
                 const std::optional<GameplayHudTextureHandle> itemTexture =
                     context.gameplayUiRuntime().ensureItemIconTextureLoaded(textureName);
 
@@ -9321,7 +9233,8 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                             pCharacterDollType,
                             *slot,
                             width,
-                            height);
+                            height,
+                            picturePart);
 
                     if (iconRect.has_value())
                     {
@@ -9332,7 +9245,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                         const bool rotatedCounterClockwise =
                             *slot == EquipmentSlot::OffHand && pItemDefinition->equipStat != "Shield";
 
-                        if (!nativePaperdollComposite.has_value())
+                        if (!paperdollCompositeSubmitted)
                         {
                             if (rotatedCounterClockwise)
                             {
@@ -9412,7 +9325,8 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                 layoutForRender.textColorAbgr = experienceValueColorAbgr;
             }
 
-            std::string label = pLayout->labelText;
+            std::string label = characterStatDisplayLabel(context.characterInspectTable(), normalizedLayoutId)
+                .value_or(pLayout->labelText);
             label = replaceAllText(label, "{gold}", std::to_string(party.gold()));
             label = replaceAllText(label, "{food}", std::to_string(party.food()));
             label = replaceAllText(label, "{character_name}", pCharacter != nullptr ? pCharacter->name : "");
@@ -9657,7 +9571,8 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
     }
 
     const auto renderSkillGroup =
-        [&context, width, height, &hasVisibleCharacterAncestors, &shouldRenderInCurrentPass, skillRowHeight](
+        [&context, width, height, &hasVisibleCharacterAncestors, &shouldRenderInCurrentPass,
+         skillRowHeight, &skillLayout](
             const char *pRegionId,
             const char *pLevelHeaderId,
             const std::vector<CharacterSkillUiRow> &rows)
@@ -9697,6 +9612,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
 
                 UiLayoutManager::LayoutElement nameLayout = {};
                 nameLayout.fontName = "Lucida";
+                nameLayout.textFitHeight = true;
                 nameLayout.textColorAbgr = textColorAbgr;
                 nameLayout.textAlignX = UiLayoutManager::TextAlignX::Left;
                 nameLayout.textAlignY = UiLayoutManager::TextAlignY::Middle;
@@ -9706,6 +9622,10 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                 nameResolved.width = nameWidth;
                 nameResolved.height = rowHeightPixels;
                 nameResolved.scale = resolvedRegion->scale;
+                if (!skillLayout.placeVisible(nameResolved))
+                {
+                    continue;
+                }
                 context.renderLayoutLabel(nameLayout, nameResolved, row.label);
 
                 if (!row.level.empty())
@@ -9931,11 +9851,24 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             if (font.has_value() && !adventurersInnBlurb.empty())
             {
                 float fontScale = baseScale >= 1.0f ? snappedHudFontScale(baseScale) : std::max(0.5f, baseScale);
-                const float lineHeight = std::max(1.0f, static_cast<float>(font->fontHeight - 2)) * fontScale;
+                float lineHeight = std::max(1.0f, static_cast<float>(font->fontHeight)) * fontScale;
                 const float wrapWidth =
                     std::max(1.0f, (AdventurersInnBlurbWidth * baseScale) / std::max(0.5f, fontScale));
                 const std::vector<std::string> wrappedLines =
                     context.wrapHudTextToWidth(*font, adventurersInnBlurb, wrapWidth);
+#if defined(__APPLE__)
+                for (const std::string &line : wrappedLines)
+                {
+                    if (hasUtf8MultibyteText(line))
+                    {
+                        const auto imageSize = Engine::measureAppleTextImageSize(line, font->fontHeight * fontScale);
+                        if (imageSize)
+                        {
+                            lineHeight = std::max(lineHeight, float(imageSize->height) + std::max(1.0f, fontScale));
+                        }
+                    }
+                }
+#endif
                 bgfx::TextureHandle coloredTextureHandle =
                     context.ensureHudFontMainTextureColor(*font, AdventurersInnTextColorAbgr);
 

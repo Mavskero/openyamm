@@ -4,9 +4,11 @@
 #include "game/events/ScriptedEventProgram.h"
 #include "game/items/ItemEnchantTables.h"
 #include "game/tables/CharacterDollTable.h"
+#include "game/tables/CharacterInspectTable.h"
 #include "game/tables/ClassMultiplierTable.h"
 #include "game/tables/ClassSkillTable.h"
 #include "game/tables/HouseTable.h"
+#include "game/tables/HouseServiceTextTable.h"
 #include "game/tables/ItemTable.h"
 #include "game/tables/MonsterTable.h"
 #include "game/tables/MergedBaseTables.h"
@@ -50,9 +52,11 @@ struct RegressionGameData
     Game::ReadableScrollTable readableScrollTable = {};
     Game::SpellTable spellTable = {};
     Game::CharacterDollTable characterDollTable = {};
+    Game::CharacterInspectTable characterInspectTable = {};
     Game::ClassMultiplierTable classMultiplierTable = {};
     Game::ClassSkillTable classSkillTable = {};
     Game::HouseTable houseTable = {};
+    Game::HouseServiceTextTable houseServiceTextTable = {};
     Game::MonsterTable monsterTable = {};
     Game::NpcDialogTable npcDialogTable = {};
     Game::RosterTable rosterTable = {};

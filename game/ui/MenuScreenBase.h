@@ -2,6 +2,7 @@
 
 #include "engine/AssetFileSystem.h"
 #include "game/ui/IScreen.h"
+#include "game/ui/AppleTextTextureCache.h"
 
 #include <bgfx/bgfx.h>
 
@@ -118,6 +119,10 @@ protected:
         bool drawShadow = true);
     float measureTextWidth(const std::string &fontName, const std::string &text, float scale = 1.0f);
     int fontHeight(const std::string &fontName);
+#if defined(__APPLE__)
+    bool drawUtf8Text(const std::string &text, float size, float x, float y,
+        uint32_t colorAbgr = 0xffffffffu, bool shadow = true);
+#endif
     void setRenderViewId(uint16_t viewId);
     void setClearBackground(bool clearBackground);
     ButtonState drawButton(const ButtonVisualSet &visuals, const Rect &rect);
@@ -229,6 +234,9 @@ private:
     bool m_rendererInitialized = false;
     uint16_t m_renderViewId = 0;
     bool m_clearBackground = true;
+#if defined(__APPLE__)
+    AppleTextTextureCache m_utf8TextTextures;
+#endif
     bgfx::ProgramHandle m_texturedProgramHandle = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_textureUniformHandle = BGFX_INVALID_HANDLE;
     static std::vector<TextureHandle> s_textureHandles;
