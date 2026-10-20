@@ -829,7 +829,7 @@ bool GameplayOverlayInputController::handleRestOverlayInput(
             }
 
             constexpr float DawnMinuteOfDay = 6.0f * 60.0f;
-            const float minutesOfDay = std::fmod(std::max(0.0f, view.worldRuntime()->gameMinutes()), 1440.0f);
+            const float minutesOfDay = std::fmod(std::max(0.0, view.worldRuntime()->gameMinutes()), 1440.0);
             float targetMinuteOfDay = DawnMinuteOfDay;
 
             if (targetMinuteOfDay <= minutesOfDay)
@@ -4272,6 +4272,7 @@ void GameplayOverlayInputController::handleLootOverlayInput(
                         view.heldInventoryItem().grabOffsetX = 0.0f;
                         view.heldInventoryItem().grabOffsetY = 0.0f;
                         view.party()->setHeldItemForQueries(view.heldInventoryItem().item);
+                        view.worldRuntime()->notifyItemAcquired(view.heldInventoryItem().item.objectDescriptionId);
                         GAMEPLAY_DEBUG_TRACE(
                             "item_received destination=held source=chest item_id="
                             + std::to_string(view.heldInventoryItem().item.objectDescriptionId)
@@ -4412,6 +4413,7 @@ void GameplayOverlayInputController::handleLootOverlayInput(
                         }
                         else
                         {
+                            view.worldRuntime()->notifyItemAcquired(removedItem.item.objectDescriptionId);
                             GAMEPLAY_DEBUG_TRACE(
                                 "item_received destination=inventory source="
                                 + std::string(pCurrentChestView != nullptr ? "chest" : "corpse")

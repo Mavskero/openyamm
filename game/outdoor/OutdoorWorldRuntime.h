@@ -1,5 +1,9 @@
 #pragma once
 
+#include "game/gameplay/GameplayActorCombatState.h"
+
+#include "game/content/BreachAlvarCompanionProfile.h"
+#include "game/content/BreachAlvarCompanionState.h"
 #include "game/events/ISceneEventContext.h"
 #include "game/events/EventRuntime.h"
 #include "game/events/ScriptedEventProgram.h"
@@ -48,6 +52,8 @@ class StandardItemEnchantTable;
 class SpecialItemEnchantTable;
 class WorldFxSystem;
 class OutdoorPartyRuntime;
+class GameSession;
+struct BreachAlvarWorldActorTestAccess;
 
 class OutdoorWorldRuntime : public ISceneEventContext, public IGameplayWorldRuntime
 {
@@ -80,6 +86,7 @@ public:
         float fogDensity = 0.0f;
         float rainIntensity = 0.0f;
         float ambientBrightness = 0.69f;
+        float lightMinutesOfDay = 0.0f;
         float visibilityDistance = 200000.0f;
         float darknessOverlayAlpha = 0.0f;
         uint32_t darknessOverlayColorAbgr = 0x00000000u;
@@ -180,7 +187,7 @@ public:
         uint32_t specialItemId = 0;
         bool proceduralDeathLoot = true;
         int currentHp = 0;
-        int maxHp = 0;
+        GameplayActorCombatState combatState{GameplayActorLegacySnapshot{0}};
         float bolsterRewardMultiplier = 1.0f;
         int x = 0;
         int y = 0;
@@ -300,6 +307,10 @@ public:
         uint8_t crowdEscapeAttempts = 0;
         int8_t crowdSideSign = 0;
         bool suppressLowHealthFlee = false;
+        // Save91: source-owned companion lifecycle, independent of transient event visibility masks.
+        bool breachAlvarCompanion = false;
+        bool breachAlvarCompanionRemoved = false;
+        double breachAlvarNextMaintenanceGameMinute = 0.0;
     };
 
     using CombatEvent = GameplayCombatController::CombatEvent;
@@ -512,7 +523,7 @@ public:
 
     struct Snapshot
     {
-        float gameMinutes = 0.0f;
+        double gameMinutes = 0.0;
         MapDeltaLocationInfo locationInfo = {};
         MapDeltaLocationTime locationTime = {};
         bool hasLocationTime = false;
@@ -548,9 +559,57 @@ public:
         std::vector<uint8_t> fullyRevealedCells;
         std::vector<uint8_t> partiallyRevealedCells;
         std::vector<uint32_t> faceAttributes;
+        std::vector<uint16_t> decorationFlags;
         std::vector<std::string> searchedLootPropSourceIds;
         bool hasOutdoorRuntimeSaveParityFields = false;
     };
+
+    class PreparedBreachAlvarFriendActorMutation
+    {
+    public:
+        PreparedBreachAlvarFriendActorMutation(PreparedBreachAlvarFriendActorMutation &&other) noexcept;
+        PreparedBreachAlvarFriendActorMutation &operator=(PreparedBreachAlvarFriendActorMutation &&other) noexcept;
+        PreparedBreachAlvarFriendActorMutation(const PreparedBreachAlvarFriendActorMutation &) = delete;
+        PreparedBreachAlvarFriendActorMutation &operator=(const PreparedBreachAlvarFriendActorMutation &) = delete;
+        const BreachAlvarFriendActorBinding &binding() const { return m_binding; }
+        bool removesActor() const { return m_removesActor; }
+
+    private:
+        friend class OutdoorWorldRuntime;
+        PreparedBreachAlvarFriendActorMutation() = default;
+        const OutdoorWorldRuntime *m_pWorld = nullptr;
+        uint64_t m_sceneGeneration = 0;
+        uint32_t m_beforeNextActorId = 0;
+        uint32_t m_afterNextActorId = 0;
+        double m_gameMinutes = 0.0;
+        bool m_removesActor = false;
+        BreachAlvarFriendActorBinding m_binding;
+        std::vector<MapActorState> m_beforeActors;
+        std::vector<MapActorState> m_afterActors;
+        std::optional<BreachAlvarFriendActorRules> m_rules;
+        const SpriteFrameTable *m_pFrames = nullptr;
+    };
+
+    // Rules must come from the validated source profile. Resource prewarming is allowed during prepare;
+    // actors, Party and IDs remain untouched. A prepared token is not a Session/world commit.
+    // B5 supplies the source-time Party: only NPC772's selected member removed, or the unchanged solo party.
+    // This context affects generated stats only; it never replaces the World live Party.
+    std::optional<PreparedBreachAlvarFriendActorMutation> prepareBreachAlvarFriendSpawn(
+        uint32_t monsterId, const BreachAlvarFriendActorRules &rules,
+        const Party &spawnBolsterContext, std::string &error);
+    std::optional<PreparedBreachAlvarFriendActorMutation> prepareBreachAlvarFriendRemoval(
+        const BreachAlvarFriendActorBinding &binding, const BreachAlvarFriendActorRules &rules, std::string &error);
+    std::optional<PreparedBreachAlvarFriendActorMutation> prepareBreachAlvarFriendPreservation(
+        const BreachAlvarFriendActorBinding &binding, const BreachAlvarFriendActorRules &rules,
+        bool returned, std::string &error);
+    bool isPreparedBreachAlvarFriendActorCurrent(const PreparedBreachAlvarFriendActorMutation &prepared) const noexcept;
+    std::optional<Snapshot> snapshotWithPreparedBreachAlvarFriendActor(
+        const PreparedBreachAlvarFriendActorMutation &prepared, std::string &error) const;
+    static bool validateBreachAlvarFriendActorBinding(
+        const Snapshot &snapshot, const BreachAlvarFriendActorBinding &binding,
+        bool returned, std::string &error, const BreachAlvarFriendActorRules *pRules = nullptr);
+    // Bind again after map initialization/cold restoration, before advancing its authoritative clock.
+    bool bindBreachAlvarFriendActorRules(const BreachAlvarFriendActorRules &rules, std::string &error);
 
     void initialize(
         const MapStatsEntry &map,
@@ -596,13 +655,16 @@ public:
     bool isIndoorMap() const override;
     bool isUnderwaterMap() const override;
     bool allowsLloydsBeacon() const override;
+    bool townPortalUsesDimensionDoor() const override;
     bool allowsRest() const override;
     Snapshot snapshot() const;
     void restoreSnapshot(const Snapshot &snapshot);
     void stampLastVisitTime();
     void applyMapReentryReset() override;
     float currentGameMinutes() const override;
-    float gameMinutes() const override;
+    double currentGameMinutesPrecise() const override;
+    double gameMinutes() const override;
+    double lightGameMinutes() const noexcept;
     int currentHour() const override;
     int currentLocationReputation() const override;
     void setCurrentLocationReputation(int reputation) override;
@@ -611,7 +673,7 @@ public:
     RainIntensityPreset cycleRainIntensityPreset();
     RainIntensityPreset rainIntensityPreset() const;
     const char *rainIntensityPresetName() const;
-    void advanceGameMinutes(float minutes) override;
+    void advanceGameMinutes(double minutes) override;
     void updateMapActors(float deltaSeconds, float partyX, float partyY, float partyZ,
         ActorAiUpdateMode mode = ActorAiUpdateMode::Full);
     void updateMm9FoundPlayerEvents(float deltaSeconds, float partyX, float partyY, float partyZ);
@@ -872,11 +934,19 @@ public:
     float gameplayCameraPitchRadians() const override;
     bool partyIsAirborneForRest() const override;
     bool partyIsFlyingForEventChecks() const override;
+    bool partyFlyingModeForEvents() const override;
     bool partyIsActivelyFlyingForHud() const override;
     bool partyNeedsTurnBasedPhysicsUpdate() const override;
-    void syncSpellMovementStatesFromPartyBuffs() override;
+    void syncSpellMovementStatesFromPartyBuffs() noexcept override;
     void requestPartyJump(float verticalVelocity = 0.0f, float lift = 1.0f) override;
-    bool specialJump(uint32_t encodedHorizontalVelocity, uint32_t verticalVelocity) override;
+    bool specialJump(uint32_t encodedAngles, uint32_t speedBits) override;
+    bool sourceJump(float direction, float zAngle, float speed) override;
+    bool setPartyPositionForEvents(float x, float y, float footZ) override;
+    bool setMapDecorationVisible(size_t entityIndex, bool visible) override;
+    bool setMapDecorationVisibleByEventKey(uint32_t eventKey, bool visible) override;
+    bool isMapDecorationVisible(size_t entityIndex) const;
+    uint32_t partyDirectionForEvents() const override;
+    bool setPartyDirectionForEvents(uint32_t direction, float lookAngle) override;
     void setAlwaysRunEnabled(bool enabled) override;
     void updateWorldMovement(
         const GameplayInputFrame &input,
@@ -1086,6 +1156,20 @@ public:
     uint64_t bloodSplatRevision() const;
 
 private:
+    friend class GameSession;
+    friend struct BreachAlvarWorldActorTestAccess;
+    // Coordinator checks all Party/world/receipt inputs before its first publication. This rechecks the
+    // actor token and swaps prepared storage only; false means no write, true performs no allocation.
+    bool publishPreparedBreachAlvarFriendActor(PreparedBreachAlvarFriendActorMutation &&prepared) noexcept;
+    // Shared candidate core; only the public preflight supplies production visual readiness.
+    std::optional<PreparedBreachAlvarFriendActorMutation> prepareBreachAlvarFriendSpawnCandidate(
+        uint32_t monsterId, const BreachAlvarFriendActorRules &rules, const Party &spawnBolsterContext,
+        const SpriteFrameTable &frames, std::string &error);
+    static bool validBreachAlvarActorRules(const BreachAlvarFriendActorRules &rules);
+    void maintainBreachAlvarFriendActor();
+    void enforceBreachAlvarFriendActorLifecycle(MapActorState &actor) const;
+    std::optional<BreachAlvarFriendActorRules> m_breachAlvarFriendActorRules;
+    uint64_t m_breachAlvarSceneGeneration = 0;
     bool summonEventPayload(
         uint32_t payloadId,
         bool payloadIsObjectId,
@@ -1344,7 +1428,7 @@ private:
     int m_mapTreasureLevel = 0;
     MapStatsEntry m_map = {};
     std::string m_mapName;
-    float m_gameMinutes = 9.0f * 60.0f;
+    double m_gameMinutes = 9.0 * 60.0;
     AtmosphereState m_atmosphereState = {};
     std::optional<OutdoorWeatherProfile> m_outdoorWeatherProfile;
     bool m_mergedWeatherStateCacheValid = false;
@@ -1563,7 +1647,7 @@ private:
     void applyActorFrameSideEffects(float deltaSeconds, float partyX, float partyY, float partyZ);
     void updateMm9ActorReactions(float deltaSeconds, float partyX, float partyY, float partyZ);
     void startMm9CivilianFlee(MapActorState &actor);
-    void advanceGameMinutesInternal(float minutes);
+    void advanceGameMinutesInternal(double minutes);
     void initializeTimers(
         const std::optional<ScriptedEventProgram> &localEventProgram,
         const std::optional<ScriptedEventProgram> &globalEventProgram,
@@ -1580,5 +1664,6 @@ private:
     void updateArmageddon(float deltaSeconds, float partyX, float partyY, float partyZ);
     void resolveArmageddonDetonation(float partyX, float partyY, float partyZ);
     void refreshAtmosphereState();
+    void refreshDecorationCollisionFlags();
 };
 }

@@ -175,6 +175,7 @@ OutdoorSceneRuntime::OutdoorSceneRuntime(
     , m_globalEventProgram(globalEventProgram)
     , m_eventRuntime(pHouseTable, pNpcDialogTable)
 {
+    m_pPartyRuntime->setUnderwater(m_pWorldRuntime->isUnderwaterMap());
     if (pMm9MapTransitionTable != nullptr)
     {
         m_mm9PositionedTransitionRuntime.configure(
@@ -225,6 +226,22 @@ ISceneEventContext *OutdoorSceneRuntime::sceneEventContext()
 std::optional<EventRuntimeState::PendingMapMove> OutdoorSceneRuntime::consumePendingMapMove()
 {
     return m_pWorldRuntime->consumePendingMapMove();
+}
+
+bool OutdoorSceneRuntime::executeGlobalAfterLoadEvents()
+{
+    if (m_globalAfterLoadDispatched) return true;
+    EventRuntimeState *pState = eventRuntimeState();
+    m_globalAfterLoadDispatched = pState && m_eventRuntime.executeGlobalAfterLoadEvents(m_localEventProgram, m_globalEventProgram,
+        *pState, &party(), sceneEventContext());
+    return m_globalAfterLoadDispatched;
+}
+
+bool OutdoorSceneRuntime::executeOnLeaveEvents()
+{
+    EventRuntimeState *pState = eventRuntimeState();
+    return pState && m_eventRuntime.executeOnLeaveEvents(m_localEventProgram, m_globalEventProgram,
+        *pState, &party(), sceneEventContext());
 }
 
 void OutdoorSceneRuntime::advanceGameMinutes(float minutes)
@@ -351,6 +368,7 @@ OutdoorSceneRuntime::AdvanceFrameResult OutdoorSceneRuntime::advanceFrame(
     }
 
     const OutdoorMoveState &moveState = m_pPartyRuntime->movementState();
+    resetBoundaryHookAfterMovingAway(moveState);
 
     stageBeginTickCount = pPerformanceDiagnostics != nullptr ? SDL_GetTicksNS() : 0;
     if (pEventRuntimeState != nullptr && enteredPressurePlateFace(previousMoveState, moveState))
@@ -448,10 +466,15 @@ OutdoorSceneRuntime::AdvanceFrameResult OutdoorSceneRuntime::advanceFrame(
         && !pEventRuntimeState->pendingMapMove.has_value()
         && m_pPartyRuntime->movementEvents().blockedBoundaryEdge.has_value())
     {
+        const MapBoundaryEdge boundaryEdge = *m_pPartyRuntime->movementEvents().blockedBoundaryEdge;
+        const bool handledByHook = processMapBoundaryHook(boundaryEdge, moveState);
+        result.shouldOpenEventDialog = result.shouldOpenEventDialog
+            || pEventRuntimeState->pendingDialogueContext.has_value()
+            || pEventRuntimeState->messages.size() > result.previousMessageCount;
         const std::optional<MapEdgeTransition> *pTransition =
-            m_mapEntry.edgeTransition(*m_pPartyRuntime->movementEvents().blockedBoundaryEdge);
+            m_mapEntry.edgeTransition(boundaryEdge);
 
-        if (pTransition != nullptr
+        if (!handledByHook && pTransition != nullptr
             && pTransition->has_value()
             && !(*pTransition)->destinationMapFileName.empty()
             && canOfferMapTransition(*m_pPartyRuntime, moveState, **pTransition)
@@ -530,6 +553,65 @@ OutdoorSceneRuntime::AdvanceFrameResult OutdoorSceneRuntime::advanceFrame(
     }
 
     return result;
+}
+
+void OutdoorSceneRuntime::resetBoundaryHookAfterMovingAway(const OutdoorMoveState &moveState)
+{
+    if (!m_lastBoundaryHookEdge)
+    {
+        return;
+    }
+
+    // The movement driver may have no fixed physics step on a render frame.
+    // Rearm by actual inward movement, not by one frame without a contact event.
+    float inwardDistance = 0.0f;
+    switch (*m_lastBoundaryHookEdge)
+    {
+        case MapBoundaryEdge::North: inwardDistance = m_boundaryHookContactY - moveState.y; break;
+        case MapBoundaryEdge::South: inwardDistance = moveState.y - m_boundaryHookContactY; break;
+        case MapBoundaryEdge::East: inwardDistance = m_boundaryHookContactX - moveState.x; break;
+        case MapBoundaryEdge::West: inwardDistance = moveState.x - m_boundaryHookContactX; break;
+    }
+    if (inwardDistance > 8.0f)
+    {
+        m_lastBoundaryHookEdge.reset();
+        m_boundaryHookHandled = false;
+    }
+}
+
+bool OutdoorSceneRuntime::processMapBoundaryHook(MapBoundaryEdge edge, const OutdoorMoveState &moveState)
+{
+    if (m_lastBoundaryHookEdge == edge)
+    {
+        return m_boundaryHookHandled;
+    }
+
+    m_lastBoundaryHookEdge = edge;
+    m_boundaryHookContactX = moveState.x;
+    m_boundaryHookContactY = moveState.y;
+    m_boundaryHookHandled = false;
+    EventRuntimeState &state = *m_pWorldRuntime->eventRuntimeState();
+    const std::optional<EventRuntimeState::ActiveHookContext> previousContext = state.activeHookContext;
+    EventRuntimeState::ActiveHookContext hook = {};
+    hook.kind = EventRuntimeHookKind::MapBoundary;
+    hook.boundaryEdge = static_cast<uint32_t>(edge);
+    const std::optional<MapEdgeTransition> *pTransition = m_mapEntry.edgeTransition(edge);
+    if (pTransition != nullptr && pTransition->has_value())
+    {
+        hook.destinationMapName = (*pTransition)->destinationMapFileName;
+    }
+    hook.heldItemId = m_pPartyRuntime->party().heldItemIdForQueries();
+    state.activeHookContext = hook;
+    executeEventHooks(EventRuntimeHookKind::MapBoundary);
+    const EventRuntimeState::ActiveHookContext completed = state.activeHookContext.value_or(hook);
+    state.activeHookContext = previousContext;
+    if (completed.statusText && !completed.statusText->empty())
+    {
+        state.statusMessages.push_back(*completed.statusText);
+    }
+    m_boundaryHookHandled = completed.blocked || state.pendingMapMove.has_value()
+        || state.pendingDialogueContext.has_value();
+    return m_boundaryHookHandled;
 }
 
 bool OutdoorSceneRuntime::executeEventById(

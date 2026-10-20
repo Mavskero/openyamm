@@ -496,6 +496,20 @@ void GameplayScreenRuntime::presentPendingEventDialog(
         return;
     }
 
+    if (pEventRuntimeState->pendingCloseNpcDialogue)
+    {
+        pEventRuntimeState->pendingCloseNpcDialogue = false;
+        stopHouseVideoPlayback();
+        closeActiveEventDialog();
+        if (pEventRuntimeState->messages.size() <= previousMessageCount)
+        {
+            return;
+        }
+        EventRuntimeState::PendingDialogueContext messageContext;
+        messageContext.kind = DialogueContextKind::MapEvent;
+        pEventRuntimeState->pendingDialogueContext = messageContext;
+    }
+
     GameplayDialogController::Context context = contextBuilder
         ? contextBuilder(*pEventRuntimeState)
         : buildDialogContext(*pEventRuntimeState);
@@ -1313,7 +1327,7 @@ void GameplayScreenRuntime::beginRestAction(
     restScreen.innRest = innRest;
     restScreen.totalMinutes = std::max(0.0f, minutes);
     restScreen.targetGameMinutes = worldRuntime()->gameMinutes() + restScreen.totalMinutes;
-    restScreen.remainingMinutes = std::max(0.0f, restScreen.targetGameMinutes - worldRuntime()->gameMinutes());
+    restScreen.remainingMinutes = std::max(0.0, restScreen.targetGameMinutes - worldRuntime()->gameMinutes());
 
     GAMEPLAY_DEBUG_TRACE(
         "rest_action_started mode=\"" + std::string(restModeTraceName(mode)) + "\""
@@ -1589,26 +1603,21 @@ void GameplayScreenRuntime::completeRestAction(bool closeRestScreenAfterCompleti
 
     const GameplayUiController::RestMode completedMode = restScreen.mode;
     const bool completedInnRest = restScreen.innRest;
-    const float beforeGameMinutes = worldRuntime() != nullptr ? worldRuntime()->gameMinutes() : 0.0f;
-    const float remainingMinutes = completedMode != GameplayUiController::RestMode::None
-        ? std::max(0.0f, restScreen.targetGameMinutes - beforeGameMinutes) : 0.0f;
+    const double beforeGameMinutes = worldRuntime() != nullptr ? worldRuntime()->gameMinutes() : 0.0;
+    const double remainingMinutes = completedMode != GameplayUiController::RestMode::None
+        ? std::max(0.0, restScreen.targetGameMinutes - beforeGameMinutes) : 0.0;
 
     if (remainingMinutes > 0.0f && worldRuntime() != nullptr)
     {
         IGameplayWorldRuntime *pWorldRuntime = worldRuntime();
         pWorldRuntime->advanceGameMinutes(remainingMinutes);
-        EventRuntimeState *pEventRuntimeState = pWorldRuntime->eventRuntimeState();
         Party *pParty = party();
         if (pParty != nullptr)
         {
             pParty->advanceTimedStates(remainingMinutes * 60.0f);
         }
-        if (pEventRuntimeState != nullptr && pParty != nullptr)
-        {
-            itemService().updateConnectorStoneRecharge(*pParty, *pEventRuntimeState, pWorldRuntime->gameMinutes());
-        }
     }
-    const float afterGameMinutes = worldRuntime() != nullptr ? worldRuntime()->gameMinutes() : beforeGameMinutes;
+    const double afterGameMinutes = worldRuntime() != nullptr ? worldRuntime()->gameMinutes() : beforeGameMinutes;
 
     if (remainingMinutes > 0.0f)
     {
@@ -3029,7 +3038,15 @@ void GameplayScreenRuntime::bindAssetFileSystem(const Engine::AssetFileSystem *p
 
 void GameplayScreenRuntime::clearUiControllerRuntimeState()
 {
+    // Map/view reconstruction clears interface state, not the session's cursor-item owner.
+    const auto heldItem = uiController().heldInventoryItem();
     uiController().clearRuntimeState();
+    uiController().heldInventoryItem() = heldItem;
+    if (Party *pParty = party())
+    {
+        if (heldItem.active) pParty->setHeldItemForQueries(heldItem.item);
+        else pParty->clearHeldItemForQueries();
+    }
 }
 
 bool GameplayScreenRuntime::ensureGameplayLayoutsLoaded()
@@ -3176,6 +3193,17 @@ int GameplayScreenRuntime::defaultHudLayoutZIndexForScreen(const std::string &sc
 GameplayHudScreenState GameplayScreenRuntime::currentHudScreenState() const
 {
     return resolveGameplayHudScreenState(uiController(), activeEventDialog(), worldRuntime());
+}
+
+bool GameplayScreenRuntime::isNormalGameplayScreen() const
+{
+    // Holding an item, cursor mode and targeting do not change the original CurrentScreen==0.
+    return currentHudScreenState() == GameplayHudScreenState::Gameplay
+        && !utilitySpellOverlayReadOnly().active
+        && !readableScrollOverlayReadOnly().active
+        && !controlsScreenState().active
+        && !keyboardScreenState().active
+        && !videoOptionsScreenState().active;
 }
 
 const std::vector<std::string> &GameplayScreenRuntime::sortedHudLayoutIdsForScreen(const std::string &screen) const
@@ -3775,7 +3803,7 @@ bool GameplayScreenRuntime::ensureDimensionDoorDestinationsLoaded()
     constexpr float MinutesPerDay = 24.0f * 60.0f;
 
     const IGameplayWorldRuntime *pWorldRuntime = worldRuntime();
-    const float gameMinutes = pWorldRuntime != nullptr ? std::max(0.0f, pWorldRuntime->gameMinutes()) : 0.0f;
+    const double gameMinutes = pWorldRuntime != nullptr ? std::max(0.0, pWorldRuntime->gameMinutes()) : 0.0;
     const uint32_t dayIndex = static_cast<uint32_t>(std::floor(gameMinutes / MinutesPerDay));
     return uiRuntime().ensureDimensionDoorDestinationsLoaded(
         m_dimensionDoorState.active ? m_dimensionDoorState.destinationDayIndex : dayIndex);
@@ -3828,13 +3856,46 @@ void GameplayScreenRuntime::activateDimensionDoor(DimensionDoorActivationSource 
     if (pWorldRuntime != nullptr)
     {
         m_dimensionDoorState.activate(pWorldRuntime->gameMinutes(), source);
+        if (EventRuntimeState *pState = pWorldRuntime->eventRuntimeState())
+        {
+            pState->dimensionDoorActive = m_dimensionDoorState.active;
+        }
         setStatusBarEvent("You feel high magic presence here.", 4.0f);
+        if (source == DimensionDoorActivationSource::NaturalLocation)
+        {
+            if (EventRuntimeState *pState = pWorldRuntime->eventRuntimeState())
+            {
+                const std::optional<EventRuntimeState::ActiveHookContext> previous = pState->activeHookContext;
+                pState->activeHookContext = EventRuntimeState::ActiveHookContext{};
+                pState->activeHookContext->kind = EventRuntimeHookKind::DimensionDoorActivated;
+                pWorldRuntime->executeEventHooks(EventRuntimeHookKind::DimensionDoorActivated);
+                pState->activeHookContext = previous;
+                if (pState->pendingDialogueContext
+                    && pState->pendingDialogueContext->kind == DialogueContextKind::NpcTalk)
+                {
+                    const EventRuntimeState::PendingDialogueContext pending = *pState->pendingDialogueContext;
+                    GameplayDialogController::Context context = buildDialogContext(*pState);
+                    const GameplayDialogController::Result result =
+                        m_session.gameplayDialogController().openNpcDialogue(
+                            context, pending.sourceId, pending.hostHouseId, pending.sourceActorIndex);
+                    presentPendingDialogActionResult(result);
+                }
+                else
+                {
+                    ensurePendingEventDialogPresented();
+                }
+            }
+        }
     }
 }
 
 void GameplayScreenRuntime::resetDimensionDoor()
 {
     m_dimensionDoorState = {};
+    if (EventRuntimeState *pState = worldRuntime() != nullptr ? worldRuntime()->eventRuntimeState() : nullptr)
+    {
+        pState->dimensionDoorActive = false;
+    }
 }
 
 void GameplayScreenRuntime::updateDimensionDoor()
@@ -3857,6 +3918,10 @@ void GameplayScreenRuntime::updateDimensionDoor()
     // Original screen 3 includes the journal/map/history and Lloyd's Beacon as well as Town Portal.
     const bool infoScreenOpen = overlay.active || journalScreenStateReadOnly().active;
     m_dimensionDoorState.update(pWorldRuntime->gameMinutes(), infoScreenOpen);
+    if (EventRuntimeState *pState = pWorldRuntime->eventRuntimeState())
+    {
+        pState->dimensionDoorActive = m_dimensionDoorState.active;
+    }
 }
 
 void GameplayScreenRuntime::dispatchOutdoorStep(int tileX, int tileY)
@@ -3888,7 +3953,8 @@ bool GameplayScreenRuntime::tryRunTownPortalHook()
 bool GameplayScreenRuntime::shouldTownPortalCastOpenDimensionDoor()
 {
     updateDimensionDoor();
-    return m_dimensionDoorState.active;
+    const IGameplayWorldRuntime *pWorldRuntime = worldRuntime();
+    return (pWorldRuntime != nullptr && pWorldRuntime->townPortalUsesDimensionDoor()) || m_dimensionDoorState.active;
 }
 
 bool GameplayScreenRuntime::openDimensionDoorOverlay(

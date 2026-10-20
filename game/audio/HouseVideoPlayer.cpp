@@ -561,11 +561,16 @@ struct HouseVideoPlayer::StreamingSession
 
     void stop()
     {
-        stopRequested.store(true);
+        {
+            // Share the wait predicate's mutex so notification cannot land
+            // between its last false check and registration of the waiter.
+            std::lock_guard<std::mutex> lock(queueMutex);
+            stopRequested.store(true);
+        }
+        queueChanged.notify_all();
 
         if (worker.joinable())
         {
-            queueChanged.notify_all();
             worker.join();
         }
     }
@@ -612,8 +617,10 @@ struct HouseVideoPlayer::StreamingSession
             const double decodeLimitSeconds = playbackPositionSeconds + HouseVideoDecodeAheadSeconds;
             const bool videoBufferedAhead = decodedVideoEndSeconds >= decodeLimitSeconds;
             const bool audioBufferedAhead = !hasAudio || decodedAudioEndSeconds >= decodeLimitSeconds;
-            return !videoBufferedAhead || !audioBufferedAhead;
+            waitingForDecodeWindow = videoBufferedAhead && audioBufferedAhead;
+            return !waitingForDecodeWindow;
         });
+        waitingForDecodeWindow = false;
         return !stopRequested.load();
     }
 
@@ -1214,6 +1221,7 @@ struct HouseVideoPlayer::StreamingSession
     bool loopPlayback = true;
     std::mutex queueMutex;
     std::condition_variable queueChanged;
+    bool waitingForDecodeWindow = false;
     std::deque<DecodedVideoFrame> videoFrames;
     std::deque<DecodedAudioChunk> audioChunks;
     size_t bufferedAudioFrames = 0;
@@ -1347,6 +1355,17 @@ void HouseVideoPlayer::stop()
     m_videoTextureHandle = BGFX_INVALID_HANDLE;
     m_videoTextureWidth = 0;
     m_videoTextureHeight = 0;
+}
+
+bool HouseVideoPlayer::isDecodeWindowBlocked() const
+{
+    if (m_pStreamingSession == nullptr)
+    {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(m_pStreamingSession->queueMutex);
+    return m_pStreamingSession->waitingForDecodeWindow;
 }
 
 bool HouseVideoPlayer::play(const Engine::AssetFileSystem &assetFileSystem, const std::string &videoStem)

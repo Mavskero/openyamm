@@ -1,4 +1,5 @@
 #include "StoryResources.h"
+#include "CrossContinentsResources.h"
 #include "LodResources.h"
 #include "TextResources.h"
 #include "engine/TextTable.h"
@@ -171,6 +172,7 @@ void convertStoryResources(const std::filesystem::path &source, const std::files
     const std::filesystem::path base = sourceRoot / "Data/mmmerge.T.lod";
     const std::filesystem::path localized = sourceRoot / "Data/10 LocZHCN.EnglishT.lod";
     const bool chinese = std::filesystem::exists(localized);
+    const std::optional<CrossContinentsIntroProfile> crossContinents = loadCrossContinentsIntroProfile(sourceRoot);
     std::map<std::string, Rows> tables;
     std::ostringstream manifest;
     manifest << "{\"schema\":1,\"stage\":\"shared-story-tables\",\"runtime_ready\":false,"
@@ -240,6 +242,25 @@ void convertStoryResources(const std::filesystem::path &source, const std::files
                 row.push_back(baseTopic);
             }
         }
+        if (crossContinents && std::string_view(spec.pSource) == "npctopic.txt")
+        {
+            const CrossContinentsBreachTravelTopic &topic = crossContinents->breachTravelTopic;
+            const bool collision = std::any_of(rows.begin(), rows.end(), [&](const std::vector<std::string> &row)
+                { return rowId(row) == topic.id; })
+                || translated.contains(topic.id)
+                || std::find(emptyBaseTopics.begin(), emptyBaseTopics.end(), topic.id) != emptyBaseTopics.end()
+                || std::find(emptyLocalizedTopics.begin(), emptyLocalizedTopics.end(), topic.id)
+                    != emptyLocalizedTopics.end();
+            if (collision)
+            {
+                throw std::runtime_error("BreachTravel synthetic topic collides with an original NPC topic");
+            }
+            // This is an ordinary global topic row. The handler displays NPCTopic186 explicitly,
+            // so its Text # is empty rather than silently changing that source namespace to NPCText.
+            rows.push_back({std::to_string(topic.id), topic.topic, "",
+                "Verdant - BreachTravel; Quest_CrossContinents.lua447-463; Hints slot3", "", "803", "803",
+                topic.baseTopic});
+        }
         manifest << (tables.empty() ? "" : ",\n") << "{\"source\":" << std::quoted(spec.pSource)
             << ",\"output\":" << std::quoted(std::string("engine/data_tables/") + spec.pOutput)
             << ",\"rows\":" << rows.size() << ",\"localized_rows\":" << applied
@@ -272,7 +293,16 @@ void convertStoryResources(const std::filesystem::path &source, const std::files
         {
             manifest << (i == 0 ? "" : ",") << localizedWeekdayIds[i];
         }
-        manifest << "]}";
+        manifest << "]";
+        if (crossContinents && std::string_view(spec.pSource) == "npctopic.txt")
+        {
+            manifest << ",\"projected_topics\":[{\"id\":" << crossContinents->breachTravelTopic.id
+                << ",\"source\":\"Scripts/Global/Quest_CrossContinents.lua:447-463\",\"source_sha256\":"
+                << std::quoted(crossContinents->sourceSha256)
+                << ",\"label_source\":\"Game.MapStats[204].Name\",\"message_source\":\"Game.NPCTopic[186]\","
+                << "\"npc\":803,\"branch\":\"Hints\",\"slot\":3}]";
+        }
+        manifest << "}";
         if (std::string_view(spec.pSource) == "npctopic.txt")
         {
             rows.insert(rows.begin(), {"#", "Topic", "Requires", "Notes", "Text #", "Owner(s)",

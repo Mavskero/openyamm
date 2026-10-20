@@ -1,4 +1,5 @@
 #include "game/scenario/ScenarioRuntimeDriver.h"
+#include "game/StringUtils.h"
 
 #include "game/gameplay/GameplayInteractionController.h"
 #include "game/gameplay/GameplayInputFrame.h"
@@ -1661,10 +1662,12 @@ bool ScenarioRuntimeDriver::answerPendingInputPrompt(
     result.prompt = activeInputPromptSnapshot();
     result.selectedContinueStep = prompt.continueStep;
 
-    const std::string normalizedInput = normalizeScenarioPromptAnswer(text);
+    const std::string normalizedInput = prompt.trimWhitespace
+        ? normalizeScenarioPromptAnswer(text) : toLowerCopy(text);
     for (size_t answerIndex = 0; answerIndex < prompt.answers.size(); ++answerIndex)
     {
-        const std::string normalizedAnswer = normalizeScenarioPromptAnswer(prompt.answers[answerIndex]);
+        const std::string normalizedAnswer = prompt.trimWhitespace
+            ? normalizeScenarioPromptAnswer(prompt.answers[answerIndex]) : toLowerCopy(prompt.answers[answerIndex]);
         if (!prompt.answers[answerIndex].empty() && normalizedAnswer == normalizedInput)
         {
             result.matched = true;

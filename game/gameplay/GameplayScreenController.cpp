@@ -5,6 +5,7 @@
 #include "game/gameplay/GameplayFxService.h"
 #include "game/gameplay/GameplayInputController.h"
 #include "game/gameplay/GameplayItemService.h"
+#include "game/gameplay/GameplayHeldItemController.h"
 #include "game/gameplay/GameplayPartyOverlayInputController.h"
 #include "game/items/ItemRuntime.h"
 #include "game/ui/GameplayHudOverlaySupport.h"
@@ -116,6 +117,7 @@ void GameplayScreenController::updateSharedFrameState(
     float deltaSeconds,
     const GameplayScreenFrameUpdateConfig &config)
 {
+    GameplayHeldItemController::applyPendingQuestItemDeliveries(context);
     context.fxService().syncProjectilePresentation();
     context.fxService().advanceGameplayScreenOverlay(deltaSeconds);
     context.updatePartyPortraitAnimations(deltaSeconds);
@@ -583,27 +585,22 @@ void GameplayScreenController::updateRestOverlayProgress(
         : restScreen.totalMinutes;
     // Derive remaining time from the world's clock, avoiding accumulated rounding differences
     // between two independently advanced floats at dawn and other exact opening times.
-    restScreen.remainingMinutes = std::max(0.0f,
+    restScreen.remainingMinutes = std::max(0.0,
         restScreen.targetGameMinutes - context.worldRuntime()->gameMinutes());
-    const float advancedMinutes = std::min(
-        restScreen.remainingMinutes,
-        gameMinutesPerSecond * safeDeltaSeconds);
+    const double advancedMinutes = std::min(
+        std::max(0.0, restScreen.targetGameMinutes - context.worldRuntime()->gameMinutes()),
+        double(gameMinutesPerSecond * safeDeltaSeconds));
 
     if (advancedMinutes > 0.0f)
     {
         IGameplayWorldRuntime *pWorldRuntime = context.worldRuntime();
         pWorldRuntime->advanceGameMinutes(advancedMinutes);
-        EventRuntimeState *pEventRuntimeState = pWorldRuntime->eventRuntimeState();
         Party *pParty = context.party();
         if (pParty != nullptr)
         {
             pParty->advanceTimedStates(advancedMinutes * 60.0f);
         }
-        if (pEventRuntimeState != nullptr && pParty != nullptr)
-        {
-            context.itemService().updateConnectorStoneRecharge(*pParty, *pEventRuntimeState, pWorldRuntime->gameMinutes());
-        }
-        restScreen.remainingMinutes = std::max(0.0f, restScreen.targetGameMinutes - pWorldRuntime->gameMinutes());
+        restScreen.remainingMinutes = std::max(0.0, restScreen.targetGameMinutes - pWorldRuntime->gameMinutes());
     }
 
     if (restScreen.remainingMinutes > 0.0f)

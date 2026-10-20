@@ -1,12 +1,16 @@
 #include "SceneResources.h"
+#include "BreachAlvarCompanionResources.h"
+#include "BreachMazeEventSource.h"
 #include "LodResources.h"
 #include "SpriteFrameResources.h"
 #include "SurfaceResources.h"
 #include "TextResources.h"
 #include "engine/TextTable.h"
+#include "game/audio/SoundCatalog.h"
 #include "game/events/ScriptedEventProgram.h"
 #include "game/maps/MapDeltaData.h"
 #include "game/maps/TerrainTileData.h"
+#include "game/tables/HouseTable.h"
 #include "game/tables/MapStats.h"
 #include "game/tables/MergedBaseTables.h"
 #include "game/tables/MonsterTable.h"
@@ -14,10 +18,14 @@
 #include "game/tables/SpriteTables.h"
 #include "game/tables/SurfaceMaterialTable.h"
 #include "game/tables/TextureFrameTable.h"
+#include "tools/legacy_events/StrTable.h"
 
+#include <CommonCrypto/CommonDigest.h>
+#include <array>
 #include <fstream>
 #include <iomanip>
 #include <map>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -80,6 +88,65 @@ void writeText(const Path &path, const std::string &text)
     writeConvertedResource(path, {text.begin(), text.end()});
 }
 
+std::string luaText(const std::string &text)
+{
+    std::ostringstream out;
+    out << '"';
+    for (unsigned char byte : text)
+    {
+        if (byte == '"' || byte == '\\') out << '\\' << char(byte);
+        else if (byte < 32 || byte == 127) out << '\\' << std::setw(3) << std::setfill('0') << uint32_t(byte);
+        else out << char(byte);
+    }
+    out << '"';
+    return out.str();
+}
+
+std::string breachNativeTexts(const Path &root, bool chinese, const std::string &stem,
+    size_t minimumEntries, std::optional<uint32_t> globalTextId = std::nullopt)
+{
+    const Path archive = root / "Data" / (chinese ? "10 LocZHCN.EnglishT.lod" : "mmmerge.T.lod");
+    std::vector<uint8_t> stringBytes = readLodText(archive, stem + ".str");
+    require(!stringBytes.empty(), "Empty original " + stem + " STR");
+    // Some original STRs end their final entry at the LOD payload boundary without a trailing NUL.
+    // Supply that boundary to the strict shared parser; the read-only source remains untouched.
+    if (stringBytes.back() != 0) stringBytes.push_back(0);
+    Game::StrTable strings;
+    require(strings.loadFromNullSeparatedBytes(stringBytes)
+        && strings.getEntries().size() >= minimumEntries, "Incomplete original " + stem + " STR");
+    size_t restoredGlyphs = 0;
+    std::ostringstream source;
+    source << "-- Native text projection: original " << stem << ".str, same active language.\n"
+        << "evt.strings = {\n";
+    for (size_t index = 0; index < strings.getEntries().size(); ++index)
+    {
+        const std::string &raw = strings.getEntries()[index];
+        source << "  [" << index << "] = "
+            << luaText(decodeLegacyText({raw.begin(), raw.end()}, chinese, restoredGlyphs)) << ",\n";
+    }
+    source << "}\nevt.importedGlobalText = {";
+    if (globalTextId)
+    {
+        const auto global = Engine::TextTable::parseTabSeparated(
+            decodeLegacyText(readLodText(archive, "global.txt"), chinese, restoredGlyphs));
+        require(global.has_value(), "Invalid original GlobalTxt table");
+        std::optional<std::string> value;
+        for (size_t index = 0; index < global->getRowCount(); ++index)
+        {
+            const auto &row = global->getRow(index);
+            if (row.size() >= 2 && row[0] == std::to_string(*globalTextId))
+            {
+                require(!value, "Duplicate GlobalTxt" + std::to_string(*globalTextId));
+                value = row[1];
+            }
+        }
+        require(value && !value->empty(), "Missing original GlobalTxt" + std::to_string(*globalTextId));
+        source << '[' << *globalTextId << "] = " << luaText(*value);
+    }
+    source << "}\n";
+    return source.str();
+}
+
 std::string minimapArrowPrefix(const std::string &worldId)
 {
     if (worldId == "mm6")
@@ -92,6 +159,177 @@ std::string minimapArrowPrefix(const std::string &worldId)
     }
     require(worldId == "mm8", "Unsupported minimap arrow source world");
     return "mapdir";
+}
+
+struct MergeSceneProfile
+{
+    std::string sourceScript;
+    std::string sha256;
+    std::set<std::string> textures;
+};
+
+// These scenes have Map Lua, not EVT binaries. Only explicit source projections execute; importing
+// their remaining original scripts as provenance does not provide general Merge Lua compatibility.
+MergeSceneProfile mergeSceneProfile(const Path &root, const std::string &file)
+{
+    const std::map<std::string, MergeSceneProfile> profiles = {
+        {"breach.odm", {"Breach", "e3ef00b2de86c3f795fe18739adc978b41d8c7bd3c7aac08bafd90f4116a9eac", {}}},
+        {"bralvar.odm", {"BrAlvar", "947567325601e0e120c03125b5f3087c15d311391c80c1949312e7a6feadc7a3", {}}},
+        {"brbase.blv", {"BrBase", "58d0978f2d8683d3d94cfeb6048917c0cc61d9818a8f272ca1baca2e6005d60b",
+            {"7c1fl", "7cdb", "7t1s2bs4", "7tfb1", "7trim9_32", "7trimd", "rmzdra", "rmzdrb",
+                "bookcas1", "cwb", "cwb1", "t65a03", "t65b03", "t65b10", "t65c02"}}},
+    };
+    const auto found = profiles.find(file);
+    require(found != profiles.end(), "Merge scene is outside the audited source profile: " + file);
+    MergeSceneProfile profile = found->second;
+    profile.sourceScript = "Scripts/Maps/" + profile.sourceScript + ".lua";
+    const Path path = std::filesystem::canonical(root / profile.sourceScript);
+    const Path relative = path.lexically_relative(root);
+    require(!relative.empty() && !relative.is_absolute() && *relative.begin() != "..",
+        "Merge scene source script escapes input root");
+    const std::string script = readText(path);
+    require(!script.empty(), "Empty Merge scene source script");
+    std::array<unsigned char, CC_SHA256_DIGEST_LENGTH> hash;
+    CC_SHA256(script.data(), static_cast<CC_LONG>(script.size()), hash.data());
+    std::ostringstream digest;
+    for (unsigned char value : hash)
+    {
+        digest << std::hex << std::setfill('0') << std::setw(2) << unsigned(value);
+    }
+    require(digest.str() == profile.sha256, "Unsupported Merge scene source fingerprint: " + file);
+    return profile;
+}
+
+std::string breachTowerMechanisms(const Game::OutdoorMapData &map, const Path &base,
+    const std::string &file, const MergeSceneProfile &profile)
+{
+    require(file == "bralvar.odm" || file == "breach.odm", "Unsupported Breach tower source: " + file);
+    const bool isAlvar = file == "bralvar.odm";
+    struct ModelRule
+    {
+        std::string name;
+        uint16_t eventId;
+        int32_t dz;
+        uint32_t moveTimeMs;
+        uint32_t startSoundId;
+        uint32_t stopSoundId;
+    };
+    // Source const.Minute advances in two real seconds at the ordinary outdoor clock rate.
+    // Closed models are stored at their source position; opening moves them by the source dz.
+    std::array<ModelRule, 28> rules = {{
+        {"Time_1", 101, -10, 2000, 0, 0},
+        {"Time_2", 102, -10, 2000, 0, 0},
+        {"Time_3", 103, -10, 2000, 0, 0},
+        {"Elev_1_Door", 104, 250, 2000, 185, 178},
+        {"Elev_2_Door", 105, 250, 2000, 185, 178},
+        {"Elev_3_Door", 106, 250, 2000, 185, 178},
+        {"SubTower_Door_1", 107, 250, 2000, 185, 178},
+        {"SubTower_Door_2", 108, 250, 2000, 185, 178},
+        {"SubTower_Door_3", 109, 250, 2000, 185, 178},
+        {"LibDoor_1", 110, 300, 2000, 177, 168},
+        {"LibDoor_2", 111, 300, 2000, 177, 168},
+        {"LibDoor_3", 112, 300, 2000, 177, 168},
+        {"LibDoor_4", 113, 300, 2000, 177, 168},
+        {"Mus_Door_2", 114, 300, 2000, 177, 178},
+        {"Mus_Door_3", 115, 300, 2000, 177, 178},
+        {"Mus_Door_4", 116, 300, 2000, 177, 178},
+        {"Mus_Door_1", 117, 300, 2000, 185, 178},
+        {"RoomDoor_1", 118, 200, 1000, 0, 170},
+        {"RoomDoor_2", 119, 200, 1000, 0, 170},
+        {"RoomDoor_3", 120, 200, 1000, 0, 170},
+        {"RoomDoor_4", 121, 200, 1000, 0, 170},
+        {"RoomDoor_5", 122, 200, 1000, 0, 170},
+        {"RoomDoor_6", 123, 200, 1000, 0, 170},
+        {"RoomDoor_7", 124, 200, 1000, 0, 170},
+        {"RoomElev", 125, 455, 4000, 177, 170},
+        {"Elev_1_Button", 126, 5, 500, 177, 0},
+        {"Elev_2_Button", 127, 5, 500, 177, 0},
+        {"Elev_3_Button", 128, 5, 500, 177, 0},
+    }};
+    if (!isAlvar)
+    {
+        // Breach.lua 268-284 uses Mus_Door_1..4 in order, all with StartSound177.
+        for (size_t index = 0; index < 4; ++index)
+        {
+            rules[13 + index].name = "Mus_Door_" + std::to_string(index + 1);
+            rules[13 + index].startSoundId = 177;
+        }
+    }
+    Game::SoundCatalog sounds;
+    std::string error;
+    require(sounds.loadFromScopedRows(readRows(base / "engine/data_tables/sounds.txt"), {}, error),
+        "Cannot read shared tower sound catalog: " + error);
+    const auto soundName = [&sounds](uint32_t id)
+    {
+        const Game::SoundCatalogEntry *pSound = sounds.findById(id);
+        require(pSound && !pSound->name.empty(), "Missing original tower sound ID " + std::to_string(id));
+        return lower(pSound->name) + ".wav";
+    };
+
+    std::ostringstream yaml;
+    yaml << "# " << profile.sourceScript
+        << "; original model positions and raw ODM/DDM are retained.\n"
+        << "format_version: 1\nkind: outdoor_mechanisms\nmap: " << file << "\nsource:\n"
+        << "  script: " << profile.sourceScript << "\n  sha256: " << std::quoted(profile.sha256)
+        << "\nruntime_restrictions:\n";
+    if (isAlvar)
+    {
+        yaml << "  allow_lloyds_beacon: false\n";
+    }
+    // Breach.lua 355-358 forces Dimension Door but does not prohibit Lloyd's Beacon.
+    yaml << "  town_portal_uses_dimension_door: true\nmechanisms:\n";
+    for (const ModelRule &rule : rules)
+    {
+        std::optional<size_t> modelIndex;
+        for (size_t index = 0; index < map.bmodels.size(); ++index)
+        {
+            if (map.bmodels[index].name == rule.name)
+            {
+                require(!modelIndex, "Ambiguous original tower model: " + rule.name);
+                modelIndex = index;
+            }
+        }
+        require(modelIndex && !map.bmodels[*modelIndex].faces.empty(),
+            "Missing original tower model: " + rule.name);
+        yaml << "  - mechanism_id: " << rule.eventId << "\n    event_id: " << rule.eventId
+            << "\n    source_object_index: " << *modelIndex
+            << "\n    source_class: OutdoorAnimObjects.SetDoor\n    source_name: " << std::quoted(rule.name)
+            << "\n    kind: " << (rule.eventId <= 103 || rule.dz == 5 ? "linear_button" : "linear_door")
+            << "\n    binding:\n      target_kind: odm_bmodel\n      bmodel_index: " << *modelIndex
+            << "\n      bmodel_name: " << std::quoted(rule.name)
+            << "\n      confidence: exact_source_model_name\n    motion:\n      move_time_ms: " << rule.moveTimeMs
+            << "\n      linear:\n        delta_openyamm: {x: 0, y: 0, z: " << rule.dz << "}\n"
+            << "    activation:\n      start_open: false\n      move_party: false\n";
+        if (rule.startSoundId != 0 || rule.stopSoundId != 0)
+        {
+            yaml << "    sounds:\n";
+        }
+        if (rule.startSoundId != 0)
+        {
+            const std::string startSound = soundName(rule.startSoundId);
+            yaml << "      open_start: " << std::quoted(startSound)
+                << "\n      close_start: " << std::quoted(startSound) << '\n';
+        }
+        if (rule.stopSoundId != 0)
+        {
+            const std::string stopSound = soundName(rule.stopSoundId);
+            yaml << "      open_stop: " << std::quoted(stopSound)
+                << "\n      close_stop: " << std::quoted(stopSound) << '\n';
+        }
+    }
+    return yaml.str();
+}
+
+std::string presentationWorld(const Game::MapStatsEntry &map, SceneImportMode mode)
+{
+    if (mode == SceneImportMode::ResourceInspection || mode == SceneImportMode::NativeMergeGameplay)
+    {
+        require(map.worldId == "mmmerge", "Merge source profile requires original mmmerge ownership");
+        return "mm8";
+    }
+    require(map.worldId == "mm6" || map.worldId == "mm7" || map.worldId == "mm8",
+        "Scene has no supported gameplay world: " + map.fileName);
+    return map.worldId;
 }
 
 struct Archives
@@ -164,7 +402,7 @@ SceneMapSelection discoverSceneMapFiles(const Path &source, const Path &converte
 }
 
 void convertSceneResources(const Path &source, const Path &convertedBase, const Path &destination,
-    const std::vector<std::string> &mapFiles, const ImportCancelCheck &cancelled)
+    const std::vector<std::string> &mapFiles, const ImportCancelCheck &cancelled, SceneImportMode mode, bool chinese)
 {
     checkImportCancellation(cancelled);
     using namespace Game;
@@ -174,6 +412,10 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
     require(!std::filesystem::exists(output) && outside(output, root) && outside(output, base),
         "Scene output must be new and outside both inputs");
     require(!mapFiles.empty(), "No scene maps requested");
+    const bool nativeMergeSource = mode == SceneImportMode::ResourceInspection
+        || mode == SceneImportMode::NativeMergeGameplay;
+    const Path resources = mode == SceneImportMode::ResourceInspection
+        ? output / "inspection/merge-scenes" : output;
     const Path tables = base / "engine/data_tables";
     MapStats registry;
     MonsterTable monsters;
@@ -219,21 +461,26 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
     for (const std::string &file : mapFiles)
     {
         const MapStatsEntry *pMap = registry.findByFileName(lower(file));
-        require(pMap && terrainRows.contains(pMap->worldId), "Scene has no supported registered world: " + file);
+        require(pMap != nullptr, "Scene has no registered world: " + file);
+        const std::string formatWorld = presentationWorld(*pMap, mode);
+        if (nativeMergeSource)
+        {
+            mergeSceneProfile(root, lower(file));
+        }
         if (lower(Path(file).extension().string()) == ".odm")
         {
             minimapNames.insert(lower(Path(file).stem().string()));
-            if (pMap->worldId == "mm8")
+            if (formatWorld == "mm8")
             {
                 mm8MinimapNames.insert(lower(Path(file).stem().string()));
             }
         }
         for (int direction = 1; direction <= 8; ++direction)
         {
-            minimapNames.insert(minimapArrowPrefix(pMap->worldId) + std::to_string(direction));
-            if (pMap->worldId == "mm8")
+            minimapNames.insert(minimapArrowPrefix(formatWorld) + std::to_string(direction));
+            if (formatWorld == "mm8")
             {
-                mm8MinimapNames.insert(minimapArrowPrefix(pMap->worldId) + std::to_string(direction));
+                mm8MinimapNames.insert(minimapArrowPrefix(formatWorld) + std::to_string(direction));
             }
         }
     }
@@ -261,15 +508,17 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
     require(std::filesystem::create_directories(output), "Cannot create scene staging output");
     try
     {
-        writeText(output / "engine/data_tables/texture_frame_data.txt", serializeTextRows(textureRows));
-        writeText(output / "engine/rendering/surface_materials.yml", waterYaml);
+        writeText(resources / "engine/data_tables/texture_frame_data.txt", serializeTextRows(textureRows));
+        writeText(resources / "engine/rendering/surface_materials.yml", waterYaml);
         for (const auto &[world, rows] : terrainRows)
         {
             const std::string suffix = world == "mm6" ? "_3" : world == "mm7" ? "_2" : "";
-            writeText(output / "engine/data_tables" / ("terrain_tile_data" + suffix + ".txt"), serializeTextRows(rows));
+            writeText(resources / "engine/data_tables" / ("terrain_tile_data" + suffix + ".txt"),
+                serializeTextRows(rows));
         }
         std::map<std::string, std::set<std::string>> mapMembers;
-        for (const char *pArchive : {"mm6.games.lod", "mm7.games.lod", "mm8.games.lod", "patch.games.lod"})
+        for (const char *pArchive : {"mm6.games.lod", "mm7.games.lod", "mm8.games.lod", "patch.games.lod",
+                "breach.games.lod"})
         {
             if (std::filesystem::exists(root / "Data" / pArchive))
             {
@@ -283,7 +532,9 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
         std::set<std::string> arrowWorlds;
         std::ostringstream arrowReport;
         std::ostringstream report;
-        report << "{\"schema\":1,\"stage\":\"registered-scenes\",\"runtime_ready\":false,"
+        report << "{\"schema\":1,\"stage\":" << std::quoted(mode == SceneImportMode::ResourceInspection
+            ? "inspection-scenes" : mode == SceneImportMode::NativeMergeGameplay
+                ? "native-merge-gameplay-scenes" : "registered-scenes") << ",\"runtime_ready\":false,"
             "\"tft_frames\":" << textureRows.size() << ",\"hardware_water_materials\":" << waterRows.size() - 1
             << ",\"maps\":[";
         std::set<std::string> seen;
@@ -296,11 +547,14 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                 && file.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_.-") == std::string::npos
                 && seen.insert(file).second, "Invalid or duplicate scene map name");
             const MapStatsEntry *pMap = registry.findByFileName(file);
-            require(pMap && terrainRows.contains(pMap->worldId), "Scene has no supported registered world: " + file);
+            require(pMap != nullptr, "Scene has no registered world: " + file);
+            const std::string formatWorld = presentationWorld(*pMap, mode);
+            const std::optional<MergeSceneProfile> profile = nativeMergeSource
+                ? std::optional<MergeSceneProfile>(mergeSceneProfile(root, file)) : std::nullopt;
             const auto sourceArchive = [&](const std::string &member)
             {
-                const std::string name = mapMembers["patch.games.lod"].contains(member)
-                    ? "patch.games.lod" : pMap->worldId + ".games.lod";
+                const std::string name = profile ? "breach.games.lod"
+                    : mapMembers["patch.games.lod"].contains(member) ? "patch.games.lod" : pMap->worldId + ".games.lod";
                 require(mapMembers[name].contains(member), "Missing scene member: " + member);
                 return root / "Data" / name;
             };
@@ -324,11 +578,14 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                 ? MapDeltaDataLoader().loadOutdoorFromBytes(companion, *outdoorMap)
                 : MapDeltaDataLoader().loadIndoorFromBytes(companion, *indoorMap);
             require(delta.has_value(), "Cannot decode scene companion: " + file);
-            const std::string eventSource = readText(base / "engine/scripts/common/event_support.lua") + "\n"
-                + readText(base / "worlds" / pMap->worldId / "events/maps" / (Path(file).stem().string() + ".lua"));
-            const std::optional<ScriptedEventProgram> events = ScriptedEventProgram::loadFromLuaText(
-                eventSource, "@" + file, ScriptedEventScope::Map, error);
-            require(events.has_value(), "Cannot read converted scene event metadata: " + error);
+            std::optional<ScriptedEventProgram> events;
+            if (!profile)
+            {
+                const std::string eventSource = readText(base / "engine/scripts/common/event_support.lua") + "\n"
+                    + readText(base / "worlds" / pMap->worldId / "events/maps" / (Path(file).stem().string() + ".lua"));
+                events = ScriptedEventProgram::loadFromLuaText(eventSource, "@" + file, ScriptedEventScope::Map, error);
+                require(events.has_value(), "Cannot read converted scene event metadata: " + error);
+            }
             std::set<std::string> textures;
             std::set<std::string> groups;
             std::set<std::string> unresolved;
@@ -361,19 +618,26 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                     }
                 }
             };
-            for (const std::string &name : events->textureNames())
+            for (const std::string &name : events ? events->textureNames() : std::vector<std::string>{})
             {
                 addSurface(name, 0);
             }
+            if (profile)
+            {
+                for (const std::string &name : profile->textures)
+                {
+                    addSurface(name, 0);
+                }
+            }
             if (outdoorMap)
             {
-                const Rows &tiles = terrainRows.at(pMap->worldId);
+                const Rows &tiles = terrainRows.at(formatWorld);
                 require(outdoorMap->masterTile <= 2, "Unsupported master terrain table in " + file);
                 // Collect the same complete local palette that the runtime resolves, including seasonal variants.
                 for (int tile = 0; tile < 234; ++tile)
                 {
                     const std::optional<int> index = resolveTerrainDescriptorIndex(*outdoorMap, tile,
-                        pMap->worldId == "mm8");
+                        formatWorld == "mm8");
                     require(index && *index >= 0 && size_t(*index) + 1 < tiles.size(),
                         "Scene terrain lookup outside source table: " + file);
                     const std::string &name = tiles[*index + 1][1];
@@ -476,7 +740,7 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                     addDecoration(entity);
                 }
             }
-            for (const std::string &name : events->spriteNames())
+            for (const std::string &name : events ? events->spriteNames() : std::vector<std::string>{})
             {
                 if (const DecorationEntry *pDecoration = decorations.findByInternalName(name))
                 {
@@ -553,10 +817,131 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                     missingPalettes.insert(name.str());
                 }
             }
-            const Path world = output / "worlds" / pMap->worldId;
+            const Path world = resources / "worlds" / pMap->worldId;
+            if (profile)
+            {
+                require(missingTextures.empty() && missingSprites.empty() && missingPalettes.empty(),
+                    "Merge inspection resources are incomplete: " + file);
+                const std::string stem = Path(file).stem().string();
+                std::string mapLuaSource;
+                std::string mechanismsYaml;
+                if (file == "bralvar.odm")
+                {
+                    // BrAlvar.lua hides these exact entity slots, not their shared primary10 sprite key.
+                    for (size_t entityIndex : {381u, 676u, 792u})
+                    {
+                        require(entityIndex < outdoorMap->entities.size()
+                            && outdoorMap->entities[entityIndex].eventIdPrimary == 10
+                            && outdoorMap->entities[entityIndex].eventIdSecondary == 0,
+                            "BrAlvar source hidden decoration identity changed");
+                    }
+                    const auto companions = loadBreachAlvarCompanionResources(root);
+                    require(companions.has_value(), "Missing Breach Alvar companion source profile");
+                    mapLuaSource = breachNativeTexts(root, chinese, stem, 5) + companions->mapLuaSource
+                        + "\n" + std::string(BreachMazeBrAlvarMapSource);
+                    mechanismsYaml = breachTowerMechanisms(*outdoorMap, base, file, *profile);
+                }
+                else if (file == "breach.odm")
+                {
+                    require(delta->chests.size() > 15, "Breach source chest indices1..15 are unavailable");
+                    Game::HouseTable houses;
+                    require(houses.loadFromRows(readRows(base / "engine/data_tables/house_data.txt")),
+                        "Cannot read Breach source Inn dependency");
+                    const Game::HouseEntry *pInn = houses.get(1607);
+                    require(pInn && pInn->isAdventurersInn(), "Breach source house1607 is not an Adventurer's Inn");
+                    bool telelocatorFacetsPresent = false;
+                    for (const Game::OutdoorBModel &model : outdoorMap->bmodels)
+                    {
+                        for (const Game::OutdoorBModelFace &face : model.faces)
+                        {
+                            telelocatorFacetsPresent = telelocatorFacetsPresent || face.cogNumber == 400;
+                        }
+                    }
+                    require(telelocatorFacetsPresent, "Breach source Telelocator facet group400 is unavailable");
+                    std::optional<std::string> telelocatorName;
+                    for (const auto &row : readRows(base / "engine/data_tables/items.txt"))
+                    {
+                        if (row.size() >= 3 && row[0] == "666")
+                        {
+                            require(!telelocatorName && !row[2].empty(), "Invalid Telelocator item666 name");
+                            telelocatorName = row[2];
+                        }
+                    }
+                    require(telelocatorName.has_value(), "Missing source Telelocator item666");
+                    mapLuaSource = breachNativeTexts(root, chinese, stem, 6, 676)
+                        + "evt.importedItemNames = {[666] = " + luaText(*telelocatorName) + "}\n"
+                        + std::string(BreachMazeBreachMapSource);
+                    mechanismsYaml = breachTowerMechanisms(*outdoorMap, base, file, *profile);
+                    std::vector<Path> endCardArchives = {root / "Data/mmmerge.D.lod"};
+                    const Path localizedEndCards = root / "Data/10 LocZHCN.EnglishD.lod";
+                    if (chinese && std::filesystem::exists(localizedEndCards))
+                    {
+                        endCardArchives.push_back(localizedEndCards);
+                    }
+                    convertLodImages(endCardArchives, {"winbg2.pcx"}, resources / "engine/icons");
+                }
+                else if (file == "brbase.blv")
+                {
+                    mapLuaSource = breachNativeTexts(root, chinese, stem, 7, 521)
+                        + std::string(BreachMazeBrBaseMapSource);
+                }
+                const std::string eventSource = readText(base / "engine/scripts/common/event_support.lua")
+                    + "\n" + mapLuaSource;
+                const auto program = ScriptedEventProgram::loadFromLuaText(
+                    eventSource, "@" + stem + "-native-breach", ScriptedEventScope::Map, error);
+                require(program && (file == "brbase.blv" ? program->hasEvent(1) && program->hasEvent(2)
+                    : file == "bralvar.odm" ? program->hasEvent(5) && program->hasEvent(50)
+                        && program->hasEvent(51) && program->hasEvent(52) && program->hasEvent(53)
+                        && program->hasEvent(54) && program->hasEvent(81) && program->hasEvent(65458)
+                        && program->hasEvent(65459) && program->hasEvent(65460)
+                        && program->hasEvent(65461) && program->hasEvent(65469)
+                    : program->hasEvent(54) && program->hasEvent(65462) && program->hasEvent(65463)),
+                    "Native Breach map request Lua rejected: " + error);
+                if (file == "bralvar.odm")
+                {
+                    require(program->hasEvent(15) && program->hasEvent(16), "Missing native BrAlvar jump handlers");
+                    for (uint16_t eventId = 65454; eventId <= 65457; ++eventId)
+                    {
+                        require(program->hasEvent(eventId),
+                            "Missing native BrAlvar source journey handler " + std::to_string(eventId));
+                    }
+                }
+                else if (file == "breach.odm")
+                {
+                    for (uint16_t eventId : {81, 82, 401, 402, 403, 900, 65464, 65465, 65466, 65467})
+                    {
+                        require(program->hasEvent(eventId),
+                            "Missing native Breach source handler " + std::to_string(eventId));
+                    }
+                    for (uint16_t eventId = 301; eventId <= 315; ++eventId)
+                    {
+                        require(program->hasEvent(eventId),
+                            "Missing native Breach chest handler " + std::to_string(eventId));
+                    }
+                }
+                if (!mechanismsYaml.empty())
+                {
+                    for (uint16_t eventId = 101; eventId <= 128; ++eventId)
+                    {
+                        require(program->hasEvent(eventId),
+                            "Missing native " + stem + " tower handler " + std::to_string(eventId));
+                    }
+                    writeText(world / "maps" / (stem + ".mechanisms.yml"), mechanismsYaml);
+                }
+                // Executable content is the authenticated projection; original Map Lua remains provenance only.
+                writeText(world / "events/maps" / (stem + ".lua"), mapLuaSource);
+                // Provenance assets are not placed in events/ and are never registered as executable handlers.
+                writeText(world / "source/maps" / (stem + ".original.lua"), readText(root / profile->sourceScript));
+                for (const auto &[language, archiveName] : std::map<std::string, std::string>{
+                        {"english", "mmmerge.T.lod"}, {"zh_CN", "10 LocZHCN.EnglishT.lod"}})
+                {
+                    writeConvertedResource(world / "source/maps" / language / (stem + ".str"),
+                        readLodText(root / "Data" / archiveName, stem + ".str"));
+                }
+            }
             if (arrowWorlds.insert(pMap->worldId).second)
             {
-                const std::string prefix = minimapArrowPrefix(pMap->worldId);
+                const std::string prefix = minimapArrowPrefix(formatWorld);
                 std::set<std::string> missingArrows;
                 std::ostringstream bindings;
                 bindings << "Direction\tTexture\n";
@@ -638,6 +1023,9 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                 world / "sprites");
             convertLodPalettes(bitmaps.paths, presentPalettes, world / "textures");
             report << (seen.size() > 1 ? "," : "") << "{\"map\":" << std::quoted(pMap->worldId + ":" + file)
+                << ",\"presentation_format\":" << std::quoted(formatWorld)
+                << ",\"normal_enterable\":" << (mode == SceneImportMode::ResourceInspection ? "false" : "true")
+                << ",\"script_execution\":" << std::quoted(profile ? "native-source-overlay" : "converted-evt")
                 << ",\"geometry_archive\":" << std::quoted(archive.filename().string())
                 << ",\"companion_archive\":" << std::quoted(companionArchive.filename().string())
                 << ",\"faces\":" << faceCount << ",\"actors\":" << delta->actors.size()
@@ -661,6 +1049,20 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                         << ",\"width\":" << image.width << ",\"height\":" << image.height;
                 }
                 report << '}';
+            }
+            if (profile)
+            {
+                report << ",\"map_lua_source\":" << std::quoted(profile->sourceScript)
+                    << ",\"map_lua_sha256\":" << std::quoted(profile->sha256)
+                    << ",\"evt_present\":false,\"dynamic_script_limit\":"
+                    << "\"Only explicit source overlays execute; "
+                        "unprojected dynamic Merge behavior remains unsupported\"";
+                if (file == "bralvar.odm" || file == "breach.odm")
+                {
+                    report << ",\"mechanisms_companion\":"
+                        << std::quoted(Path(file).stem().string() + ".mechanisms.yml")
+                        << ",\"tower_mechanisms\":28";
+                }
             }
             report << ",\"missing_textures\":";
             stringArray(report, missingTextures);
@@ -704,7 +1106,7 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                 }
             }
             const std::vector<ConvertedLodImage> images =
-                convertLodImages(bitmaps.paths, present, output / "worlds" / world / "textures");
+                convertLodImages(bitmaps.paths, present, resources / "worlds" / world / "textures");
             // sky_textures is the runtime's scale-category alias for physical textures[_xN],
             // not a separate package directory. Both sky existence checks and rendering use it.
             report << (skyWorldIndex++ ? "," : "") << "{\"world\":" << std::quoted(world)

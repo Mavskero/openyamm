@@ -413,9 +413,10 @@ DecorationLookupResult resolveDecorationEntry(
 }
 
 template <typename EntityType>
-bool shouldSkipDecorationCollision(const EntityType &entity, const DecorationEntry &decoration)
+bool shouldSkipDecorationCollision(
+    const EntityType &entity, const DecorationEntry &decoration, bool includeInvisible = false)
 {
-    if ((entity.aiAttributes & LevelDecorationInvisible) != 0)
+    if (!includeInvisible && (entity.aiAttributes & LevelDecorationInvisible) != 0)
     {
         return true;
     }
@@ -2297,7 +2298,8 @@ std::optional<OutdoorDecorationCollisionSet> buildOutdoorDecorationCollisionSet(
             continue;
         }
 
-        if (shouldSkipDecorationCollision(entity, *pDecoration))
+        // Keep the geometry baseline for later source visibility changes; movement filters instance flags.
+        if (shouldSkipDecorationCollision(entity, *pDecoration, true))
         {
             continue;
         }
@@ -4209,9 +4211,17 @@ std::optional<MapAssetInfo> MapAssetLoader::load(
     MapLoadPurpose purpose,
     const MapCompanionLoadOptions &companionLoadOptions,
     const MapLoadProgressPump &progressPump,
-    MapAssetLoadSharedCache *pSharedCache
+    MapAssetLoadSharedCache *pSharedCache,
+    const PreparedIndoorMapInstance *pPreparedIndoorInstance
 ) const
 {
+    if (pPreparedIndoorInstance != nullptr
+        && (pPreparedIndoorInstance->worldId != map.worldId
+            || toLowerCopy(pPreparedIndoorInstance->mapFileName) != toLowerCopy(map.fileName)
+            || !toLowerCopy(map.fileName).ends_with(".blv")))
+    {
+        return std::nullopt;
+    }
     BitmapLoadCache bitmapLoadCache = {};
     bitmapLoadCache.pSharedCache = pSharedCache;
     MapLoadTimingLogger timingLogger(map.fileName);
@@ -4559,6 +4569,49 @@ std::optional<MapAssetInfo> MapAssetLoader::load(
                 }
             }
 
+            if (assetInfo.outdoorMapDeltaData)
+            {
+                assetInfo.outdoorMapData->sourceDecorationFlags = assetInfo.outdoorMapDeltaData->decorationFlags;
+            }
+
+            // A mechanisms companion augments the loaded ODM/DDM in place. It does not opt a classic
+            // map into the complete scene/cooked-resource path or replace its authored population.
+            const std::optional<std::string> mechanismsPath = companionLoadOptions.allowSceneYml
+                ? findAssetPath(assetFileSystem, map.worldId,
+                    normalizedFileName.substr(0, normalizedFileName.size() - 4) + ".mechanisms.yml")
+                : std::nullopt;
+            if (mechanismsPath)
+            {
+                const std::optional<std::string> mechanismsText = assetFileSystem.readTextFile(*mechanismsPath);
+                std::string mechanismsError;
+                if (!mechanismsText || !assetInfo.outdoorMapDeltaData
+                    || !OutdoorSceneYmlLoader().applyMechanismsFromText(
+                        *assetInfo.outdoorMapData, *assetInfo.outdoorMapDeltaData,
+                        assetInfo.map.runtimeRestrictions, *mechanismsText, map.fileName, mechanismsError))
+                {
+                    std::cerr << "Failed to apply outdoor mechanisms for " << map.fileName << ": "
+                              << (mechanismsError.empty() ? "missing companion content" : mechanismsError) << '\n';
+                    return std::nullopt;
+                }
+                assetInfo.scenePath = assetInfo.scenePath
+                    ? *assetInfo.scenePath + " + " + *mechanismsPath : *mechanismsPath;
+                assetInfo.sceneSize = assetInfo.sceneSize.value_or(0) + mechanismsText->size();
+                logStageComplete("outdoor mechanisms companion applied");
+            }
+
+            // Merge's IsUnderwater hook uses MapStats EAX environment 22 in
+            // addition to the map's own flags (2_OutdoorTravels.lua:163-174).
+            // Imported MapStats retains that environment as UNDERWATER; original
+            // Shoals companions do not supply the native scene-environment bit.
+            if (toLowerCopy(map.environmentName) == "underwater")
+            {
+                if (!assetInfo.outdoorWeatherProfile)
+                {
+                    assetInfo.outdoorWeatherProfile = OutdoorWeatherProfile {};
+                }
+                assetInfo.outdoorWeatherProfile->underwater = true;
+            }
+
             if (!applyTerrainTileDescriptorAttributes(assetFileSystem, *assetInfo.outdoorMapData))
             {
                 std::cerr << "Failed to apply outdoor terrain tile flags for " << map.fileName << '\n';
@@ -4798,6 +4851,22 @@ std::optional<MapAssetInfo> MapAssetLoader::load(
                     assetInfo.authoredCompanionSource = AuthoredCompanionSource::LegacyCompanion;
                     logStageComplete("indoor map delta parsed");
                 }
+            }
+
+            if (pPreparedIndoorInstance != nullptr)
+            {
+                assetInfo.indoorMapData = pPreparedIndoorInstance->geometry;
+                assetInfo.indoorMapData->mapPresentation = mapPresentation;
+                assetInfo.indoorMapDeltaData = pPreparedIndoorInstance->delta;
+                assetInfo.preparedActorCombat = pPreparedIndoorInstance->actorCombat;
+                assetInfo.preparedMonsterGeneration = pPreparedIndoorInstance->monsterGeneration;
+                assetInfo.itemSourceData = pPreparedIndoorInstance->itemSources;
+                if (pPreparedIndoorInstance->runtimeRestrictions)
+                {
+                    assetInfo.map.runtimeRestrictions = *pPreparedIndoorInstance->runtimeRestrictions;
+                }
+                assetInfo.authoredCompanionSource = AuthoredCompanionSource::PreparedInstance;
+                logStageComplete("prepared indoor instance installed before presentation");
             }
 
             if (loadFullPresentation)

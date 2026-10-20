@@ -256,6 +256,9 @@ struct ActorWorldFacts
     bool activeByDistance = false;
     bool sameSectorAsParty = false;
     bool portalPathToParty = false;
+    // Opt-in active combat state, independent of target sensing. Source behavior reference:
+    // https://github.com/OpenEnroth/OpenEnroth/blob/master/src/Engine/Objects/Actor.cpp#L2500
+    bool requiresLongHostilityForActiveCombat = false;
 };
 
 struct ActorAiFacts

@@ -488,6 +488,10 @@ MonsterSpecialAttackParseResult parseMonsterSpecialAttack(const std::string &val
     {
         result.kind = MonsterSpecialAttackKind::ManaDrain;
     }
+    else if (token.rfind("steal", 0) == 0)
+    {
+        result.kind = MonsterSpecialAttackKind::Steal;
+    }
 
     if (result.kind == MonsterSpecialAttackKind::None)
     {

@@ -71,7 +71,7 @@ TEST_CASE("animated short wait and eight hour rest retain their requested end ti
                 duration == 480.0f ? GameplayUiController::RestMode::Heal : GameplayUiController::RestMode::Wait,
                 duration, false, false);
             fixture.animate(1.0f / 60.0f);
-            CHECK(fixture.world.gameMinutes() == start + duration);
+            CHECK(fixture.world.gameMinutes() == double(start) + duration);
         }
     }
 }

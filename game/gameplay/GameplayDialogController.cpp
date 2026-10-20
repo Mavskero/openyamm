@@ -1248,34 +1248,6 @@ void applyMapTransitionTravelSideEffects(
     }
 }
 
-void applyPendingMapMoveTravelSideEffects(
-    GameplayDialogController::Context &context,
-    const EventRuntimeState::PendingMapMove &move)
-{
-    const int travelDays = outdoorMapMoveTravelDays(
-        context.pCurrentMap != nullptr ? context.pCurrentMap->fileName : std::string(),
-        move.mapName.value_or(std::string()));
-
-    if (travelDays <= 0)
-    {
-        return;
-    }
-
-    if (context.pScreenRuntime != nullptr)
-    {
-        context.pScreenRuntime->stopAllAudioPlayback();
-    }
-
-    if (context.pParty != nullptr)
-    {
-        applyTravelDaysSideEffects(
-            *context.pParty,
-            context.pWorldRuntime,
-            travelDays,
-            OutdoorMapTravelFoodCost);
-    }
-}
-
 bool executeMapTransitionHook(
     GameplayDialogController::Context &context,
     const MapEdgeTransition &transition)
@@ -2588,12 +2560,8 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                     pMm9Transition->travelDays,
                     std::max(0, pMm9Transition->travelDays));
             }
-            else
-            {
-                applyPendingMapMoveTravelSideEffects(
-                    context,
-                    *context.eventRuntimeState.pendingDialogueContext->transitionMapMove);
-            }
+            // Scripted MoveToMap confirmations do not implicitly rest, heal, charge food or advance
+            // days. Content-specific travel effects belong to their explicit source event/route.
             context.eventRuntimeState.pendingMapMove =
                 *context.eventRuntimeState.pendingDialogueContext->transitionMapMove;
             result.shouldCloseActiveDialog = true;
@@ -3867,6 +3835,7 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
     if (action.kind == EventDialogActionKind::NpcTopic)
     {
         const uint32_t npcId = context.activeEventDialog.sourceId;
+        const std::optional<uint32_t> sourceActorIndex = context.activeEventDialog.sourceActorIndex;
         const std::optional<EventRuntimeState::PendingDialogueContext> previousPendingDialogueContext =
             context.eventRuntimeState.pendingDialogueContext;
         bool executed = executeBuiltInNpcTopic(context, action.id);
@@ -3918,7 +3887,8 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 context.eventRuntimeState,
                 DialogueContextKind::NpcTalk,
                 npcId,
-                currentDialogueHostHouseId(context.eventRuntimeState));
+                currentDialogueHostHouseId(context.eventRuntimeState),
+                sourceActorIndex);
         }
 
         result.shouldOpenPendingEventDialog = true;
@@ -3960,7 +3930,20 @@ GameplayDialogController::PresentPendingDialogResult GameplayDialogController::p
         return result;
     }
 
-    const EventRuntimeState::PendingDialogueContext originalContext = *context.eventRuntimeState.pendingDialogueContext;
+    EventRuntimeState::PendingDialogueContext originalContext = *context.eventRuntimeState.pendingDialogueContext;
+    if (originalContext.kind == DialogueContextKind::NpcTalk && originalContext.npcEnterPending)
+    {
+        originalContext.npcEnterPending = false;
+        context.eventRuntimeState.pendingDialogueContext->npcEnterPending = false;
+        executeNpcHook(context, EventRuntimeHookKind::NpcEnter, originalContext.sourceId,
+            originalContext.sourceActorIndex);
+        if (!context.eventRuntimeState.pendingDialogueContext)
+            return result;
+        originalContext = *context.eventRuntimeState.pendingDialogueContext;
+        // Respect cancellation/replacement by the hook. A fresh Speak request enters on the next presentation.
+        if (originalContext.npcEnterPending)
+            return result;
+    }
 
     if (originalContext.kind == DialogueContextKind::Mm9Rude)
     {
@@ -4022,6 +4005,12 @@ GameplayDialogController::PresentPendingDialogResult GameplayDialogController::p
         context.pCharacterInspectTable,
         context.pHouseServiceTextTable
     ));
+
+    if (context.pParty != nullptr && context.activeEventDialog.displayedNpcGreetingCount.has_value())
+    {
+        context.pParty->recordNpcGreetingDisplay(
+            context.activeEventDialog.sourceId, *context.activeEventDialog.displayedNpcGreetingCount);
+    }
 
     if (context.eventRuntimeState.pendingDialogueContext.has_value()
         && context.eventRuntimeState.pendingDialogueContext->kind == DialogueContextKind::NpcTalk
@@ -4241,6 +4230,31 @@ GameplayDialogController::CloseDialogRequestResult GameplayDialogController::han
     CloseDialogRequestResult result = {};
     result.previousMessageCount = context.eventRuntimeState.messages.size();
     traceDialogState(context.activeEventDialog, "before_dialog_close");
+
+    // Source Action113/screen4: a scripted outdoor NPC branch can return to its root.
+    if (context.activeEventDialog.isActive && context.pWorldRuntime != nullptr
+        && !context.activeEventDialog.isHouseDialog
+        && context.eventRuntimeState.pendingDialogueContext
+        && context.eventRuntimeState.pendingDialogueContext->kind == DialogueContextKind::NpcTalk
+        && context.eventRuntimeState.pendingDialogueContext->hostHouseId == 0)
+    {
+        const auto previousHook = context.eventRuntimeState.activeHookContext;
+        EventRuntimeState::ActiveHookContext hook = {};
+        hook.kind = EventRuntimeHookKind::GameplayAction;
+        hook.npcId = context.activeEventDialog.sourceId;
+        hook.gameplayActionId = 113;
+        hook.menuId = 4;
+        context.eventRuntimeState.activeHookContext = hook;
+        context.pWorldRuntime->executeEventHooks(EventRuntimeHookKind::GameplayAction);
+        const bool handled = context.eventRuntimeState.activeHookContext
+            && context.eventRuntimeState.activeHookContext->blocked;
+        context.eventRuntimeState.activeHookContext = previousHook;
+        if (handled)
+        {
+            result.shouldOpenPendingEventDialog = true;
+            return result;
+        }
+    }
 
     if (context.activeEventDialog.presentation == EventDialogPresentation::Mm9Rude)
     {

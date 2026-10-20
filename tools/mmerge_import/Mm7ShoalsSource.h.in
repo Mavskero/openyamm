@@ -1,0 +1,10 @@
+#pragma once
+
+#include <string_view>
+
+namespace OpenYAMM::Import
+{
+constexpr std::string_view Mm7AvleeSource = R"OY_MM7_AVLEE(@OPENYAMM_MM7_AVLEE_SOURCE@)OY_MM7_AVLEE";
+constexpr std::string_view Mm7ShoalsSource = R"OY_MM7_SHOALS(@OPENYAMM_MM7_SHOALS_SOURCE@)OY_MM7_SHOALS";
+constexpr std::string_view Mm7LincolnSource = R"OY_MM7_LINCOLN(@OPENYAMM_MM7_LINCOLN_SOURCE@)OY_MM7_LINCOLN";
+}

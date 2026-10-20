@@ -57,6 +57,7 @@ bool monsterHourOfPowerBoostsDamageResistance(CombatDamageType damageType)
         case CombatDamageType::Spirit:
         case CombatDamageType::Light:
         case CombatDamageType::Dark:
+        case CombatDamageType::Magic:
         case CombatDamageType::Energy:
         case CombatDamageType::Irresistible:
         default:
@@ -1824,6 +1825,7 @@ int resistanceValueForDamageType(const CharacterSheetSummary &summary, CombatDam
         case CombatDamageType::Physical:
         case CombatDamageType::Light:
         case CombatDamageType::Dark:
+        case CombatDamageType::Magic:
         case CombatDamageType::Energy:
         case CombatDamageType::Irresistible:
         default:
@@ -1846,6 +1848,7 @@ bool resistanceImmuneForDamageType(const CharacterSheetSummary &summary, CombatD
         case CombatDamageType::Physical:
         case CombatDamageType::Light:
         case CombatDamageType::Dark:
+        case CombatDamageType::Magic:
         case CombatDamageType::Energy:
         case CombatDamageType::Irresistible:
         default:
@@ -2999,6 +3002,7 @@ CombatDamageType GameMechanics::parseCombatDamageType(const std::string &value)
     if (normalized == "body") return CombatDamageType::Body;
     if (normalized == "light") return CombatDamageType::Light;
     if (normalized == "dark") return CombatDamageType::Dark;
+    if (normalized == "magic") return CombatDamageType::Magic;
     if (normalized == "ener" || normalized == "energy") return CombatDamageType::Energy;
     if (normalized == "irresistible") return CombatDamageType::Irresistible;
     return CombatDamageType::Physical;
@@ -3033,7 +3037,8 @@ int GameMechanics::resolveCharacterIncomingDamage(
 {
     int resolvedDamage = std::max(0, damage);
 
-    if (resolvedDamage <= 0 || damageType == CombatDamageType::Irresistible)
+    if (resolvedDamage <= 0 || damageType == CombatDamageType::Irresistible
+        || damageType == CombatDamageType::Magic)
     {
         return resolvedDamage;
     }
@@ -3125,7 +3130,8 @@ int GameMechanics::resolveMonsterIncomingDamage(
 {
     int resolvedDamage = std::max(0, damage);
 
-    if (resolvedDamage <= 0 || damageType == CombatDamageType::Irresistible)
+    if (resolvedDamage <= 0 || damageType == CombatDamageType::Irresistible
+        || damageType == CombatDamageType::Magic)
     {
         return resolvedDamage;
     }
@@ -3173,6 +3179,7 @@ int GameMechanics::resolveMonsterIncomingWeaponDamage(
             case CombatDamageType::Body: return resistances.body;
             case CombatDamageType::Light: return resistances.light;
             case CombatDamageType::Dark: return resistances.dark;
+            case CombatDamageType::Magic:
             case CombatDamageType::Energy:
             case CombatDamageType::Irresistible:
                 return 0;

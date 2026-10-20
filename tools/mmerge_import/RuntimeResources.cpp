@@ -2,6 +2,7 @@
 #include "RuntimeZip.h"
 #include "ArcomageResources.h"
 #include "BolsterResources.h"
+#include "BreachMazeRuntimeResources.h"
 #include "ClassResources.h"
 #include "CombatResources.h"
 #include "CoreResources.h"
@@ -102,7 +103,8 @@ void mergeStage(const Path &stageRoot, const Path &assembled, const Path &report
         }
         const Path relative = entry.path().lexically_relative(stageRoot);
         const std::string name = relative.generic_string();
-        const bool resource = *relative.begin() == "engine" || *relative.begin() == "worlds";
+        const bool resource = *relative.begin() == "engine" || *relative.begin() == "worlds"
+            || *relative.begin() == "inspection";
         const Path target = (resource ? assembled : reports / stage) / relative;
         std::filesystem::create_directories(target.parent_path());
         if (std::filesystem::exists(target))
@@ -147,13 +149,9 @@ void convertRuntimeResources(const Path &source, const Path &layoutDirectory, co
     };
     SceneMapSelection sceneMaps;
     const std::vector<std::string> sceneWorlds{"mm6", "mm7", "mm8"};
+    // These source-projected maps have no EVT binaries and must never enter the legacy event exporter.
+    const std::vector<std::string> nativeMergeMaps{"breach.odm", "bralvar.odm", "brbase.blv"};
     std::map<std::string, std::string> mapWorlds;
-    // Known legacy commands have no implemented semantics. Keep these scenes out of the supported
-    // import profile until their commands are ported; never strip instructions to make a map load.
-    const std::map<std::string, std::string> unsupportedEventMaps = {
-        {"6d09.blv", "Legacy commands 27/28 in events 21/39 are not implemented"},
-        {"znwc.blv", "Legacy command 20 in event 71 is not implemented"}};
-    std::vector<std::string> excludedScenes;
     const std::vector<Stage> stages = {
         {"menu", [&](const Path &p) { convertMenuResources(root, p); }},
         {"core", [&](const Path &p) { convertCoreResources(root, p); }},
@@ -208,15 +206,6 @@ void convertRuntimeResources(const Path &source, const Path &layoutDirectory, co
                 != sceneMaps.available.end(), "The MM7 starting scene is missing");
             require(std::find(sceneMaps.available.begin(), sceneMaps.available.end(), "out01.odm")
                 != sceneMaps.available.end(), "The MM8 starting scene is missing");
-            std::erase_if(sceneMaps.available, [&](const std::string &file)
-            {
-                if (!unsupportedEventMaps.contains(file))
-                {
-                    return false;
-                }
-                excludedScenes.push_back(file);
-                return true;
-            });
             std::vector<std::string> stems;
             for (const std::string &file : sceneMaps.available)
             {
@@ -225,6 +214,18 @@ void convertRuntimeResources(const Path &source, const Path &layoutDirectory, co
             convertEventResourcesForMaps(root, assembled, p, stems, cancelled);
         }},
         {"scene", [&](const Path &p) { convertSceneResources(root, assembled, p, sceneMaps.available, cancelled); }},
+        {"merge_scene_resources", [&](const Path &p)
+        {
+            convertSceneResources(root, assembled, p, nativeMergeMaps, cancelled,
+                SceneImportMode::ResourceInspection);
+            writeBreachMazeRuntimeResources(root, p);
+        }},
+        {"native_merge_scene_resources", [&](const Path &p)
+        {
+            convertSceneResources(root, assembled, p, nativeMergeMaps, cancelled,
+                SceneImportMode::NativeMergeGameplay);
+            require(writeBreachMazeRuntimeResources(root, p), "Missing authenticated native Breach maze profile");
+        }},
         {"house", [&](const Path &p) { convertHousePresentationResources(root, assembled, p); }},
         {"media", [&](const Path &p) { convertMediaResources(root, p); }},
     };
@@ -253,11 +254,14 @@ void convertRuntimeResources(const Path &source, const Path &layoutDirectory, co
             progress(activeStage, stages.size() + 1, stages.size() + 2);
         }
         writeRuntimeZip(assembled / "engine", output / "engine.zip", cancelled);
-        for (const char *pWorld : {"mm6", "mm7", "mm8"})
+        for (const char *pWorld : {"mm6", "mm7", "mm8", "mmmerge"})
         {
             writeRuntimeZip(assembled / "worlds" / pWorld,
                 output / "worlds" / (std::string(pWorld) + ".zip"), cancelled);
         }
+        // Retain the separate inspection archive and its explicit mounting contract. The normal mmmerge package
+        // contains only the same three authenticated native projections, never arbitrary dynamic Merge scripts.
+        writeRuntimeZip(assembled / "inspection/merge-scenes", output / "inspection/merge-scenes.zip", cancelled);
         activeStage = "validate";
         if (progress)
         {
@@ -324,19 +328,25 @@ void convertRuntimeResources(const Path &source, const Path &layoutDirectory, co
             const std::string &file = sceneMaps.missing[index];
             manifest << (index ? "," : "") << std::quoted(mapWorlds.at(file) + ":" + file);
         }
+        // Every available map passes the event importer's strict opcode/payload validation.
+        // Keep the existing report field for readers of older conversion reports.
         manifest << "],\"unsupported_event_maps\":[";
-        for (size_t index = 0; index < excludedScenes.size(); ++index)
-        {
-            const std::string &file = excludedScenes[index];
-            manifest << (index ? "," : "") << "{\"map\":" << std::quoted(mapWorlds.at(file) + ":" + file)
-                << ",\"reason\":" << std::quoted(unsupportedEventMaps.at(file)) << '}';
-        }
         manifest << "],\"converted_worlds\":[";
         for (size_t index = 0; index < sceneWorlds.size(); ++index)
         {
             manifest << (index ? "," : "") << std::quoted(sceneWorlds[index]);
         }
-        manifest << "],\"default_world\":\"mm6\",\"converted_maps_load_validated\":true,"
+        manifest << ",\"mmmerge\"],\"native_merge_resources\":{\"package\":\"worlds/mmmerge.zip\","
+            "\"maps\":[\"mmmerge:breach.odm\",\"mmmerge:bralvar.odm\",\"mmmerge:brbase.blv\"],"
+            "\"normal_enterable\":true,\"script_execution\":\"sha-gated-native-source-overlay\","
+            "\"source_profile_validated\":true,\"arbitrary_dynamic_merge_admitted\":false,"
+            "\"scope\":\"first-source-journey\",\"post_completion_source_complete\":false,"
+            "\"prepared_instance_required\":[\"mmmerge:brbase.blv\"]},"
+            "\"inspection_resources\":{\"package\":\"inspection/merge-scenes.zip\","
+            "\"maps\":[\"mmmerge:breach.odm\",\"mmmerge:bralvar.odm\",\"mmmerge:brbase.blv\"],"
+            "\"normal_enterable\":false,\"script_execution\":\"sha-gated-native-source-overlay\","
+            "\"mount_requires_explicit_inspection_tool\":true},"
+            "\"default_world\":\"mm6\",\"converted_maps_load_validated\":true,"
             "\"full_gameplay_validated\":false,\"resource_audit\":{\"schema\":1,"
             "\"base_archives_checked\":true,\"chest_backgrounds_checked\":true,"
             "\"missing_mm8_base_archives\":[";
@@ -366,7 +376,8 @@ void convertRuntimeResources(const Path &source, const Path &layoutDirectory, co
             manifest << (index == 0 ? "" : ",") << std::quoted(stages[index].name);
         }
         manifest << "],\"limits\":[\"MM6/MM7/MM8 scenes with supported event commands are converted; "
-            "Breach scene expansion remains pending\","
+            "exactly three SHA-gated native Merge source projections are packaged for the first journey\","
+            "\"Breach post-completion source activities and deeper maze population remain incomplete\","
             "\"Missing original artwork/audio and MMExtension overlays remain unresolved\","
             "\"A successful conversion does not establish complete MM6/7/8 gameplay\"]}\n";
         std::ofstream report(output / "conversion.json", std::ios::binary);

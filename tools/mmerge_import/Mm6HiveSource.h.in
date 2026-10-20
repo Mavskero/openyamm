@@ -1,0 +1,8 @@
+#pragma once
+
+#include <string_view>
+
+namespace OpenYAMM::Import
+{
+constexpr std::string_view Mm6HiveSource = R"OY_MM6_HIVE(@OPENYAMM_MM6_HIVE_SOURCE@)OY_MM6_HIVE";
+}

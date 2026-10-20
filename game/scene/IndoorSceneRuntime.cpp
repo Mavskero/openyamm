@@ -6,10 +6,13 @@
 #include "game/gameplay/InteractiveDecorationRules.h"
 #include "game/gameplay/TravelRuntime.h"
 #include "game/maps/MapAssetLoader.h"
+#include "game/maps/MapIdentity.h"
+#include "game/tables/MergedBaseTables.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <stdexcept>
 
 namespace OpenYAMM::Game
 {
@@ -404,7 +407,11 @@ IndoorSceneRuntime::IndoorSceneRuntime(
     const NpcDialogTable *pNpcDialogTable,
     const MapItemSourceData *pItemSourceData,
     const Mm9MapTransitionTable *pMm9MapTransitionTable,
-    const Mm9TeacherScheduleTable *pMm9TeacherScheduleTable)
+    const Mm9TeacherScheduleTable *pMm9TeacherScheduleTable,
+    std::span<const GameplayActorCombatState> preparedActorCombat,
+    const MergeMonsterGenerationState *pMonsterGeneration,
+    const MergeMonsterSourceProfile *pMonsterSource,
+    const MergedBolsterFormulaTable *pBolsterFormulas)
     : m_map(map)
     , m_mapFileName(mapFileName)
     , m_pIndoorMapData(&indoorMapData)
@@ -458,8 +465,24 @@ IndoorSceneRuntime::IndoorSceneRuntime(
         pIndoorDecorationBillboardSet,
         pMergedBolsterMapTable,
         pMergedBolsterMonsterTable,
-        pItemSourceData
+        pItemSourceData,
+        preparedActorCombat
     );
+    if (pMonsterGeneration != nullptr)
+    {
+        if (pMonsterSource == nullptr || pBolsterFormulas == nullptr || pMergedBolsterMonsterTable == nullptr)
+        {
+            throw std::invalid_argument("Prepared indoor monster generation requires its source services");
+        }
+        const MergeBolsterProfile bolster = MergeBolsterProfile::fromFormulas(pBolsterFormulas->entries());
+        const MergeMonsterGenerationServices services{
+            *pMonsterSource, bolster, *pMergedBolsterMonsterTable, monsterProjectileTable, spellTable};
+        std::string error;
+        if (!m_worldRuntime.installMergeMonsterGeneration(*pMonsterGeneration, services, error))
+        {
+            throw std::invalid_argument("Prepared indoor monster generation: " + error);
+        }
+    }
     m_worldRuntime.bindEventExecution(&m_eventRuntime, &m_localEventProgram, &m_globalEventProgram);
 
     initializeIndoorPartyStart(m_partyRuntime, indoorMapData);
@@ -497,7 +520,8 @@ IndoorSceneRuntime::IndoorSceneRuntime(
     const NpcDialogTable *pNpcDialogTable,
     const MapItemSourceData *pItemSourceData,
     const Mm9MapTransitionTable *pMm9MapTransitionTable,
-    const Mm9TeacherScheduleTable *pMm9TeacherScheduleTable)
+    const Mm9TeacherScheduleTable *pMm9TeacherScheduleTable,
+    std::span<const GameplayActorCombatState> preparedActorCombat)
     : m_map(map)
     , m_mapFileName(mapFileName)
     , m_pIndoorMapData(&indoorMapData)
@@ -546,7 +570,8 @@ IndoorSceneRuntime::IndoorSceneRuntime(
         pIndoorDecorationBillboardSet,
         pMergedBolsterMapTable,
         pMergedBolsterMonsterTable,
-        pItemSourceData
+        pItemSourceData,
+        preparedActorCombat
     );
     m_worldRuntime.bindEventExecution(&m_eventRuntime, &m_localEventProgram, &m_globalEventProgram);
 
@@ -608,6 +633,20 @@ std::optional<EventRuntimeState::PendingMapMove> IndoorSceneRuntime::consumePend
     std::optional<EventRuntimeState::PendingMapMove> pendingMapMove = std::move(m_eventRuntimeState->pendingMapMove);
     m_eventRuntimeState->pendingMapMove.reset();
     return pendingMapMove;
+}
+
+bool IndoorSceneRuntime::executeGlobalAfterLoadEvents()
+{
+    if (m_globalAfterLoadDispatched) return true;
+    m_globalAfterLoadDispatched = m_eventRuntimeState && m_eventRuntime.executeGlobalAfterLoadEvents(m_localEventProgram,
+        m_globalEventProgram, *m_eventRuntimeState, &party(), sceneEventContext());
+    return m_globalAfterLoadDispatched;
+}
+
+bool IndoorSceneRuntime::executeOnLeaveEvents()
+{
+    return m_eventRuntimeState && m_eventRuntime.executeOnLeaveEvents(m_localEventProgram,
+        m_globalEventProgram, *m_eventRuntimeState, &party(), sceneEventContext());
 }
 
 void IndoorSceneRuntime::advanceGameMinutes(float minutes)
@@ -687,6 +726,7 @@ IndoorSceneRuntime::Snapshot IndoorSceneRuntime::snapshot() const
     snapshot.worldRuntime = m_worldRuntime.snapshot();
     snapshot.partyRuntime = m_partyRuntime.snapshot();
     snapshot.timers = m_timers;
+    std::erase_if(snapshot.timers, [](const auto &timer) { return timer.definition.temporaryMapLifecycle; });
     snapshot.lastProcessedPartyMoveStateForFaceTriggers = m_lastProcessedPartyMoveStateForFaceTriggers;
     snapshot.lastPartyFloorFaceForPressurePlateTriggers = m_lastPartyFloorFaceForPressurePlateTriggers;
     snapshot.mechanismAccumulatorMilliseconds = m_mechanismAccumulatorMilliseconds;
@@ -695,6 +735,7 @@ IndoorSceneRuntime::Snapshot IndoorSceneRuntime::snapshot() const
 
 void IndoorSceneRuntime::restoreSnapshot(const Snapshot &snapshot)
 {
+    m_globalAfterLoadDispatched = false;
     m_mapDeltaData = snapshot.mapDeltaData;
     if (m_mapDeltaData && m_pIndoorMapData != nullptr)
     {
@@ -966,7 +1007,11 @@ bool IndoorSceneRuntime::updatePartyFaceTriggers()
     const std::optional<uint16_t> currentPressureEvent =
         indoorPressurePlateEventId(*m_pIndoorMapData, m_mapDeltaData, currentMoveState.supportFaceIndex);
 
-    if (previousPressureEvent && currentPressureEvent && *previousPressureEvent == *currentPressureEvent)
+    // Native BrBase traps share event 3 but each floor face is a separate trap cell.
+    const bool nativeBreachTrap = m_worldRuntime.hasNativeEventHandler()
+        && currentPressureEvent == 3 && normalizeMapFileStem(m_mapFileName) == "brbase";
+    if (previousPressureEvent && currentPressureEvent && *previousPressureEvent == *currentPressureEvent
+        && !nativeBreachTrap)
     {
         return false;
     }
@@ -1014,6 +1059,7 @@ bool IndoorSceneRuntime::updateTimers(float deltaGameMinutes)
                 std::nullopt,
                 true,
                 definition.scope,
+                true,
                 true);
 
             if (executed)
@@ -1049,9 +1095,6 @@ bool IndoorSceneRuntime::activateEvent(
     size_t sourceIndex,
     const std::optional<EventRuntimeState::ActiveDecorationContext> &activeDecorationContext)
 {
-    static_cast<void>(sourceKind);
-    static_cast<void>(sourceIndex);
-
     if (!m_eventRuntimeState)
     {
         return false;
@@ -1061,6 +1104,12 @@ bool IndoorSceneRuntime::activateEvent(
     {
         m_eventRuntimeState->lastActivationResult = "no event on hovered target";
         return false;
+    }
+
+    const std::optional<bool> nativeResult = m_worldRuntime.tryNativeEvent(eventId, sourceKind, sourceIndex);
+    if (nativeResult)
+    {
+        return *nativeResult;
     }
 
     if (m_worldRuntime.useMm9BarrelEvent(eventId))

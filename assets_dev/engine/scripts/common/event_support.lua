@@ -484,6 +484,7 @@ local function ensureMetaScope(scopeName)
     local meta = evt.meta[scopeName]
     meta.onLoad = meta.onLoad or {}
     meta.onLeave = meta.onLeave or {}
+    meta.afterLoad = meta.afterLoad or {}
     meta.npcEnterHooks = meta.npcEnterHooks or {}
     meta.npcExitHooks = meta.npcExitHooks or {}
     meta.houseTopicFilterHooks = meta.houseTopicFilterHooks or {}
@@ -492,6 +493,7 @@ local function ensureMetaScope(scopeName)
     meta.gameplayActionHooks = meta.gameplayActionHooks or {}
     meta.mapRefillHooks = meta.mapRefillHooks or {}
     meta.mapTransitionHooks = meta.mapTransitionHooks or {}
+    meta.mapBoundaryHooks = meta.mapBoundaryHooks or {}
     meta.monsterKilledHooks = meta.monsterKilledHooks or {}
     meta.monsterDamageHooks = meta.monsterDamageHooks or {}
     meta.chestOpenHooks = meta.chestOpenHooks or {}
@@ -817,6 +819,7 @@ function support.removeScopeEvent(scopeName, tableName, eventId)
     meta.contextActions[eventId] = nil
 
     removeArrayValue(meta.onLoad, eventId)
+    removeArrayValue(meta.afterLoad, eventId)
     removeArrayValue(meta.onLeave, eventId)
 
     local removedHandlerIds = removeTimersForEvent(meta.timers, eventId)
@@ -906,6 +909,25 @@ function support.registerCanShowTopic(eventId, handler)
     end
 end
 
+-- NPC-local overrides preserve existing shared handlers/predicates for every other NPC.
+function support.registerNpcScopedTopic(npcId, topicId, handler, predicate)
+    local previousHandler = evt.global[topicId]
+    local previousPredicate = evt.CanShowTopic[topicId]
+    support.registerGlobalEvent(topicId, nil, function(...)
+        if evt.GetDialogueNpcId() == npcId then
+            handler(previousHandler, ...)
+        elseif previousHandler ~= nil then
+            previousHandler(...)
+        else
+            error("Topic has no handler for this NPC")
+        end
+    end)
+    support.registerCanShowTopic(topicId, function()
+        if evt.GetDialogueNpcId() == npcId then return predicate() end
+        return previousPredicate == nil or previousPredicate()
+    end)
+end
+
 function support.point(x, y, z)
     return {x = x, y = y, z = z}
 end
@@ -976,6 +998,7 @@ end
 function support.setMapMetadata(metadata)
     local meta = ensureMetaScope("map")
     local existingOnLoad = meta.onLoad or {}
+    local existingAfterLoad = meta.afterLoad or {}
     local existingOnLeave = meta.onLeave or {}
     local existingTimers = meta.timers or {}
 
@@ -994,6 +1017,13 @@ function support.setMapMetadata(metadata)
         meta.onLeave = meta.onLeave or {}
         for _, eventId in ipairs(existingOnLeave) do
             table.insert(meta.onLeave, eventId)
+        end
+    end
+
+    if existingAfterLoad ~= meta.afterLoad and #existingAfterLoad > 0 then
+        meta.afterLoad = meta.afterLoad or {}
+        for _, eventId in ipairs(existingAfterLoad) do
+            table.insert(meta.afterLoad, eventId)
         end
     end
 
@@ -1023,6 +1053,11 @@ end
 function support.registerMapOnLoadEvent(eventId, title, handler, hint)
     support.registerEvent(eventId, title, handler, hint)
     support.appendMapOnLoadEvent(eventId)
+end
+
+function support.registerMapAfterLoadEvent(eventId, title, handler, hint)
+    support.registerEvent(eventId, title, handler, hint)
+    table.insert(ensureMetaScope("map").afterLoad, eventId)
 end
 
 function support.registerMapOnLeaveEvent(eventId, title, handler, hint)
@@ -1058,7 +1093,18 @@ function support.registerGlobalOnLoadEvent(eventId, title, handler, hint)
     support.appendGlobalOnLoadEvent(eventId)
 end
 
-function support.registerGlobalTimerEvent(eventId, intervalSeconds, handler, title, hint, initialDelaySeconds)
+function support.registerGlobalAfterLoadEvent(eventId, title, handler, hint)
+    support.registerGlobalEvent(eventId, title, handler, hint)
+    table.insert(ensureMetaScope("global").afterLoad, eventId)
+end
+
+function support.registerGlobalOnLeaveEvent(eventId, title, handler, hint)
+    support.registerGlobalEvent(eventId, title, handler, hint)
+    table.insert(ensureMetaScope("global").onLeave, eventId)
+end
+
+function support.registerGlobalTimerEvent(eventId, intervalSeconds, handler, title, hint, initialDelaySeconds,
+    temporaryMapLifecycle, exactStartMinutes)
     support.removeGlobalEvent(eventId)
     support.registerGlobalEvent(eventId, title, handler, hint)
 
@@ -1069,11 +1115,20 @@ function support.registerGlobalTimerEvent(eventId, intervalSeconds, handler, tit
         eventId = eventId,
         sourceEventId = eventId,
         origin = "native",
-        scheduleKind = "relative",
+        scheduleKind = exactStartMinutes and "interval" or "relative",
         repeating = true,
         intervalGameMinutes = intervalGameMinutes,
         initialDelayGameMinutes = remainingGameMinutes,
+        temporaryMapLifecycle = temporaryMapLifecycle or false,
+        startHour = exactStartMinutes and math.floor(exactStartMinutes / 60) or 0,
+        startMinute = exactStartMinutes and (exactStartMinutes % 60) or 0,
     })
+end
+
+function support.registerGlobalTemporaryTimerEvent(eventId, intervalSeconds, handler, title, hint,
+    initialDelaySeconds, exactStartMinutes)
+    support.registerGlobalTimerEvent(eventId, intervalSeconds, handler, title, hint,
+        initialDelaySeconds, true, exactStartMinutes)
 end
 
 local function appendHookEvent(scopeName, hookName, eventId)
@@ -1164,6 +1219,10 @@ function support.registerMapTransitionHook(eventId, title, handler)
     registerMapHook("mapTransitionHooks", eventId, title, handler)
 end
 
+function support.registerMapBoundaryHook(eventId, title, handler)
+    registerMapHook("mapBoundaryHooks", eventId, title, handler)
+end
+
 function support.registerGlobalMapTransitionHook(eventId, title, handler)
     registerGlobalHook("mapTransitionHooks", eventId, title, handler)
 end
@@ -1190,6 +1249,22 @@ end
 
 function support.registerGlobalChestOpenHook(eventId, title, handler)
     registerGlobalHook("chestOpenHooks", eventId, title, handler)
+end
+
+function support.registerGotItemHook(eventId, title, handler)
+    registerMapHook("gotItemHooks", eventId, title, handler)
+end
+
+function support.registerGlobalGotItemHook(eventId, title, handler)
+    registerGlobalHook("gotItemHooks", eventId, title, handler)
+end
+
+function support.registerDimensionDoorActivatedHook(eventId, title, handler)
+    registerMapHook("dimensionDoorActivatedHooks", eventId, title, handler)
+end
+
+function support.registerGlobalDimensionDoorActivatedHook(eventId, title, handler)
+    registerGlobalHook("dimensionDoorActivatedHooks", eventId, title, handler)
 end
 
 function support.registerInventoryOpenHook(eventId, title, handler)
@@ -1472,6 +1547,7 @@ function support.setGlobalMetadata(metadata)
     local meta = ensureMetaScope("global")
     local existingOnLoad = meta.onLoad or {}
     local existingOnLeave = meta.onLeave or {}
+    local existingAfterLoad = meta.afterLoad or {}
     local existingTimers = meta.timers or {}
 
     for key, value in pairs(metadata) do
@@ -1496,6 +1572,12 @@ function support.setGlobalMetadata(metadata)
         meta.timers = meta.timers or {}
         for _, timer in ipairs(existingTimers) do
             table.insert(meta.timers, timer)
+        end
+    end
+    if existingAfterLoad ~= meta.afterLoad and #existingAfterLoad > 0 then
+        meta.afterLoad = meta.afterLoad or {}
+        for _, eventId in ipairs(existingAfterLoad) do
+            table.insert(meta.afterLoad, eventId)
         end
     end
 end
@@ -1575,6 +1657,7 @@ ReplaceGlobalEvent = support.replaceGlobalEvent
 AppendMapEvent = support.appendMapEvent
 AppendGlobalEvent = support.appendGlobalEvent
 RegisterCanShowTopic = support.registerCanShowTopic
+RegisterNpcScopedTopic = support.registerNpcScopedTopic
 Point = support.point
 MoveToMap = support.moveToMap
 RegisterOutdoorModelMechanism = support.registerOutdoorModelMechanism
@@ -1593,9 +1676,13 @@ SetMapContextAction = support.setMapContextAction
 AppendMapOnLoadEvent = support.appendMapOnLoadEvent
 AppendMapOnLeaveEvent = support.appendMapOnLeaveEvent
 RegisterMapOnLoadEvent = support.registerMapOnLoadEvent
+RegisterMapAfterLoadEvent = support.registerMapAfterLoadEvent
 RegisterMapOnLeaveEvent = support.registerMapOnLeaveEvent
 RegisterMapTimerEvent = support.registerMapTimerEvent
 RegisterGlobalOnLoadEvent = support.registerGlobalOnLoadEvent
+RegisterGlobalAfterLoadEvent = support.registerGlobalAfterLoadEvent
+RegisterGlobalOnLeaveEvent = support.registerGlobalOnLeaveEvent
+RegisterGlobalTemporaryTimerEvent = support.registerGlobalTemporaryTimerEvent
 RegisterGlobalTimerEvent = support.registerGlobalTimerEvent
 RegisterOutdoorStepHook = support.registerOutdoorStepHook
 RegisterTownPortalHook = support.registerTownPortalHook
@@ -1614,6 +1701,7 @@ RegisterGlobalGameplayActionHook = support.registerGlobalGameplayActionHook
 RegisterMapRefillHook = support.registerMapRefillHook
 RegisterGlobalMapRefillHook = support.registerGlobalMapRefillHook
 RegisterMapTransitionHook = support.registerMapTransitionHook
+RegisterMapBoundaryHook = support.registerMapBoundaryHook
 RegisterGlobalMapTransitionHook = support.registerGlobalMapTransitionHook
 RegisterMonsterKilledHook = support.registerMonsterKilledHook
 RegisterGlobalMonsterKilledHook = support.registerGlobalMonsterKilledHook
@@ -1621,6 +1709,10 @@ RegisterMonsterDamageHook = support.registerMonsterDamageHook
 RegisterGlobalMonsterDamageHook = support.registerGlobalMonsterDamageHook
 RegisterChestOpenHook = support.registerChestOpenHook
 RegisterGlobalChestOpenHook = support.registerGlobalChestOpenHook
+RegisterGotItemHook = support.registerGotItemHook
+RegisterGlobalGotItemHook = support.registerGlobalGotItemHook
+RegisterDimensionDoorActivatedHook = support.registerDimensionDoorActivatedHook
+RegisterGlobalDimensionDoorActivatedHook = support.registerGlobalDimensionDoorActivatedHook
 RegisterInventoryOpenHook = support.registerInventoryOpenHook
 RegisterGlobalInventoryOpenHook = support.registerGlobalInventoryOpenHook
 IsFlying = support.isFlying

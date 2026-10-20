@@ -117,6 +117,8 @@ struct EventDialogContent
     std::string title;
     std::vector<std::string> lines;
     std::vector<EventDialogAction> actions;
+    // Presentation receipt for the Party-owned greeting counter; no receipt for event-message text.
+    std::optional<uint32_t> displayedNpcGreetingCount;
 };
 
 std::vector<uint32_t> collectSelectableResidentNpcIds(

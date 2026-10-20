@@ -65,6 +65,7 @@ enum class CombatDamageType
     Dark,
     Energy,
     Irresistible,
+    Magic,
 };
 
 struct ElementalDamageBonuses

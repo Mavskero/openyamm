@@ -319,7 +319,7 @@ public:
         return m_indoorMap;
     }
 
-    float gameMinutes() const override
+    double gameMinutes() const override
     {
         return currentGameMinutes();
     }
@@ -344,7 +344,7 @@ public:
         return 0;
     }
 
-    void advanceGameMinutes(float minutes) override
+    void advanceGameMinutes(double minutes) override
     {
         setCurrentGameMinutes(currentGameMinutes() + minutes);
     }

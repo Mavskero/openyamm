@@ -309,6 +309,7 @@ public:
     bool renderHouseVideoFrame(float x, float y, float quadWidth, float quadHeight) const;
 
 private:
+    friend struct ApplicationCaptureTestAccess;
     void recordPerformanceAssetLoad(
         GameplayUiAssetLoadKind kind,
         const std::string &name,

@@ -233,9 +233,9 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     };
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
-    const std::array<std::pair<uint32_t, const char *>, 5> combatTextIds{{
+    const std::array<std::pair<uint32_t, const char *>, 6> combatTextIds{{
         {164, "combat.melee_hit"}, {189, "combat.projectile_hit"}, {175, "combat.kill"},
-        {635, "combat.stun"}, {636, "combat.paralyze"}}};
+        {635, "combat.stun"}, {636, "combat.paralyze"}, {480, "combat.enemy_nearby"}}};
     Rows combatText;
     for (const auto &[id, key] : combatTextIds)
     {
@@ -691,7 +691,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     }
     std::ostringstream manifest;
     manifest << "{\"schema\":1,\"stage\":\"shared-core-tables\",\"runtime_ready\":false,"
-        << "\"combat_text_count\":5,\"combat_text_source\":"
+        << "\"combat_text_count\":" << combatText.size() << ",\"combat_text_source\":"
         << std::quoted(chinese ? "Data/10 LocZHCN.EnglishT.lod::global.txt" : "Data/mmmerge.T.lod::global.txt") << ','
         << "\"house_service_text_count\":" << houseServiceTextCount << ",\"house_service_text_source\":"
         << std::quoted(chinese ? "Data/10 LocZHCN.EnglishT.lod::global.txt" : "Data/mmmerge.T.lod::global.txt") << ','

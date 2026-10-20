@@ -18,6 +18,7 @@
 #include "game/outdoor/OutdoorWorldRuntime.h"
 #include "game/app/ScreenManager.h"
 #include "game/content/ContentManifest.h"
+#include "game/content/BreachMazeLifecycle.h"
 #include "game/debug/DebugConsole.h"
 #include "game/debug/GameImGuiBgfxRenderer.h"
 #include "game/maps/SaveGame.h"
@@ -175,11 +176,16 @@ private:
     bool activateWorldForMapFileName(const std::string &mapFileName);
     bool applyCurrentSessionToRuntime();
     bool processPendingMapMove(bool initializeView = true);
+    bool applyMapMove(const EventRuntimeState::PendingMapMove &move, bool initializeView,
+        const std::function<void()> &commitArrival = {});
     bool processPendingWinGame();
     bool processPendingEventMovie();
     bool processPendingReturnToMainMenu();
+    bool processPendingCampaignRestart(bool initializeView = true);
+    bool processPendingDelayedMapMove(bool initializeView = true);
     bool processPendingDimensionDoorOverlay();
     bool executeCurrentMapOnLeaveEvents();
+    bool executeCurrentMapAfterLoadEvents();
     bool processPendingPartyDefeat();
     void handleCompletedPartyDefeatScreen();
     void handleCompletedEventMovieScreen();
@@ -196,6 +202,16 @@ private:
     void applyPartyDefeatConsequences();
     bool respawnPartyAfterDefeat(bool initializeView);
     void captureCurrentSceneState();
+    void captureBreachMazeRuntime(const IndoorSceneRuntime::Snapshot &snapshot, float yaw, float pitch);
+    bool restoreBreachMazeMapAssets();
+    bool bindBreachMazeInteractions();
+    std::optional<bool> activateBreachMazeNativeEvent(
+        uint16_t eventId, const std::string &sourceKind, size_t sourceIndex);
+    void projectBreachMazeInteractions(IndoorSceneRuntime &scene, const BreachMazeFloorState &floor);
+    bool breachMazeRequestMatches(const EventRuntimeState::PendingBreachMazeTransitionRequest &request) const;
+    void processPendingBreachMazeTransitionRequest();
+    bool commitBreachMazeTransition(const EventRuntimeState::PendingMapMove &move, bool initializeView);
+    bool commitBreachMazePortalDeparture(const EventRuntimeState::PendingMapMove &move, bool initializeView);
     void restoreSavedOutdoorWorldStateForSelectedMap();
     void updateQuickSaveInput();
     void updateDoubleSpeedInput();
@@ -212,6 +228,10 @@ private:
     void openMainMenuScreen();
     void openLoadGameScreen(bool returnToGameplayMenu = false, const std::string &source = "main_menu");
     void openNewGameScreen(const std::string &source = "main_menu");
+    void processPendingBreachAlvarCompanionRequest();
+    bool breachAlvarChaosRequestMatches(const EventRuntimeState::PendingBreachAlvarChaosRequest &request) const;
+    void processPendingBreachAlvarChaosRequest();
+    bool commitBreachAlvarChaosReturn(const EventRuntimeState::PendingMapMove &move, bool initializeView);
     bool processPendingArcomageGame();
     void handleCompletedArcomageScreen();
     bool initializeStartupSession(bool initializeView);
@@ -314,5 +334,8 @@ private:
     bool m_debugConsoleFrameBegun = false;
     bool m_debugConsoleCommandsRegistered = false;
     std::optional<PendingDebugMapJump> m_pendingDebugMapJump;
+    std::optional<EventRuntimeState::PendingBreachMazeTransitionRequest> m_pendingBreachMazeTransition;
+    std::optional<EventRuntimeState::PendingBreachAlvarChaosRequest> m_pendingBreachAlvarChaosReturn;
+    BreachMazeQuestView m_pendingBreachMazeQuest;
 };
 }

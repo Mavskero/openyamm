@@ -85,7 +85,7 @@ constexpr float EventNpcPortraitUvCropY = 2.0f;
 constexpr float DialogueTextTopInset = 2.0f;
 constexpr float DialogueTextBottomInset = 5.0f;
 constexpr float DialogueTextRightInset = 6.0f;
-constexpr float DialogueTextPrimaryFontMaxHeight = 344.0f;
+constexpr float DialogueTextMaxHeight = 344.0f;
 constexpr const char *DialogueTextSmallFontName = "Create";
 constexpr float Mm9RudeCanvasWidth = 800.0f;
 constexpr float Mm9RudeCanvasHeight = 600.0f;
@@ -817,11 +817,12 @@ std::optional<DialogueBodyTextMetrics> calculateDialogueBodyTextMetrics(
         return std::nullopt;
     }
     const auto calculateForFont =
-        [&](const GameplayScreenRuntime::HudFontHandle &font) -> std::optional<DialogueBodyTextMetrics>
+        [&](const GameplayScreenRuntime::HudFontHandle &font,
+            float fitScale = 1.0f) -> std::optional<DialogueBodyTextMetrics>
         {
             DialogueBodyTextMetrics metrics = {};
             metrics.font = font;
-            metrics.fontScale = snappedHudFontScale(layoutScale * std::max(0.1f, layout.textScale));
+            metrics.fontScale = snappedHudFontScale(layoutScale * std::max(0.1f, layout.textScale)) * fitScale;
             metrics.lineHeight = font.fontHeight * metrics.fontScale;
             metrics.lineAdvance = dialogueTextLineAdvance(font) * metrics.fontScale;
             const float wrapWidth = std::max(0.0f,
@@ -883,7 +884,7 @@ std::optional<DialogueBodyTextMetrics> calculateDialogueBodyTextMetrics(
         return std::nullopt;
     }
     std::optional<DialogueBodyTextMetrics> metrics = calculateForFont(*primaryFont);
-    if (!metrics || metrics->textHeight <= DialogueTextPrimaryFontMaxHeight)
+    if (!metrics || metrics->textHeight <= DialogueTextMaxHeight)
     {
         return metrics;
     }
@@ -891,6 +892,14 @@ std::optional<DialogueBodyTextMetrics> calculateDialogueBodyTextMetrics(
     if (smallFont && toLowerCopy(smallFont->fontName) != toLowerCopy(primaryFont->fontName))
     {
         metrics = calculateForFont(*smallFont);
+    }
+    // Localized introductions can exceed the available body even with the smaller bitmap font.
+    // Rewrap and measure at each reduced size so the bottom-anchored frame stays below the HUD.
+    const GameplayScreenRuntime::HudFontHandle fittedFont = smallFont.value_or(*primaryFont);
+    for (float fitScale = 0.95f; metrics && metrics->textHeight > DialogueTextMaxHeight
+        && fitScale >= 0.1f; fitScale *= 0.95f)
+    {
+        metrics = calculateForFont(fittedFont, fitScale);
     }
     return metrics;
 }

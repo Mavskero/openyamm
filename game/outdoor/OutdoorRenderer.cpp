@@ -378,7 +378,9 @@ void applySelectedOutdoorFxLightUniforms(
 
 uint32_t computeOutdoorSkyTintAbgr(const OutdoorWorldRuntime &worldRuntime)
 {
-    const uint8_t brightness = outdoorClearDistanceFogBrightness(worldRuntime.gameMinutes());
+    const float lightMinutesOfDay =
+        static_cast<float>(std::fmod(std::max(worldRuntime.lightGameMinutes(), 0.0), 1440.0));
+    const uint8_t brightness = outdoorClearDistanceFogBrightness(lightMinutesOfDay);
     return makeAbgr(brightness, brightness, brightness);
 }
 
@@ -5163,7 +5165,8 @@ void OutdoorRenderer::renderOutdoorDarknessOverlay(
         return;
     }
 
-    const float planeDistance = 1.0f;
+    // The outdoor camera clips geometry nearer than4 units, including screen-covering overlays.
+    const float planeDistance = 8.0f;
     const float planeHalfHeight = std::tan(bx::toRad(CameraVerticalFovDegrees * 0.5f)) * planeDistance;
     const float planeHalfWidth = planeHalfHeight * std::max(aspectRatio, 0.1f);
     const bx::Vec3 overlayCenter = {

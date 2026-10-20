@@ -93,7 +93,7 @@ void GameplayHeldItemController::clearHeldInventoryItem(
 }
 
 bool GameplayHeldItemController::tryDisplaceHeldInventoryItem(
-    GameplayScreenRuntime &runtime)
+    GameplayScreenRuntime &runtime, bool sourceTakeOrDrop)
 {
     GameplayUiController::HeldInventoryItemState &heldInventoryItem = runtime.heldInventoryItem();
 
@@ -120,7 +120,8 @@ bool GameplayHeldItemController::tryDisplaceHeldInventoryItem(
     const ItemDefinition *pItemDefinition =
         pItemTable != nullptr ? pItemTable->get(heldInventoryItem.item.objectDescriptionId) : nullptr;
 
-    if (pWorldRuntime == nullptr || (pItemDefinition != nullptr && !ItemRuntime::canDrop(*pItemDefinition)))
+    if (pWorldRuntime == nullptr
+        || (!sourceTakeOrDrop && pItemDefinition != nullptr && !ItemRuntime::canDrop(*pItemDefinition)))
     {
         return false;
     }
@@ -147,18 +148,44 @@ bool GameplayHeldItemController::tryDisplaceHeldInventoryItem(
     return true;
 }
 
+void GameplayHeldItemController::applyPendingQuestItemDeliveries(GameplayScreenRuntime &runtime)
+{
+    Party *pParty = runtime.party();
+    const ItemTable *pTable = runtime.itemTable();
+    if (pParty == nullptr || pTable == nullptr)
+    {
+        return;
+    }
+    while (!pParty->pendingItemDeliveries().empty())
+    {
+        const Party::PendingItemDelivery delivery = pParty->pendingItemDeliveries().front();
+        if (pTable->get(delivery.item.objectDescriptionId) == nullptr)
+        {
+            return;
+        }
+        if (delivery.recipientMemberIndex >= 0
+            && pParty->tryGrantInventoryItemToMember(size_t(delivery.recipientMemberIndex), delivery.item))
+        {
+            pParty->completeFirstPendingItemDelivery();
+            notifyEventGrantedItemReceived(runtime, delivery.item, *pTable);
+            continue;
+        }
+        if (!tryDisplaceHeldInventoryItem(runtime, delivery.allowDropProtectedHeldItem))
+        {
+            return; // Party retains the new item; the failed old held displacement retains its owner.
+        }
+        setHeldInventoryItem(runtime.heldInventoryItem(), delivery.item);
+        pParty->setHeldItemForQueries(delivery.item);
+        pParty->completeFirstPendingItemDelivery();
+        notifyEventGrantedItemReceived(runtime, delivery.item, *pTable);
+    }
+}
+
 void GameplayHeldItemController::applyGrantedEventItemsToHeldInventory(
     GameplayScreenRuntime &runtime,
     EventRuntimeState &eventRuntimeState,
     const ItemTable &itemTable)
 {
-    if (eventRuntimeState.grantedItems.empty()
-        && eventRuntimeState.grantedItemIds.empty()
-        && !eventRuntimeState.clearHeldItemRequest)
-    {
-        return;
-    }
-
     if (runtime.party() == nullptr)
     {
         return;
@@ -171,6 +198,12 @@ void GameplayHeldItemController::applyGrantedEventItemsToHeldInventory(
         clearHeldInventoryItem(heldInventoryItem);
         runtime.party()->clearHeldItemForQueries();
         eventRuntimeState.clearHeldItemRequest = false;
+    }
+
+    applyPendingQuestItemDeliveries(runtime);
+    if (eventRuntimeState.grantedItems.empty() && eventRuntimeState.grantedItemIds.empty())
+    {
+        return;
     }
 
     const auto receiveGrantedItem =
@@ -190,13 +223,13 @@ void GameplayHeldItemController::applyGrantedEventItemsToHeldInventory(
                     + std::to_string(grantedItem.objectDescriptionId)
                     + gameplayDebugTraceItemSummary(grantedItem.objectDescriptionId, &itemTable)
                     + " member_index=" + std::to_string(recipientMemberIndex));
-                return;
+                return true;
             }
 #endif
 
             if (!GameplayHeldItemController::tryDisplaceHeldInventoryItem(runtime))
             {
-                return;
+                return false;
             }
 
             GameplayHeldItemController::setHeldInventoryItem(heldInventoryItem, grantedItem);
@@ -206,8 +239,11 @@ void GameplayHeldItemController::applyGrantedEventItemsToHeldInventory(
                 "item_received destination=held source=event item_id="
                 + std::to_string(grantedItem.objectDescriptionId)
                 + gameplayDebugTraceItemSummary(grantedItem.objectDescriptionId, &itemTable));
+            return true;
         };
 
+    std::vector<InventoryItem> undeliveredItems;
+    std::vector<uint32_t> undeliveredItemIds;
     for (const InventoryItem &item : eventRuntimeState.grantedItems)
     {
         if (item.objectDescriptionId == 0)
@@ -215,7 +251,7 @@ void GameplayHeldItemController::applyGrantedEventItemsToHeldInventory(
             continue;
         }
 
-        receiveGrantedItem(item);
+        if (!receiveGrantedItem(item)) undeliveredItems.push_back(item);
     }
 
     for (uint32_t itemId : eventRuntimeState.grantedItemIds)
@@ -226,11 +262,11 @@ void GameplayHeldItemController::applyGrantedEventItemsToHeldInventory(
         }
 
         InventoryItem item = ItemGenerator::makeInventoryItem(itemId, itemTable, ItemGenerationMode::Generic);
-        receiveGrantedItem(std::move(item));
+        if (!receiveGrantedItem(std::move(item))) undeliveredItemIds.push_back(itemId);
     }
 
-    eventRuntimeState.grantedItems.clear();
-    eventRuntimeState.grantedItemIds.clear();
+    eventRuntimeState.grantedItems = std::move(undeliveredItems);
+    eventRuntimeState.grantedItemIds = std::move(undeliveredItemIds);
 }
 
 bool GameplayHeldItemController::tryAutoPlaceHeldInventoryItemOnPartyMember(

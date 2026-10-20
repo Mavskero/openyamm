@@ -1,6 +1,5 @@
 #include "game/gameplay/TravelRuntime.h"
 
-#include "game/StringUtils.h"
 #include "game/gameplay/GameplayRuntimeInterfaces.h"
 #include "game/party/Party.h"
 
@@ -8,17 +7,6 @@
 
 namespace OpenYAMM::Game
 {
-int outdoorMapMoveTravelDays(const std::string &currentMapFileName, const std::string &destinationMapFileName)
-{
-    const std::string currentMap = toLowerCopy(currentMapFileName);
-    const std::string destinationMap = toLowerCopy(destinationMapFileName);
-    if (currentMap == destinationMap || !currentMap.ends_with(".odm") || !destinationMap.ends_with(".odm"))
-    {
-        return 0;
-    }
-    return 5;
-}
-
 void applyTravelDaysSideEffects(
     Party &party,
     IGameplayWorldRuntime *pWorldRuntime,

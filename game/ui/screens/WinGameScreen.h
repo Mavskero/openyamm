@@ -15,6 +15,7 @@ struct WinGameCertificate
     std::string endingText;
     std::string totalTimeLine;
     std::string scoreLine;
+    std::string backgroundTexture = "winBG";
 };
 
 class WinGameScreen : public MenuScreenBase

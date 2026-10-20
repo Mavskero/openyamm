@@ -271,6 +271,8 @@ struct OutdoorMapData
     std::vector<float> normals;
     std::vector<OutdoorBModel> bmodels;
     std::vector<OutdoorEntity> entities;
+    // Immutable DDM visibility baseline; live source writes belong to MapDeltaData.
+    std::vector<uint16_t> sourceDecorationFlags;
     std::vector<uint16_t> decorationPidList;
     std::vector<uint32_t> decorationMap;
     std::vector<OutdoorSpawn> spawns;

@@ -1351,6 +1351,11 @@ ActorEngagementState resolveActorEngagement(
         }
     }
 
+    if (actor.world.requiresLongHostilityForActiveCombat && result.hostilityType != 4)
+    {
+        result.shouldEngageTarget = false;
+    }
+
     if (invisiblePartyTarget)
     {
         result.hasDetectedParty = false;

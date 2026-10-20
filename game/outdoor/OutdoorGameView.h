@@ -124,6 +124,9 @@ public:
     void setSettingsSnapshot(const GameSettings &settings);
     bool executeEventHooks(EventRuntimeHookKind kind);
     bool ensureMonsterVisualResources(int16_t monsterId);
+    // Transaction preflight on the initialized API/main thread: all authored actions, frames and octants.
+    // Failure may retain warmed caches, but never creates a gameplay actor.
+    bool prepareMonsterVisualResourcesForTransaction(int16_t monsterId, std::string &error);
     const SpriteFrameTable *actorSpriteFrameTable() const;
 
 private:

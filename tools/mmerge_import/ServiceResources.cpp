@@ -1,4 +1,5 @@
 #include "ServiceResources.h"
+#include "BreachAlvarCompanionResources.h"
 #include "LodResources.h"
 #include "TextResources.h"
 #include "engine/TextTable.h"
@@ -7,6 +8,9 @@
 #include "game/tables/NpcDialogTable.h"
 #include "game/audio/SoundCatalog.h"
 #include "game/gameplay/HouseInteraction.h"
+#include "game/StringUtils.h"
+
+#include <CommonCrypto/CommonDigest.h>
 
 #include <algorithm>
 #include <array>
@@ -100,6 +104,95 @@ IndexedRows indexed(const Rows &rows, size_t columns)
     return result;
 }
 
+bool verifiedBreachAlvarHouseSource(const std::filesystem::path &root)
+{
+    const std::string name(BreachAlvarMapSourcePath);
+    if (!std::filesystem::exists(root / name))
+    {
+        return false;
+    }
+    const std::filesystem::path path = sourcePath(root, name);
+    const uintmax_t size = std::filesystem::file_size(path);
+    require(size > 0 && size <= 256 * 1024, "Invalid Breach Alvar house source size");
+    std::string text(size, '\0');
+    std::ifstream input(path, std::ios::binary);
+    require(bool(input.read(text.data(), std::streamsize(size))), "Cannot read Breach Alvar house source");
+    std::array<unsigned char, CC_SHA256_DIGEST_LENGTH> hash;
+    CC_SHA256(text.data(), CC_LONG(text.size()), hash.data());
+    std::ostringstream digest;
+    for (unsigned char value : hash)
+    {
+        digest << std::hex << std::setfill('0') << std::setw(2) << unsigned(value);
+    }
+    require(digest.str() == BreachAlvarMapSourceSha256, "Unsupported Breach Alvar house source fingerprint");
+    return true;
+}
+
+const BreachAlvarHousePresentationRule *breachAlvarHouseRule(uint32_t houseId)
+{
+    const auto found = std::find_if(BreachAlvarHousePresentationRules.begin(), BreachAlvarHousePresentationRules.end(),
+        [houseId](const BreachAlvarHousePresentationRule &rule) { return rule.houseId == houseId; });
+    return found != BreachAlvarHousePresentationRules.end() ? &*found : nullptr;
+}
+
+const Row &numericRow(const Rows &rows, uint32_t id, size_t columns)
+{
+    const std::string key = std::to_string(id);
+    const Row *pResult = nullptr;
+    for (const Row &row : rows)
+    {
+        if (!row.empty() && row[0] == key)
+        {
+            require(row.size() == columns && pResult == nullptr, "Invalid Breach Alvar name source row: " + key);
+            pResult = &row;
+        }
+    }
+    require(pResult != nullptr, "Missing Breach Alvar name source row: " + key);
+    return *pResult;
+}
+
+std::string breachAlvarSourceMapName(const std::filesystem::path &root, uint32_t mapId,
+    bool chinese, size_t &glyphs)
+{
+    const Rows maps = parse(readLodText(sourcePath(root, "Data/mmmerge.T.lod"), "mapstats.txt"), false, glyphs);
+    const Row &source = numericRow(maps, mapId, 34);
+    require(!source[1].empty() && !source[2].empty(), "Empty Breach Alvar map name identity");
+    if (chinese)
+    {
+        const Rows translated = parse(readLodText(sourcePath(root, "Data/10 LocZHCN.EnglishT.lod"),
+            "mapstats.txt"), true, glyphs);
+        const Row &localized = numericRow(translated, mapId, 34);
+        // Same ID and map-file check as the shared core map-name translation.
+        if (Game::toLowerCopy(source[2]) == Game::toLowerCopy(localized[2]))
+        {
+            require(!localized[1].empty(), "Breach Alvar map translation removes the name");
+            return localized[1];
+        }
+    }
+    return source[1];
+}
+
+void applyBreachAlvarHouseRules(Rows &houses, const std::filesystem::path &root, bool chinese, size_t &glyphs)
+{
+    for (const BreachAlvarHousePresentationRule &rule : BreachAlvarHousePresentationRules)
+    {
+        const std::string name = rule.nameSource == BreachAlvarHouseNameSource::House
+            ? numericRow(houses, rule.nameSourceId, 24)[5]
+            : breachAlvarSourceMapName(root, rule.nameSourceId, chinese, glyphs);
+        require(!name.empty(), "Empty Breach Alvar source house name");
+        const auto target = std::find_if(houses.begin(), houses.end(), [&](const Row &row)
+        {
+            return !row.empty() && row[0] == std::to_string(rule.houseId);
+        });
+        require(target != houses.end(), "Missing Breach Alvar destination house");
+        if (rule.pictureId)
+        {
+            (*target)[4] = std::to_string(*rule.pictureId);
+        }
+        (*target)[5] = name;
+    }
+}
+
 void writeText(const std::filesystem::path &path, const std::string &text)
 {
     writeConvertedResource(path, std::vector<uint8_t>(text.begin(), text.end()));
@@ -158,6 +251,7 @@ void convertServiceResources(const std::filesystem::path &source, const std::fil
         && sourceHouses[1][2] == "Type" && sourceHouses[1][5] == "Name", "Unrecognized house source header");
     sourceHouses.erase(sourceHouses.begin());
     const IndexedRows baseHouses = indexed(sourceHouses, 24);
+    const bool breachAlvarHouses = verifiedBreachAlvarHouseSource(root);
     const bool chinese = std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod");
     IndexedRows localizedHouses;
     if (chinese)
@@ -210,6 +304,10 @@ void convertServiceResources(const std::filesystem::path &source, const std::fil
         {
             extraHouseTranslations.push_back(id);
         }
+    }
+    if (breachAlvarHouses)
+    {
+        applyBreachAlvarHouseRules(houses, root, chinese, glyphs);
     }
     Game::HouseTable baseHouseCheck;
     Game::HouseTable houseCheck;
@@ -283,7 +381,15 @@ void convertServiceResources(const std::filesystem::path &source, const std::fil
             }
             manifest << "]";
         }
-        manifest << ",\"missing_chest_images\":[";
+        manifest << ",\"breach_alvar_source_houses\":[";
+        if (breachAlvarHouses)
+        {
+            for (size_t index = 0; index < BreachAlvarHousePresentationRules.size(); ++index)
+            {
+                manifest << (index == 0 ? "" : ",") << BreachAlvarHousePresentationRules[index].houseId;
+            }
+        }
+        manifest << "],\"missing_chest_images\":[";
         for (size_t index = 0; index < missingImages.size(); ++index)
         {
             manifest << (index == 0 ? "" : ",") << std::quoted(missingImages[index]);
@@ -356,6 +462,7 @@ void convertHousePresentationResources(const std::filesystem::path &source,
         && originalHouseRows[1][0] == "#", "Unrecognized original house table");
     originalHouseRows.erase(originalHouseRows.begin());
     const IndexedRows originalHouses = indexed(originalHouseRows, 24);
+    const bool breachAlvarHouses = verifiedBreachAlvarHouseSource(root);
     HouseTable originalHouseTable;
     HouseTable houseTable;
     const Rows houseRows = convertedRows("house_data.txt");
@@ -368,8 +475,10 @@ void convertHousePresentationResources(const std::filesystem::path &source,
             continue;
         }
         const uint32_t id = integer(row[0]);
+        const BreachAlvarHousePresentationRule *pRule = breachAlvarHouses ? breachAlvarHouseRule(id) : nullptr;
         require(convertedHouseIds.insert(id).second && originalHouses.contains(id)
-            && integer(row[4]) == integer(originalHouses.at(id)[4]),
+            && integer(row[4]) == (pRule != nullptr && pRule->pictureId
+                ? *pRule->pictureId : integer(originalHouses.at(id)[4])),
             "Converted house animation identity changed");
     }
     require(originalHouseTable.loadFromRows(originalHouseRows) && houseTable.loadFromRows(houseRows)
@@ -428,7 +537,9 @@ void convertHousePresentationResources(const std::filesystem::path &source,
         require(pHouse && pOriginal && pHouse->mapId == pOriginal->mapId && pHouse->type == pOriginal->type
             && pHouse->videoName == pOriginal->videoName
             && pHouse->proprietorPictureId == pOriginal->proprietorPictureId, "House dependency identity changed");
-        const uint32_t animationId = integer(originalRow[4]);
+        const BreachAlvarHousePresentationRule *pRule = breachAlvarHouses ? breachAlvarHouseRule(id) : nullptr;
+        const uint32_t animationId = pRule != nullptr && pRule->pictureId
+            ? *pRule->pictureId : integer(originalRow[4]);
         require(movies.contains(animationId), "Missing house movie ID: " + std::to_string(animationId));
         const Row &movie = movies.at(animationId);
         const uint32_t group = integer(movie[4]);
@@ -445,7 +556,8 @@ void convertHousePresentationResources(const std::filesystem::path &source,
             npcList << (npcList.tellp() == 0 ? "" : ",") << npcId;
         }
         animations.push_back({std::to_string(id), std::to_string(animationId), pHouse->name, npcList.str(),
-            movie[1], "", "0", std::to_string(soundBaseId), movie[2], movie[3]});
+            movie[1], "", "0", std::to_string(soundBaseId), movie[2],
+            pRule != nullptr ? pOriginal->type : movie[3]});
         if (!movie[1].empty())
         {
             videoStems.insert(movie[1]);
@@ -468,6 +580,11 @@ void convertHousePresentationResources(const std::filesystem::path &source,
             && pHouse->roomSoundId == 0 && pHouse->houseSoundBaseId == soundBaseId
             && pHouse->proprietorPictureId == expectedPortrait && pHouse->videoName == row[4],
             "House presentation roundtrip changed identity");
+        if (breachAlvarHouses && breachAlvarHouseRule(id) != nullptr)
+        {
+            require(pHouse->type == originalHouseTable.get(id)->type,
+                "Breach Alvar picture changed the source house type");
+        }
         const std::optional<uint32_t> greeting = deriveHouseSoundId(*pHouse, HouseSoundType::GeneralGreeting);
         require(soundBaseId == 0 ? !greeting : greeting == soundBaseId + 1, "House sound group was misinterpreted");
     }

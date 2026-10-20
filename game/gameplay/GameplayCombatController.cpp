@@ -99,6 +99,7 @@ const char *combatDamageTypeName(CombatDamageType damageType)
         case CombatDamageType::Light: return "light";
         case CombatDamageType::Dark: return "dark";
         case CombatDamageType::Energy: return "energy";
+        case CombatDamageType::Magic: return "magic";
         case CombatDamageType::Irresistible: return "irresistible";
     }
 
@@ -255,6 +256,7 @@ SoundId soundForMonsterSpecialAttack(MonsterSpecialAttackKind specialAttackKind)
         case MonsterSpecialAttackKind::DiseaseWeak:
         case MonsterSpecialAttackKind::DiseaseMedium:
         case MonsterSpecialAttackKind::DiseaseSevere:
+        case MonsterSpecialAttackKind::Steal:
             return SoundId::Star2;
 
         case MonsterSpecialAttackKind::Insane:
@@ -382,7 +384,7 @@ bool monsterImpactRequiresArmorHitRoll(
     const GameplayCombatController::CombatEvent &event,
     const std::optional<GameplayCombatActorInfo> &sourceActor)
 {
-    if (!sourceActor)
+    if (!sourceActor || event.ability == GameplayActorAttackAbility::Special)
     {
         return false;
     }
@@ -431,11 +433,16 @@ MonsterImpactHitCheck resolveMonsterImpactHitCheck(
     }
 
     result.baseArmorClass = std::max(0, result.baseArmorClass);
-    result.adjustedArmorClass =
-        gameplayBolsterPlayerArmorClass(
+    const int playerBaseLevel = static_cast<int>(std::max<uint32_t>(1, pMember->level));
+    const std::optional<int32_t> resolvedArmorClass = context.pWorldRuntime != nullptr
+        ? context.pWorldRuntime->resolvedMonsterTargetArmorClass(
+            sourceActor.actorId, playerBaseLevel, result.baseArmorClass)
+        : std::nullopt;
+    result.adjustedArmorClass = resolvedArmorClass ? *resolvedArmorClass
+        : gameplayBolsterPlayerArmorClass(
             result.baseArmorClass,
             result.monsterLevel,
-            static_cast<int>(std::max<uint32_t>(1, pMember->level)),
+            playerBaseLevel,
             result.bolsterAffectsArmorClass);
     std::mt19937 rng = buildMonsterAttackRng(event, targetMemberIndex, animationTicks(context.pRuntime));
     result.hit = GameMechanics::monsterAttackHitsArmorClass(
@@ -734,6 +741,33 @@ std::vector<BreakItemCandidate> collectBreakItemCandidates(
     return candidates;
 }
 
+std::vector<size_t> collectMonsterStealCandidates(const Character &member, const ItemTable *pItemTable)
+{
+    std::vector<size_t> candidates;
+    if (pItemTable == nullptr)
+    {
+        return candidates;
+    }
+    // Native MM8 DoBadThing20 scans only backpack main cells, with source Number in 1..151.
+    for (size_t index = 0; index < member.inventory.size(); ++index)
+    {
+        const InventoryItem &item = member.inventory[index];
+        const ItemDefinition *pDefinition = pItemTable->get(item.objectDescriptionId);
+        if (item.quantity != 0 && pDefinition != nullptr && pDefinition->packageId == "engine"
+            && pDefinition->sourceItemId >= 1 && pDefinition->sourceItemId <= 151)
+        {
+            candidates.push_back(index);
+        }
+    }
+    std::sort(candidates.begin(), candidates.end(), [&member](size_t left, size_t right)
+    {
+        const InventoryItem &a = member.inventory[left];
+        const InventoryItem &b = member.inventory[right];
+        return a.gridY != b.gridY ? a.gridY < b.gridY : a.gridX < b.gridX;
+    });
+    return candidates;
+}
+
 std::optional<CharacterCondition> conditionForMonsterSpecialAttack(MonsterSpecialAttackKind specialAttackKind)
 {
     switch (specialAttackKind)
@@ -828,6 +862,7 @@ FaceAnimationId faceAnimationForMonsterSpecialAttack(MonsterSpecialAttackKind sp
         case MonsterSpecialAttackKind::BreakAny:
         case MonsterSpecialAttackKind::BreakArmor:
         case MonsterSpecialAttackKind::BreakWeapon:
+        case MonsterSpecialAttackKind::Steal:
             return FaceAnimationId::ItemBrokenStolen;
         case MonsterSpecialAttackKind::Aging:
             return FaceAnimationId::Aged;
@@ -848,6 +883,8 @@ int monsterSpecialAttackSaveBonus(
     {
         case MonsterSpecialAttackKind::Curse:
             return parameterBonusForCombat(summary.personality.actual);
+        case MonsterSpecialAttackKind::Steal:
+            return parameterBonusForCombat(summary.accuracy.actual);
         case MonsterSpecialAttackKind::Weak:
         case MonsterSpecialAttackKind::Sleep:
         case MonsterSpecialAttackKind::Drunk:
@@ -944,7 +981,8 @@ bool shouldApplyMonsterSpecialAttack(
         && event.ability == GameplayActorAttackAbility::Attack1
         && event.spellId == 0;
 
-    if ((!monsterMelee && !attack1Projectile)
+    if (event.ability == GameplayActorAttackAbility::Special
+        || (!monsterMelee && !attack1Projectile)
         || sourceActor.specialAttackKind == MonsterSpecialAttackKind::None
         || sourceActor.specialAttackLevel <= 0
         || sourceActor.monsterLevel <= 0)
@@ -981,6 +1019,7 @@ bool applyMonsterSpecialAttack(
 
     std::vector<BreakItemCandidate> breakCandidates;
     const BreakItemCandidate *pBreakCandidate = nullptr;
+    std::optional<size_t> stolenItemIndex;
     const ItemTable *pItemTable =
         context.pRuntime != nullptr ? context.pRuntime->itemTable() : context.party.itemTable();
     const StandardItemEnchantTable *pStandardItemEnchantTable =
@@ -1009,6 +1048,16 @@ bool applyMonsterSpecialAttack(
         pBreakCandidate = &breakCandidates[std::uniform_int_distribution<size_t>(
             0,
             breakCandidates.size() - 1)(rng)];
+    }
+
+    if (sourceActor.specialAttackKind == MonsterSpecialAttackKind::Steal)
+    {
+        const std::vector<size_t> candidates = collectMonsterStealCandidates(*pMember, pItemTable);
+        if (candidates.empty() || context.pWorldRuntime == nullptr)
+        {
+            return false;
+        }
+        stolenItemIndex = candidates[std::uniform_int_distribution<size_t>(0, candidates.size() - 1)(rng)];
     }
 
     const CharacterSheetSummary summary = GameMechanics::buildCharacterSheetSummary(
@@ -1061,6 +1110,16 @@ bool applyMonsterSpecialAttack(
     {
         ++pMember->ageModifier;
         applied = true;
+    }
+    else if (stolenItemIndex)
+    {
+        // Commit the receiving custody first. Erasing this plain-value inventory entry cannot throw.
+        const InventoryItem &item = pMember->inventory[*stolenItemIndex];
+        if (context.pWorldRuntime->retainMonsterStolenItem(sourceActor.actorId, item))
+        {
+            pMember->inventory.erase(pMember->inventory.begin() + *stolenItemIndex);
+            applied = true;
+        }
     }
     else if (pBreakCandidate != nullptr)
     {
@@ -1340,6 +1399,27 @@ void GameplayCombatController::handlePendingCombatEvents(
 {
     for (const CombatEvent &event : events)
     {
+        if (!event.affectsAllParty && !event.targetPartyMemberIndex
+            && (event.type == CombatEventType::MonsterMeleeImpact
+                || event.type == CombatEventType::PartyProjectileImpact))
+        {
+            const std::optional<GameplayCombatActorInfo> source = resolveActor(context, event.sourceId);
+            if (source && source->usesMergeTargetPreferences)
+            {
+                const bool normalAttack = event.ability == GameplayActorAttackAbility::Attack1
+                    || event.ability == GameplayActorAttackAbility::Attack2;
+                const std::vector<size_t> targets = context.party.chooseMergeMonsterAttackTargets(
+                    source->sourcePreferredTargets, normalAttack ? source->sourcePreferredTargetCount : 1,
+                    event.sourceId ^ uint32_t(event.damage) ^ uint32_t(event.spellId));
+                for (size_t target : targets)
+                {
+                    CombatEvent targeted = event;
+                    targeted.targetPartyMemberIndex = target;
+                    handlePendingCombatEvents(context, {targeted});
+                }
+                continue;
+            }
+        }
         if (event.type == CombatEventType::PartyProjectileActorImpact)
         {
             const Character *pSourceMember = context.party.member(event.sourcePartyMemberIndex);
@@ -1443,9 +1523,9 @@ void GameplayCombatController::handlePendingCombatEvents(
             sourceAttackPreferences = sourceActor->attackPreferences;
         }
 
-        std::optional<size_t> targetMemberIndex = std::nullopt;
+        std::optional<size_t> targetMemberIndex = event.targetPartyMemberIndex;
 
-        if (!event.affectsAllParty)
+        if (!event.affectsAllParty && !targetMemberIndex)
         {
             targetMemberIndex = context.party.chooseMonsterAttackTarget(
                 sourceAttackPreferences,

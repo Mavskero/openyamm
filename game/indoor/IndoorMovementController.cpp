@@ -1520,9 +1520,14 @@ IndoorMoveState IndoorMovementController::resolveMove(
     bool allowUnsupportedPathRecovery,
     bool allowBlockedWallRecovery,
     bool requireWalkableSupport,
-    float gravityPerSecond
+    float gravityPerSecond,
+    bool *pBlockingCollision
 ) const
 {
+    if (pBlockingCollision != nullptr)
+    {
+        *pBlockingCollision = false;
+    }
     if (m_pIndoorMapData == nullptr || deltaSeconds <= 0.0f)
     {
         return state;
@@ -1559,7 +1564,8 @@ IndoorMoveState IndoorMovementController::resolveMove(
             allowUnsupportedPathRecovery,
             allowBlockedWallRecovery,
             requireWalkableSupport,
-            gravityPerSecond);
+            gravityPerSecond,
+            pBlockingCollision);
     }
 
     const RuntimeGeometryCache &runtimeCache = runtimeGeometryCache();
@@ -1595,7 +1601,8 @@ IndoorMoveState IndoorMovementController::resolveMove(
             allowUnsupportedPathRecovery,
             allowBlockedWallRecovery,
             requireWalkableSupport,
-            gravityPerSecond);
+            gravityPerSecond,
+            pBlockingCollision);
     }
 
     IndoorMoveState currentState = state;
@@ -1626,7 +1633,8 @@ IndoorMoveState IndoorMovementController::resolveMove(
             allowUnsupportedPathRecovery,
             allowBlockedWallRecovery,
             requireWalkableSupport,
-            gravityPerSecond);
+            gravityPerSecond,
+            pBlockingCollision);
 
         if (currentState.landedThisFrame)
         {
@@ -1797,7 +1805,8 @@ IndoorMoveState IndoorMovementController::resolveMoveSingleStep(
     bool allowUnsupportedPathRecovery,
     bool allowBlockedWallRecovery,
     bool requireWalkableSupport,
-    float gravityPerSecond
+    float gravityPerSecond,
+    bool *pBlockingCollision
 ) const
 {
     if (m_pIndoorMapData == nullptr || deltaSeconds <= 0.0f)
@@ -1876,6 +1885,13 @@ IndoorMoveState IndoorMovementController::resolveMoveSingleStep(
 
     const auto finalizeFallState = [&](IndoorMoveState result) -> IndoorMoveState
     {
+        if (pBlockingCollision != nullptr
+            && ((!state.grounded && result.grounded && candidateVerticalVelocity <= 0.0f)
+                || (candidateVerticalVelocity > 0.0f && result.verticalVelocity <= 0.0f
+                    && result.footZ < candidateFootZ - 0.01f)))
+        {
+            *pBlockingCollision = true;
+        }
         result.landedThisFrame = false;
         result.fallDistance = 0.0f;
 
@@ -3257,6 +3273,10 @@ IndoorMoveState IndoorMovementController::resolveMoveSingleStep(
 
             fullMoveBlockedByActor = hitActor;
             fullMoveWallCollision = wallCollision;
+            if (pBlockingCollision != nullptr && (hitActor || wallCollision.hit))
+            {
+                *pBlockingCollision = true;
+            }
 
             if (fullMoveWallCollision.hit && !fullMoveBlockedByActor)
             {
@@ -3304,6 +3324,10 @@ IndoorMoveState IndoorMovementController::resolveMoveSingleStep(
             break;
         }
 
+        if (pBlockingCollision != nullptr)
+        {
+            *pBlockingCollision = true;
+        }
         sweptFaceHit =
             sweptFaceHit
             || nearestHit->type == SweptCollisionHitType::Face

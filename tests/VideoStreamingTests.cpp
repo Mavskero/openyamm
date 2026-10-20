@@ -8,6 +8,7 @@
 #include <doctest/doctest.h>
 
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <thread>
 #include <vector>
@@ -16,6 +17,16 @@ namespace OpenYAMM::Game
 {
 struct HouseVideoPlayerTestAccess
 {
+    static bool isDecodeWindowBlocked(const HouseVideoPlayer &player)
+    {
+        return player.isDecodeWindowBlocked();
+    }
+
+    static bool hasStreamingSession(const HouseVideoPlayer &player)
+    {
+        return player.m_pStreamingSession != nullptr;
+    }
+
     static uint64_t presentedFrameSerial(const HouseVideoPlayer &player)
     {
         return player.m_presentedFrameSerial;
@@ -28,6 +39,37 @@ struct HouseVideoPlayerTestAccess
 };
 }
 
+namespace
+{
+const char *videoRuntimeRoot()
+{
+    const char *pRoot = std::getenv("OPENYAMM_VIDEO_TEST_RUNTIME_ROOT");
+    return pRoot != nullptr && *pRoot != '\0' ? pRoot : nullptr;
+}
+
+std::filesystem::path videoAssetRoot()
+{
+    const char *pRoot = videoRuntimeRoot();
+    return pRoot != nullptr ? std::filesystem::path(pRoot)
+                            : std::filesystem::path(OPENYAMM_SOURCE_DIR) / "assets_dev";
+}
+
+bool waitForBlockedDecoder(const OpenYAMM::Game::HouseVideoPlayer &player)
+{
+    const std::chrono::steady_clock::time_point deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    while (std::chrono::steady_clock::now() < deadline)
+    {
+        if (OpenYAMM::Game::HouseVideoPlayerTestAccess::isDecodeWindowBlocked(player))
+        {
+            return true;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return false;
+}
+}
+
 TEST_CASE("HouseVideoPlayer streams a complete OGV without predecoding the clip")
 {
     SDL_setenv_unsafe("SDL_AUDIODRIVER", "dummy", 1);
@@ -35,7 +77,7 @@ TEST_CASE("HouseVideoPlayer streams a complete OGV without predecoding the clip"
     OpenYAMM::Engine::AssetFileSystem assetFileSystem;
     REQUIRE(assetFileSystem.initialize(
         sourceRoot,
-        sourceRoot / "assets_dev",
+        videoAssetRoot(),
         OpenYAMM::Engine::AssetScaleTier::X1,
         "mm6"));
 
@@ -153,7 +195,7 @@ TEST_CASE("HouseVideoPlayer streams MM7 event cutscenes")
     OpenYAMM::Engine::AssetFileSystem assetFileSystem;
     REQUIRE(assetFileSystem.initialize(
         sourceRoot,
-        sourceRoot / "assets_dev",
+        videoAssetRoot(),
         OpenYAMM::Engine::AssetScaleTier::X1,
         "mm7"));
 
@@ -175,4 +217,66 @@ TEST_CASE("HouseVideoPlayer streams MM7 event cutscenes")
     CHECK_FALSE(videoPlayer.hasFinishedPlayback());
     CHECK_GT(OpenYAMM::Game::HouseVideoPlayerTestAccess::presentedFrameSerial(videoPlayer), 0);
     CHECK_GE(OpenYAMM::Game::HouseVideoPlayerTestAccess::presentedFrameSeconds(videoPlayer), 1.5);
+}
+
+TEST_CASE("HouseVideoPlayer stops immediately when a cutscene is skipped before its first update")
+{
+    SDL_setenv_unsafe("SDL_AUDIODRIVER", "dummy", 1);
+    OpenYAMM::Engine::AssetFileSystem assetFileSystem;
+    REQUIRE(assetFileSystem.initialize(
+        OPENYAMM_SOURCE_DIR, videoAssetRoot(), OpenYAMM::Engine::AssetScaleTier::X1,
+        videoRuntimeRoot() != nullptr ? "mm6" : "mm7"));
+
+    OpenYAMM::Game::HouseVideoPlayer player;
+    REQUIRE(player.initialize());
+    REQUIRE(player.play(assetFileSystem,
+        videoRuntimeRoot() != nullptr ? "mm6end1" : "arbiter good", "Videos/Cutscenes", false));
+    CHECK_EQ(OpenYAMM::Game::HouseVideoPlayerTestAccess::presentedFrameSerial(player), 0u);
+
+    const std::chrono::steady_clock::time_point started = std::chrono::steady_clock::now();
+    player.stop();
+    CHECK_LT(std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count(), 2.0);
+    CHECK_FALSE(OpenYAMM::Game::HouseVideoPlayerTestAccess::hasStreamingSession(player));
+    CHECK_FALSE(player.hasActiveFrame());
+    CHECK_FALSE(player.hasFinishedPlayback());
+    player.stop();
+    player.shutdown();
+}
+
+TEST_CASE("HouseVideoPlayer stops a decoder waiting on a full decode window and can replay")
+{
+    SDL_setenv_unsafe("SDL_AUDIODRIVER", "dummy", 1);
+    OpenYAMM::Engine::AssetFileSystem assetFileSystem;
+    REQUIRE(assetFileSystem.initialize(
+        OPENYAMM_SOURCE_DIR, videoAssetRoot(), OpenYAMM::Engine::AssetScaleTier::X1,
+        videoRuntimeRoot() != nullptr ? "mm6" : "mm7"));
+
+    OpenYAMM::Game::HouseVideoPlayer player;
+    REQUIRE(player.initialize());
+    const char *pClip = videoRuntimeRoot() != nullptr ? "mm6end1" : "arbiter good";
+    for (bool loopPlayback : {false, true})
+    {
+        CAPTURE(loopPlayback);
+        REQUIRE(player.play(assetFileSystem, pClip, "Videos/Cutscenes", loopPlayback));
+        // Do not update playback: the worker must fill the decode-ahead window.
+        // Acquiring the same mutex as the predicate proves it has entered wait.
+        REQUIRE(waitForBlockedDecoder(player));
+        CHECK_FALSE(player.hasFinishedPlayback());
+
+        const std::chrono::steady_clock::time_point started = std::chrono::steady_clock::now();
+        if (loopPlayback)
+        {
+            // Screen exit uses shutdown; the previous pass exercises direct stop.
+            player.shutdown();
+        }
+        else
+        {
+            player.stop();
+        }
+        CHECK_LT(std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count(), 2.0);
+        CHECK_FALSE(OpenYAMM::Game::HouseVideoPlayerTestAccess::hasStreamingSession(player));
+        CHECK_FALSE(OpenYAMM::Game::HouseVideoPlayerTestAccess::isDecodeWindowBlocked(player));
+        CHECK_FALSE(player.hasActiveFrame());
+        CHECK_EQ(OpenYAMM::Game::HouseVideoPlayerTestAccess::presentedFrameSerial(player), 0u);
+    }
 }

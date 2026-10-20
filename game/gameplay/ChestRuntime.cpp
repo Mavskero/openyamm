@@ -397,6 +397,7 @@ GameplayChestViewState buildMaterializedChestView(
     Party *pParty)
 {
     GameplayChestViewState view = {};
+    view.itemRecordCapacity = uint32_t(chest.rawItems.size() / ChestItemRecordSize);
     view.chestId = chestId;
     view.chestTypeId = chest.chestTypeId;
     view.flags = chest.flags;
@@ -629,6 +630,10 @@ GameplayChestViewState buildMaterializedChestView(
     for (size_t recordIndex = 0; recordIndex < rawItemIds.size(); ++recordIndex)
     {
         materializedRecordItems[recordIndex] = materializeChestRecord(rawItemIds[recordIndex], recordIndex);
+        if (!materializedRecordItems[recordIndex].empty())
+        {
+            materializedRecordItems[recordIndex].front().itemRecordIndex = int32_t(recordIndex);
+        }
     }
 
     for (uint8_t gridY = 0; gridY < view.gridHeight; ++gridY)
@@ -757,8 +762,127 @@ GameplayChestViewState buildMaterializedChestView(
 
     placeDeferredItems(guaranteedDeferredItems, true);
     placeDeferredItems(randomDeferredItems, false);
+    assignMissingChestItemRecords(view);
 
     return view;
+}
+
+namespace
+{
+std::optional<int32_t> firstFreeChestItemRecord(const GameplayChestViewState &view)
+{
+    std::vector<bool> occupied(view.itemRecordCapacity, false);
+    const auto mark = [&occupied](const std::vector<GameplayChestItemState> &items)
+    {
+        for (const GameplayChestItemState &item : items)
+        {
+            if (item.itemRecordIndex >= 0 && size_t(item.itemRecordIndex) < occupied.size())
+            {
+                occupied[size_t(item.itemRecordIndex)] = true;
+            }
+        }
+    };
+    mark(view.items);
+    mark(view.hiddenItems);
+    const auto empty = std::find(occupied.begin(), occupied.end(), false);
+    if (empty == occupied.end())
+    {
+        return std::nullopt;
+    }
+    return int32_t(std::distance(occupied.begin(), empty));
+}
+}
+
+void assignMissingChestItemRecords(GameplayChestViewState &view)
+{
+    const auto assign = [&view](std::vector<GameplayChestItemState> &items)
+    {
+        for (GameplayChestItemState &item : items)
+        {
+            if (item.itemRecordIndex < 0)
+            {
+                item.itemRecordIndex = firstFreeChestItemRecord(view).value_or(-1);
+            }
+        }
+    };
+    assign(view.items);
+    assign(view.hiddenItems);
+}
+
+bool insertChestItemOnce(
+    MapDeltaChest &chest,
+    std::optional<GameplayChestViewState> &view,
+    uint32_t itemId,
+    const ItemTable *pItemTable)
+{
+    if (itemId == 0 || pItemTable == nullptr || pItemTable->get(itemId) == nullptr)
+    {
+        return false;
+    }
+    const size_t capacity = chest.rawItems.size() / ChestItemRecordSize;
+    if (!view)
+    {
+        for (size_t index = 0; index < capacity; ++index)
+        {
+            int32_t existingId = 0;
+            readChestItemRecordInt32(chest, index, 0, existingId);
+            if (existingId == 0)
+            {
+                // Original hook writes Number only; retain the other source record fields.
+                std::memcpy(chest.rawItems.data() + index * ChestItemRecordSize, &itemId, sizeof(itemId));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    if (view->itemRecordCapacity == 0)
+    {
+        view->itemRecordCapacity = uint32_t(capacity);
+    }
+    assignMissingChestItemRecords(*view);
+    const std::optional<int32_t> record = firstFreeChestItemRecord(*view);
+    if (!record)
+    {
+        return false;
+    }
+    GameplayChestItemState item = {};
+    item.itemRecordIndex = *record;
+    item.item = ItemGenerator::makeInventoryItem(itemId, *pItemTable, ItemGenerationMode::ChestLoot);
+    item.itemId = itemId;
+    item.quantity = item.item.quantity;
+    resolveChestItemSize(item, pItemTable);
+    // A full visible grid does not mean the item record array is full.
+    view->hiddenItems.push_back(item);
+    tryPlaceHiddenChestItems(*view);
+    return true;
+}
+
+void applyPendingChestItemInsertions(
+    EventRuntimeState &state,
+    std::vector<MapDeltaChest> &chests,
+    std::vector<std::optional<GameplayChestViewState>> &views,
+    std::optional<GameplayChestViewState> &activeView,
+    const ItemTable *pItemTable)
+{
+    std::vector<EventRuntimeState::ChestItemInsertion> requests;
+    requests.swap(state.pendingChestItemInsertions);
+    for (const EventRuntimeState::ChestItemInsertion &request : requests)
+    {
+        if (request.chestId >= chests.size())
+        {
+            continue;
+        }
+        if (request.chestId >= views.size())
+        {
+            views.resize(request.chestId + 1);
+        }
+        insertChestItemOnce(chests[request.chestId], views[request.chestId], request.itemId, pItemTable);
+        if (activeView && activeView->chestId == request.chestId && views[request.chestId])
+        {
+            activeView = views[request.chestId];
+        }
+    }
 }
 
 void markChestOpened(uint32_t chestId, MapDeltaChest &chest, EventRuntimeState *pEventRuntimeState)
@@ -848,6 +972,17 @@ bool tryPlaceChestItemAt(
         placedItem.gridY = fallbackPlacement->second;
     }
 
+    placedItem.itemRecordIndex = -1;
+    if (view.itemRecordCapacity > 0)
+    {
+        assignMissingChestItemRecords(view);
+        const std::optional<int32_t> record = firstFreeChestItemRecord(view);
+        if (!record)
+        {
+            return false;
+        }
+        placedItem.itemRecordIndex = *record;
+    }
     view.items.push_back(placedItem);
     return true;
 }

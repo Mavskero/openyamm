@@ -20,6 +20,7 @@
 #include "game/ui/CharacterSkillRows.h"
 #include "game/ui/CharacterStatLayout.h"
 #include "game/ui/GameplayJournalMapUi.h"
+#include "game/ui/JournalTextLayout.h"
 #include "game/party/SkillData.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/ui/SpellbookUiLayout.h"
@@ -873,80 +874,64 @@ std::string journalNotesCategoryTitle(GameplayUiController::JournalNotesCategory
     return "Notes";
 }
 
-struct JournalStackedPageEntry
+float journalLineAdvance(
+    const auto &font, const std::vector<std::vector<std::string>> &entries, float fontScale)
 {
-    std::vector<std::string> lines;
-};
-
-struct JournalStackedPage
-{
-    std::vector<JournalStackedPageEntry> entries;
-};
+    float advance = std::max(1.0f, static_cast<float>(font.fontHeight) * fontScale);
+#if defined(__APPLE__)
+    // Match GameplayUiRuntime's fallback raster size and the shadow layer's vertical offset.
+    for (const std::vector<std::string> &lines : entries)
+    {
+        for (const std::string &line : lines)
+        {
+            if (hasUtf8MultibyteText(line))
+            {
+                const auto imageSize = Engine::measureAppleTextImageSize(line, font.fontHeight * fontScale);
+                if (imageSize)
+                {
+                    advance = std::max(advance, float(imageSize->height) + std::max(1.0f, fontScale));
+                }
+            }
+        }
+    }
+#else
+    (void)entries;
+#endif
+    return advance;
+}
 
 struct JournalStoryPage
 {
     std::string title;
     std::vector<std::string> lines;
+    float lineAdvance = 0.0f;
 };
 
-std::vector<JournalStackedPage> buildJournalStackedPages(
+JournalTextLayout buildJournalStackedPages(
     const GameplayScreenRuntime &context,
     const auto &font,
     const std::vector<std::string> &texts,
     float pageWidthPixels,
-    float pageHeightPixels,
-    float fontScale)
+    float fontScale,
+    JournalTextLayoutMetrics metrics)
 {
-    std::vector<JournalStackedPage> pages;
-
-    if (texts.empty())
-    {
-        return pages;
-    }
-
     const float wrapWidth = std::max(1.0f, pageWidthPixels / std::max(0.1f, fontScale));
-    const float lineHeight = std::max(1.0f, static_cast<float>(font.fontHeight) * fontScale);
-    const float dividerGap = std::max(10.0f, 12.0f * fontScale);
-    const size_t maxLinesPerPage = std::max<size_t>(1, static_cast<size_t>(std::floor(pageHeightPixels / lineHeight)));
-    JournalStackedPage currentPage = {};
-    float currentHeight = 0.0f;
-
+    std::vector<std::vector<std::string>> entries;
     for (const std::string &text : texts)
     {
-        std::vector<std::string> wrappedLines = context.wrapHudTextToWidth(font, text, wrapWidth);
-
-        if (wrappedLines.empty())
+        std::vector<std::string> lines = context.wrapHudTextToWidth(font, text, wrapWidth);
+        if (lines.empty())
         {
-            wrappedLines.push_back("");
+            lines.push_back("");
         }
-
-        if (wrappedLines.size() > maxLinesPerPage)
-        {
-            wrappedLines.resize(maxLinesPerPage);
-        }
-
-        const float entryHeight = static_cast<float>(wrappedLines.size()) * lineHeight;
-        const float additionalHeight = currentPage.entries.empty() ? entryHeight : dividerGap + entryHeight;
-
-        if (!currentPage.entries.empty() && currentHeight + additionalHeight > pageHeightPixels)
-        {
-            pages.push_back(std::move(currentPage));
-            currentPage = {};
-            currentHeight = 0.0f;
-        }
-
-        JournalStackedPageEntry entry = {};
-        entry.lines = std::move(wrappedLines);
-        currentPage.entries.push_back(std::move(entry));
-        currentHeight += currentPage.entries.size() == 1 ? entryHeight : dividerGap + entryHeight;
+        entries.push_back(std::move(lines));
     }
-
-    if (!currentPage.entries.empty())
+    metrics.lineAdvance = journalLineAdvance(font, entries, fontScale);
+    if (metrics.pageHeight < metrics.lineAdvance)
     {
-        pages.push_back(std::move(currentPage));
+        return {}; // A temporarily tiny viewport cannot display a line; source text remains intact.
     }
-
-    return pages;
+    return layoutJournalText(entries, metrics, JournalTextFlow::Stacked);
 }
 
 std::vector<JournalStoryPage> buildJournalStoryPages(
@@ -960,55 +945,46 @@ std::vector<JournalStoryPage> buildJournalStoryPages(
     float fontScale)
 {
     std::vector<JournalStoryPage> pages;
-
     if (pEventRuntimeState == nullptr || pParty == nullptr)
     {
         return pages;
     }
 
     const float wrapWidth = std::max(1.0f, pageWidthPixels / std::max(0.1f, fontScale));
-    const size_t linesPerPage = std::max<size_t>(
-        1,
-        static_cast<size_t>(std::floor(pageHeightPixels / std::max(1.0f, static_cast<float>(font.fontHeight) * fontScale))));
     const uint32_t historyContinentId = context.activeHistoryContinentId();
     const std::unordered_map<uint32_t, int32_t> &historyEventTimes =
         historyEventTimesForActiveContinent(*pEventRuntimeState);
-
+    std::vector<std::string> titles;
+    std::vector<std::vector<std::string>> entries;
     for (const JournalHistoryEntry &entry : historyTable.entriesForContinent(historyContinentId))
     {
         const auto historyTimeIt = historyEventTimes.find(entry.id);
-
         if (historyTimeIt == historyEventTimes.end())
         {
             continue;
         }
-
-        std::vector<std::string> wrappedLines = context.wrapHudTextToWidth(
-            font,
-            StoryTextFormatter::format(entry.text, *pParty, historyTimeIt->second),
-            wrapWidth);
-
-        if (wrappedLines.empty())
+        std::vector<std::string> lines = context.wrapHudTextToWidth(
+            font, StoryTextFormatter::format(entry.text, *pParty, historyTimeIt->second), wrapWidth);
+        if (lines.empty())
         {
-            wrappedLines.push_back("");
+            lines.push_back("");
         }
-
-        for (size_t lineIndex = 0; lineIndex < wrappedLines.size(); lineIndex += linesPerPage)
-        {
-            JournalStoryPage page = {};
-            page.title = entry.pageTitle;
-
-            const size_t endIndex = std::min(wrappedLines.size(), lineIndex + linesPerPage);
-
-            for (size_t chunkIndex = lineIndex; chunkIndex < endIndex; ++chunkIndex)
-            {
-                page.lines.push_back(wrappedLines[chunkIndex]);
-            }
-
-            pages.push_back(std::move(page));
-        }
+        titles.push_back(entry.pageTitle);
+        entries.push_back(std::move(lines));
     }
-
+    JournalTextLayoutMetrics metrics;
+    metrics.pageHeight = pageHeightPixels;
+    metrics.lineAdvance = journalLineAdvance(font, entries, fontScale);
+    if (metrics.pageHeight < metrics.lineAdvance)
+    {
+        return pages;
+    }
+    JournalTextLayout layout = layoutJournalText(entries, metrics, JournalTextFlow::SeparateEntries);
+    for (JournalTextPage &textPage : layout.pages)
+    {
+        JournalTextPageEntry &entry = textPage.entries.front();
+        pages.push_back({titles[entry.sourceEntryIndex], std::move(entry.lines), layout.lineAdvance});
+    }
     return pages;
 }
 
@@ -1126,7 +1102,8 @@ void renderHudLines(
     const std::vector<std::string> &lines,
     float x,
     float y,
-    float fontScale)
+    float fontScale,
+    float lineAdvance = 0.0f)
 {
     bgfx::TextureHandle coloredMainTextureHandle = context.ensureHudFontMainTextureColor(font, colorAbgr);
 
@@ -1135,7 +1112,7 @@ void renderHudLines(
         coloredMainTextureHandle = font.mainTextureHandle;
     }
 
-    const float lineHeight = static_cast<float>(font.fontHeight) * fontScale;
+    const float lineHeight = lineAdvance > 0.0f ? lineAdvance : static_cast<float>(font.fontHeight) * fontScale;
 
     for (size_t index = 0; index < lines.size(); ++index)
     {
@@ -3888,7 +3865,8 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
         };
 
     const auto renderTextureLayout =
-        [&context, &loadHudTexture, &resolveLayout](const std::string &layoutId, const std::string &textureName)
+        [&context, &loadHudTexture, &resolveLayout](
+            const std::string &layoutId, const std::string &textureName, bool useNativeSize = false)
         {
             const std::optional<GameplayScreenRuntime::HudTextureHandle> texture = loadHudTexture(textureName);
             const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolved = resolveLayout(layoutId);
@@ -3898,7 +3876,10 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
                 return;
             }
 
-            context.submitHudTexturedQuad(*texture, resolved->x, resolved->y, resolved->width, resolved->height);
+            // Selected UI packs can replace these decorations with smaller original images.
+            const float quadWidth = useNativeSize ? texture->width * resolved->scale : resolved->width;
+            const float quadHeight = useNativeSize ? texture->height * resolved->scale : resolved->height;
+            context.submitHudTexturedQuad(*texture, resolved->x, resolved->y, quadWidth, quadHeight);
         };
 
     const auto renderInteractiveTextureLayout =
@@ -4034,13 +4015,13 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
         case GameplayUiController::JournalView::Map:
             break;
         case GameplayUiController::JournalView::Quests:
-            renderTextureLayout("JournalQuestsTopLeftArt", "IRB-2");
+            renderTextureLayout("JournalQuestsTopLeftArt", "IRB-2", true);
             break;
         case GameplayUiController::JournalView::Story:
-            renderTextureLayout("JournalStoryTopLeftArt", "IRB-3");
+            renderTextureLayout("JournalStoryTopLeftArt", "IRB-3", true);
             break;
         case GameplayUiController::JournalView::Notes:
-            renderTextureLayout("JournalNotesTopLeftArt", "IRB-4");
+            renderTextureLayout("JournalNotesTopLeftArt", "IRB-4", true);
             break;
     }
 
@@ -4301,7 +4282,39 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
             pWorldRuntime != nullptr ? pWorldRuntime->eventRuntimeState() : nullptr;
         const Party *pParty = context.partyReadOnly();
         std::vector<std::string> bodyLines;
+        float bodyLineAdvance = 0.0f;
         std::string titleText;
+        const std::optional<GameplayScreenRuntime::HudTextureHandle> dividerTexture =
+            journalScreen.view != GameplayUiController::JournalView::Story ? loadHudTexture("DIVBAR") : std::nullopt;
+        JournalTextLayoutMetrics stackedMetrics;
+        stackedMetrics.pageHeight = textResolved->height;
+        if (dividerTexture)
+        {
+            stackedMetrics.dividerHeight = static_cast<float>(dividerTexture->height) * textResolved->scale;
+            stackedMetrics.dividerGapBefore = 7.0f * bodyFontScale;
+            stackedMetrics.dividerGapAfter = 9.0f * bodyFontScale;
+        }
+        const auto renderStackedPage = [&](const JournalTextLayout &layout, size_t requestedPage)
+        {
+            if (layout.pages.empty())
+            {
+                return;
+            }
+            const JournalTextPage &page = layout.pages[std::min(requestedPage, layout.pages.size() - 1)];
+            for (const JournalTextPageEntry &entry : page.entries)
+            {
+                if (entry.dividerY && dividerTexture)
+                {
+                    const float dividerWidth =
+                        std::min(textResolved->width, static_cast<float>(dividerTexture->width) * textResolved->scale);
+                    const float dividerX = textResolved->x + (textResolved->width - dividerWidth) * 0.5f;
+                    context.submitHudTexturedQuad(*dividerTexture, dividerX, textResolved->y + *entry.dividerY,
+                        dividerWidth, stackedMetrics.dividerHeight);
+                }
+                renderHudLines(context, *bodyFont, pTextLayout->textColorAbgr, entry.lines,
+                    textResolved->x, textResolved->y + entry.y, bodyFontScale, layout.lineAdvance);
+            }
+        };
 
         if (journalScreen.view == GameplayUiController::JournalView::Quests)
         {
@@ -4317,39 +4330,9 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
                 questTexts = buildCurrentQuestTexts(*pJournalQuestTable, *pParty);
             }
 
-            const std::vector<JournalStackedPage> pages = buildJournalStackedPages(
-                context,
-                *bodyFont,
-                questTexts,
-                textResolved->width,
-                textResolved->height,
-                bodyFontScale);
-            const size_t pageIndex = pages.empty() ? 0 : std::min(journalScreen.questPage, pages.size() - 1);
-
-            if (!pages.empty())
-            {
-                float textY = textResolved->y;
-                const float lineHeight = static_cast<float>(bodyFont->fontHeight) * bodyFontScale;
-                const std::optional<GameplayScreenRuntime::HudTextureHandle> dividerTexture = loadHudTexture("DIVBAR");
-
-                for (size_t entryIndex = 0; entryIndex < pages[pageIndex].entries.size(); ++entryIndex)
-                {
-                    const JournalStackedPageEntry &entry = pages[pageIndex].entries[entryIndex];
-                    renderHudLines(context, *bodyFont, pTextLayout->textColorAbgr, entry.lines, textResolved->x, textY, bodyFontScale);
-                    textY += static_cast<float>(entry.lines.size()) * lineHeight;
-
-                    if (entryIndex + 1 < pages[pageIndex].entries.size() && dividerTexture)
-                    {
-                        const float dividerWidth =
-                            std::min(textResolved->width, static_cast<float>(dividerTexture->width) * textResolved->scale);
-                        const float dividerHeight = static_cast<float>(dividerTexture->height) * textResolved->scale;
-                        const float dividerX = textResolved->x + (textResolved->width - dividerWidth) * 0.5f;
-                        textY += 7.0f * bodyFontScale;
-                        context.submitHudTexturedQuad(*dividerTexture, dividerX, textY, dividerWidth, dividerHeight);
-                        textY += dividerHeight + 9.0f * bodyFontScale;
-                    }
-                }
-            }
+            const JournalTextLayout layout = buildJournalStackedPages(
+                context, *bodyFont, questTexts, textResolved->width, bodyFontScale, stackedMetrics);
+            renderStackedPage(layout, journalScreen.questPage);
         }
         else if (journalScreen.view == GameplayUiController::JournalView::Story)
         {
@@ -4375,6 +4358,7 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
             {
                 titleText = pages[pageIndex].title;
                 bodyLines = pages[pageIndex].lines;
+                bodyLineAdvance = pages[pageIndex].lineAdvance;
             }
             else
             {
@@ -4428,46 +4412,17 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
                 }
             }
 
-            const std::vector<JournalStackedPage> pages = buildJournalStackedPages(
-                context,
-                *bodyFont,
-                noteTexts,
-                textResolved->width,
-                textResolved->height,
-                bodyFontScale);
-            const size_t pageIndex = pages.empty() ? 0 : std::min(journalScreen.notesPage, pages.size() - 1);
-
-            if (!pages.empty())
-            {
-                float textY = textResolved->y;
-                const float lineHeight = static_cast<float>(bodyFont->fontHeight) * bodyFontScale;
-                const std::optional<GameplayScreenRuntime::HudTextureHandle> dividerTexture = loadHudTexture("DIVBAR");
-
-                for (size_t entryIndex = 0; entryIndex < pages[pageIndex].entries.size(); ++entryIndex)
-                {
-                    const JournalStackedPageEntry &entry = pages[pageIndex].entries[entryIndex];
-                    renderHudLines(context, *bodyFont, pTextLayout->textColorAbgr, entry.lines, textResolved->x, textY, bodyFontScale);
-                    textY += static_cast<float>(entry.lines.size()) * lineHeight;
-
-                    if (entryIndex + 1 < pages[pageIndex].entries.size() && dividerTexture)
-                    {
-                        const float dividerWidth =
-                            std::min(textResolved->width, static_cast<float>(dividerTexture->width) * textResolved->scale);
-                        const float dividerHeight = static_cast<float>(dividerTexture->height) * textResolved->scale;
-                        const float dividerX = textResolved->x + (textResolved->width - dividerWidth) * 0.5f;
-                        textY += 7.0f * bodyFontScale;
-                        context.submitHudTexturedQuad(*dividerTexture, dividerX, textY, dividerWidth, dividerHeight);
-                        textY += dividerHeight + 9.0f * bodyFontScale;
-                    }
-                }
-            }
+            const JournalTextLayout layout = buildJournalStackedPages(
+                context, *bodyFont, noteTexts, textResolved->width, bodyFontScale, stackedMetrics);
+            renderStackedPage(layout, journalScreen.notesPage);
         }
 
         context.renderLayoutLabel(*pTitleLayout, *titleResolved, titleText);
 
         if (!bodyLines.empty())
         {
-            renderHudLines(context, *bodyFont, pTextLayout->textColorAbgr, bodyLines, textResolved->x, textResolved->y, bodyFontScale);
+            renderHudLines(context, *bodyFont, pTextLayout->textColorAbgr, bodyLines,
+                textResolved->x, textResolved->y, bodyFontScale, bodyLineAdvance);
         }
     }
 

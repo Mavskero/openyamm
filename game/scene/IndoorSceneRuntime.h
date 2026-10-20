@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <string>
 #include <unordered_map>
 
@@ -23,6 +24,7 @@ class GameplayCombatController;
 class GameplayProjectileService;
 class MergedBolsterMapTable;
 class MergedBolsterMonsterTable;
+class MergedBolsterFormulaTable;
 class MonsterProjectileTable;
 class NpcDialogTable;
 class Mm9MapTransitionTable;
@@ -74,7 +76,11 @@ public:
         const NpcDialogTable *pNpcDialogTable = nullptr,
         const MapItemSourceData *pItemSourceData = nullptr,
         const Mm9MapTransitionTable *pMm9MapTransitionTable = nullptr,
-        const Mm9TeacherScheduleTable *pMm9TeacherScheduleTable = nullptr
+        const Mm9TeacherScheduleTable *pMm9TeacherScheduleTable = nullptr,
+        std::span<const GameplayActorCombatState> preparedActorCombat = {},
+        const MergeMonsterGenerationState *pMonsterGeneration = nullptr,
+        const MergeMonsterSourceProfile *pMonsterSource = nullptr,
+        const MergedBolsterFormulaTable *pBolsterFormulas = nullptr
     );
     IndoorSceneRuntime(
         const std::string &mapFileName,
@@ -98,7 +104,8 @@ public:
         const NpcDialogTable *pNpcDialogTable = nullptr,
         const MapItemSourceData *pItemSourceData = nullptr,
         const Mm9MapTransitionTable *pMm9MapTransitionTable = nullptr,
-        const Mm9TeacherScheduleTable *pMm9TeacherScheduleTable = nullptr
+        const Mm9TeacherScheduleTable *pMm9TeacherScheduleTable = nullptr,
+        std::span<const GameplayActorCombatState> preparedActorCombat = {}
     );
 
     SceneKind kind() const override;
@@ -116,6 +123,8 @@ public:
     const std::optional<EventRuntimeState> &eventRuntimeStateStorage() const;
     const std::optional<ScriptedEventProgram> &localEventProgram() const override;
     const std::optional<ScriptedEventProgram> &globalEventProgram() const override;
+    bool executeGlobalAfterLoadEvents() override;
+    bool executeOnLeaveEvents() override;
     IndoorPartyRuntime &partyRuntime();
     const IndoorPartyRuntime &partyRuntime() const;
     IndoorWorldRuntime &worldRuntime();
@@ -156,6 +165,7 @@ private:
     std::optional<ScriptedEventProgram> m_localEventProgram;
     std::optional<ScriptedEventProgram> m_globalEventProgram;
     EventRuntime m_eventRuntime;
+    bool m_globalAfterLoadDispatched = false;
     IndoorPartyRuntime m_partyRuntime;
     IndoorWorldRuntime m_worldRuntime;
     std::vector<TimerState> m_timers;

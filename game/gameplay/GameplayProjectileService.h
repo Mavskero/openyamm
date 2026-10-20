@@ -26,6 +26,7 @@ public:
         Attack2,
         Spell1,
         Spell2,
+        Special,
     };
 
     struct ProjectileState

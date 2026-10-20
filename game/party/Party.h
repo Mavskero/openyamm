@@ -1,6 +1,7 @@
 #pragma once
 
 #include "game/party/CharacterState.h"
+#include "game/items/InventoryItem.h"
 #include "game/gameplay/NpcFollowerTypes.h"
 #include "game/tables/ClassSkillTable.h"
 #include "game/outdoor/OutdoorMovementDriver.h"
@@ -29,27 +30,6 @@ struct EventRuntimeState;
 class StandardItemEnchantTable;
 class SpecialItemEnchantTable;
 
-struct InventoryItem
-{
-    uint32_t objectDescriptionId = 0;
-    uint32_t quantity = 1;
-    uint8_t width = 1;
-    uint8_t height = 1;
-    uint8_t gridX = 0;
-    uint8_t gridY = 0;
-    bool identified = true;
-    bool broken = false;
-    bool stolen = false;
-    uint16_t standardEnchantId = 0;
-    uint16_t standardEnchantPower = 0;
-    uint16_t specialEnchantId = 0;
-    uint16_t artifactId = 0;
-    ItemRarity rarity = ItemRarity::Common;
-    uint16_t currentCharges = 0;
-    uint16_t maxCharges = 0;
-    float temporaryBonusRemainingSeconds = 0.0f;
-};
-
 struct LloydBeacon
 {
     std::string mapName;
@@ -76,6 +56,7 @@ struct Character
     static constexpr int InventoryHeight = 9;
 
     std::string name;
+    std::string biography;
     std::string role;
     std::string className;
     std::string portraitTextureName;
@@ -86,6 +67,7 @@ struct Character
     uint32_t portraitSequenceCounter = 0;
     uint16_t portraitImageIndex = 0;
     uint32_t rosterId = 0;
+    uint64_t memberId = 0; // Party-owned identity; roster templates remain unassigned until admission.
     uint32_t characterDataId = 0;
     int32_t voiceId = -1;
     uint32_t birthYear = 0;
@@ -267,6 +249,7 @@ struct CharacterBuffState
     SkillMastery skillMastery = SkillMastery::None;
     int power = 0;
     uint32_t casterMemberIndex = 0;
+    uint64_t casterMemberId = 0;
 
     bool active() const
     {
@@ -286,6 +269,42 @@ public:
         std::vector<InventoryItem> standardStock;
         std::vector<InventoryItem> specialStock;
         std::vector<InventoryItem> spellbookStock;
+    };
+
+    struct PendingItemDelivery
+    {
+        InventoryItem item;
+        int32_t recipientMemberIndex = -1; // -1: mouse; otherwise a fixed active-party member.
+        bool allowDropProtectedHeldItem = true; // Original source TakeOrDrop; generic event grants honor NoDrop.
+    };
+    static constexpr size_t MaxPendingItemDeliveries = 128;
+    static constexpr size_t MaxDetachedMembers = 32;
+    static constexpr size_t MaxDetachmentBatches = 64;
+    static constexpr uint32_t NoActiveMember = UINT32_MAX;
+
+    struct DetachmentAssignment
+    {
+        size_t memberIndex = 0;
+        uint32_t slotId = 0;
+    };
+
+    struct ReservedDetachment
+    {
+        uint32_t slotId = 0;
+        uint64_t memberId = 0; // Zero admits a new, uninstantiated template.
+        // Existing custody is preserved unless source generation explicitly supplies a replacement.
+        std::optional<Character> replacement;
+        bool generated = false; // A transient preparation fact, never inferred from Character defaults.
+    };
+
+    struct DetachedPartyMember
+    {
+        std::string ownerKey;
+        uint32_t slotId = 0;
+        Character character;
+        std::array<CharacterBuffState, CharacterBuffCount> characterBuffs = {};
+        // A fixed recipient of zero denotes this container's sole character until rejoining.
+        std::vector<PendingItemDelivery> pendingItemDeliveries;
     };
 
     struct Snapshot
@@ -326,6 +345,10 @@ public:
         std::unordered_map<uint32_t, uint32_t> npcItemOverrides;
         std::unordered_set<uint32_t> unavailableNpcIds;
         std::vector<HiredNpcFollower> hiredNpcFollowers;
+        std::vector<PendingItemDelivery> pendingItemDeliveries;
+        std::vector<DetachedPartyMember> detachedMembers;
+        std::vector<std::string> completedDetachmentOwners;
+        uint64_t nextMemberId = 1;
     };
 
     struct PendingAudioRequest
@@ -388,6 +411,8 @@ public:
     uint32_t setMemberExperience(size_t memberIndex, uint32_t experience);
     uint32_t grantSharedExperience(uint32_t totalExperience);
     std::optional<size_t> chooseMonsterAttackTarget(uint32_t attackPreferences, uint32_t seedHint);
+    std::vector<size_t> chooseMergeMonsterAttackTargets(
+        uint32_t sourcePreferences, uint8_t targetCount, uint32_t seedHint);
     void addGold(int amount);
     void addFood(int amount);
     void requestSound(SoundId soundId);
@@ -400,6 +425,7 @@ public:
     void setNpcTopicOverride(uint32_t npcId, uint32_t topicSlotIndex, uint32_t topicId);
     void setNpcGroupNews(uint32_t groupId, uint32_t newsId);
     void setNpcGreetingOverride(uint32_t npcId, uint32_t greetingId);
+    void recordNpcGreetingDisplay(uint32_t npcId, uint32_t displayCount);
     void setNpcHouseOverride(uint32_t npcId, uint32_t houseId);
     void clearNpcHouseOverride(uint32_t npcId);
     void setNpcItemOverride(uint32_t npcId, uint32_t itemId);
@@ -410,6 +436,15 @@ public:
     bool tryGrantItem(uint32_t objectDescriptionId, uint32_t quantity = 1);
     bool tryGrantInventoryItem(const InventoryItem &item, size_t *pRecipientMemberIndex = nullptr);
     bool tryGrantInventoryItemToMember(size_t memberIndex, const InventoryItem &item);
+    bool grantOwnedQuestItem(
+        const InventoryItem &item, int32_t recipientMemberIndex, bool allowDropProtectedHeldItem = true);
+    bool canQueueItemDeliveries(size_t count) const;
+    const std::vector<PendingItemDelivery> &pendingItemDeliveries() const;
+    void completeFirstPendingItemDelivery();
+    bool ownsPendingItem(uint32_t itemId) const;
+    int pendingItemCount(uint32_t itemId, std::optional<size_t> memberIndex = std::nullopt) const;
+    bool removePendingItem(uint32_t itemId, std::optional<size_t> memberIndex = std::nullopt);
+    static bool validPendingItemDelivery(const PendingItemDelivery &delivery, size_t memberCount);
     bool tryGrantInventoryItemStartingAt(
         size_t firstMemberIndex,
         const InventoryItem &item,
@@ -438,6 +473,7 @@ public:
     int withdrawAllBankGold();
     bool isFull() const;
     bool recruitRosterMember(const RosterEntry &rosterEntry);
+    Character makeRosterCharacter(const RosterEntry &rosterEntry) const;
     bool recruitCharacter(const Character &character);
     bool addAdventurersInnMember(const RosterEntry &rosterEntry, uint32_t portraitPictureId);
     bool addAdventurersInnMember(const Character &character, uint32_t portraitPictureId);
@@ -445,6 +481,15 @@ public:
     bool dismissMemberToAdventurersInn(size_t memberIndex);
     bool replaceMemberWithRosterEntry(size_t memberIndex, const RosterEntry &rosterEntry);
     bool hasRosterMember(uint32_t rosterId) const;
+    bool detachMembers(const std::string &ownerKey, const std::vector<DetachmentAssignment> &assignments);
+    bool detachMembersWithReserves(const std::string &ownerKey,
+        const std::vector<DetachmentAssignment> &assignments, const std::vector<ReservedDetachment> &reserves);
+    bool joinDetachedMember(const std::string &ownerKey, uint32_t slotId);
+    bool hasDetachedBatch(const std::string &ownerKey) const;
+    const DetachedPartyMember *detachedMember(const std::string &ownerKey, uint32_t slotId) const;
+    const std::vector<DetachedPartyMember> &detachedMembers() const;
+    static void initializeLegacyMemberIdentities(Snapshot &snapshot);
+    static bool validMemberOwnership(const Snapshot &snapshot, std::string &error);
     bool hasAward(uint32_t awardId) const;
     bool hasAward(size_t memberIndex, uint32_t awardId) const;
     void addAward(uint32_t awardId);
@@ -554,6 +599,7 @@ public:
         uint32_t skillLevel,
         SkillMastery skillMastery,
         uint32_t casterMemberIndex);
+    bool extendFeatherFall(float minimumRemainingSeconds);
     void applyCharacterBuff(
         size_t memberIndex,
         CharacterBuffId buffId,
@@ -630,8 +676,14 @@ private:
     void applyDefaultStartingSkills(Character &member) const;
     void markArtifactItemFoundIfRelevant(const InventoryItem &item);
     void recordEverOwnedItemIfRelevant(const InventoryItem &item);
+    void recordEverOwnedItemsFromCharacter(const Character &member);
     void recordEverOwnedItemsFromCurrentState();
     void applyWeeklyItemEffects();
+    bool assignMemberIdentity(Character &character);
+    bool hasDetachedRosterMember(uint32_t rosterId) const;
+    size_t totalPendingItemDeliveries() const;
+    void synchronizeCharacterBuffCasters();
+    void rebuildMagicalBonusesPreservingProgress();
     void queueSound(SoundId soundId);
     void queueSpeech(size_t memberIndex, SpeechId speechId);
     SoundId resolveDamageImpactSoundForMember(size_t memberIndex) const;
@@ -645,6 +697,9 @@ private:
     const ClassSkillTable *m_pClassSkillTable = nullptr;
     std::vector<Character> m_members;
     std::vector<AdventurersInnMember> m_adventurersInnMembers;
+    std::vector<DetachedPartyMember> m_detachedMembers;
+    std::vector<std::string> m_completedDetachmentOwners;
+    uint64_t m_nextMemberId = 1;
     size_t m_activeMemberIndex = 0;
     std::array<PartyBuffState, PartyBuffCount> m_partyBuffs = {};
     std::array<std::array<CharacterBuffState, CharacterBuffCount>, MaxMembers> m_characterBuffs = {};
@@ -683,6 +738,7 @@ private:
     std::unordered_map<uint32_t, uint32_t> m_npcItemOverrides;
     std::unordered_set<uint32_t> m_unavailableNpcIds;
     std::vector<HiredNpcFollower> m_hiredNpcFollowers;
+    std::vector<PendingItemDelivery> m_pendingItemDeliveries;
     uint32_t m_heldItemIdForQueries = 0;
     std::vector<PendingAudioRequest> m_pendingAudioRequests;
 };

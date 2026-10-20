@@ -38,7 +38,7 @@ bool hasDuration(const EventDialogContent &dialog)
 }
 }
 
-TEST_CASE("positioned outdoor travel shows its charged five days before confirmation")
+TEST_CASE("positioned script moves do not invent five travel days from outdoor filenames")
 {
     MapStatsEntry current = {};
     current.fileName = "outd3.odm";
@@ -48,9 +48,9 @@ TEST_CASE("positioned outdoor travel shows its charged five days before confirma
     const EventDialogContent dialog = travelDialog(&current, true, "oute3.odm");
     REQUIRE(dialog.isActive);
     CHECK(dialog.title == "新索匹格镇");
-    REQUIRE(dialog.lines.size() == 2);
-    CHECK(dialog.lines[0] == "It will take 5 days to travel to 新索匹格镇.");
-    CHECK(dialog.lines[1] == "Do you wish to enter 新索匹格镇?");
+    REQUIRE(dialog.lines.size() == 1);
+    CHECK(dialog.lines[0] == "Do you wish to enter 新索匹格镇?");
+    CHECK_FALSE(hasDuration(dialog));
     REQUIRE(dialog.actions.size() == 2);
     CHECK(dialog.actions[0].kind == EventDialogActionKind::MapTransitionConfirm);
     CHECK(dialog.actions[1].kind == EventDialogActionKind::MapTransitionCancel);
@@ -64,8 +64,7 @@ TEST_CASE("positioned travel does not borrow a different edge route duration")
     current.eastTransition->destinationMapFileName = "somewhere-else.odm";
     current.eastTransition->travelDays = 2;
     const EventDialogContent dialog = travelDialog(&current, true, "oute3.odm");
-    REQUIRE(hasDuration(dialog));
-    CHECK(dialog.lines[0] == "It will take 5 days to travel to 新索匹格镇.");
+    CHECK_FALSE(hasDuration(dialog));
 }
 
 TEST_CASE("same map and dungeon moves do not claim multi day outdoor travel")

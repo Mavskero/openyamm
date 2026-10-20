@@ -117,6 +117,8 @@ bool isPointInsideOutdoorPolygonProjected(
     const bx::Vec3 &normal
 );
 float calculateOutdoorFaceHeight(const OutdoorFaceGeometryData &geometry, float x, float y);
+bool calculateOutdoorSupportFaceHeight(
+    const OutdoorFaceGeometryData &geometry, float x, float y, float xySlack, float &height);
 bool intersectOutdoorSegmentWithFace(
     const OutdoorFaceGeometryData &geometry,
     const bx::Vec3 &segmentStart,

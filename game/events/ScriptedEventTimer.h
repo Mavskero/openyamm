@@ -46,6 +46,8 @@ struct ScriptedEventTimerDefinition
     uint8_t triggerStep = 0;
     uint32_t registrationIndex = 0;
     bool repeating = false;
+    // Derived from Lua metadata, never persisted: callbacks are re-created for each map entry.
+    bool temporaryMapLifecycle = false;
     uint16_t intervalHalfMinutes = 0;
     int startHour = 0;
     int startMinute = 0;

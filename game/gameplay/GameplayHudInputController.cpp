@@ -293,6 +293,192 @@ void GameplayHudInputController::handlePartyPortraitInput(
         });
 }
 
+GameplayHudPointerTarget GameplayHudInputController::resolveGameplayHudButtonTarget(
+    const GameplayScreenRuntime &context,
+    const GameplayHudButtonInputConfig &config)
+{
+    if (!config.allowInput || config.screenWidth <= 0 || config.screenHeight <= 0)
+    {
+        return {};
+    }
+
+    const float pointerX = config.pointerX;
+    const float pointerY = config.pointerY;
+    const GameplayContextActionState &contextActionState = context.contextActionStateReadOnly();
+    const bool hasDropHeldItemAction =
+        contextActionState.visible
+        && contextActionState.primaryIndex < contextActionState.actions.size()
+        && contextActionState.actions[contextActionState.primaryIndex].kind
+            == GameplayContextActionKind::DropHeldItem;
+    const bool contextActionButtonEnabled =
+        context.settingsSnapshot().contextActionPopup || hasDropHeldItemAction;
+
+    if (context.interactionState().gameplayHudPressedTarget.type
+            == GameplayHudPointerTargetType::ContextActionButton
+        && contextActionButtonEnabled
+        && pointerInsideHudElement(context, config, "OutdoorMobileContextActionButton", pointerX, pointerY))
+    {
+        return context.interactionState().gameplayHudPressedTarget;
+    }
+
+    if (pointerInsideHudElement(context, config, "OutdoorFollowerToggle", pointerX, pointerY))
+    {
+        return {GameplayHudPointerTargetType::FollowerPanelToggleButton};
+    }
+
+    if (context.interactionState().followerPanelOpen)
+    {
+        static constexpr std::array<const char *, VisibleFollowerPanelSlots> FollowerSlots = {{
+            "OutdoorFollowerSlot_1",
+            "OutdoorFollowerSlot_2",
+            "OutdoorFollowerSlot_3"
+        }};
+
+        for (size_t slotIndex = 0; slotIndex < FollowerSlots.size(); ++slotIndex)
+        {
+            if (pointerInsideHudElement(context, config, FollowerSlots[slotIndex], pointerX, pointerY))
+            {
+                return {GameplayHudPointerTargetType::FollowerPanelPortrait, slotIndex};
+            }
+        }
+
+        if (pointerInsideHudElement(context, config, "OutdoorFollowerScrollUp", pointerX, pointerY))
+        {
+            return {GameplayHudPointerTargetType::FollowerPanelScrollUpButton};
+        }
+
+        if (pointerInsideHudElement(context, config, "OutdoorFollowerScrollDown", pointerX, pointerY))
+        {
+            return {GameplayHudPointerTargetType::FollowerPanelScrollDownButton};
+        }
+    }
+
+    if (contextActionButtonEnabled
+        && contextActionState.visible
+        && contextActionState.primaryIndex < contextActionState.actions.size()
+        && pointerInsideHudElement(context, config, "OutdoorMobileContextActionButton", pointerX, pointerY))
+    {
+        return {GameplayHudPointerTargetType::ContextActionButton, contextActionState.primaryIndex};
+    }
+
+    const std::pair<const char *, GameplayHudPointerTargetType> targets[] = {
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorButtonOptions",
+                "OutdoorStandardButtonOptions"),
+            GameplayHudPointerTargetType::MenuButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorMobileButtonPause",
+                ""),
+            GameplayHudPointerTargetType::TurnBasedToggleButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorButtonRest",
+                "OutdoorStandardButtonRest"),
+            GameplayHudPointerTargetType::RestButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorButtonBooks",
+                "OutdoorStandardButtonBooks"),
+            GameplayHudPointerTargetType::BooksButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorMobileButtonInventory",
+                ""),
+            GameplayHudPointerTargetType::InventoryButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorButtonDimensionDoor",
+                "OutdoorStandardButtonDimensionDoor"),
+            GameplayHudPointerTargetType::DimensionDoorButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorButtonQuickReference",
+                "OutdoorStandardButtonQuickReference"),
+            GameplayHudPointerTargetType::QuickReferenceButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorMobileButtonQuickCast",
+                ""),
+            GameplayHudPointerTargetType::QuickCastButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorMobileButtonAttack",
+                ""),
+            GameplayHudPointerTargetType::AttackButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorMobileButtonCast",
+                ""),
+            GameplayHudPointerTargetType::CastButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorMinimapZoomIn",
+                "OutdoorStandardMinimapZoomIn"),
+            GameplayHudPointerTargetType::MinimapZoomInButton
+        },
+        {
+            activeGameplayButtonLayoutId(
+                context,
+                "OutdoorMinimapZoomOut",
+                "OutdoorStandardMinimapZoomOut"),
+            GameplayHudPointerTargetType::MinimapZoomOutButton
+        }
+    };
+
+    for (const auto &[pLayoutId, targetType] : targets)
+    {
+        if (pLayoutId == nullptr || *pLayoutId == '\0')
+        {
+            continue;
+        }
+
+        const GameplayScreenRuntime::HudLayoutElement *pLayout = context.findHudLayoutElement(pLayoutId);
+
+        if (pLayout == nullptr)
+        {
+            continue;
+        }
+
+        const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolved =
+            context.resolveHudLayoutElement(
+                pLayoutId,
+                config.screenWidth,
+                config.screenHeight,
+                pLayout->width,
+                pLayout->height);
+
+        if (resolved && context.isPointerInsideResolvedElement(*resolved, pointerX, pointerY))
+        {
+            return {targetType};
+        }
+    }
+
+    return {};
+}
+
 void GameplayHudInputController::handleGameplayHudButtonInput(
     GameplayScreenRuntime &context,
     const GameplayHudButtonInputConfig &config)
@@ -317,188 +503,23 @@ void GameplayHudInputController::handleGameplayHudButtonInput(
         context.interactionState().gameplayHudClickLatch,
         context.interactionState().gameplayHudPressedTarget,
         GameplayHudPointerTarget{},
-        [&context, &config, &pointerState](float pointerX, float pointerY) -> GameplayHudPointerTarget
+        [&context, &config, &pointerState](float, float) -> GameplayHudPointerTarget
         {
-            const GameplayContextActionState &contextActionState = context.contextActionStateReadOnly();
-            const bool hasDropHeldItemAction =
-                contextActionState.visible
-                && contextActionState.primaryIndex < contextActionState.actions.size()
-                && contextActionState.actions[contextActionState.primaryIndex].kind
-                    == GameplayContextActionKind::DropHeldItem;
-            const bool contextActionButtonEnabled =
-                context.settingsSnapshot().contextActionPopup || hasDropHeldItemAction;
+            const GameplayHudPointerTarget target = resolveGameplayHudButtonTarget(context, config);
 
-            if (context.interactionState().gameplayHudPressedTarget.type
-                    == GameplayHudPointerTargetType::ContextActionButton
-                && contextActionButtonEnabled
-                && pointerInsideHudElement(context, config, "OutdoorMobileContextActionButton", pointerX, pointerY))
+            if (target.type == GameplayHudPointerTargetType::ContextActionButton
+                && context.interactionState().gameplayHudPressedTarget.type
+                    != GameplayHudPointerTargetType::ContextActionButton
+                && pointerState.leftButtonPressed
+                && !context.interactionState().gameplayHudClickLatch)
             {
-                return context.interactionState().gameplayHudPressedTarget;
+                const GameplayContextActionState &contextActionState = context.contextActionStateReadOnly();
+                context.interactionState().gameplayHudPressedContextActionActive = true;
+                context.interactionState().gameplayHudPressedContextActionHit =
+                    contextActionState.actions[target.index].worldHit;
             }
 
-            if (pointerInsideHudElement(context, config, "OutdoorFollowerToggle", pointerX, pointerY))
-            {
-                return {GameplayHudPointerTargetType::FollowerPanelToggleButton};
-            }
-
-            if (context.interactionState().followerPanelOpen)
-            {
-                static constexpr std::array<const char *, VisibleFollowerPanelSlots> FollowerSlots = {{
-                    "OutdoorFollowerSlot_1",
-                    "OutdoorFollowerSlot_2",
-                    "OutdoorFollowerSlot_3"
-                }};
-
-                for (size_t slotIndex = 0; slotIndex < FollowerSlots.size(); ++slotIndex)
-                {
-                    if (pointerInsideHudElement(context, config, FollowerSlots[slotIndex], pointerX, pointerY))
-                    {
-                        return {GameplayHudPointerTargetType::FollowerPanelPortrait, slotIndex};
-                    }
-                }
-
-                if (pointerInsideHudElement(context, config, "OutdoorFollowerScrollUp", pointerX, pointerY))
-                {
-                    return {GameplayHudPointerTargetType::FollowerPanelScrollUpButton};
-                }
-
-                if (pointerInsideHudElement(context, config, "OutdoorFollowerScrollDown", pointerX, pointerY))
-                {
-                    return {GameplayHudPointerTargetType::FollowerPanelScrollDownButton};
-                }
-            }
-
-            if (contextActionButtonEnabled
-                && contextActionState.visible
-                && contextActionState.primaryIndex < contextActionState.actions.size()
-                && pointerInsideHudElement(context, config, "OutdoorMobileContextActionButton", pointerX, pointerY))
-            {
-                if (pointerState.leftButtonPressed && !context.interactionState().gameplayHudClickLatch)
-                {
-                    context.interactionState().gameplayHudPressedContextActionActive = true;
-                    context.interactionState().gameplayHudPressedContextActionHit =
-                        contextActionState.actions[contextActionState.primaryIndex].worldHit;
-                }
-
-                return {GameplayHudPointerTargetType::ContextActionButton, contextActionState.primaryIndex};
-            }
-
-            const std::pair<const char *, GameplayHudPointerTargetType> targets[] = {
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorButtonOptions",
-                        "OutdoorStandardButtonOptions"),
-                    GameplayHudPointerTargetType::MenuButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorMobileButtonPause",
-                        ""),
-                    GameplayHudPointerTargetType::TurnBasedToggleButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorButtonRest",
-                        "OutdoorStandardButtonRest"),
-                    GameplayHudPointerTargetType::RestButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorButtonBooks",
-                        "OutdoorStandardButtonBooks"),
-                    GameplayHudPointerTargetType::BooksButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorMobileButtonInventory",
-                        ""),
-                    GameplayHudPointerTargetType::InventoryButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorButtonDimensionDoor",
-                        "OutdoorStandardButtonDimensionDoor"),
-                    GameplayHudPointerTargetType::DimensionDoorButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorButtonQuickReference",
-                        "OutdoorStandardButtonQuickReference"),
-                    GameplayHudPointerTargetType::QuickReferenceButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorMobileButtonQuickCast",
-                        ""),
-                    GameplayHudPointerTargetType::QuickCastButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorMobileButtonAttack",
-                        ""),
-                    GameplayHudPointerTargetType::AttackButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorMobileButtonCast",
-                        ""),
-                    GameplayHudPointerTargetType::CastButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorMinimapZoomIn",
-                        "OutdoorStandardMinimapZoomIn"),
-                    GameplayHudPointerTargetType::MinimapZoomInButton
-                },
-                {
-                    activeGameplayButtonLayoutId(
-                        context,
-                        "OutdoorMinimapZoomOut",
-                        "OutdoorStandardMinimapZoomOut"),
-                    GameplayHudPointerTargetType::MinimapZoomOutButton
-                }
-            };
-
-            for (const auto &[pLayoutId, targetType] : targets)
-            {
-                if (pLayoutId == nullptr || *pLayoutId == '\0')
-                {
-                    continue;
-                }
-
-                const GameplayScreenRuntime::HudLayoutElement *pLayout = context.findHudLayoutElement(pLayoutId);
-
-                if (pLayout == nullptr)
-                {
-                    continue;
-                }
-
-                const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolved =
-                    context.resolveHudLayoutElement(
-                        pLayoutId,
-                        config.screenWidth,
-                        config.screenHeight,
-                        pLayout->width,
-                        pLayout->height);
-
-                if (resolved && context.isPointerInsideResolvedElement(*resolved, pointerX, pointerY))
-                {
-                    return {targetType};
-                }
-            }
-
-            return {};
+            return target;
         },
         [&context](const GameplayHudPointerTarget &target)
         {

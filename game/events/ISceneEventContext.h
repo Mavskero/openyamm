@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -14,6 +15,10 @@ public:
     virtual ~ISceneEventContext() = default;
 
     virtual float currentGameMinutes() const = 0;
+    virtual double currentGameMinutesPrecise() const
+    {
+        return currentGameMinutes();
+    }
     virtual const MapDeltaData *mapDeltaData() const = 0;
     virtual MapDeltaData *mapDeltaData() = 0;
     virtual bool setFacetBit(uint32_t cogNumber, uint32_t bit, bool isOn) = 0;
@@ -94,10 +99,55 @@ public:
         bool invisibleAsDead
     ) const = 0;
 
-    virtual bool specialJump(uint32_t encodedHorizontalVelocity, uint32_t verticalVelocity)
+    virtual bool specialJump(uint32_t encodedAngles, uint32_t speedBits)
     {
-        (void)encodedHorizontalVelocity;
-        (void)verticalVelocity;
+        (void)encodedAngles;
+        (void)speedBits;
+        return false;
+    }
+
+    // Source Direction/ZAngle use 2048 units per turn; Speed may be fractional.
+    virtual bool sourceJump(float direction, float zAngle, float speed)
+    {
+        (void)direction;
+        (void)zAngle;
+        (void)speed;
+        return false;
+    }
+
+    // Source Party.X/Y/Z writes retain jump momentum, flight, timers and pending movement.
+    virtual bool setPartyPositionForEvents(float x, float y, float footZ)
+    {
+        (void)x;
+        (void)y;
+        (void)footZ;
+        return false;
+    }
+
+    virtual bool setMapDecorationVisible(size_t entityIndex, bool visible)
+    {
+        (void)entityIndex;
+        (void)visible;
+        return false;
+    }
+
+    virtual bool setMapDecorationVisibleByEventKey(uint32_t eventKey, bool visible)
+    {
+        (void)eventKey;
+        (void)visible;
+        return false;
+    }
+
+    // The original Party.Direction query is an integer in [0, 2047].
+    virtual uint32_t partyDirectionForEvents() const
+    {
+        return 0;
+    }
+
+    virtual bool setPartyDirectionForEvents(uint32_t direction, float lookAngle)
+    {
+        (void)direction;
+        (void)lookAngle;
         return false;
     }
 

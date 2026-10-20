@@ -57,6 +57,8 @@ public:
     const OutdoorWorldRuntime &worldRuntime() const;
     const std::optional<ScriptedEventProgram> &localEventProgram() const override;
     const std::optional<ScriptedEventProgram> &globalEventProgram() const override;
+    bool executeGlobalAfterLoadEvents() override;
+    bool executeOnLeaveEvents() override;
     AdvanceFrameResult advanceFrame(
         const OutdoorMovementInput &movementInput,
         float deltaSeconds,
@@ -79,6 +81,9 @@ public:
     bool executeEventHooks(EventRuntimeHookKind kind);
 
 private:
+    bool processMapBoundaryHook(MapBoundaryEdge edge, const OutdoorMoveState &moveState);
+    void resetBoundaryHookAfterMovingAway(const OutdoorMoveState &moveState);
+
     std::string m_mapFileName;
     MapStatsEntry m_mapEntry;
     OutdoorPartyRuntime *m_pPartyRuntime = nullptr;
@@ -86,6 +91,11 @@ private:
     std::optional<ScriptedEventProgram> m_localEventProgram;
     std::optional<ScriptedEventProgram> m_globalEventProgram;
     EventRuntime m_eventRuntime;
+    bool m_globalAfterLoadDispatched = false;
+    std::optional<MapBoundaryEdge> m_lastBoundaryHookEdge;
+    float m_boundaryHookContactX = 0.0f;
+    float m_boundaryHookContactY = 0.0f;
+    bool m_boundaryHookHandled = false;
     Mm9PositionedTransitionRuntime m_mm9PositionedTransitionRuntime;
     Mm9TeacherScheduleRuntime m_mm9TeacherScheduleRuntime;
 };

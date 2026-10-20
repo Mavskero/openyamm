@@ -63,6 +63,19 @@ struct GameplayUiFramePerformanceDiagnostics
     GameplayUiOverlayFramePerformanceDiagnostics overlays = {};
 };
 
+struct BreachAlvarSessionResult
+{
+    enum class Code
+    {
+        Committed,
+        AlreadyApplied,
+        Rejected,
+        Unsafe,
+    };
+    Code code = Code::Rejected;
+    std::string error;
+};
+
 class GameSession
 {
 public:
@@ -92,8 +105,8 @@ public:
     const std::string &currentMapFileName() const;
     void setCurrentMapFileName(const std::string &mapFileName);
     void setCurrentMapFileName(std::string &&mapFileName);
-    float gameMinutes() const;
-    void setGameMinutes(float gameMinutes);
+    double gameMinutes() const;
+    void setGameMinutes(double gameMinutes);
 
     GameplayUiController &gameplayUiController();
     const GameplayUiController &gameplayUiController() const;
@@ -168,6 +181,16 @@ public:
     int32_t namedGlobalVar(const std::string &name, int32_t defaultValue = 0) const;
     void setNamedGlobalVar(const std::string &name, int32_t value);
     void clearNamedGlobalVar(const std::string &name);
+    const std::optional<BreachAlvarCompanionState> &breachAlvarCompanions() const;
+    const std::optional<BreachMazeRunData> &breachMazeRunData() const;
+    void setBreachMazeRunData(std::optional<BreachMazeRunData> data);
+    // Read-only projection query; deliberately valid outside a current NPC dialogue.
+    bool isBreachAlvarCompanionAvailable(uint32_t npcId) const;
+    // Call after initialize/restore and before the world clock advances. Does not open map admission.
+    bool bindBreachAlvarCompanionRuntime(std::string &error);
+    // Called only after the Lua/world/UI event stack has returned to a synchronous safe point.
+    BreachAlvarSessionResult processBreachAlvarCompanionRequest(
+        const EventRuntimeState::PendingBreachAlvarCompanionRequest &request);
     void mergeNamedGlobalVarsFromRuntime(const EventRuntimeState &runtimeState);
     void applyNamedGlobalVarsToRuntime(EventRuntimeState &runtimeState) const;
     void applyHistoryToRuntime(EventRuntimeState &runtimeState) const;
@@ -315,8 +338,10 @@ private:
     std::optional<IndoorSceneRuntime::Snapshot> m_currentIndoorSceneState;
     std::unordered_map<std::string, IndoorSceneRuntime::Snapshot> m_indoorSceneStates;
     std::unordered_map<std::string, int32_t> m_namedGlobalVars;
+    std::optional<BreachAlvarCompanionState> m_breachAlvarCompanions;
+    std::optional<BreachMazeRunData> m_breachMazeRunData;
     std::unordered_map<uint32_t, std::unordered_map<uint32_t, int32_t>> m_historyEventTimesByContinent;
-    float m_gameMinutes = 9.0f * 60.0f;
+    double m_gameMinutes = 9.0 * 60.0;
     float m_outdoorCameraYawRadians = 0.0f;
     float m_outdoorCameraPitchRadians = 0.0f;
     float m_indoorCameraYawRadians = 0.0f;

@@ -1534,6 +1534,9 @@ bool GameDataLoader::loadInternal(
     bool loadInitialMap)
 {
     m_activeWorldId = normalizeWorldId(assetFileSystem.getActiveWorldId());
+    m_commonTablesLoaded = false;
+    m_mergeMonsterSourceProfile.reset();
+    m_breachMazeRuntimeProfile.reset();
     m_loadedTables.clear();
     m_selectedMap.reset();
     m_selectedMapRenderSourcePixelsReleased = false;
@@ -1544,6 +1547,25 @@ bool GameDataLoader::loadInternal(
     m_scriptBitmapDirectoryAssetPathsByPath.clear();
     m_scriptBitmapPathByKey.clear();
     m_scriptBitmapPixelsByKey.clear();
+
+    m_breachAlvarCompanionProfile.reset();
+    // Engine packages and mounted engine development roots expose root metadata at this flat key.
+    // Unlike data_tables/events, arbitrary engine/<filename> paths have no legacy VFS alias.
+    const std::string companionPath(BreachAlvarCompanionContentPath);
+    if (assetFileSystem.exists(companionPath))
+    {
+        const std::optional<std::string> text = assetFileSystem.readTextFile(companionPath);
+        std::string error;
+        if (text)
+        {
+            m_breachAlvarCompanionProfile = loadBreachAlvarCompanionProfileText(*text, error);
+        }
+        if (!m_breachAlvarCompanionProfile)
+        {
+            std::cerr << "Invalid Breach Alvar companion profile: " << error << '\n';
+            return false;
+        }
+    }
 
     std::vector<std::vector<std::string>> combatTextRows;
     m_combatTextTable = {};
@@ -1783,6 +1805,7 @@ bool GameDataLoader::loadInternal(
         }
     }
 
+    m_commonTablesLoaded = true;
     return true;
 }
 
@@ -1826,6 +1849,30 @@ bool GameDataLoader::loadMapByFileNameForGameplay(
     }
 
     return loadSelectedMap(assetFileSystem, selectedMap->id, MapLoadPurpose::FullGameplay, progressPump);
+}
+
+bool GameDataLoader::loadPreparedIndoorMapForGameplay(
+    const Engine::AssetFileSystem &assetFileSystem,
+    const PreparedIndoorMapInstance &instance,
+    const MapLoadProgressPump &progressPump)
+{
+    // Resolve by world as well as filename. Canonical stem lookup alone also accepts other extensions,
+    // so loadSelectedMap verifies the complete original source name before publishing any candidate.
+    if (instance.worldId.empty() || instance.mapFileName.empty())
+    {
+        std::cerr << "Prepared indoor map is missing its source identity.\n";
+        return false;
+    }
+    const std::optional<MapStatsEntry> selectedMap =
+        m_mapRegistry.findByWorldAndFileName(instance.worldId, instance.mapFileName);
+    if (!selectedMap)
+    {
+        std::cerr << "Prepared indoor map source is absent from the map registry: "
+                  << instance.worldId << '/' << instance.mapFileName << '\n';
+        return false;
+    }
+    return loadSelectedMap(assetFileSystem, selectedMap->id, MapLoadPurpose::FullGameplay,
+        progressPump, &instance);
 }
 
 bool GameDataLoader::loadMapByFileNameForHeadlessGameplay(
@@ -1886,6 +1933,50 @@ const MonsterTable &GameDataLoader::getMonsterTable() const
     return m_monsterTable;
 }
 
+const MergeMonsterSourceProfile &GameDataLoader::getOrCreateMergeMonsterSourceProfile(
+    const Engine::AssetFileSystem &assetFileSystem)
+{
+    if (!m_commonTablesLoaded || normalizeWorldId(assetFileSystem.getActiveWorldId()) != m_activeWorldId)
+    {
+        throw MergeMonsterSourceError({MergeMonsterSourceErrorCode::UnsupportedProfile, 0, -1,
+            "common gameplay tables", "load the current mounted world's gameplay tables before source preparation"});
+    }
+    if (!m_mergeMonsterSourceProfile)
+    {
+        std::vector<std::vector<std::string>> baseRows;
+        const std::string path = engineDataTablePath("monster_data.txt");
+        if (!loadTextTableRows(assetFileSystem, path, baseRows))
+        {
+            throw MergeMonsterSourceError({MergeMonsterSourceErrorCode::MissingResource, 0, -1,
+                path, "cannot read original base monster mechanical rows"});
+        }
+        // Read the base table, never the composed world append rows or lossy MonsterStatsEntry values.
+        // Construction is local/atomic; a rejected three-column projectile package leaves no cached profile.
+        m_mergeMonsterSourceProfile.emplace(MergeMonsterSourceProfile::fromRows(
+            baseRows, m_monsterTable, m_monsterProjectileTable, m_spellTable));
+    }
+    return *m_mergeMonsterSourceProfile;
+}
+
+const BreachMazeRuntimeProfile &GameDataLoader::getOrCreateBreachMazeRuntimeProfile(
+    const Engine::AssetFileSystem &assetFileSystem)
+{
+    if (!m_commonTablesLoaded || normalizeWorldId(assetFileSystem.getActiveWorldId()) != m_activeWorldId)
+    {
+        throw std::invalid_argument("Load mounted gameplay tables before maze profile preparation");
+    }
+    if (!m_breachMazeRuntimeProfile)
+    {
+        const auto bytes = assetFileSystem.readBinaryFile(std::string(BreachMazeRuntimeProfileAsset));
+        if (!bytes)
+        {
+            throw std::invalid_argument("Missing packaged Breach maze profile; reimport original content");
+        }
+        m_breachMazeRuntimeProfile = decodeBreachMazeRuntimeProfile(*bytes);
+    }
+    return *m_breachMazeRuntimeProfile;
+}
+
 const MonsterProjectileTable &GameDataLoader::getMonsterProjectileTable() const
 {
     return m_monsterProjectileTable;
@@ -1899,6 +1990,11 @@ const ObjectTable &GameDataLoader::getObjectTable() const
 const SpellTable &GameDataLoader::getSpellTable() const
 {
     return m_spellTable;
+}
+
+const std::optional<BreachAlvarCompanionProfile> &GameDataLoader::getBreachAlvarCompanionProfile() const
+{
+    return m_breachAlvarCompanionProfile;
 }
 
 const CombatTextTable &GameDataLoader::getCombatTextTable() const
@@ -4385,13 +4481,10 @@ bool GameDataLoader::loadSelectedMap(
     const Engine::AssetFileSystem &assetFileSystem,
     int mapId,
     MapLoadPurpose mapLoadPurpose,
-    const MapLoadProgressPump &progressPump
+    const MapLoadProgressPump &progressPump,
+    const PreparedIndoorMapInstance *pPreparedIndoorInstance
 )
 {
-    m_selectedMap.reset();
-    m_selectedMapRenderSourcePixelsReleased = false;
-    m_lastReleasedMapRenderSourcePixelBytes = 0;
-    m_mapAssetLoadSharedCache.clearTransientBitmapData();
     const std::optional<MapStatsEntry> selectedMap = m_mapRegistry.findById(mapId);
 
     if (!selectedMap)
@@ -4399,6 +4492,22 @@ bool GameDataLoader::loadSelectedMap(
         std::cerr << "Failed to select map from map registry: id=" << mapId << '\n';
         return false;
     }
+    if (pPreparedIndoorInstance != nullptr
+        && (!m_commonTablesLoaded
+            || pPreparedIndoorInstance->worldId != selectedMap->worldId
+            || toLowerCopy(pPreparedIndoorInstance->mapFileName) != toLowerCopy(selectedMap->fileName)
+            || !toLowerCopy(selectedMap->fileName).ends_with(".blv")
+            || normalizeWorldId(assetFileSystem.getActiveWorldId()) != selectedMap->worldId
+            || m_activeWorldId != selectedMap->worldId))
+    {
+        std::cerr << "Prepared indoor map source does not match the selected map and active world: "
+                  << pPreparedIndoorInstance->worldId << '/' << pPreparedIndoorInstance->mapFileName << '\n';
+        return false;
+    }
+    m_selectedMap.reset();
+    m_selectedMapRenderSourcePixelsReleased = false;
+    m_lastReleasedMapRenderSourcePixelBytes = 0;
+    m_mapAssetLoadSharedCache.clearTransientBitmapData();
 
     GameDataLoadTimingLogger timingLogger(selectedMap->fileName, "game_data_loader");
     const MapAssetLoader mapAssetLoader;
@@ -4410,7 +4519,8 @@ bool GameDataLoader::loadSelectedMap(
         mapLoadPurpose,
         {},
         progressPump,
-        &m_mapAssetLoadSharedCache);
+        &m_mapAssetLoadSharedCache,
+        pPreparedIndoorInstance);
     m_mapAssetLoadSharedCache.clearTransientBitmapData();
 
     if (!loadedMap)

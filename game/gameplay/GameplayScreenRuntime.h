@@ -343,6 +343,7 @@ public:
 
     int defaultHudLayoutZIndexForScreen(const std::string &screen) const;
     GameplayHudScreenState currentHudScreenState() const;
+    bool isNormalGameplayScreen() const;
     const std::vector<std::string> &sortedHudLayoutIdsForScreen(const std::string &screen) const;
 
     std::optional<ResolvedHudLayoutElement> resolveHudLayoutElement(

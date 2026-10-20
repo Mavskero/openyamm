@@ -96,9 +96,11 @@ def test_merged_ids_chinese_nul_slots_and_input_preservation(tmp_path):
     ("truncated_evt", "Malformed EVT"),
     ("short_add", "payload"),
     ("unterminated_map", "Unterminated opcode string payload"),
-    ("unknown_20", "Unimplemented opcode 20"),
-    ("unknown_27", "Unimplemented opcode 27"),
-    ("unknown_28", "Unimplemented opcode 28"),
+    ("short_20", "payload"),
+    ("short_27", "payload"),
+    ("short_28", "payload"),
+    ("unknown_0", "Unimplemented opcode 0"),
+    ("unknown_69", "Unimplemented opcode 69"),
     ("localized_evt", "Language archive must not replace"),
 ])
 def test_rejects_damaged_or_unimplemented_events_without_partial_output(tmp_path, fault, message):
@@ -115,6 +117,10 @@ def test_rejects_damaged_or_unimplemented_events_without_partial_output(tmp_path
         entries["OUTE3.EVT"] = record(1, 0, 16, b"\1")
     elif fault == "unterminated_map":
         entries["OUTE3.EVT"] = record(1, 0, 6, bytes(27) + b"next.blv")
+    elif fault.startswith("short_"):
+        opcode = int(fault.split("_")[1])
+        minimum_payload = {20: 5, 27: 2, 28: 1}[opcode]
+        entries["OUTE3.EVT"] = record(1, 0, opcode, bytes(minimum_payload - 1))
     else:
         entries["OUTE3.EVT"] = record(1, 0, int(fault.split("_")[1]), b"\1\1")
     archive(root / "Data/mm6.T.lod", entries)
@@ -126,6 +132,23 @@ def test_rejects_damaged_or_unimplemented_events_without_partial_output(tmp_path
     assert message in result.stderr
     assert not output.exists()
     assert (digest_tree(root), digest_tree(base)) == before
+
+
+@pytest.mark.parametrize("opcode,payload", [(20, b"\x47\0\0\0\1"), (27, b"\1\1"), (28, b"\1")])
+def test_original_mm8_ignored_commands_preserve_the_following_instruction(tmp_path, opcode, payload):
+    root, base, entries, _ = fixture(tmp_path)
+    entries["OUTE3.EVT"] = (record(21, 0, opcode, payload)
+                           + record(21, 1, 15, b"\x15\1") + record(21, 2, 1))
+    archive(root / "Data/mm6.T.lod", entries)
+    output = tmp_path / "converted"
+    result = run(root, base, output)
+    assert result.returncode == 0, result.stderr
+    lua = (output / "worlds/mm6/events/maps/oute3.lua").read_text()
+    assert f"do end -- Original MM8 ignores command {opcode}" in lua
+    assert "evt.SetDoorState(21, DoorAction.Close)" in lua
+    manifest = json.loads((output / "event_conversion.json").read_text())
+    assert manifest["programs"][1]["source_instructions"] == 3
+    assert manifest["programs"][1]["lua_load_passed"] is True
 
 
 def test_protects_existing_output_and_both_input_roots(tmp_path):

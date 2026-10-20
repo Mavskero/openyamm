@@ -1,13 +1,26 @@
 # 内容与证据覆盖清单（Checkpoint 123）
 
+2026-09-28最新状态：133已正式验收，完整开发运行包为 `local-data/validation/event-map-compat-133/runtime-001`，
+203张地图通过导入加载；6d09/znwc按原MM8指令语义恢复，受控Mac事件/存读档及generic iOS Release通过。
+剩余登记缺口为原源无几何的zddb05和三张Merge/Breach地图；完整动态剧情仍未验收。
+正常续玩存档继续采用132原有来源，133受控存档分列。结果与限制见133的result.json。
+新有限批次134–141已授权，长期goal不变；后文历史快照与各旧章证据原样保留。
+
+135待主审：三张mmmerge地图已完成独立资源转换及生产geometry/presentation loader检查，8类严格输入拒绝，
+原203地图加载与正常Merge入口拒绝保持。Breach/BrAlvar原始入口附近静止Metal图像已复核；BrBase仅headless。
+资源位于明确inspection命名空间，原Map Lua作为来源证据保存而不执行；动态迷宫、分队、谜题、模型逻辑未移植，
+不开放正常旅行。默认运行包仍为133；正式整合导入/新iOS产物在141。
+证据：`../local-data/validation/merge-scene-import-135/review-result.json`。
+
+
 状态：2026-09-16 验收通过。本章建立可重生的全量清单，不把文件存在、导入成功或 headless
 请求冒充为实际游玩通过。权威结果为
 `../local-data/validation/content-coverage-123/result.json`，源哈希为同目录 `source-hashes.json`。
 
-2026-09-19 后续状态：下列清单数字及“待127/128”描述是123验收时的快照，未重写已封存的清单。
-127已完成正常大耳怪前哨任务；128已完成当前导入事件的正常清堡、奖励与独立读档，但发现原Merge
-历史编号3与导出事件5不同，交Sol先修复。最新证据分别见127/result.json、128/result.json和
-`MM7_CASTLE_CLEAR_VALIDATION.md`；不能把123的历史层级计数当作今天全部证据的统计。
+2026-09-24 后续状态：123 的清单保留原封存快照。127–129 三条正常任务、128 原始历史语义补充、
+130 受控邀请链和131有限耐久已通过；132 已完成新包导入、201 图加载及关键结果回访。
+下文“待127/128/129/130”是历史描述；最新证据层次见 `BATCH_123_132_VALIDATION.md`。
+原有6张地图缺口仍在，事件或 QBit 数量仍不能作为真实任务分母。
 
 ## 可证明的分母
 

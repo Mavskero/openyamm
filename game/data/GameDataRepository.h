@@ -1,6 +1,7 @@
 #pragma once
 
 #include "game/arcomage/ArcomageTypes.h"
+#include "game/content/BreachAlvarCompanionProfile.h"
 #include "game/items/ItemEnchantTables.h"
 #include "game/mm9/Mm9MapTransition.h"
 #include "game/mm9/Mm9TeacherSchedule.h"
@@ -60,6 +61,7 @@ public:
     const ObjectTable &objectTable() const;
     const SpellTable &spellTable() const;
     const CombatTextTable &combatTextTable() const;
+    const std::optional<BreachAlvarCompanionProfile> &breachAlvarCompanionProfile() const;
     const HouseServiceTextTable &houseServiceTextTable() const;
     const ItemTable &itemTable() const;
     const StandardItemEnchantTable &standardItemEnchantTable() const;
@@ -83,6 +85,7 @@ public:
     const CharacterDollTable &characterDollTable() const;
     const CharacterInspectTable &characterInspectTable() const;
     const RaceStartingStatsTable &raceStartingStatsTable() const;
+    const MergedClassStartingStatTable &mergedClassStartingStatsSourceTable() const;
     const ReadableScrollTable &readableScrollTable() const;
     const PotionMixingTable &potionMixingTable() const;
     const PotionNoteTable &potionNoteTable() const;
@@ -120,6 +123,7 @@ private:
     const ObjectTable *m_pObjectTable = nullptr;
     const SpellTable *m_pSpellTable = nullptr;
     const CombatTextTable *m_pCombatTextTable = nullptr;
+    const std::optional<BreachAlvarCompanionProfile> *m_pBreachAlvarCompanionProfile = nullptr;
     const HouseServiceTextTable *m_pHouseServiceTextTable = nullptr;
     const ItemTable *m_pItemTable = nullptr;
     const StandardItemEnchantTable *m_pStandardItemEnchantTable = nullptr;
@@ -143,6 +147,7 @@ private:
     const CharacterDollTable *m_pCharacterDollTable = nullptr;
     const CharacterInspectTable *m_pCharacterInspectTable = nullptr;
     const RaceStartingStatsTable *m_pRaceStartingStatsTable = nullptr;
+    const MergedClassStartingStatTable *m_pMergedClassStartingStatsSourceTable = nullptr;
     const ReadableScrollTable *m_pReadableScrollTable = nullptr;
     const PotionMixingTable *m_pPotionMixingTable = nullptr;
     const PotionNoteTable *m_pPotionNoteTable = nullptr;

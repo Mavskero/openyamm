@@ -47,6 +47,8 @@ public:
 private:
     struct StreamingSession;
 
+    // Inspect under the wait mutex so tests can stop an actually blocked decoder.
+    bool isDecodeWindowBlocked() const;
     bool ensureAudioStream();
     void ensureVideoTexture(int width, int height);
     bool uploadReadyVideoFrame(bool firstFrame);

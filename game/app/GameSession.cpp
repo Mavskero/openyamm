@@ -1,6 +1,9 @@
 #include "game/app/GameSession.h"
 
 #include "game/debug/GameplayDebugTrace.h"
+#include "game/events/GameTime.h"
+#include "game/maps/MapIdentity.h"
+#include "game/StringUtils.h"
 #include "game/gameplay/GameplayActionController.h"
 #include "game/gameplay/GameMechanics.h"
 #include "game/gameplay/GameplayInputFrame.h"
@@ -13,6 +16,7 @@
 #include <cctype>
 #include <iostream>
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -20,6 +24,13 @@ namespace OpenYAMM::Game
 {
 namespace
 {
+bool isBreachMazeMap(const std::string &map)
+{
+    const std::string lower = toLowerCopy(map);
+    return lower == "brbase.blv" || lower == "brbase"
+        || lower == buildCanonicalMapId("mmmerge", "brbase.blv");
+}
+
 constexpr uint32_t BlazenStormlanceRosterUnlockQBit = 435;
 constexpr uint32_t RescuedBlazenStormlanceQBit = 1542;
 
@@ -221,6 +232,10 @@ const GameDataRepository &GameSession::data() const
 
 void GameSession::clear()
 {
+    if (m_pActiveWorldRuntime != nullptr && m_pActiveWorldRuntime->boundGameSession() == this)
+    {
+        m_pActiveWorldRuntime->bindGameSession(nullptr);
+    }
     m_partyState.reset();
     m_currentSceneKind = SceneKind::Outdoor;
     m_currentMapFileName.clear();
@@ -250,6 +265,8 @@ void GameSession::clear()
     m_currentIndoorSceneState.reset();
     m_indoorSceneStates.clear();
     m_namedGlobalVars.clear();
+    m_breachAlvarCompanions.reset();
+    m_breachMazeRunData.reset();
     m_historyEventTimesByContinent.clear();
     m_gameMinutes = 9.0f * 60.0f;
     m_outdoorCameraYawRadians = 0.0f;
@@ -325,14 +342,18 @@ void GameSession::setCurrentMapFileName(std::string &&mapFileName)
     ++m_mm9QuestMarkerMapRevision;
 }
 
-float GameSession::gameMinutes() const
+double GameSession::gameMinutes() const
 {
     return m_gameMinutes;
 }
 
-void GameSession::setGameMinutes(float gameMinutes)
+void GameSession::setGameMinutes(double gameMinutes)
 {
-    m_gameMinutes = std::max(0.0f, gameMinutes);
+    if (!validGameMinutes(gameMinutes))
+    {
+        throw std::invalid_argument("Invalid authoritative game clock");
+    }
+    m_gameMinutes = gameMinutes;
 }
 
 GameplayUiController &GameSession::gameplayUiController()
@@ -488,7 +509,22 @@ void GameSession::bindActiveWorldRuntime(IGameplayWorldRuntime *pWorldRuntime)
         m_turnBasedFrameTraceState = {};
     }
 
+    if (m_pActiveWorldRuntime != nullptr && m_pActiveWorldRuntime != pWorldRuntime
+        && m_pActiveWorldRuntime->boundGameSession() == this)
+    {
+        m_pActiveWorldRuntime->bindGameSession(nullptr);
+    }
     m_pActiveWorldRuntime = pWorldRuntime;
+    if (pWorldRuntime != nullptr)
+    {
+        pWorldRuntime->bindGameSession(this);
+    }
+    if (pWorldRuntime != nullptr && pWorldRuntime->party() != nullptr)
+    {
+        const auto &heldItem = m_gameplayUiController.heldInventoryItem();
+        if (heldItem.active) pWorldRuntime->party()->setHeldItemForQueries(heldItem.item);
+        else pWorldRuntime->party()->clearHeldItemForQueries();
+    }
     m_mm9QuestMarkerCache.clear();
     ++m_mm9QuestMarkerMapRevision;
 }
@@ -885,6 +921,11 @@ void GameSession::updateGameplay(
             || pendingSpellTargetActive
             || m_sharedWorldInteractionBlockedThisFrame
             || rightMouseInspectPauseActive;
+
+        if (EventRuntimeState *pEventState = pWorldRuntime->eventRuntimeState())
+        {
+            pEventState->normalGameplayScreen = m_gameplayScreenRuntime.isNormalGameplayScreen();
+        }
 
         const Party *pTurnBasedParty = pWorldRuntime->party();
         const bool turnBasedWorldPaused =
@@ -1287,6 +1328,24 @@ void GameSession::storeOutdoorWorldState(const std::string &mapFileName, const O
         applyHistoryToRuntime(*normalizedSnapshot.eventRuntimeState);
     }
     m_outdoorWorldStates[mapFileName] = normalizedSnapshot;
+    if (m_breachAlvarCompanions)
+    {
+        const std::string canonical = buildCanonicalMapId("mmmerge", "bralvar.odm");
+        const auto isCompanionMap = [&](const std::string &name)
+        {
+            const std::string lower = toLowerCopy(name);
+            return lower == "bralvar.odm" || lower == BreachAlvarCompanionMap || lower == canonical;
+        };
+        if (isCompanionMap(mapFileName))
+        {
+            // These aliases refer to one live map. Each capture must advance them together.
+            for (auto &[key, cached] : m_outdoorWorldStates)
+            {
+                if (isCompanionMap(key)) cached = normalizedSnapshot;
+            }
+            if (isCompanionMap(m_currentMapFileName)) m_currentOutdoorWorldState = normalizedSnapshot;
+        }
+    }
 }
 
 const std::optional<IndoorSceneRuntime::Snapshot> &GameSession::currentIndoorSceneState() const
@@ -1341,7 +1400,29 @@ void GameSession::storeIndoorSceneState(const std::string &mapFileName, const In
         applyNamedGlobalVarsToRuntime(*normalizedSnapshot.eventRuntimeState);
         applyHistoryToRuntime(*normalizedSnapshot.eventRuntimeState);
     }
-    m_indoorSceneStates[mapFileName] = normalizedSnapshot;
+    if (!m_breachMazeRunData || !isBreachMazeMap(mapFileName))
+    {
+        m_indoorSceneStates[mapFileName] = normalizedSnapshot;
+    }
+}
+
+const std::optional<BreachMazeRunData> &GameSession::breachMazeRunData() const
+{
+    return m_breachMazeRunData;
+}
+
+void GameSession::setBreachMazeRunData(std::optional<BreachMazeRunData> data)
+{
+    m_breachMazeRunData = std::move(data);
+    if (m_breachMazeRunData)
+    {
+        std::erase_if(m_indoorSceneStates, [](const auto &entry) { return isBreachMazeMap(entry.first); });
+    }
+}
+
+const std::optional<BreachAlvarCompanionState> &GameSession::breachAlvarCompanions() const
+{
+    return m_breachAlvarCompanions;
 }
 
 const std::unordered_map<std::string, int32_t> &GameSession::namedGlobalVars() const
@@ -1598,7 +1679,7 @@ void GameSession::captureOutdoorRuntimeState(
     m_currentMapFileName = mapFileName;
     m_partyState = party;
     m_outdoorPartyState = partySnapshot;
-    m_gameMinutes = std::max(0.0f, worldSnapshot.gameMinutes);
+    setGameMinutes(worldSnapshot.gameMinutes);
 
     OutdoorWorldRuntime::Snapshot normalizedWorldSnapshot = worldSnapshot;
     normalizedWorldSnapshot.gameMinutes = m_gameMinutes;
@@ -1610,7 +1691,7 @@ void GameSession::captureOutdoorRuntimeState(
         applyHistoryToRuntime(*normalizedWorldSnapshot.eventRuntimeState);
     }
     m_currentOutdoorWorldState = normalizedWorldSnapshot;
-    m_outdoorWorldStates[mapFileName] = normalizedWorldSnapshot;
+    storeOutdoorWorldState(mapFileName, normalizedWorldSnapshot);
     m_outdoorCameraYawRadians = yawRadians;
     m_outdoorCameraPitchRadians = pitchRadians;
 }
@@ -1625,7 +1706,7 @@ void GameSession::captureIndoorRuntimeState(
     m_currentSceneKind = SceneKind::Indoor;
     m_currentMapFileName = mapFileName;
     m_partyState = party;
-    m_gameMinutes = std::max(0.0f, snapshot.worldRuntime.gameMinutes);
+    setGameMinutes(snapshot.worldRuntime.gameMinutes);
 
     IndoorSceneRuntime::Snapshot normalizedSnapshot = snapshot;
     normalizedSnapshot.worldRuntime.gameMinutes = m_gameMinutes;
@@ -1637,7 +1718,10 @@ void GameSession::captureIndoorRuntimeState(
         applyHistoryToRuntime(*normalizedSnapshot.eventRuntimeState);
     }
     m_currentIndoorSceneState = normalizedSnapshot;
-    m_indoorSceneStates[mapFileName] = normalizedSnapshot;
+    if (!m_breachMazeRunData || !isBreachMazeMap(mapFileName))
+    {
+        m_indoorSceneStates[mapFileName] = normalizedSnapshot;
+    }
     m_indoorCameraYawRadians = yawRadians;
     m_indoorCameraPitchRadians = pitchRadians;
 }
@@ -1664,6 +1748,8 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
     saveData.mapFileName = m_currentMapFileName;
     saveData.party = m_partyState->snapshot();
     saveData.namedGlobalVars = m_namedGlobalVars;
+    saveData.breachAlvarCompanions = m_breachAlvarCompanions;
+    saveData.breachMaze = m_breachMazeRunData;
     saveData.savedGameMinutes = m_gameMinutes;
     saveData.turnBasedCombat = m_turnBasedCombatRuntime.snapshot();
     if (saveData.turnBasedCombat.active && m_pActiveWorldRuntime != nullptr)
@@ -1720,6 +1806,27 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
         }
     }
 
+    if (saveData.breachMaze)
+    {
+        std::erase_if(saveData.indoorSceneStates, [](const auto &entry) { return isBreachMazeMap(entry.first); });
+        for (auto &[level, floor] : saveData.breachMaze->floors)
+        {
+            if (floor.runtime.scene.eventRuntimeState)
+            {
+                applyNamedGlobalVarsToRuntime(*floor.runtime.scene.eventRuntimeState);
+                applyHistoryToRuntime(*floor.runtime.scene.eventRuntimeState);
+            }
+        }
+        const bool genericMazeScene = saveData.indoorScene.eventRuntimeState
+            && isBreachMazeMap(saveData.indoorScene.eventRuntimeState->mapFileName);
+        if ((saveData.breachMaze->inside && isBreachMazeMap(m_currentMapFileName)) || genericMazeScene)
+        {
+            // Maze scenes remain owned by their floor after departure as well as while active.
+            saveData.hasIndoorSceneState = false;
+            saveData.indoorScene = {};
+        }
+    }
+
     saveData.outdoorCameraYawRadians = m_outdoorCameraYawRadians;
     saveData.outdoorCameraPitchRadians = m_outdoorCameraPitchRadians;
     saveData.indoorCameraYawRadians = m_indoorCameraYawRadians;
@@ -1764,8 +1871,10 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
 
     m_currentSceneKind = saveData.currentSceneKind;
     m_currentMapFileName = saveData.mapFileName;
-    m_gameMinutes = std::max(0.0f, saveData.savedGameMinutes);
+    setGameMinutes(saveData.savedGameMinutes);
     m_namedGlobalVars = saveData.namedGlobalVars;
+    m_breachAlvarCompanions = saveData.breachAlvarCompanions;
+    m_breachMazeRunData = saveData.breachMaze;
     const bool collectLegacyNamedGlobalVars = m_namedGlobalVars.empty();
     restoreHistoryFromSaveData(saveData);
 
@@ -1773,11 +1882,11 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
     {
         if (saveData.currentSceneKind == SceneKind::Outdoor && saveData.hasOutdoorRuntimeState)
         {
-            m_gameMinutes = std::max(0.0f, saveData.outdoorWorld.gameMinutes);
+            setGameMinutes(saveData.outdoorWorld.gameMinutes);
         }
         else if (saveData.currentSceneKind == SceneKind::Indoor && saveData.hasIndoorSceneState)
         {
-            m_gameMinutes = std::max(0.0f, saveData.indoorScene.worldRuntime.gameMinutes);
+            setGameMinutes(saveData.indoorScene.worldRuntime.gameMinutes);
         }
     }
 
@@ -1856,6 +1965,22 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
     if (saveData.hasIndoorSceneState && m_currentSceneKind == SceneKind::Indoor)
     {
         m_indoorSceneStates[m_currentMapFileName] = *m_currentIndoorSceneState;
+    }
+
+    if (m_breachMazeRunData)
+    {
+        std::erase_if(m_indoorSceneStates, [](const auto &entry) { return isBreachMazeMap(entry.first); });
+        if (m_breachMazeRunData->inside && isBreachMazeMap(m_currentMapFileName))
+        {
+            const auto &floor = m_breachMazeRunData->floors.at(m_breachMazeRunData->currentLevel);
+            m_currentIndoorSceneState = floor.runtime.scene;
+            m_currentIndoorSceneState->worldRuntime.gameMinutes = m_gameMinutes;
+            if (m_currentIndoorSceneState->eventRuntimeState)
+            {
+                applyNamedGlobalVarsToRuntime(*m_currentIndoorSceneState->eventRuntimeState);
+                applyHistoryToRuntime(*m_currentIndoorSceneState->eventRuntimeState);
+            }
+        }
     }
 
     m_outdoorCameraYawRadians = saveData.outdoorCameraYawRadians;

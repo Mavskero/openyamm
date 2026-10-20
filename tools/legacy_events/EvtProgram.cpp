@@ -374,6 +374,9 @@ std::string EvtProgram::opcodeName(EvtOpcode opcode)
         case EvtOpcode::Subtract: return "Subtract";
         case EvtOpcode::Set: return "Set";
         case EvtOpcode::SummonMonsters: return "SummonMonsters";
+        case EvtOpcode::LegacyCommand20: return "LegacyCommand20";
+        case EvtOpcode::LegacyCommand27: return "LegacyCommand27";
+        case EvtOpcode::LegacyCommand28: return "LegacyCommand28";
         case EvtOpcode::CastSpell: return "CastSpell";
         case EvtOpcode::SpeakNpc: return "SpeakNPC";
         case EvtOpcode::SetFacesBit: return "SetFacetBit";
@@ -479,6 +482,9 @@ bool EvtProgram::parseInstruction(const std::vector<uint8_t> &record, EvtInstruc
         case EvtOpcode::OnMapReload:
         case EvtOpcode::OnMapLeave:
         case EvtOpcode::EndCanShowDialogItem:
+        case EvtOpcode::LegacyCommand20:
+        case EvtOpcode::LegacyCommand27:
+        case EvtOpcode::LegacyCommand28:
             break;
 
         case EvtOpcode::ForPartyMember:
@@ -918,7 +924,7 @@ bool EvtProgram::parseInstruction(const std::vector<uint8_t> &record, EvtInstruc
                 instruction.value1 = *value;
             }
 
-            if (const std::optional<uint8_t> value = tryReadU8(6))
+            if (const std::optional<uint32_t> value = tryReadU32(6))
             {
                 instruction.value2 = *value;
             }

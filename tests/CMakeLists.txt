@@ -63,6 +63,8 @@ add_executable(openyamm_unit_tests
     OutdoorRenderDataTests.cpp
     BillboardGeometryTests.cpp
     PartyRegressionTests.cpp
+    PendingItemDeliveryTests.cpp
+    NpcFollowerPersistenceTests.cpp
     PathMapTests.cpp
     PathPlannerTests.cpp
     RegressionMapLoader.cpp
@@ -104,6 +106,11 @@ add_executable(openyamm_unit_tests
     ../game/events/ScriptedEventTimer.cpp
     ../game/gameplay/ChestRuntime.cpp
     ../game/gameplay/GameplayBolsterRuntime.cpp
+    ../game/gameplay/GameplayActorCombatState.cpp
+    ../game/gameplay/MergeBolsterProfile.cpp
+    ../game/gameplay/MergeMonsterSourceProfile.cpp
+    ../game/gameplay/MergeMonsterRuntimeView.cpp
+    ../game/gameplay/MergeMonsterGenerationState.cpp
     ../game/gameplay/GameplayActorAiSystem.cpp
     ../game/gameplay/GameplayActorService.cpp
     ../game/gameplay/GameplayWorldItemPolicy.cpp
@@ -138,6 +145,16 @@ add_executable(openyamm_unit_tests
     ../game/maps/MapAssetLoader.cpp
     ../game/maps/MapIdentity.cpp
     ../game/maps/SaveGame.cpp
+    ../game/content/BreachMazeLayout.cpp
+    ../game/content/BreachMazePopulation.cpp
+    ../game/content/BreachMazeState.cpp
+    ../game/gameplay/BreachMazeInteractionRuntime.cpp
+    ../game/gameplay/BreachMazeCombatRuntime.cpp
+    ../game/content/BreachMazeRuntimeProfile.cpp
+    ../game/content/BreachAlvarSplitPlan.cpp
+    ../game/content/BreachAlvarCompanionState.cpp
+    ../game/content/BreachAlvarCompanionProfile.cpp
+    ../game/outdoor/BreachAlvarActorState.cpp
     ../game/maps/MapRegistry.cpp
     ../game/maps/IndoorSceneYml.cpp
     ../game/maps/MapItemSourceYml.cpp
@@ -160,6 +177,7 @@ add_executable(openyamm_unit_tests
     ../game/items/ItemEnchantRuntime.cpp
     ../game/items/ItemEnchantTables.cpp
     ../game/items/ItemGenerator.cpp
+    ../game/items/ItemGenerationRandom.cpp
     ../game/items/PriceCalculator.cpp
     ../game/items/ItemRuntime.cpp
     ../game/party/Party.cpp

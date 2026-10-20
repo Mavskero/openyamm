@@ -78,7 +78,7 @@ TEST_CASE("original MM8 blackmail EVT and source text preserve acceptance delive
     CHECK(delivery.find("RemoveItem(742)") != std::string_view::npos);
     CHECK(delivery.find("ClearQBit(QBit(222))") != std::string_view::npos);
     CHECK(delivery.find("evt.SetNPCTopic(4, 0, 33)") != std::string_view::npos);
-    CHECK(delivery.find("AddValue(History(5), 0)") != std::string_view::npos);
+    CHECK(delivery.find("AddValue(History(3), 0)") != std::string_view::npos);
     CHECK(delivery.find("IsActorKilled") == std::string_view::npos);
 
     const size_t canShowBegin = lua.find("RegisterCanShowTopic(32");
@@ -89,4 +89,23 @@ TEST_CASE("original MM8 blackmail EVT and source text preserve acceptance delive
         std::string_view(lua).substr(canShowBegin, canShowEnd - canShowBegin);
     CHECK(canShow.find("HasItem(742)") != std::string_view::npos);
     CHECK(canShow.find("IsActorKilled") == std::string_view::npos);
+}
+
+TEST_CASE("MM7 and MM8 binary history selectors preserve every original journal index")
+{
+    for (const LegacyEventVersion version : {LegacyEventVersion::Mm7, LegacyEventVersion::Mm8})
+    {
+        const uint16_t base = version == LegacyEventVersion::Mm8 ? 0x116 : 0x114;
+        for (uint16_t index = 1; index <= 29; ++index)
+        {
+            const uint16_t selector = base + index - 1;
+            const std::vector<uint8_t> bytes = {
+                10, 1, 0, 0, 16, uint8_t(selector), uint8_t(selector >> 8), 0, 0, 0, 0,
+                5, 1, 0, 1, 1, 0};
+            EvtProgram program;
+            REQUIRE(program.loadFromBytes(bytes));
+            const std::string lua = generateLegacyEventLuaChunk(program, {}, {}, LegacyLuaExportScope::Map, version);
+            CHECK(lua.find("AddValue(History(" + std::to_string(index) + "), 0)") != std::string::npos);
+        }
+    }
 }

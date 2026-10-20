@@ -1,5 +1,10 @@
 #pragma once
 
+#include "game/gameplay/GameplayActorCombatState.h"
+#include "game/gameplay/BreachMazeCombatRuntime.h"
+#include "game/gameplay/MergeMonsterRuntimeView.h"
+#include "game/gameplay/MergeMonsterGenerationState.h"
+
 #include "game/FaceEnums.h"
 #include "game/events/EventRuntime.h"
 #include "game/events/ISceneEventContext.h"
@@ -19,8 +24,10 @@
 #include "game/tables/MonsterTable.h"
 #include "game/tables/ObjectTable.h"
 
+#include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -49,9 +56,15 @@ public:
     using ChestItemState = GameplayChestItemState;
     using ChestViewState = GameplayChestViewState;
     using CorpseViewState = GameplayCorpseViewState;
+    using NativeEventHandler = std::function<std::optional<bool>(uint16_t, const std::string &, size_t)>;
 
     struct MapActorAiState
     {
+        GameplayActorCombatState combatState;
+        GameplayActorSpecialRuntimeState specialState;
+        std::vector<InventoryItem> stolenItems;
+        // Disposable projection of combatState, rebuilt on install/restore and never serialized.
+        std::shared_ptr<const MergeMonsterRuntimeView> pResolvedCombatView;
         uint32_t actorId = 0;
         int16_t monsterId = 0;
         std::string displayName;
@@ -192,7 +205,7 @@ public:
 
     struct Snapshot
     {
-        float gameMinutes = 9.0f * 60.0f;
+        double gameMinutes = 9.0 * 60.0;
         int currentLocationReputation = 0;
         uint32_t sessionChestSeed = 0;
         std::vector<std::optional<ChestViewState>> materializedChestViews;
@@ -201,6 +214,7 @@ public:
         std::optional<CorpseViewState> activeCorpseView;
         std::vector<GameplayActorSpellEffectState> mapActorSpellEffectStates;
         std::vector<MapActorAiState> mapActorAiStates;
+        std::optional<MergeMonsterGenerationState> mergeMonsterGeneration;
         std::vector<uint8_t> activatedIndoorSectorMask;
         std::vector<BloodSplatState> bloodSplats;
         std::vector<FireSpikeTrapState> fireSpikeTraps;
@@ -217,6 +231,11 @@ public:
         const EventRuntime *pEventRuntime,
         const std::optional<ScriptedEventProgram> *pLocalEventProgram,
         const std::optional<ScriptedEventProgram> *pGlobalEventProgram);
+    // nullopt permits Lua execution; either bool value means the native handler owns this activation.
+    // Scene-owned wiring is deliberately excluded from Snapshot and retained through restoreSnapshot.
+    void setNativeEventHandler(NativeEventHandler handler);
+    bool hasNativeEventHandler() const;
+    std::optional<bool> tryNativeEvent(uint16_t eventId, const std::string &sourceKind, size_t sourceIndex);
     bool executeFaceTriggeredEvent(
         size_t faceIndex,
         FaceAttribute triggerAttribute,
@@ -243,7 +262,8 @@ public:
         const DecorationBillboardSet *pIndoorDecorationBillboardSet = nullptr,
         const MergedBolsterMapTable *pMergedBolsterMapTable = nullptr,
         const MergedBolsterMonsterTable *pMergedBolsterMonsterTable = nullptr,
-        const MapItemSourceData *pItemSourceData = nullptr
+        const MapItemSourceData *pItemSourceData = nullptr,
+        std::span<const GameplayActorCombatState> preparedActorCombat = {}
     );
     void initialize(
         const MapStatsEntry &map,
@@ -261,17 +281,34 @@ public:
         const DecorationBillboardSet *pIndoorDecorationBillboardSet = nullptr,
         const MergedBolsterMapTable *pMergedBolsterMapTable = nullptr,
         const MergedBolsterMonsterTable *pMergedBolsterMonsterTable = nullptr,
-        const MapItemSourceData *pItemSourceData = nullptr
+        const MapItemSourceData *pItemSourceData = nullptr,
+        std::span<const GameplayActorCombatState> preparedActorCombat = {}
     );
     void setBolsterMonstersEnabled(bool enabled);
+    // Index-aligned with the current delta actors. Validates all entries before installation;
+    // current HP is preserved, including wounded/dead actors. Fresh builders supply their own HP.
+    bool installPreparedActorCombat(std::span<const GameplayActorCombatState> states, std::string &error);
+    // Owns copies of source/B2; the settings/projectile/spell tables keep their existing world lifetime.
+    bool installMergeMonsterGeneration(const MergeMonsterGenerationState &state,
+        const MergeMonsterGenerationServices &services, std::string &error);
+    // Transient active-floor profile; actorRage must match current delta actor indices. Installation
+    // schedules the first projection for the next AI step at the current authoritative game clock.
+    bool installBreachMazeCombatProfile(const BreachMazeLayout &layout,
+        std::span<const uint8_t> actorRage, std::string &error);
+    void clearBreachMazeCombatProfile();
+    std::span<const uint8_t> breachMazeActorRage() const;
+    std::optional<int32_t> resolvedMonsterTargetArmorClass(
+        uint32_t actorId, int32_t playerBaseLevel, int32_t originalArmorClass) const override;
 
     const std::string &mapName() const override;
     const MonsterTable *monsterTable() const override;
     const MergedBolsterMonsterTable *mergedBolsterMonsterTable() const override;
     bool isIndoorMap() const override;
     bool allowsLloydsBeacon() const override;
+    bool townPortalUsesDimensionDoor() const override;
     bool allowsRest() const override;
     float currentGameMinutes() const override;
+    double currentGameMinutesPrecise() const override;
     const MapDeltaData *mapDeltaData() const override;
     MapDeltaData *mapDeltaData() override;
     bool setFacetBit(uint32_t cogNumber, uint32_t bit, bool isOn) override;
@@ -290,9 +327,9 @@ public:
     bool setPersistentItemMechanismVariant(
         const std::string &sourceId,
         uint32_t variantIndex) override;
-    float gameMinutes() const override;
+    double gameMinutes() const override;
     int currentHour() const override;
-    void advanceGameMinutes(float minutes) override;
+    void advanceGameMinutes(double minutes) override;
     int currentLocationReputation() const override;
     void setCurrentLocationReputation(int reputation) override;
     Party *party() override;
@@ -353,7 +390,11 @@ public:
         int32_t toY,
         int32_t toZ
     ) override;
-    bool specialJump(uint32_t encodedHorizontalVelocity, uint32_t verticalVelocity) override;
+    bool specialJump(uint32_t encodedAngles, uint32_t rawSpeed) override;
+    bool sourceJump(float direction, float zAngle, float speed) override;
+    bool setPartyPositionForEvents(float x, float y, float footZ) override;
+    uint32_t partyDirectionForEvents() const override;
+    bool setPartyDirectionForEvents(uint32_t direction, float lookAngle) override;
     size_t mapActorCount() const override;
     const MapActorAiState *mapActorAiState(size_t actorIndex) const;
     std::vector<int16_t> activatedIndoorSectorIds() const;
@@ -370,6 +411,7 @@ public:
         uint32_t animationTicks,
         GameplayActorInspectState &state) const override;
     std::optional<GameplayCombatActorInfo> combatActorInfoById(uint32_t actorId) const override;
+    bool retainMonsterStolenItem(uint32_t actorId, const InventoryItem &item) override;
     bool applyReflectedDamageToActor(
         uint32_t actorId,
         int damage,
@@ -646,6 +688,9 @@ private:
     bool materializeTreasureSpawn(size_t spawnIndex, const IndoorSpawn &spawn);
     void materializeInitialMonsterSpawns();
     void syncMapActorAiStates();
+    void updateBreachMazeCombat();
+    void noteBreachMazePartyDamage(size_t actorIndex);
+    bool breachMazeActorAllowsPathfinding(size_t actorIndex) const;
     RuntimeGeometryCache &runtimeGeometryCache() const;
     std::shared_ptr<const PathMap> indoorPathMap() const;
     bool indoorActorPathfindingEnabled() const;
@@ -733,6 +778,14 @@ private:
         const MapActorAiState &aiState,
         const MonsterTable::MonsterStatsEntry &stats,
         const MonsterEntry *pMonsterEntry) const;
+    const MonsterTable::MonsterStatsEntry *actorStats(size_t actorIndex) const;
+    const MonsterTable::MonsterStatsEntry *actorStats(const MapActorAiState &aiState) const;
+    GameplayMonsterBolsterResult actorBolster(size_t actorIndex,
+        const MonsterTable::MonsterStatsEntry &stats, const MonsterEntry *pMonsterEntry) const;
+    bool prepareActorCombatView(MapActorAiState &state, const MapDeltaActor &actor, std::string &error) const;
+    uint32_t actorExperienceReward(size_t actorIndex, const MonsterTable::MonsterStatsEntry &stats) const;
+    MonsterTable::LootPrototype actorLootPrototype(size_t actorIndex,
+        const MonsterTable::MonsterStatsEntry &stats) const;
     bool indoorActorCanApplyPartyMeleeImpact(size_t actorIndex) const;
     void materializeSemanticWorldItems();
     void synchronizeSemanticWorldItemVisibility();
@@ -763,7 +816,12 @@ private:
         MapDeltaActor &actor,
         const GameplayWorldPoint *pSource);
     void beginMapActorDyingState(size_t actorIndex, MapDeltaActor &actor);
+    void applyResolvedActorDeathSpecial(size_t actorIndex);
+    void tryResolvedActorSummon(size_t actorIndex);
+    bool spawnResolvedSpecialActors(size_t actorIndex, bool replicate, uint32_t count, uint64_t cursor);
+    void updateResolvedActorSpecials(float deltaSeconds);
     void spawnMonsterDeathDropsForActor(size_t actorIndex, const MapDeltaActor &actor);
+    void transferActorStolenItemsToCorpse(size_t actorIndex, CorpseViewState &corpse);
     bool spawnMonsterDeathDropItem(
         const InventoryItem &item,
         float x,
@@ -818,13 +876,14 @@ private:
     const EventRuntime *m_pEventRuntime = nullptr;
     const std::optional<ScriptedEventProgram> *m_pLocalEventProgram = nullptr;
     const std::optional<ScriptedEventProgram> *m_pGlobalEventProgram = nullptr;
+    NativeEventHandler m_nativeEventHandler;
     GameplayActorService *m_pGameplayActorService = nullptr;
     GameplayProjectileService *m_pGameplayProjectileService = nullptr;
     GameplayCombatController *m_pGameplayCombatController = nullptr;
     IndoorRenderer *m_pRenderer = nullptr;
     IndoorGameView *m_pGameplayView = nullptr;
     std::string m_mapName;
-    float m_gameMinutes = 9.0f * 60.0f;
+    double m_gameMinutes = 9.0 * 60.0;
     int m_currentLocationReputation = 0;
     uint32_t m_sessionChestSeed = 0;
     std::vector<std::optional<ChestViewState>> m_materializedChestViews;
@@ -833,6 +892,12 @@ private:
     std::vector<std::optional<CorpseViewState>> m_mapActorCorpseViews;
     std::optional<CorpseViewState> m_activeCorpseView;
     std::vector<MapActorAiState> m_mapActorAiStates;
+    // Deliberately excluded from Snapshot; App binds the floor's saved actorRage on cold restore.
+    std::optional<BreachMazeCombatRuntime> m_breachMazeCombatRuntime;
+    std::optional<MergeMonsterGenerationState> m_mergeMonsterGeneration;
+    std::shared_ptr<const MergeMonsterSourceProfile> m_pMergeGenerationSource;
+    std::shared_ptr<const MergeBolsterProfile> m_pMergeGenerationBolster;
+    std::optional<MergeMonsterGenerationServices> m_mergeGenerationServices;
     std::vector<size_t> m_actorCorpsePhysicsActorIndices;
     mutable ActorInspectPreviewAnimationState m_actorInspectPreviewAnimation = {};
     std::vector<uint8_t> m_activatedIndoorSectorMask;

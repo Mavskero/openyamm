@@ -24,6 +24,8 @@ public:
     virtual ISceneEventContext *sceneEventContext() = 0;
     virtual const std::optional<ScriptedEventProgram> &localEventProgram() const = 0;
     virtual const std::optional<ScriptedEventProgram> &globalEventProgram() const = 0;
+    virtual bool executeGlobalAfterLoadEvents() = 0;
+    virtual bool executeOnLeaveEvents() = 0;
     virtual std::optional<EventRuntimeState::PendingMapMove> consumePendingMapMove() = 0;
     virtual void advanceGameMinutes(float minutes) = 0;
     virtual void advanceTurnBasedGameMinutes(float minutes) = 0;

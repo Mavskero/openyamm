@@ -4357,7 +4357,7 @@ struct ApplicationCaptureTestAccess
     static bool handleMm8DungeonCombat(GameApplication &game, uint32_t frame, int width, int height,
         Mm8PortalCheckState &state, std::vector<std::string> &captures, const std::string &prefix,
         bool useMm8StarterSpells = true, bool approachInCombat = false,
-        float maximumTargetDistance = 1100.0f)
+        float maximumTargetDistance = 1100.0f, uint32_t attackSpellId = 2, bool stopAfterKill = false)
     {
         const auto require = [](bool ok, const std::string &message)
         {
@@ -4397,7 +4397,7 @@ struct ApplicationCaptureTestAccess
         {
             GameplayRuntimeActorState actor;
             require(world.actorRuntimeState(index, actor), "Observed dungeon actor disappeared");
-            if (actor.isDead && state.defeatedActors.insert(index).second)
+            if (world.mapDeltaData()->actors[index].hp <= 0 && state.defeatedActors.insert(index).second)
             {
                 require(state.attackPresses > 0 && experience() > state.experienceBeforeCombat,
                     "Observed dungeon kill has no normal attack or experience");
@@ -4411,6 +4411,7 @@ struct ApplicationCaptureTestAccess
                     state.killCaptured = true;
                     return true;
                 }
+                if (stopAfterKill) return true;
             }
         }
         uint64_t enemyHealth = 0;
@@ -4432,6 +4433,7 @@ struct ApplicationCaptureTestAccess
         {
             GameplayRuntimeActorState actor;
             if (!world.actorRuntimeState(index, actor) || actor.isDead || actor.isInvisible || !actor.hostileToParty
+                || world.mapDeltaData()->actors[index].hp <= 0
                 || std::abs(actor.preciseZ - position.footZ) > 450.0f
                 || !world.partyAttackActorHasLineOfSight(index)) continue;
             const float distance = std::hypot(actor.preciseX - position.x, actor.preciseY - position.y);
@@ -4531,9 +4533,11 @@ struct ApplicationCaptureTestAccess
                 }
                 if (weakest != size_t(-1)) { cast(68, std::nullopt, weakest); return true; }
             }
-            if (useMm8StarterSpells && member == 2 && party.members()[member].spellPoints >= 2)
+            const SpellEntry *pAttackSpell = game.m_gameDataLoader.getSpellTable().findById(attackSpellId);
+            if (useMm8StarterSpells && member == 2 && pAttackSpell
+                && party.members()[member].spellPoints >= pAttackSpell->normalManaCost)
             {
-                cast(2, target, std::nullopt);
+                cast(attackSpellId, target, std::nullopt);
                 ++state.attackPresses;
                 return true;
             }
@@ -5301,10 +5305,21 @@ struct ApplicationCaptureTestAccess
         bool blockingCombat = false;
         bool reloadElgarVerified = false;
         int32_t deliveryHistoryTime = 0;
+        size_t skillMember = 1;
+        size_t trainingMember = 0;
+        unsigned resupplyTrips = 0;
+        bool retreating = false;
+        int restFoodBefore = 0;
+        int restFoodCost = 0;
+        float restMinutesBefore = 0.0f;
+        size_t templeMember = 0;
+        unsigned reloadRestNights = 0;
+        unsigned reloadGuardGreetings = 0;
+        unsigned innEntryRetries = 0;
     };
 
     static void checkMm8Blackmail(GameApplication &game, uint32_t frame, int width, int height,
-        bool reload, Mm8BlackmailCheckState &state, std::vector<std::string> &captures)
+        bool reload, bool continuation, Mm8BlackmailCheckState &state, std::vector<std::string> &captures)
     {
         const auto require = [](bool ok, const std::string &message)
         {
@@ -5353,6 +5368,26 @@ struct ApplicationCaptureTestAccess
                 return action.kind == kind && action.id == id && action.enabled;
             });
         };
+        const auto click = [&](float x, float y)
+        {
+            GameplayInputFrame input;
+            input.screenWidth = width;
+            input.screenHeight = height;
+            input.pointerX = x;
+            input.pointerY = y;
+            input.leftMouseButton = {true, true, false};
+            session.updateGameplay(input, 0.0f);
+            input.leftMouseButton = {false, false, true};
+            session.updateGameplay(input, 0.0f);
+        };
+        const auto resolve = [&](const char *id)
+        {
+            const auto *pLayout = runtime.findHudLayoutElement(id);
+            require(pLayout != nullptr, std::string("Missing blackmail preparation control: ") + id);
+            const auto rect = runtime.resolveHudLayoutElement(id, width, height, pLayout->width, pLayout->height);
+            require(rect.has_value(), std::string("Cannot place blackmail preparation control: ") + id);
+            return *rect;
+        };
         const auto aimOutdoor = [&](float x, float y, float z)
         {
             const float dx = x - pWorld->partyX(), dy = y - pWorld->partyY();
@@ -5366,6 +5401,60 @@ struct ApplicationCaptureTestAccess
             const IndoorMoveState &position = pScene->partyRuntime().movementState();
             game.m_indoorRenderer.setCameraAngles(std::atan2(y - position.y, x - position.x),
                 std::atan2(z - position.eyeZ(), std::hypot(x - position.x, y - position.y)));
+        };
+        const auto enterInn = [&]()
+        {
+            aimOutdoor(16810.0f, -7776.0f, 160.0f);
+            // Trigger scans nearby visible billboards. Use selects the precise crosshair target.
+            pressQuestGameplay(session, width, height, KeyboardAction::Use);
+            if (runtime.activeEventDialog().isActive && runtime.activeEventDialog().sourceId == 229)
+            {
+                state.innEntryRetries = 0;
+                return true;
+            }
+            std::cout << "Blackmail inn approach obstructed: dialog=" << runtime.activeEventDialog().sourceId
+                << " retry=" << state.innEntryRetries + 1 << '\n';
+            require(++state.innEntryRetries <= 4, "Blackmail could not reach the inn door past town pedestrians");
+            if (runtime.activeEventDialog().isActive) close();
+            const float x = pWorld->partyX(), y = pWorld->partyY();
+            const float yaw = std::atan2(-7776.0f - y, 16810.0f - x);
+            game.m_outdoorGameView.setCameraAngles(yaw + 1.57079632679f, 0.0f);
+            pressQuestGameplay(session, width, height, KeyboardAction::Forward, 0.125f);
+            state.walkedDistance += std::hypot(pWorld->partyX() - x, pWorld->partyY() - y);
+            return false;
+        };
+        const auto healDuringRetreat = [&]()
+        {
+            const Character &healer = pParty->members()[1];
+            if (!pParty->canSelectMemberInGameplay(1) || healer.recoverySecondsRemaining > 0.0f
+                || healer.spellPoints < 2) return;
+            size_t weakest = size_t(-1);
+            float fraction = 0.85f;
+            for (size_t index = 0; index < pParty->members().size(); ++index)
+            {
+                const Character &member = pParty->members()[index];
+                if (member.conditions.test(size_t(CharacterCondition::Dead))
+                    || member.conditions.test(size_t(CharacterCondition::Eradicated))) continue;
+                const float health = float(member.health) / float(std::max(1, member.maxHealth));
+                if (health < fraction) { fraction = health; weakest = index; }
+            }
+            if (healer.health < 18) weakest = 1;
+            if (weakest == size_t(-1)) return;
+            const SpellEntry *pSpell = game.m_gameDataLoader.getSpellTable().findById(68);
+            require(pSpell && runtime.tryCastSpellFromMember(1, 68, pSpell->name),
+                "Blackmail retreat healer could not start ordinary Heal");
+            GameplaySpellService &spells = runtime.spellService();
+            PartySpellCastRequest request = spells.makePendingTargetSelectionRequest();
+            request.targetCharacterIndex = weakest;
+            require(spells.validatePendingTargetSelectionRequest(runtime, request), "Retreat Heal target rejected");
+            const int hp = pParty->members()[weakest].health, mana = healer.spellPoints;
+            const auto result = spells.resolvePendingTargetSelectionCast(runtime, request);
+            require(result.castResult.succeeded() && pParty->members()[weakest].health > hp
+                && healer.spellPoints == mana - 2, "Retreat Heal did not apply normal health and mana effects");
+            spells.clearPendingTargetSelection(runtime);
+            session.updateGameplay({}, 0.0f);
+            std::cout << "Blackmail retreat Heal: target=" << weakest << " hp=" << hp << "->"
+                << pParty->members()[weakest].health << " mana=" << mana << "->" << healer.spellPoints << '\n';
         };
         const auto loadRoute = [&](const char *name, bool reverse)
         {
@@ -5391,21 +5480,35 @@ struct ApplicationCaptureTestAccess
                 state.route.push_back({-22000.0f, -11239.0f, 2.0f});
                 state.route.push_back({-22200.0f, -11239.0f, 2.0f});
             }
+            if (std::string_view(name) == "town-to-training-open.tsv")
+            {
+                state.route.push_back({16576.0f, -6016.0f, 0.0f});
+                state.route.push_back({16874.0f, -6016.0f, 0.0f});
+            }
             if (reverse) std::reverse(state.route.begin(), state.route.end());
             state.waypoint = 0;
         };
+        const auto loadInnApproach = [&]()
+        {
+            state.route = {{16576.0f, -6016.0f, 0.0f}, {16400.0f, -6016.0f, 0.0f},
+                {16400.0f, -7776.0f, 0.0f}, {16576.0f, -7776.0f, 0.0f}};
+        };
+        const auto loadInnReturn = [&]()
+        {
+            loadRoute("town-to-training-open.tsv", true);
+            state.route.erase(state.route.begin(), state.route.begin() + 2);
+            state.route.insert(state.route.begin(), {{16400.0f, -7776.0f, 0.0f}, {16400.0f, -6464.0f, 0.0f}});
+            state.route.push_back({12864.0f, -12352.0f, 257.0f});
+            state.route.push_back({12864.0f, -12224.0f, 257.0f});
+        };
         const auto loadTownRoute = [&](bool toTown)
         {
-            state.route = {{
-                {10000.0f, -15616.0f, 1.0f}, {10784.0f, -15616.0f, 1.0f},
-                {11000.0f, -15616.0f, 1.0f}, {12000.0f, -13100.0f, 1.0f},
-                {12160.0f, -11968.0f, 1.0f}, {12480.0f, -11968.0f, 1.0f},
-                {12480.0f, -12580.0f, 1.0f}, {12480.0f, -12700.0f, 1.0f},
-                {12864.0f, -12700.0f, 1.0f}, {12864.0f, -12400.0f, 1.0f},
-                {12864.0f, -12224.0f, 1.0f},
-            }};
-            if (!toTown) std::reverse(state.route.begin(), state.route.end());
-            state.waypoint = 0;
+            loadInnReturn();
+            if (!toTown)
+            {
+                std::reverse(state.route.begin(), state.route.end());
+                state.route.push_back({16576.0f, -7776.0f, 1.0f});
+            }
         };
         const auto walkOutdoor = [&]()
         {
@@ -5467,12 +5570,15 @@ struct ApplicationCaptureTestAccess
             auto *pScene = dynamic_cast<IndoorSceneRuntime *>(game.m_pMapSceneRuntime.get());
             require(pScene != nullptr, "MM8 blackmail lost the indoor runtime");
             IndoorWorldRuntime &world = pScene->worldRuntime();
-            if (state.blockingCombat)
+            // Engage from the corridor before normal walking pulls the whole room into melee.
+            // Delivery still has no clear-all requirement: only nearby, visible hostiles are considered.
+            if (!pParty->hasQuestBit(10) && !state.retreating)
             {
                 if (handleMm8DungeonCombat(game, frame, width, height, state, captures,
-                        "blackmail", true, true, 600.0f)) return false;
+                        "blackmail", true, false, world.partyY() < -7500.0f ? 850.0f : 1800.0f, 90)) return false;
                 state.blockingCombat = false;
             }
+            // Follow the same corner clearance in both directions; a wide retreat tolerance cuts into rock.
             while (state.waypoint < state.route.size()
                 && std::hypot(state.route[state.waypoint][0] - world.partyX(),
                     state.route[state.waypoint][1] - world.partyY()) < 18.0f
@@ -5526,6 +5632,12 @@ struct ApplicationCaptureTestAccess
                         break;
                     }
                 }
+                if (state.retreating && hostileBlocker && state.blockedAttempts <= 2)
+                {
+                    // A nearby actor needs an immediate physical sidestep, not a door-trigger pause.
+                    state.bypassSteps = 8;
+                    return false;
+                }
                 if (state.blockedAttempts > 2 && hostileBlocker)
                 {
                     // The quest only requires combat that actually blocks the authored route. Do not
@@ -5550,7 +5662,9 @@ struct ApplicationCaptureTestAccess
                     }
                 }
                 require(state.blockedAttempts < 15 && state.indoorInteractions < 80,
-                    "MM8 blackmail could not pass an authored cove obstruction");
+                    "MM8 blackmail could not pass an authored cove obstruction: waypoint="
+                        + std::to_string(state.waypoint) + " blocked=" + std::to_string(state.blockedAttempts)
+                        + " door_inputs=" + std::to_string(state.indoorInteractions));
             }
             return false;
         };
@@ -5576,6 +5690,51 @@ struct ApplicationCaptureTestAccess
             return result;
         };
 
+        if (frame == 1 && continuation)
+        {
+            const bool atCove = std::hypot(pWorld->partyX() + 22473.0f, pWorld->partyY() + 11218.0f) < 800.0f;
+            const bool atTemple = std::hypot(pWorld->partyX() - 19776.0f, pWorld->partyY() + 18900.0f) < 400.0f;
+            const bool atInn = std::hypot(pWorld->partyX() - 16576.0f, pWorld->partyY() + 7776.0f) < 400.0f;
+            const bool insideCove = session.currentMapFileName() == "d07.blv" && pWorld->isIndoorMap();
+            require(((session.currentMapFileName() == "out02.odm" && (atCove || atTemple || atInn)) || insideCove)
+                && pParty->inventoryItemCount(742) == 1 && pParty->hasQuestBit(9)
+                && !pParty->hasQuestBit(10), "Blackmail diagnostic requires an unfinished normal recovery save");
+            state.experienceBeforeCombat = totalExperience();
+            state.resupplyTrips = 1;
+            state.retreating = true;
+            save("blackmail-diagnostic-input");
+            captures.push_back("blackmail-diagnostic-input");
+            std::cout << "MM8 blackmail DIAGNOSTIC continuation; not the continuous096 acceptance run\n";
+            if (insideCove)
+            {
+                loadRoute("astra-d07-to-arion-003.tsv", false);
+                const auto closest = std::min_element(state.route.begin(), state.route.end(),
+                    [&](const std::array<float, 3> &left, const std::array<float, 3> &right)
+                    {
+                        return std::hypot(left[0] - pWorld->partyX(), left[1] - pWorld->partyY())
+                            < std::hypot(right[0] - pWorld->partyX(), right[1] - pWorld->partyY());
+                    });
+                require(closest != state.route.end()
+                    && std::hypot((*closest)[0] - pWorld->partyX(), (*closest)[1] - pWorld->partyY()) < 200.0f,
+                    "Diagnostic indoor retreat save is not on the authored route");
+                state.route.resize(size_t(closest - state.route.begin()) + 1);
+                std::reverse(state.route.begin(), state.route.end());
+                state.route.push_back({-3800.0f, 623.0f, 0.0f});
+                next(70);
+            }
+            else if (atTemple)
+            {
+                state.route = {{pWorld->partyX(), pWorld->partyY(), pWorld->partyFootZ()}};
+                next(85);
+            }
+            else if (atInn)
+            {
+                state.route = {{pWorld->partyX(), pWorld->partyY(), pWorld->partyFootZ()}};
+                next(60);
+            }
+            else next(72);
+            return;
+        }
         if (frame == 1)
         {
             require(session.currentMapFileName() == "out02.odm" && runtime.activeHistoryContinentId() == 1,
@@ -5673,17 +5832,263 @@ struct ApplicationCaptureTestAccess
         }
         case 3:
             if (runtime.activeEventDialog().isActive) close();
-            else { loadTownRoute(false); next(4); }
+            else { loadRoute("town-to-training-open.tsv", false); next(50); }
+            break;
+        case 50:
+            if (!walkOutdoor()) break;
+            aimOutdoor(16874.0f, -6176.0f, 160.0f);
+            pressQuestGameplay(session, width, height, KeyboardAction::Trigger);
+            next(51);
+            break;
+        case 51:
+            require(runtime.activeEventDialog().isActive && runtime.activeEventDialog().sourceId == 1565,
+                "Blackmail preparation did not reach the original Ravenshore training hall");
+            next(52);
+            break;
+        case 52:
+        {
+            const auto portrait = runtime.resolvePartyPortraitRect(width, height, state.trainingMember);
+            require(portrait.has_value(), "Blackmail training student has no portrait");
+            click(portrait->x + portrait->width * 0.5f, portrait->y + portrait->height * 0.5f);
+            require(pParty->activeMemberIndex() == state.trainingMember, "Blackmail training selected another student");
+            const Character before = pParty->members()[state.trainingMember];
+            const uint64_t requiredExperience = uint64_t(before.level) * (before.level + 1) * 500;
+            if (before.experience < requiredExperience)
+            {
+                if (++state.trainingMember == pParty->members().size())
+                {
+                    close();
+                    state.skillMember = 0;
+                    next(40);
+                }
+                break;
+            }
+            const HouseEntry *pHouse = runtime.houseTable()->get(1565);
+            require(pHouse != nullptr, "Blackmail training hall has no original fee data");
+            const int reputation = effectivePartyReputation(pWorld->currentLocationReputation(),
+                pWorld->eventRuntimeState());
+            const Character *pMerchant = pParty->bestPartyWideUtilitySkillMember("Merchant");
+            const int price = PriceCalculator::trainingPrice(pParty->activeMember(),
+                pMerchant ? pMerchant : pParty->activeMember(), *pHouse, reputation);
+            const int gold = pParty->gold();
+            require(price > 0 && gold >= price, "Blackmail party cannot afford normal training");
+            selectQuestDialog(runtime, EventDialogActionKind::HouseService,
+                uint32_t(HouseActionId::TrainingTrainActiveMember));
+            const Character &after = pParty->members()[state.trainingMember];
+            require(after.level == before.level + 1 && after.experience == before.experience
+                && after.skillPoints > before.skillPoints && pParty->gold() == gold - price,
+                "Blackmail training did not apply the earned level and exact fee");
+            std::cout << "Blackmail normal training: member=" << state.trainingMember
+                << " level=" << after.level << " price=" << price << '\n';
+            break;
+        }
+        case 40:
+        {
+            const auto portrait = runtime.resolvePartyPortraitRect(width, height, state.skillMember);
+            require(portrait.has_value(), "Blackmail skill student has no portrait");
+            GameplayInputFrame input;
+            input.screenWidth = width;
+            input.screenHeight = height;
+            input.pointerX = portrait->x + portrait->width * 0.5f;
+            input.pointerY = portrait->y + portrait->height * 0.5f;
+            input.rightMouseButton = {true, true, false};
+            session.updateGameplay(input, 0.0f);
+            input.rightMouseButton.pressed = false;
+            for (unsigned press = 0; press < 2; ++press)
+            {
+                input.leftMouseButton = {true, true, false};
+                session.updateGameplay(input, 0.0f);
+                input.leftMouseButton = {false, false, true};
+                session.updateGameplay(input, 0.0f);
+            }
+            input.leftMouseButton = {};
+            input.rightMouseButton = {false, false, true};
+            session.updateGameplay(input, 0.0f);
+            require(runtime.characterScreen().open
+                && runtime.selectedCharacterScreenSourceIndex() == state.skillMember,
+                "Blackmail portrait did not open the selected character");
+            next(41);
+            break;
+        }
+        case 41:
+        {
+            const auto rect = resolve("CharacterSkillsButton");
+            click(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f);
+            require(runtime.characterScreen().page == GameplayUiController::CharacterPage::Skills,
+                "Blackmail skills tab did not open");
+            next(42);
+            break;
+        }
+        case 42:
+        {
+            static constexpr std::array<const char *, 5> skills =
+                {"Sword", "BodyMagic", "DarkMagic", "Dagger", "Bow"};
+            const Character &before = pParty->members()[state.skillMember];
+            const CharacterSkill *pSkill = before.findSkillByCanonicalName(skills[state.skillMember]);
+            require(pSkill != nullptr, "Blackmail preparation requires an already learned skill");
+            const uint32_t level = pSkill->level;
+            const uint32_t points = before.skillPoints;
+            if (level >= 6 || points < level + 1) { next(43); break; }
+            const CharacterSkillUiData rows = buildCharacterSkillUiData(
+                pParty->member(state.skillMember), runtime.characterInspectTable());
+            const auto font = runtime.findHudFont("Lucida");
+            const float naturalHeight = font ? float(std::max(1, font->fontHeight - 3)) : 11.0f;
+            const CharacterSkillLayout layout = layoutCharacterSkillRows(runtime, width, height, naturalHeight,
+                {rows.weaponRows.size(), rows.magicRows.size(), rows.armorRows.size(), rows.miscRows.size()});
+            const bool magic = state.skillMember == 1 || state.skillMember == 2;
+            const auto &group = magic ? rows.magicRows : rows.weaponRows;
+            const auto row = std::find_if(group.begin(), group.end(), [&](const CharacterSkillUiRow &entry)
+                { return entry.canonicalName == skills[state.skillMember]; });
+            require(row != group.end(), "Blackmail preparation skill has no visible row");
+            const auto region = resolve(magic ? "CharacterSkillsMagicListRegion" : "CharacterSkillsWeaponsListRegion");
+            const auto header = resolve(
+                magic ? "CharacterSkillsMagicLevelHeader" : "CharacterSkillsWeaponsLevelHeader");
+            const float rowHeight = layout.rowHeight * region.scale;
+            GameplayResolvedHudLayoutElement rect = {region.x,
+                region.y + float(row - group.begin()) * rowHeight,
+                header.x + header.width - region.x, rowHeight, region.scale};
+            require(layout.placeVisible(rect), "Blackmail skill row is outside the viewport");
+            click(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f);
+            const Character &after = pParty->members()[state.skillMember];
+            require(after.findSkillByCanonicalName(skills[state.skillMember])->level == level + 1
+                && after.skillPoints + level + 1 == points,
+                "Blackmail skill click did not spend the exact earned point cost");
+            std::cout << "Blackmail skill upgrade: member=" << state.skillMember
+                << " skill=" << skills[state.skillMember] << " level=" << level + 1
+                << " points=" << points << "->" << after.skillPoints << '\n';
+            break;
+        }
+        case 43:
+            close();
+            require(!runtime.characterScreen().open, "Blackmail character screen did not close");
+            if (++state.skillMember < pParty->members().size()) next(40);
+            else
+            {
+                save("blackmail-prepared");
+                captures.push_back("blackmail-prepared");
+                loadInnApproach();
+                next(60);
+            }
+            break;
+        case 60:
+            if (!walkOutdoor()) break;
+            if (!enterInn()) break;
+            next(61);
+            break;
+        case 61:
+            require(runtime.activeEventDialog().isActive && runtime.activeEventDialog().sourceId == 229,
+                "Blackmail preparation did not enter the original Ravenshore tavern");
+            selectQuestDialog(runtime, EventDialogActionKind::HouseProprietor, 229);
+            next(62);
+            break;
+        case 62:
+            if (pParty->food() < 14)
+                selectQuestDialog(runtime, EventDialogActionKind::HouseService, uint32_t(HouseActionId::TavernBuyFood));
+            require(pParty->food() >= 14, "Blackmail tavern did not replenish provisions");
+            selectQuestDialog(runtime, EventDialogActionKind::HouseService, uint32_t(HouseActionId::TavernRentRoom));
+            require(runtime.restScreenState().active, "Blackmail paid room did not open rest");
+            next(63);
+            break;
+        case 63:
+            close();
+            require(runtime.restScreenState().mode == GameplayUiController::RestMode::None,
+                "Blackmail paid room did not finish its normal rest");
+            next(64);
+            break;
+        case 64:
+            if (runtime.restScreenState().active || runtime.activeEventDialog().isActive) { close(); break; }
+            save(state.resupplyTrips == 0 ? "blackmail-provisioned"
+                : "blackmail-provisions-" + std::to_string(state.resupplyTrips));
+            captures.push_back(state.resupplyTrips == 0 ? "blackmail-provisioned"
+                : "blackmail-provisions-" + std::to_string(state.resupplyTrips));
+            if (std::any_of(pParty->members().begin(), pParty->members().end(), [](const Character &member)
+                { return member.conditions.any(); }))
+            {
+                loadRoute("astra-tavern-to-temple-001.tsv", false);
+                next(85);
+                break;
+            }
+            state.retreating = false;
+            loadRoute("astra-inn-to-cove-001.tsv", false);
+            next(5);
+            break;
+        case 80:
+            if (!walkOutdoor()) break;
+            state.route.clear();
+            next(60);
+            break;
+        case 85:
+            if (!walkOutdoor()) break;
+            aimOutdoor(19776.0f, -19200.0f, 768.0f);
+            pressQuestGameplay(session, width, height, KeyboardAction::Trigger);
+            next(86);
+            break;
+        case 86:
+            require(runtime.activeEventDialog().isActive && runtime.activeEventDialog().sourceId == 304,
+                "Blackmail recovery did not enter Ravenshore's original temple");
+            if (hasAction(EventDialogActionKind::HouseProprietor, 304))
+                selectQuestDialog(runtime, EventDialogActionKind::HouseProprietor, 304);
+            state.templeMember = 0;
+            save("blackmail-temple-before-" + std::to_string(state.resupplyTrips));
+            next(87);
+            break;
+        case 87:
+        {
+            while (state.templeMember < pParty->members().size())
+            {
+                const Character &member = pParty->members()[state.templeMember];
+                if (member.conditions.any() || member.health < Party::effectiveMaximumHealth(member)
+                    || member.spellPoints < Party::effectiveMaximumSpellPoints(member)) break;
+                ++state.templeMember;
+            }
+            if (state.templeMember == pParty->members().size())
+            {
+                save("blackmail-temple-healed-" + std::to_string(state.resupplyTrips));
+                captures.push_back("blackmail-temple-healed-" + std::to_string(state.resupplyTrips));
+                next(88);
+                break;
+            }
+            const auto portrait = runtime.resolvePartyPortraitRect(width, height, state.templeMember);
+            require(portrait.has_value(), "Blackmail temple patient has no portrait");
+            click(portrait->x + portrait->width * 0.5f, portrait->y + portrait->height * 0.5f);
+            require(pParty->activeMemberIndex() == state.templeMember, "Blackmail temple selected another patient");
+            const HouseEntry *pHouse = runtime.houseTable()->get(304);
+            require(pHouse && pHouse->templeCanHeal, "Blackmail temple cannot heal");
+            const int price = PriceCalculator::templeHealPrice(pParty->activeMember(), *pHouse, pWorld->gameMinutes());
+            const int gold = pParty->gold();
+            require(price > 0 && gold >= price, "Blackmail party cannot afford normal temple treatment");
+            selectQuestDialog(runtime, EventDialogActionKind::HouseService, uint32_t(HouseActionId::TempleHeal));
+            const Character &member = pParty->members()[state.templeMember];
+            require(member.conditions.none() && member.health == Party::effectiveMaximumHealth(member)
+                && member.spellPoints == Party::effectiveMaximumSpellPoints(member)
+                && pParty->gold() == gold - price, "Blackmail temple did not apply quoted treatment and fee");
+            std::cout << "Blackmail normal temple: trip=" << state.resupplyTrips
+                << " member=" << state.templeMember << " price=" << price << '\n';
+            ++state.templeMember;
+            break;
+        }
+        case 88:
+            if (runtime.activeEventDialog().isActive) { close(); break; }
+            loadRoute("astra-tavern-to-temple-001.tsv", true);
+            next(89);
+            break;
+        case 89:
+            if (!walkOutdoor()) break;
+            state.retreating = false;
+            loadRoute("astra-inn-to-cove-001.tsv", false);
+            next(5);
             break;
         case 4:
             if (!walkOutdoor()) break;
-            loadRoute("landing-to-cove.tsv", false);
+            loadRoute("astra-inn-to-cove-001.tsv", false);
             next(5);
             break;
         case 5:
             if (!walkOutdoor()) break;
-            save("blackmail-cove-entrance");
-            captures.push_back("blackmail-cove-entrance");
+            save(state.resupplyTrips == 0 ? "blackmail-cove-entrance"
+                : "blackmail-cove-approach-" + std::to_string(state.resupplyTrips));
+            captures.push_back(state.resupplyTrips == 0 ? "blackmail-cove-entrance"
+                : "blackmail-cove-approach-" + std::to_string(state.resupplyTrips));
             next(6);
             break;
         case 6:
@@ -5702,15 +6107,119 @@ struct ApplicationCaptureTestAccess
             if (frame < state.phaseFrame + 24) break;
             require(session.currentMapFileName() == "d07.blv" && pWorld->isIndoorMap(),
                 "Normal blackmail route did not enter the smuggler cove");
-            state.experienceBeforeCombat = totalExperience();
-            loadRoute("d07-to-arion-open.tsv", false);
-            save("blackmail-cove-entered");
-            captures.push_back("blackmail-cove-entered");
+            if (state.resupplyTrips == 0) state.experienceBeforeCombat = totalExperience();
+            loadRoute("astra-d07-to-arion-003.tsv", false);
+            if (state.resupplyTrips == 0)
+            {
+                save("blackmail-cove-entered");
+                captures.push_back("blackmail-cove-entered");
+            }
+            else
+            {
+                save("blackmail-reentered-" + std::to_string(state.resupplyTrips));
+                captures.push_back("blackmail-reentered-" + std::to_string(state.resupplyTrips));
+            }
             next(9);
             break;
         case 9:
+        {
+            TurnBasedCombatRuntime &turn = session.turnBasedCombatRuntime();
+            if (!turn.hasPendingActions() && turn.stage() != TurnBasedCombatStage::Wait
+                && (pParty->members()[2].spellPoints < 45 || pParty->members()[1].spellPoints < 20
+                    || pParty->members()[1].health < 20))
+            {
+                ++state.resupplyTrips;
+                require(state.resupplyTrips < 80, "Blackmail normal recovery trip limit exceeded");
+                save("blackmail-retreat-" + std::to_string(state.resupplyTrips));
+                state.route.resize(state.waypoint);
+                std::reverse(state.route.begin(), state.route.end());
+                state.route.push_back({-3800.0f, 623.0f, 0.0f});
+                state.retreating = true;
+                next(70);
+                break;
+            }
             if (!walkIndoor()) break;
             next(10);
+            break;
+        }
+        case 70:
+        {
+            // Keep two Toxic Clouds in reserve for actors physically blocking the return corridor.
+            if (state.blockingCombat)
+            {
+                const size_t defeatedBefore = state.defeatedActors.size();
+                const bool handlingCombat = handleMm8DungeonCombat(game, frame, width, height, state, captures,
+                    "blackmail", true, false, 600.0f, 90, true);
+                if (state.defeatedActors.size() > defeatedBefore)
+                {
+                    state.blockingCombat = false;
+                    state.blockedAttempts = 0;
+                    state.stalledFrames = 0;
+                    std::cout << "Blackmail retreat blocker defeated; resume physical escape\n";
+                    break;
+                }
+                if (handlingCombat) break;
+                state.blockingCombat = false;
+            }
+            TurnBasedCombatRuntime &turn = session.turnBasedCombatRuntime();
+            if (turn.active())
+            {
+                if (turn.canToggleOff(*pParty)) pressQuestGameplay(session, width, height, KeyboardAction::Combat);
+                else if (turn.stage() == TurnBasedCombatStage::Movement || turn.playerActionReady(*pParty))
+                    pressQuestGameplay(session, width, height, KeyboardAction::Pass);
+                break;
+            }
+            healDuringRetreat();
+            if (!walkIndoor()) break;
+            aimIndoor(-3968.0f, 627.2f, 486.4f);
+            pressQuestGameplay(session, width, height, KeyboardAction::Trigger);
+            next(71);
+            break;
+        }
+        case 71:
+            require(runtime.activeEventDialog().isActive
+                && runtime.activeEventDialog().presentation == EventDialogPresentation::Transition,
+                "Blackmail retreat did not reach the original cove exit");
+            selectQuestDialog(runtime, EventDialogActionKind::MapTransitionConfirm, 0);
+            next(72);
+            break;
+        case 72:
+            if (frame < state.phaseFrame + 24) break;
+            require(session.currentMapFileName() == "out02.odm", "Blackmail retreat did not return outdoors");
+            state.restFoodBefore = pParty->food();
+            state.restFoodCost = runtime.restFoodRequired();
+            state.restMinutesBefore = pWorld->gameMinutes();
+            save("blackmail-outside-" + std::to_string(state.resupplyTrips));
+            if (state.restFoodBefore < state.restFoodCost
+                || std::any_of(pParty->members().begin(), pParty->members().end(), [](const Character &member)
+                    { return member.conditions.any(); }))
+            {
+                loadRoute("astra-cove-to-inn-001.tsv", false);
+                next(80);
+                break;
+            }
+            pressQuestGameplay(session, width, height, KeyboardAction::Rest);
+            require(runtime.restScreenState().active, "Blackmail ordinary outdoor rest is unavailable");
+            next(73);
+            break;
+        case 73:
+        {
+            const auto rect = resolve("RestButton8Hours");
+            click(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f);
+            require(runtime.restScreenState().mode == GameplayUiController::RestMode::Heal
+                && pParty->food() == state.restFoodBefore - state.restFoodCost,
+                "Blackmail ordinary outdoor rest did not consume the exact provisions");
+            next(74);
+            break;
+        }
+        case 74:
+            if (runtime.restScreenState().mode != GameplayUiController::RestMode::None) break;
+            if (runtime.restScreenState().active) close();
+            require(pWorld->gameMinutes() >= state.restMinutesBefore + 480.0f,
+                "Blackmail ordinary rest did not advance eight hours");
+            save("blackmail-rested-" + std::to_string(state.resupplyTrips));
+            state.retreating = false;
+            next(6);
             break;
         case 10:
             aimIndoor(2840.0f, -16472.0f, 256.0f);
@@ -5737,9 +6246,9 @@ struct ApplicationCaptureTestAccess
                 && snapshot.npcTopicOverrides.at(4).at(0) == 33,
                 "Arion delivery did not replace blackmail with the smuggler boats topic");
             const EventRuntimeState *events = pWorld->eventRuntimeState();
-            require(events != nullptr && historyEventTimesForActiveContinent(*events).contains(5),
-                "Arion delivery did not write original MM8 History5");
-            state.deliveryHistoryTime = historyEventTimesForActiveContinent(*events).at(5);
+            require(events != nullptr && historyEventTimesForActiveContinent(*events).contains(3),
+                "Arion delivery did not write original MM8 History3");
+            state.deliveryHistoryTime = historyEventTimesForActiveContinent(*events).at(3);
             save("blackmail-delivered");
             captures.push_back("blackmail-delivered");
             next(13);
@@ -5765,7 +6274,7 @@ struct ApplicationCaptureTestAccess
             break;
         case 15:
             if (runtime.activeEventDialog().isActive) close();
-            else { loadRoute("d07-to-arion-open.tsv", true); next(16); }
+            else { loadRoute("astra-d07-to-arion-003.tsv", true); next(16); }
             break;
         case 16:
             if (!walkIndoor()) break;
@@ -5789,7 +6298,7 @@ struct ApplicationCaptureTestAccess
             if (frame < state.phaseFrame + 12) break;
             require(session.currentMapFileName() == "out02.odm" && !pWorld->isIndoorMap(),
                 "Smuggler cove exit did not return to Ravenshore");
-            loadRoute("landing-to-cove.tsv", true);
+            loadRoute("astra-cove-to-inn-001.tsv", false);
             save("blackmail-returned-outdoors");
             captures.push_back("blackmail-returned-outdoors");
             next(19);
@@ -5832,8 +6341,8 @@ struct ApplicationCaptureTestAccess
             require(events && events->variables.contains(BlackmailAutonoteRawId)
                 && events->variables.at(BlackmailAutonoteRawId) != 0,
                 "Elgar blackmail reward did not set original autonote493");
-            require(historyEventTimesForActiveContinent(*events).contains(5)
-                && historyEventTimesForActiveContinent(*events).at(5) == state.deliveryHistoryTime,
+            require(historyEventTimesForActiveContinent(*events).contains(3)
+                && historyEventTimesForActiveContinent(*events).at(3) == state.deliveryHistoryTime,
                 "Returning to Elgar changed the original delivery history time");
             save("blackmail-reward");
             captures.push_back("blackmail-reward");
@@ -5847,7 +6356,8 @@ struct ApplicationCaptureTestAccess
                 save("mm8-blackmail-main-complete");
                 captures.push_back("blackmail-main-complete");
                 state.complete = true;
-                std::cout << "MM8 blackmail main passed: walked=" << state.walkedDistance
+                std::cout << (continuation ? "MM8 blackmail diagnostic passed: walked="
+                    : "MM8 blackmail main passed: walked=") << state.walkedDistance
                     << " defeated=" << state.defeatedActors.size()
                     << " door_inputs=" << state.indoorInteractions << '\n';
             }
@@ -5884,7 +6394,53 @@ struct ApplicationCaptureTestAccess
             break;
         case 103:
             if (!walkOutdoor()) break;
-            loadRoute("landing-to-cove.tsv", false);
+            save("blackmail-reload-before-lodging");
+            state.restMinutesBefore = pWorld->gameMinutes();
+            next(115);
+            break;
+        case 115:
+            if (enterInn()) next(112);
+            break;
+        case 112:
+        {
+            require(runtime.activeEventDialog().isActive && runtime.activeEventDialog().sourceId == 229,
+                "Blackmail revisit did not enter Ravenshore's inn");
+            selectQuestDialog(runtime, EventDialogActionKind::HouseProprietor, 229);
+            const HouseEntry *pHouse = runtime.houseTable()->get(229);
+            require(pHouse != nullptr, "Blackmail revisit inn has no original fee data");
+            const Character *pMerchant = pParty->bestPartyWideUtilitySkillMember("Merchant");
+            const int reputation = effectivePartyReputation(pWorld->currentLocationReputation(),
+                pWorld->eventRuntimeState());
+            const int price = PriceCalculator::tavernRoomPrice(
+                pMerchant ? pMerchant : pParty->activeMember(), *pHouse, reputation);
+            const int gold = pParty->gold();
+            selectQuestDialog(runtime, EventDialogActionKind::HouseService, uint32_t(HouseActionId::TavernRentRoom));
+            require(runtime.restScreenState().active && pParty->gold() == gold - price,
+                "Blackmail revisit room did not charge the exact quoted fee");
+            std::cout << "Blackmail revisit lodging: night=" << state.reloadRestNights + 1
+                << " price=" << price << '\n';
+            next(113);
+            break;
+        }
+        case 113:
+            close();
+            require(runtime.restScreenState().mode == GameplayUiController::RestMode::None,
+                "Blackmail revisit room did not finish its ordinary rest");
+            next(114);
+            break;
+        case 114:
+            if (runtime.restScreenState().active || runtime.activeEventDialog().isActive) { close(); break; }
+            ++state.reloadRestNights;
+            save("blackmail-reload-lodged-" + std::to_string(state.reloadRestNights));
+            if (state.reloadRestNights < 4)
+            {
+                next(115);
+                break;
+            }
+            require(pWorld->gameMinutes() > state.restMinutesBefore + 1440.0f,
+                "Blackmail revisit did not wait more than the original one-day hostility interval");
+            captures.push_back("blackmail-reload-lodged");
+            loadRoute("astra-inn-to-cove-001.tsv", false);
             next(104);
             break;
         case 104:
@@ -5908,11 +6464,26 @@ struct ApplicationCaptureTestAccess
             if (frame < state.phaseFrame + 24) break;
             require(session.currentMapFileName() == "d07.blv" && pWorld->isIndoorMap(),
                 "Blackmail reload did not enter the smuggler cove");
+            require(pWorld->eventRuntimeState()->namedMapVars.contains("WereratsMad")
+                && pWorld->eventRuntimeState()->namedMapVars.at("WereratsMad") == 0,
+                "Blackmail revisit did not clear original kill anger after more than one day away");
+            save("blackmail-reload-peaceful-entry");
+            captures.push_back("blackmail-reload-peaceful-entry");
             state.experienceBeforeCombat = totalExperience();
-            loadRoute("d07-to-arion-open.tsv", false);
+            loadRoute("astra-d07-to-arion-003.tsv", false);
             next(108);
             break;
         case 108:
+            if (runtime.activeEventDialog().isActive && runtime.activeEventDialog().sourceId == 37)
+            {
+                require(!runtime.activeEventDialog().isHouseDialog,
+                    "Blackmail revisit guard warning unexpectedly opened a house");
+                const std::string name = "blackmail-reload-guard-" + std::to_string(++state.reloadGuardGreetings);
+                save(name);
+                captures.push_back(name);
+                close();
+                break;
+            }
             if (!walkIndoor()) break;
             next(109);
             break;
@@ -13524,6 +14095,278 @@ struct ApplicationCaptureTestAccess
         }
     }
 
+    struct InvitationCheckState
+    {
+        unsigned phase = 0;
+        uint32_t phaseFrame = 0;
+        size_t waypoint = 0;
+        unsigned stalledFrames = 0;
+        unsigned introStep = 0;
+        unsigned attempts = 0;
+        float walkedDistance = 0.0f;
+        bool complete = false;
+        std::vector<std::array<float, 2>> route;
+    };
+
+    static void checkInvitation(GameApplication &game, uint32_t frame, int width, int height,
+        bool reload, InvitationCheckState &state, std::vector<std::string> &captures)
+    {
+        const auto require = [](bool ok, const std::string &message)
+        {
+            if (!ok) throw std::runtime_error(message);
+        };
+        GameSession &session = game.m_gameSession;
+        GameplayScreenRuntime &runtime = session.gameplayScreenRuntime();
+        Party *pParty = runtime.party();
+        IGameplayWorldRuntime *pWorld = session.activeWorldRuntime();
+        require(pParty && pWorld && !pWorld->isIndoorMap() && session.currentMapFileName() == "oute3.odm",
+            "Invitation validation needs the actual normal Enroth continuation");
+        require(pParty->memberCount() == 4 && pParty->hasActableMember(), "Invitation party is incapacitated");
+        EventRuntimeState *pEvents = pWorld->eventRuntimeState();
+        require(pEvents != nullptr, "Invitation world has no event runtime");
+        const auto flag = [&](const char *name)
+        {
+            const auto found = pEvents->namedGlobalVars.find(std::string("MMerge.CrossContinents.") + name);
+            return found != pEvents->namedGlobalVars.end() && found->second != 0;
+        };
+        const auto save = [&](const std::string &name)
+        {
+            require(game.quickSaveToPath(std::filesystem::current_path() / (name + ".oysav"),
+                "邀请卷轴受控经验链路", {}), "Cannot preserve invitation stage " + name);
+        };
+        const auto next = [&](unsigned phase)
+        {
+            state.phase = phase;
+            state.phaseFrame = frame;
+            state.attempts = 0;
+        };
+        const auto close = [&]()
+        {
+            GameplayInputFrame input;
+            input.screenWidth = width;
+            input.screenHeight = height;
+            input.keyboardHeld[SDL_SCANCODE_ESCAPE] = true;
+            input.keyboardPressCounts[SDL_SCANCODE_ESCAPE] = 1;
+            session.updateGameplay(input, 0.0f);
+            session.updateGameplay({}, 0.0f);
+        };
+        const auto click = [&](float x, float y)
+        {
+            GameplayInputFrame input;
+            input.screenWidth = width;
+            input.screenHeight = height;
+            input.pointerX = x;
+            input.pointerY = y;
+            input.leftMouseButton = {true, true, false};
+            session.updateGameplay(input, 0.0f);
+            input.leftMouseButton = {false, false, true};
+            session.updateGameplay(input, 0.0f);
+            session.updateGameplay({}, 0.0f);
+        };
+        const auto loadRoute = [&](const char *name, bool reverse = false)
+        {
+            std::ifstream input(std::filesystem::current_path().parent_path() / "routes" / name);
+            require(input.good(), std::string("Missing invitation route ") + name);
+            state.route.clear();
+            state.waypoint = 0;
+            state.stalledFrames = 0;
+            std::string line;
+            while (std::getline(input, line))
+            {
+                if (line.empty() || line[0] == '#') continue;
+                std::istringstream row(line);
+                float x, y, z;
+                require(bool(row >> x >> y >> z), "Invalid invitation route row");
+                state.route.push_back({x, y});
+            }
+            require(state.route.size() >= 2, "Empty invitation route");
+            if (reverse) std::reverse(state.route.begin(), state.route.end());
+        };
+        const auto walk = [&]()
+        {
+            if (runtime.activeEventDialog().isActive)
+            {
+                require(runtime.activeEventDialog().sourceId != 803, "Verdant appeared before the original location");
+                close();
+                return false;
+            }
+            while (state.waypoint < state.route.size()
+                && std::hypot(state.route[state.waypoint][0] - pWorld->partyX(),
+                    state.route[state.waypoint][1] - pWorld->partyY()) < 18.0f)
+                ++state.waypoint;
+            if (state.waypoint == state.route.size()) return true;
+            const float x = pWorld->partyX(), y = pWorld->partyY();
+            const float dx = state.route[state.waypoint][0] - x;
+            const float dy = state.route[state.waypoint][1] - y;
+            game.m_outdoorGameView.setCameraAngles(std::atan2(dy, dx), 0.0f);
+            pressQuestGameplay(session, width, height, KeyboardAction::Forward,
+                std::clamp(std::hypot(dx, dy) / 1500.0f, 1.0f / 128.0f, 0.025f));
+            const float moved = std::hypot(pWorld->partyX() - x, pWorld->partyY() - y);
+            state.walkedDistance += moved;
+            state.stalledFrames = moved < 0.5f ? state.stalledFrames + 1 : 0;
+            if (frame % 180 == 0)
+                std::cout << "Invitation walk: phase=" << state.phase << " waypoint=" << state.waypoint
+                    << " position=" << pWorld->partyX() << ',' << pWorld->partyY() << ',' << pWorld->partyFootZ()
+                    << " moved=" << state.walkedDistance << '\n';
+            require(state.stalledFrames < 180, "Invitation route blocked by original geometry or an actor");
+            return false;
+        };
+        const auto use = [&](float x, float y, float z)
+        {
+            const float dx = x - pWorld->partyX(), dy = y - pWorld->partyY();
+            game.m_outdoorGameView.setCameraAngles(std::atan2(dy, dx),
+                std::atan2(z - pWorld->partyFootZ() - 176.0f, std::hypot(dx, dy)));
+            pressQuestGameplay(session, width, height, KeyboardAction::Use);
+        };
+        if (state.phase == 0)
+        {
+            require(pParty->member(0)->experience == 50001, "Invitation fixture must declare only Party0 XP50001");
+            require(flag("GotMainQuest") == reload && flag("ScrollGotten") == reload,
+                "Invitation input flags do not match main/reload mode");
+            require(!runtime.heldInventoryItem().active, "Invitation input unexpectedly has a held item");
+            save("invitation-input");
+            captures.push_back("invitation-input");
+            loadRoute(reload ? "chest-to-fountain-001.tsv" : "start-to-chest-001.tsv", reload);
+            next(1);
+        }
+        if (state.phase == 1)
+        {
+            if (walk()) next(2);
+            return;
+        }
+        if (state.phase == 7)
+        {
+            if (walk()) next(8);
+            return;
+        }
+        if (frame < state.phaseFrame + 30) return;
+        switch (state.phase)
+        {
+        case 2:
+        case 6:
+            use(-16080.0f, -1680.0f, 32.0f);
+            require(++state.attempts <= 4, "Normal use did not open original chest1");
+            if (!pWorld->activeChestView()) return;
+            require(pWorld->activeChestView()->chestId == 1, "Opened a different invitation chest");
+            if (state.phase == 6 || reload)
+            {
+                const auto &view = *pWorld->activeChestView();
+                const auto missing = [](const std::vector<GameplayChestItemState> &items)
+                {
+                    return std::none_of(items.begin(), items.end(),
+                        [](const GameplayChestItemState &item) { return item.itemId >= 770 && item.itemId <= 772; });
+                };
+                require(missing(view.items) && missing(view.hiddenItems), "Reopened chest recreated the invitation");
+                save("invitation-chest-reopened");
+                captures.push_back("invitation-chest-reopened");
+                close();
+                loadRoute("chest-to-fountain-001.tsv");
+                next(7);
+            }
+            else
+            {
+                require(flag("ScrollGenerated") && !flag("ScrollGotten"), "Opening chest did not generate once");
+                require(pEvents->namedGlobalVars.at("MMerge.LostItems.772") == 3, "Wrong original continent record");
+                save("invitation-generated");
+                captures.push_back("invitation-generated");
+                next(3);
+            }
+            break;
+        case 3:
+        {
+            const GameplayChestViewState *pChest = pWorld->activeChestView();
+            require(pChest != nullptr, "Invitation chest closed before pickup");
+            const auto item = std::find_if(pChest->items.begin(), pChest->items.end(),
+                [](const GameplayChestItemState &value) { return value.itemId == 772; });
+            require(item != pChest->items.end(), "Original Enroth invitation is not visible in the chest");
+            const auto grid = runtime.resolveChestGridArea(width, height);
+            require(grid.has_value(), "Invitation chest has no rendered pointer grid");
+            const float x = grid->x + (item->gridX + 0.5f) * grid->width / pChest->gridWidth;
+            const float y = grid->y + (item->gridY + 0.5f) * grid->height / pChest->gridHeight;
+            click(x, y);
+            require(runtime.heldInventoryItem().active && runtime.heldInventoryItem().item.objectDescriptionId == 772,
+                "Actual pointer pickup did not place invitation772 on the cursor");
+            require(flag("ScrollGotten") && !flag("MetVerdant") && !flag("GotMainQuest"),
+                "Actual invitation pickup did not emit the scoped acquisition hook");
+            save("invitation-held");
+            captures.push_back("invitation-held");
+            next(4);
+            break;
+        }
+        case 4:
+        {
+            const auto portrait = runtime.resolvePartyPortraitRect(width, height, 0);
+            require(portrait.has_value(), "Invitation recipient portrait missing");
+            click(portrait->x + portrait->width * 0.5f, portrait->y + portrait->height * 0.5f);
+            require(!runtime.heldInventoryItem().active && pParty->inventoryItemCount(772) == 1,
+                "Normal portrait transfer did not store the invitation");
+            save("invitation-stored");
+            captures.push_back("invitation-stored");
+            next(5);
+            break;
+        }
+        case 5:
+            close();
+            require(!pWorld->activeChestView(), "Normal Escape did not close invitation chest");
+            next(6);
+            break;
+        case 8:
+            use(-11168.0f, -5376.0f, 192.0f);
+            require(runtime.shouldTownPortalCastOpenDimensionDoor(), "Original fountain did not activate DimensionDoor");
+            if (reload)
+            {
+                require(!runtime.activeEventDialog().isActive && flag("GotMainQuest"),
+                    "Completed invitation reopened introduction after independent reload");
+                save("merge-invitation-reload-complete");
+                captures.push_back("merge-invitation-reload-complete");
+                state.complete = true;
+            }
+            else
+            {
+                require(runtime.activeEventDialog().isActive && runtime.activeEventDialog().sourceId == 803
+                    && pEvents->npcGreetingOverrides.at(803) == 329, "Natural activation missed original Verdant greeting");
+                save("invitation-natural-greeting");
+                captures.push_back("invitation-natural-greeting");
+                next(9);
+            }
+            break;
+        case 9:
+        {
+            constexpr std::array<uint32_t, 4> topics{1778, 1779, 1779, 1780};
+            require(state.introStep < topics.size(), "Invalid invitation introduction step");
+            selectQuestDialog(runtime, EventDialogActionKind::NpcTopic, topics[state.introStep]);
+            ++state.introStep;
+            const std::string name = "invitation-intro-" + std::to_string(state.introStep);
+            save(name);
+            captures.push_back(name);
+            state.phaseFrame = frame;
+            if (state.introStep == topics.size())
+            {
+                require(flag("GotMainQuest") && flag("MetVerdant")
+                    && pParty->member(0)->experience == 50001, "Introduction completion changed its original zero reward");
+                next(10);
+            }
+            break;
+        }
+        case 10:
+            close();
+            next(11);
+            break;
+        case 11:
+            use(-11168.0f, -5376.0f, 192.0f);
+            require(!runtime.activeEventDialog().isActive && flag("GotMainQuest"),
+                "Completed natural invitation location repeated the introduction");
+            save("merge-invitation-main-complete");
+            captures.push_back("merge-invitation-main-complete");
+            state.complete = true;
+            break;
+        default: throw std::runtime_error("Invalid invitation validation phase");
+        }
+        if (state.complete)
+            std::cout << "Invitation actual chain passed: reload=" << reload << " walked=" << state.walkedDistance
+                << " item772=" << pParty->inventoryItemCount(772) << " firstXP=" << pParty->member(0)->experience << '\n';
+    }
+
     static int run(const std::filesystem::path &root, const std::filesystem::path &save,
         const std::filesystem::path &output, size_t fixtureSize, bool requireMinimap, bool checkNavigation,
         bool checkPartyAudio, bool checkSpellbook, bool spellbookControls, bool checkTurns, bool hostileTurns,
@@ -13534,12 +14377,12 @@ struct ApplicationCaptureTestAccess
         bool mm8Inn, bool mm8InnReload, bool paperdolls, bool mm8Shop, bool mm8ShopReload,
         bool mm8Portals, bool mm8Temple, bool mm8Dungeon, bool mm8Return, bool mm8Resupply, bool mm8Revisit,
         bool mm8Chamber, bool mm8Stairs, bool mm8Passage, bool mm8FloorPuzzle, bool mm8Exit, bool mm8Delivery,
-        bool mm8Blackmail, bool mm8BlackmailReload,
+        bool mm8Blackmail, bool mm8BlackmailReload, bool mm8BlackmailContinue,
         bool mm8Replay, size_t replayFirstStage, bool mm7Shell, bool mm7ShellReload, bool mm7Potion,
         bool mm7Recruit, bool mm7Temple, bool mm7Dungeon, bool mm7Contest, bool mm7Replay,
         bool mm6Replay, size_t mm6ReplayEndStage, bool mm6Goblinwatch, bool mm6GoblinwatchReload,
         bool mm7Castle, bool mm7CastleReload, bool mm7CastleContinue, unsigned mm7CastleHistoryMode,
-        bool pausedMovement)
+        bool pausedMovement, unsigned invitationMode)
     {
         const auto require = [](bool condition, const std::string &message)
         {
@@ -13580,6 +14423,22 @@ struct ApplicationCaptureTestAccess
             require(saveGameDataToPath(input, *expected, error), "Cannot write explicit HUD fixture");
             std::cout << "Explicit visual fixture with " << fixtureSize << " source portraits; not a playthrough.\n";
         }
+        if (invitationMode == 1)
+        {
+            require(expected->mapFileName == "oute3.odm" && expected->party.members.size() == 4
+                && expected->party.members.front().experience <= 50000 && expected->namedGlobalVars.empty(),
+                "Invitation controlled fixture requires the unmodified normal127 continuation");
+            const uint32_t originalExperience = expected->party.members.front().experience;
+            expected->party.members.front().experience = 50001;
+            input = output / "experience-fixture.oysav";
+            require(saveGameDataToPath(input, *expected, error), "Cannot write declared invitation experience fixture");
+            std::ofstream declaration(output / "fixture-change.json");
+            declaration << "{\"controlled\":true,\"changed_field\":\"party.members[0].experience\","
+                << "\"before\":" << originalExperience << ",\"after\":50001,"
+                << "\"invitation_or_contact_flags_preseeded\":false}\n";
+            std::cout << "Controlled invitation prerequisite: Party0 XP " << originalExperience
+                << " ->50001 only; not naturally earned campaign progression.\n";
+        }
         GameSettings settings = GameSettings::createDefault();
         settings.startInMainMenu = true;
         settings.preseedParty = false;
@@ -13591,7 +14450,7 @@ struct ApplicationCaptureTestAccess
         settings.collisionTrace = mm7CastleContinue;
         settings.gameplayTrace = castleLetter || indoorEncounter || templeChest || mm8Start || mm8Inn || mm8Shop
             || mm8Portals || mm8Replay || mm7Shell || mm7Replay || mm6Replay || mm6Goblinwatch
-            || mm7Castle || mm8Blackmail || pausedMovement;
+            || mm7Castle || mm8Blackmail || pausedMovement || invitationMode != 0;
         if (mm8Replay || mm7Replay || mm6Replay)
         {
             settings.newGameGodLich = false;
@@ -13631,6 +14490,7 @@ struct ApplicationCaptureTestAccess
         int turnReloadImpactDamage = 0;
         float turnReloadSimulatedSeconds = 0.0f;
         PausedMovementCheckState pausedMovementCheck;
+        InvitationCheckState invitationCheck;
         bool controlsComplete = false;
         uint32_t controlsTargetFrame = 0;
         TurnCheckState turnCheck;
@@ -13731,6 +14591,10 @@ struct ApplicationCaptureTestAccess
             if (mm8BlackmailReload)
                 captureTokens.insert(captureTokens.end(), {"blackmail-reload-input", "blackmail-reload-elgar",
                     "blackmail-reload-cove", "blackmail-reload-arion", "blackmail-reload-complete"});
+            else if (mm8BlackmailContinue)
+                captureTokens.insert(captureTokens.end(), {"blackmail-diagnostic-input", "blackmail-delivery-offer",
+                    "blackmail-delivered", "blackmail-arion-reopened", "blackmail-returned-outdoors",
+                    "blackmail-return-offer", "blackmail-reward", "blackmail-main-complete"});
             else
                 captureTokens.insert(captureTokens.end(), {"blackmail-input", "blackmail-offer",
                     "blackmail-accepted", "blackmail-cove-entrance", "blackmail-cove-entered",
@@ -13986,6 +14850,14 @@ struct ApplicationCaptureTestAccess
                         << " first_stage=" << replayFirstStage << '\n';
                 require(game.m_gameSession.currentMapFileName() == expected->mapFileName,
                     "Rendered application loaded a different map");
+                if (invitationMode == 2)
+                {
+                    require(game.quickSaveToPath(output / "cold-restored.oysav", "邀请链冷读档", {}),
+                        "Cannot preserve cold invitation restore");
+                    require(game.quickLoadFromPath(input, true), "Warm invitation reload failed");
+                    require(game.quickSaveToPath(output / "warm-restored.oysav", "邀请链热读档", {}),
+                        "Cannot preserve warm invitation restore");
+                }
                 if (mm6Replay && replayFirstStage != 0)
                 {
                     require(game.quickSaveToPath(output / "cold-restored.oysav", "MM6 冷读档", {}),
@@ -14116,6 +14988,24 @@ struct ApplicationCaptureTestAccess
                         throw;
                     }
                 }
+                if (invitationMode != 0 && !invitationCheck.complete)
+                {
+                    try
+                    {
+                        checkInvitation(game, frames + 1, width, height, invitationMode == 2,
+                            invitationCheck, frameCaptureRequests);
+                        for (const std::string &token : frameCaptureRequests)
+                        {
+                            if (std::find(captureTokens.begin(), captureTokens.end(), token) == captureTokens.end())
+                                captureTokens.push_back(token);
+                        }
+                    }
+                    catch (...)
+                    {
+                        game.quickSaveToPath(output / "invitation-failed.oysav", "邀请链验证中止", {});
+                        throw;
+                    }
+                }
                 if (mm6Goblinwatch && !mm6GoblinwatchCheck.complete)
                 {
                     try
@@ -14157,7 +15047,7 @@ struct ApplicationCaptureTestAccess
                     try
                     {
                         checkMm8Blackmail(game, frames + 1, width, height, mm8BlackmailReload,
-                            blackmailCheck, frameCaptureRequests);
+                            mm8BlackmailContinue, blackmailCheck, frameCaptureRequests);
                         for (const std::string &token : frameCaptureRequests)
                         {
                             if (std::find(captureTokens.begin(), captureTokens.end(), token) == captureTokens.end())
@@ -15004,12 +15894,13 @@ struct ApplicationCaptureTestAccess
                     && (!mm6Goblinwatch || mm6GoblinwatchCheck.complete)
                     && (!mm7Castle || mm7CastleCheck.complete)
                     && (!mm8Blackmail || blackmailCheck.complete)
+                    && (invitationMode == 0 || invitationCheck.complete)
                     && (!pausedMovement || pausedMovementCheck.complete)
                     && (!mm7Replay || mm7ReplayCheck.complete)
                     && (!mm7Shell || mm7ShellCheck.complete)
                     && (!checkDefeat || (revivedFrame != 0 && frames >= revivedFrame + 180))
                     && frames >= (checkNavigation || spellbookControls ? 260u : 180u))
-                    || frames >= (mm8Blackmail ? (mm8BlackmailReload ? 180000u : 300000u)
+                    || frames >= (invitationMode != 0 ? 30000u : mm8Blackmail ? (mm8BlackmailReload ? 180000u : 300000u)
                         : mm7Castle ? (mm7CastleHistoryMode != 0 ? 12000u
                             : mm7CastleReload ? 30000u : 360000u)
                         : mm6Goblinwatch ? (mm6GoblinwatchReload ? 12000u : 120000u)
@@ -15018,7 +15909,7 @@ struct ApplicationCaptureTestAccess
                         || mm8Start || mm8Inn || mm8Shop
                         || mm8Portals || mm7Shell ? 12000u
                         : hostileTurns || indoorCombat || checkDefeat ? 3600u : 900u)
-                    || SDL_GetTicks() - started >= (mm8Blackmail ? (mm8BlackmailReload ? 1200000u : 2400000u)
+                    || SDL_GetTicks() - started >= (invitationMode != 0 ? 600000u : mm8Blackmail ? (mm8BlackmailReload ? 1200000u : 2400000u)
                         : mm7Castle ? (mm7CastleHistoryMode != 0 ? 180000u
                             : mm7CastleReload ? 300000u : 3600000u)
                         : mm6Goblinwatch ? (mm6GoblinwatchReload ? 150000u : 900000u)
@@ -15078,6 +15969,9 @@ struct ApplicationCaptureTestAccess
                         "Hostile turn combat did not complete before timeout");
                     require(!checkTurns || turnCheck.complete,
                         "Turn controls did not complete before timeout");
+                    if (invitationMode != 0 && !invitationCheck.complete)
+                        game.quickSaveToPath(output / "invitation-timeout.oysav", "邀请链验证超时", {});
+                    require(invitationMode == 0 || invitationCheck.complete, "Invitation chain did not finish");
                     require(!pausedMovement || pausedMovementCheck.complete, "Paused movement check did not finish");
                     require(!spellbookControls || controlsComplete,
                         "Spellbook controls did not complete before timeout");
@@ -15161,7 +16055,7 @@ int main(int argc, char **argv)
                 "[--check-mm6-chest|--check-mm6-chest-reload] "
                 "[--check-mm6-candle|--check-mm6-candle-reload|--check-mm6-candle-replay] "
                 "[--check-mm6-dungeon-quest] [--check-mm6-goblinwatch|--check-mm6-goblinwatch-reload] "
-                "[--check-paused-movement] "
+                "[--check-paused-movement] [--check-merge-invitation|--check-merge-invitation-reload] "
                 "[--check-mm8-inn|--check-mm8-inn-reload] [--check-paperdolls] "
                 "[--check-mm7-shell|--check-mm7-shell-reload|--check-mm7-potion|--check-mm7-potion-reload] "
                 "[--check-mm7-recruit|--check-mm7-recruit-reload] "
@@ -15173,7 +16067,7 @@ int main(int argc, char **argv)
                 "[--check-mm8-portals|--check-mm8-temple|--check-mm8-dungeon|--check-mm8-return|--check-mm8-resupply] "
                 "[--check-mm8-revisit|--check-mm8-chamber|--check-mm8-stairs|--check-mm8-passage] "
                 "[--check-mm8-floor-puzzle|--check-mm8-exit|--check-mm8-delivery|"
-                "--check-mm8-blackmail|--check-mm8-blackmail-reload|--check-mm8-replay|"
+                "--check-mm8-blackmail|--check-mm8-blackmail-reload|--check-mm8-blackmail-continue|--check-mm8-replay|"
                 "--check-mm8-replay-from=1..15]");
         }
         size_t fixtureSize = 0;
@@ -15221,6 +16115,7 @@ int main(int argc, char **argv)
         bool mm8Delivery = false;
         bool mm8Blackmail = false;
         bool mm8BlackmailReload = false;
+        bool mm8BlackmailContinue = false;
         bool mm7Shell = false;
         bool mm7ShellReload = false;
         bool mm7Potion = false;
@@ -15230,6 +16125,7 @@ int main(int argc, char **argv)
         bool mm7Contest = false;
         bool mm6Replay = false;
         size_t mm6ReplayEndStage = 2;
+        unsigned invitationMode = 0;
         bool mm6Goblinwatch = false;
         bool mm6GoblinwatchReload = false;
         bool mm7Castle = false;
@@ -15251,6 +16147,11 @@ int main(int argc, char **argv)
             else if (option == "--check-paused-movement" && !pausedMovement)
             {
                 pausedMovement = true;
+            }
+            else if ((option == "--check-merge-invitation" || option == "--check-merge-invitation-reload")
+                && invitationMode == 0)
+            {
+                invitationMode = option.ends_with("-reload") ? 2 : 1;
             }
             else if ((option == "--check-mm6-goblinwatch"
                 || option == "--check-mm6-goblinwatch-reload") && !mm6Goblinwatch)
@@ -15371,11 +16272,13 @@ int main(int argc, char **argv)
                 castleLetter = true;
                 castleLetterReload = option == "--check-castle-letter-reload";
             }
-            else if ((option == "--check-mm8-blackmail" || option == "--check-mm8-blackmail-reload")
+            else if ((option == "--check-mm8-blackmail" || option == "--check-mm8-blackmail-reload"
+                || option == "--check-mm8-blackmail-continue")
                 && !mm8Blackmail)
             {
                 mm8Blackmail = true;
                 mm8BlackmailReload = option == "--check-mm8-blackmail-reload";
+                mm8BlackmailContinue = option == "--check-mm8-blackmail-continue";
             }
             else if (option.starts_with("--check-mm8-replay-from=") && argc == 5)
             {
@@ -15484,7 +16387,7 @@ int main(int argc, char **argv)
         if ((checkDefeat || checkTurnReload || checkTurnSaves || firstLetter || castleLetter
             || templeChest || indoorDoor || candlestick || mm8Start || mm8Inn || paperdolls || mm8Shop
             || mm8Portals || mm8Blackmail || mm7Shell || mm7Replay || mm6Replay || mm6Goblinwatch || mm7Castle
-            || pausedMovement) && argc != 5)
+            || pausedMovement || invitationMode != 0) && argc != 5)
         {
             throw std::runtime_error("This validation needs an independent capture with exactly one mode option");
         }
@@ -15500,10 +16403,10 @@ int main(int argc, char **argv)
             mm8Start, mm8StartReload, mm8Inn, mm8InnReload, paperdolls, mm8Shop, mm8ShopReload,
             mm8Portals, mm8Temple, mm8Dungeon, mm8Return, mm8Resupply, mm8Revisit, mm8Chamber,
             mm8Stairs, mm8Passage, mm8FloorPuzzle, mm8Exit, mm8Delivery,
-            mm8Blackmail, mm8BlackmailReload, mm8Replay, replayFirstStage,
+            mm8Blackmail, mm8BlackmailReload, mm8BlackmailContinue, mm8Replay, replayFirstStage,
             mm7Shell, mm7ShellReload, mm7Potion, mm7Recruit, mm7Temple, mm7Dungeon, mm7Contest,
             mm7Replay, mm6Replay, mm6ReplayEndStage, mm6Goblinwatch, mm6GoblinwatchReload,
-            mm7Castle, mm7CastleReload, mm7CastleContinue, mm7CastleHistoryMode, pausedMovement);
+            mm7Castle, mm7CastleReload, mm7CastleContinue, mm7CastleHistoryMode, pausedMovement, invitationMode);
     }
     catch (const std::exception &error)
     {

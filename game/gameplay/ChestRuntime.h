@@ -62,6 +62,21 @@ GameplayChestViewState buildMaterializedChestView(
 // Publish a successful open to both the map chest and persistent event overrides.
 void markChestOpened(uint32_t chestId, MapDeltaChest &chest, EventRuntimeState *pEventRuntimeState);
 
+// Old cached views had no record identities. Assign their retained items deterministically,
+// preserving all item data and grid placement; never infer contents from stale raw records.
+void assignMissingChestItemRecords(GameplayChestViewState &view);
+bool insertChestItemOnce(
+    MapDeltaChest &chest,
+    std::optional<GameplayChestViewState> &view,
+    uint32_t itemId,
+    const ItemTable *pItemTable);
+void applyPendingChestItemInsertions(
+    EventRuntimeState &state,
+    std::vector<MapDeltaChest> &chests,
+    std::vector<std::optional<GameplayChestViewState>> &views,
+    std::optional<GameplayChestViewState> &activeView,
+    const ItemTable *pItemTable);
+
 bool takeChestItem(GameplayChestViewState &view, size_t itemIndex, GameplayChestItemState &item);
 bool takeChestItemAt(GameplayChestViewState &view, uint8_t gridX, uint8_t gridY, GameplayChestItemState &item);
 bool tryPlaceChestItemAt(

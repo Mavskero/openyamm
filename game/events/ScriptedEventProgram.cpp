@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <limits>
 
 extern "C"
 {
@@ -218,6 +219,33 @@ std::unordered_map<uint16_t, std::string> readStringMapFromField(lua_State *pLua
     }
 
     lua_pop(pLuaState, 1);
+    return values;
+}
+
+std::unordered_map<uint32_t, std::string> readNumberedTextMetadata(lua_State *pLuaState, const char *pFieldName)
+{
+    std::unordered_map<uint32_t, std::string> values;
+    if (!pushEvtSubtable(pLuaState, pFieldName))
+    {
+        return values;
+    }
+
+    lua_pushnil(pLuaState);
+    while (lua_next(pLuaState, -2) != 0)
+    {
+        if (lua_isinteger(pLuaState, -2) && lua_type(pLuaState, -1) == LUA_TSTRING)
+        {
+            const lua_Integer id = lua_tointeger(pLuaState, -2);
+            if (id >= 0 && uint64_t(id) <= std::numeric_limits<uint32_t>::max())
+            {
+                size_t length = 0;
+                const char *pText = lua_tolstring(pLuaState, -1, &length);
+                values.emplace(uint32_t(id), std::string(pText, length));
+            }
+        }
+        lua_pop(pLuaState, 1);
+    }
+    lua_pop(pLuaState, 2);
     return values;
 }
 
@@ -505,6 +533,7 @@ std::vector<ScriptedEventProgram::TimerTrigger> readTimerTriggers(
                 {
                     timer.registrationIndex = ++nativeRegistrationCounts[timer.sourceEventId];
                     timer.repeating = readBooleanField(pLuaState, timerTableIndex, "repeating");
+                    timer.temporaryMapLifecycle = readBooleanField(pLuaState, timerTableIndex, "temporaryMapLifecycle");
                     timer.intervalGameMinutes =
                         readOptionalNumberField(pLuaState, timerTableIndex, "intervalGameMinutes").value_or(0.0);
                     timer.initialDelayGameMinutes =
@@ -539,6 +568,8 @@ bool ScriptedEventProgram::populateMetadataFromLua(
     std::string &error)
 {
     program.m_eventIds = readHandlerIds(pLuaState, luaScopeName(scope));
+    program.m_localStrings = readNumberedTextMetadata(pLuaState, "strings");
+    program.m_importedGlobalText = readNumberedTextMetadata(pLuaState, "importedGlobalText");
 
     if (scope == ScriptedEventScope::Global)
     {
@@ -552,6 +583,7 @@ bool ScriptedEventProgram::populateMetadataFromLua(
     }
 
     program.m_onLoadEventIds = readIntegerArrayFromField<uint16_t>(pLuaState, -1, "onLoad", true);
+    program.m_afterLoadEventIds = readIntegerArrayFromField<uint16_t>(pLuaState, -1, "afterLoad", true);
     program.m_onLeaveEventIds = readIntegerArrayFromField<uint16_t>(pLuaState, -1, "onLeave", true);
     program.m_monsterKilledHookEventIds =
         readIntegerArrayFromField<uint16_t>(pLuaState, -1, "monsterKilledHooks", true);
@@ -559,6 +591,8 @@ bool ScriptedEventProgram::populateMetadataFromLua(
         readIntegerArrayFromField<uint16_t>(pLuaState, -1, "monsterDamageHooks", true);
     program.m_outdoorStepHookEventIds =
         readIntegerArrayFromField<uint16_t>(pLuaState, -1, "outdoorStepHooks", true);
+    program.m_mapBoundaryHookEventIds =
+        readIntegerArrayFromField<uint16_t>(pLuaState, -1, "mapBoundaryHooks", true);
     program.m_townPortalHookEventIds =
         readIntegerArrayFromField<uint16_t>(pLuaState, -1, "townPortalHooks", true);
     program.m_hints = readStringMapFromField(pLuaState, -1, "hint");
@@ -678,6 +712,11 @@ const std::vector<uint16_t> &ScriptedEventProgram::onLeaveEventIds() const
     return m_onLeaveEventIds;
 }
 
+const std::vector<uint16_t> &ScriptedEventProgram::afterLoadEventIds() const
+{
+    return m_afterLoadEventIds;
+}
+
 const std::vector<uint16_t> &ScriptedEventProgram::monsterKilledHookEventIds() const
 {
     return m_monsterKilledHookEventIds;
@@ -713,6 +752,11 @@ const std::vector<uint16_t> &ScriptedEventProgram::outdoorStepHookEventIds() con
     return m_outdoorStepHookEventIds;
 }
 
+const std::vector<uint16_t> &ScriptedEventProgram::mapBoundaryHookEventIds() const
+{
+    return m_mapBoundaryHookEventIds;
+}
+
 const std::vector<uint16_t> &ScriptedEventProgram::townPortalHookEventIds() const
 {
     return m_townPortalHookEventIds;
@@ -731,6 +775,18 @@ bool ScriptedEventProgram::hasEvent(uint16_t eventId) const
 bool ScriptedEventProgram::isHintOnlyEvent(uint16_t eventId) const
 {
     return !hasEvent(eventId) && getHint(eventId).has_value();
+}
+
+std::optional<std::string> ScriptedEventProgram::getLocalString(uint32_t stringId) const
+{
+    const auto iterator = m_localStrings.find(stringId);
+    return iterator != m_localStrings.end() ? std::optional<std::string>(iterator->second) : std::nullopt;
+}
+
+std::optional<std::string> ScriptedEventProgram::getImportedGlobalText(uint32_t textId) const
+{
+    const auto iterator = m_importedGlobalText.find(textId);
+    return iterator != m_importedGlobalText.end() ? std::optional<std::string>(iterator->second) : std::nullopt;
 }
 
 std::optional<std::string> ScriptedEventProgram::getHint(uint16_t eventId) const

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "game/indoor/IndoorMovementController.h"
+#include "game/gameplay/PartyJumpState.h"
 #include "game/party/Party.h"
 
 #include <optional>
@@ -17,10 +18,7 @@ public:
     {
         IndoorMoveState movementState = {};
         float movementAccumulatorSeconds = 0.0f;
-        bool pendingJumpRequested = false;
-        float pendingImpulseVelocityX = 0.0f;
-        float pendingImpulseVelocityY = 0.0f;
-        float pendingImpulseVelocityZ = 0.0f;
+        PartyJumpState jumpState;
         bool alwaysRunEnabled = true;
     };
 
@@ -30,6 +28,7 @@ public:
     void initializePartyPosition(float x, float y, float z, bool resetParty = true);
     void teleportEyePosition(float x, float y, float z);
     void teleportPartyPosition(float x, float y, float z);
+    void setPositionForEvents(float x, float y, float footZ);
     void translatePartyPosition(float deltaX, float deltaY, float deltaZ);
     void update(
         float desiredVelocityX,
@@ -64,6 +63,8 @@ public:
     void requestSpecialJump(float velocityX, float velocityY, float velocityZ);
 
 private:
+    void clearSpecialJump();
+
     IndoorMovementController m_movementController;
     Party m_party;
     IndoorMoveState m_movementState = {};
@@ -74,12 +75,7 @@ private:
     float m_collisionTraceClockSeconds = 0.0f;
     float m_nextCollisionTraceSeconds = 0.0f;
     float m_movementAccumulatorSeconds = 0.0f;
-    bool m_pendingJumpRequested = false;
-    float m_pendingImpulseVelocityX = 0.0f;
-    float m_pendingImpulseVelocityY = 0.0f;
-    float m_pendingImpulseVelocityZ = 0.0f;
-    std::optional<float> m_pendingJumpVelocity;
-    float m_pendingJumpLift = 0.0f;
+    PartyJumpState m_jumpState;
     float m_burningDamageTimerSeconds = 0.0f;
     std::string m_movementStatusText;
 };

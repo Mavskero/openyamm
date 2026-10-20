@@ -708,6 +708,12 @@ std::optional<IndoorSceneData> IndoorSceneYmlLoader::loadFromText(
                 false)
             || !readScalarNode(
                 runtimeRestrictionsNode,
+                "town_portal_uses_dimension_door",
+                sceneData.runtimeRestrictions.townPortalUsesDimensionDoor,
+                errorMessage,
+                false)
+            || !readScalarNode(
+                runtimeRestrictionsNode,
                 "allow_rest",
                 sceneData.runtimeRestrictions.allowRest,
                 errorMessage,
@@ -1384,6 +1390,12 @@ bool IndoorSceneYmlLoader::applyOverlayFromText(
                 runtimeRestrictionsNode,
                 "allow_lloyds_beacon",
                 sceneData.runtimeRestrictions.allowLloydsBeacon,
+                errorMessage,
+                false)
+            || !readScalarNode(
+                runtimeRestrictionsNode,
+                "town_portal_uses_dimension_door",
+                sceneData.runtimeRestrictions.townPortalUsesDimensionDoor,
                 errorMessage,
                 false)
             || !readScalarNode(

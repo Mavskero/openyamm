@@ -1419,6 +1419,7 @@ std::optional<FloorSample> queryPreferredSupportFloor(
     if (pGeometry == nullptr
         || !outdoorFaceBlocksMovement(*pGeometry)
         || !pGeometry->isWalkable
+        || (pGeometry->polygonType != PolygonFloor && std::fabs(pGeometry->normal.z) <= CollisionEpsilon)
         || x < pGeometry->minX - bodyRadius
         || x > pGeometry->maxX + bodyRadius
         || y < pGeometry->minY - bodyRadius
@@ -1430,7 +1431,7 @@ std::optional<FloorSample> queryPreferredSupportFloor(
 
     float height = 0.0f;
 
-    if (!calculateFaceHeight(*pGeometry, x, y, height) || height > z + maxFloorRise)
+    if (!calculateOutdoorSupportFaceHeight(*pGeometry, x, y, bodyRadius, height) || height > z + maxFloorRise)
     {
         return std::nullopt;
     }
@@ -1535,6 +1536,7 @@ std::optional<FloorSample> queryBModelFootprintSupportFloor(
     {
         if (!outdoorFaceBlocksMovement(geometry)
             || !geometry.isWalkable
+            || (geometry.polygonType != PolygonFloor && std::fabs(geometry.normal.z) <= CollisionEpsilon)
             || x < geometry.minX - bodyRadius
             || x > geometry.maxX + bodyRadius
             || y < geometry.minY - bodyRadius
@@ -1546,7 +1548,7 @@ std::optional<FloorSample> queryBModelFootprintSupportFloor(
 
         float height = 0.0f;
 
-        if (!calculateFaceHeight(geometry, x, y, height)
+        if (!calculateOutdoorSupportFaceHeight(geometry, x, y, bodyRadius, height)
             || height > z + maxFloorRise
             || height < z - CloseToGroundHeight)
         {
@@ -1632,6 +1634,7 @@ FloorSample queryFloorLevel(
 
         if (!outdoorFaceBlocksMovement(geometry)
             || !geometry.isWalkable
+            || (geometry.polygonType != PolygonFloor && std::fabs(geometry.normal.z) <= CollisionEpsilon)
             || x < geometry.minX - floorSlack
             || x > geometry.maxX + floorSlack
             || y < geometry.minY - floorSlack
@@ -1643,7 +1646,7 @@ FloorSample queryFloorLevel(
 
         float height = 0.0f;
 
-        if (!calculateFaceHeight(geometry, x, y, height))
+        if (!calculateOutdoorSupportFaceHeight(geometry, x, y, floorSlack, height))
         {
             return;
         }
@@ -1831,9 +1834,11 @@ OutdoorMoveState OutdoorMovementController::initializeStateForBody(
     float x,
     float y,
     float footZHint,
-    float bodyRadius) const
+    float bodyRadius,
+    OutdoorPlacementPolicy placementPolicy,
+    float maxStepHeight) const
 {
-    return initializeStateForBody(x, y, footZHint, bodyRadius, false, false);
+    return initializeStateForBody(x, y, footZHint, bodyRadius, false, false, placementPolicy, maxStepHeight);
 }
 
 OutdoorMoveState OutdoorMovementController::initializeActorStateForBody(
@@ -1860,7 +1865,9 @@ OutdoorMoveState OutdoorMovementController::initializeStateForBody(
     float footZHint,
     float bodyRadius,
     bool actorConditionalBModelSupport,
-    bool preserveFootZ) const
+    bool preserveFootZ,
+    OutdoorPlacementPolicy placementPolicy,
+    float maxStepHeight) const
 {
     clampPositionToBounds(std::max(1.0f, bodyRadius), x, y);
     std::vector<size_t> candidateFaceIndices;
@@ -1870,9 +1877,10 @@ OutdoorMoveState OutdoorMovementController::initializeStateForBody(
         x + std::max(bodyRadius, FloorCheckSlack),
         y + std::max(bodyRadius, FloorCheckSlack),
         candidateFaceIndices);
-    const float initialMaxFloorRise = outdoorMapUsesBModelGround(*m_pOutdoorMapData)
-        ? BModelGroundSupportRise
-        : FloorSelectionHeightTolerance;
+    const bool explicitPosition = placementPolicy == OutdoorPlacementPolicy::ExplicitPosition;
+    const float initialMaxFloorRise = explicitPosition
+        ? std::max(0.0f, maxStepHeight)
+        : (outdoorMapUsesBModelGround(*m_pOutdoorMapData) ? BModelGroundSupportRise : FloorSelectionHeightTolerance);
     const FloorSample floor =
         queryFloorLevel(
             *m_pOutdoorMapData,
@@ -1892,6 +1900,12 @@ OutdoorMoveState OutdoorMovementController::initializeStateForBody(
     state.y = y;
     const float groundZ = floor.hasFloor ? floor.height + GroundSnapHeight : footZHint;
     state.footZ = preserveFootZ || !floor.hasFloor ? footZHint : groundZ;
+    if (explicitPosition)
+    {
+        // An authored position can be airborne or slightly inside a platform. Preserve the former
+        // and place the latter above its real support; do not drop either to distant terrain.
+        state.footZ = std::max(footZHint, groundZ);
+    }
     state.verticalVelocity = 0.0f;
     state.supportKind = !floor.hasFloor
         ? OutdoorSupportKind::None
@@ -1904,7 +1918,7 @@ OutdoorMoveState OutdoorMovementController::initializeStateForBody(
         || (!floor.fromBModel
             && (isOutdoorTerrainWater(*m_pOutdoorMapData, x, y) || isOutdoorLandMaskWater(m_outdoorLandMask, x, y))));
     state.supportOnBurning = floor.hasFloor && floor.isBurning;
-    state.airborne = state.footZ > groundZ + GroundSnapHeight;
+    state.airborne = (explicitPosition && !floor.hasFloor) || state.footZ > groundZ + GroundSnapHeight;
     state.landedThisFrame = false;
     state.fallStartZ = state.footZ;
     state.fallDistance = 0.0f;
@@ -1927,7 +1941,8 @@ OutdoorMoveState OutdoorMovementController::resolveMove(
     float deltaSeconds,
     std::vector<size_t> *pContactedActorIndices,
     float jumpLift,
-    OutdoorMoveDebugInfo *pDebugInfo
+    OutdoorMoveDebugInfo *pDebugInfo,
+    bool *pBlockingCollision
 ) const
 {
     return resolveMoveForBody(
@@ -1948,7 +1963,8 @@ OutdoorMoveState OutdoorMovementController::resolveMove(
         pContactedActorIndices,
         std::nullopt,
         jumpLift,
-        pDebugInfo);
+        pDebugInfo,
+        pBlockingCollision);
 }
 
 OutdoorMoveState OutdoorMovementController::resolveMoveForBody(
@@ -1969,9 +1985,14 @@ OutdoorMoveState OutdoorMovementController::resolveMoveForBody(
     std::vector<size_t> *pContactedActorIndices,
     const std::optional<OutdoorIgnoredActorCollider> &ignoredActorCollider,
     float jumpLift,
-    OutdoorMoveDebugInfo *pDebugInfo
+    OutdoorMoveDebugInfo *pDebugInfo,
+    bool *pBlockingCollision
 ) const
 {
+    if (pBlockingCollision != nullptr)
+    {
+        *pBlockingCollision = false;
+    }
     if (pDebugInfo != nullptr)
     {
         *pDebugInfo = {};
@@ -2146,7 +2167,8 @@ OutdoorMoveState OutdoorMovementController::resolveMoveForBody(
     const auto runCollisionPass =
         [this, deltaSeconds, &state, pContactedActorIndices, bodyRadius, bodyHeight, &ignoredActorCollider,
             &candidateFaceIndices, partyCloseToGround, wasAirborne, flyingActive, waterWalkActive,
-            &steppedBModelFloorSupport, slopeSlideActive, bModelGround, maxStepHeight, pDebugInfo](
+            &steppedBModelFloorSupport, slopeSlideActive, bModelGround, maxStepHeight, pDebugInfo,
+            pBlockingCollision](
             bx::Vec3 &passPosition,
             bx::Vec3 &passInputSpeed,
             bool &passPartyNotOnModel,
@@ -2194,7 +2216,7 @@ OutdoorMoveState OutdoorMovementController::resolveMoveForBody(
 
                 float obstructionHeight = 0.0f;
 
-                if (!calculateFaceHeight(geometry, x, y, obstructionHeight)
+                if (!calculateOutdoorSupportFaceHeight(geometry, x, y, bodyRadius, obstructionHeight)
                     || obstructionHeight <= sweptBodyMinZ
                     || obstructionHeight >= steppedBodyMaxZ)
                 {
@@ -2558,6 +2580,11 @@ OutdoorMoveState OutdoorMovementController::resolveMoveForBody(
             }
 
             const CollisionHit &hit = *collisionState.hit;
+
+            if (pBlockingCollision != nullptr)
+            {
+                *pBlockingCollision = true;
+            }
 
             if (pDebugInfo != nullptr)
             {
@@ -3625,18 +3652,23 @@ void OutdoorMovementController::updateFaceGeometries(const std::vector<OutdoorFa
 void OutdoorMovementController::buildDecorationColliderCache(
     const std::optional<OutdoorDecorationCollisionSet> &outdoorDecorationCollisionSet)
 {
+    m_sourceDecorationColliders = outdoorDecorationCollisionSet
+        ? outdoorDecorationCollisionSet->colliders : std::vector<OutdoorDecorationCollision>{};
+    setDecorationFlags({});
+}
+
+void OutdoorMovementController::setDecorationFlags(const std::vector<uint16_t> &decorationFlags)
+{
     m_decorationColliders.clear();
-
-    if (!outdoorDecorationCollisionSet)
+    m_decorationColliders.reserve(m_sourceDecorationColliders.size());
+    for (const OutdoorDecorationCollision &collision : m_sourceDecorationColliders)
     {
-        return;
-    }
-
-    m_decorationColliders.reserve(outdoorDecorationCollisionSet->colliders.size());
-
-    for (const OutdoorDecorationCollision &collision : outdoorDecorationCollisionSet->colliders)
-    {
-        m_decorationColliders.push_back(collision);
+        const uint16_t flags = collision.entityIndex < decorationFlags.size()
+            ? decorationFlags[collision.entityIndex] : collision.instanceFlags;
+        if ((flags & 0x0020u) == 0)
+        {
+            m_decorationColliders.push_back(collision);
+        }
     }
 }
 

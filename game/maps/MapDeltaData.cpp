@@ -106,12 +106,13 @@ bool parseActorVector(const ByteReader &reader, size_t offset, MapDeltaData &map
     {
         const size_t actorOffset = actorDataOffset + static_cast<size_t>(actorIndex) * ActorRecordSize;
         MapDeltaActor actor = {};
+        int16_t legacyHitPoints = 0;
         actor.diagnosticSourceActorIndex = actorIndex;
         actor.name = reader.readFixedString(actorOffset, ActorNameSize);
 
         if (!reader.readInt16(actorOffset + ActorNpcIdOffset, actor.npcId)
             || !reader.readUInt32(actorOffset + ActorAttributesOffset, actor.attributes)
-            || !reader.readInt16(actorOffset + ActorHpOffset, actor.hp)
+            || !reader.readInt16(actorOffset + ActorHpOffset, legacyHitPoints)
             || !reader.readUInt8(actorOffset + ActorHostilityTypeOffset, actor.hostilityType)
             || !reader.readInt16(actorOffset + ActorMonsterInfoIdOffset, actor.monsterInfoId)
             || !reader.readInt16(actorOffset + ActorMonsterIdOffset, actor.monsterId)
@@ -127,6 +128,8 @@ bool parseActorVector(const ByteReader &reader, size_t offset, MapDeltaData &map
         {
             return false;
         }
+
+        actor.hp = legacyHitPoints;
 
         int16_t coordinateX = 0;
         int16_t coordinateY = 0;

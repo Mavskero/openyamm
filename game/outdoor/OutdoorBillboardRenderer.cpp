@@ -232,7 +232,9 @@ bool contextActionHighlightsOutdoorDecoration(const GameplayWorldHit *pHit, size
 
 uint32_t computeClearDistanceFogColorAbgr(const OutdoorWorldRuntime &worldRuntime)
 {
-    const uint8_t brightness = outdoorClearDistanceFogBrightness(worldRuntime.gameMinutes());
+    const float lightMinutesOfDay =
+        static_cast<float>(std::fmod(std::max(worldRuntime.lightGameMinutes(), 0.0), 1440.0));
+    const uint8_t brightness = outdoorClearDistanceFogBrightness(lightMinutesOfDay);
     return makeAbgr(brightness, brightness, brightness);
 }
 
@@ -1301,7 +1303,7 @@ void OutdoorBillboardRenderer::prepareKeyboardInteractionBillboardCache(
             {
                 candidate.inspectHit.bModelIndex = actorIndex;
                 candidate.inspectHit.name = pActorState->displayName;
-                candidate.inspectHit.npcId = 0;
+                candidate.inspectHit.npcId = pActorState->npcId;
                 candidate.inspectHit.actorGroup = pActorState->group;
             }
             candidate.inspectHit.distance = cameraDepth;
@@ -2045,6 +2047,13 @@ void OutdoorBillboardRenderer::renderDecorationBillboards(
         hidden = false;
         uint16_t spriteId = billboard.spriteId;
 
+        if (view.m_pOutdoorWorldRuntime != nullptr
+            && !view.m_pOutdoorWorldRuntime->isMapDecorationVisible(billboard.entityIndex))
+        {
+            hidden = true;
+            return spriteId;
+        }
+
         if (!view.m_outdoorDecorationBillboardSet || view.m_pOutdoorWorldRuntime == nullptr)
         {
             return spriteId;
@@ -2071,7 +2080,7 @@ void OutdoorBillboardRenderer::renderDecorationBillboards(
             return spriteId;
         }
 
-        hidden = overrideIterator->second.hidden;
+        // Indexed DDM flags already resolve visibility; this legacy record still owns texture overrides.
 
         if (!overrideIterator->second.textureName.has_value() || overrideIterator->second.textureName->empty())
         {
@@ -2388,6 +2397,13 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
         hidden = false;
         uint16_t spriteId = billboard.spriteId;
 
+        if (view.m_pOutdoorWorldRuntime != nullptr
+            && !view.m_pOutdoorWorldRuntime->isMapDecorationVisible(billboard.entityIndex))
+        {
+            hidden = true;
+            return spriteId;
+        }
+
         if (!view.m_outdoorDecorationBillboardSet || view.m_pOutdoorWorldRuntime == nullptr)
         {
             return spriteId;
@@ -2414,7 +2430,7 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
             return spriteId;
         }
 
-        hidden = overrideIterator->second.hidden;
+        // Indexed DDM flags already resolve visibility; this legacy record still owns texture overrides.
 
         if (!overrideIterator->second.textureName.has_value() || overrideIterator->second.textureName->empty())
         {
@@ -2630,7 +2646,7 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
                 && pRuntimeActor != nullptr
                 && pRuntimeActor->hostileToParty
                 && pRuntimeActor->currentHp > 0
-                && pRuntimeActor->maxHp > 0)
+                && pRuntimeActor->combatState.maximumHitPoints() > 0)
             {
                 const float worldWidth = static_cast<float>(pTexture->width) * previewScale;
                 const bx::Vec3 billboardCenterDelta = {deltaX, deltaY, deltaZ + worldHeight * 0.5f};
@@ -2649,7 +2665,7 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
                     drawItem.healthRatio =
                         std::clamp(
                             static_cast<float>(pRuntimeActor->currentHp)
-                                / static_cast<float>(pRuntimeActor->maxHp),
+                                / static_cast<float>(pRuntimeActor->combatState.maximumHitPoints()),
                             0.0f,
                             1.0f);
                     considerCombatActorHealthBarCandidate(
@@ -2753,6 +2769,13 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
             }
 
             const OutdoorWorldRuntime::MapActorState *pRuntimeActor = OutdoorInteractionController::runtimeActorStateForBillboard(view, billboard);
+            // Keep unbound previews, but do not resurrect a removed actor through its imported visual.
+            if (view.m_pOutdoorWorldRuntime != nullptr
+                && billboard.runtimeActorIndex < view.m_pOutdoorWorldRuntime->mapActorCount()
+                && pRuntimeActor == nullptr)
+            {
+                continue;
+            }
             const int actorX = pRuntimeActor != nullptr ? pRuntimeActor->x : billboard.x;
             const int actorY = pRuntimeActor != nullptr ? pRuntimeActor->y : billboard.y;
             const int actorZ = pRuntimeActor != nullptr ? pRuntimeActor->z : billboard.z;

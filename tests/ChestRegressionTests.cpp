@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -253,6 +254,24 @@ void writeRawChestItemInt32(
 
 OpenYAMM::Game::OutdoorSceneData loadOutdoorScene(const char *pRelativeScenePath)
 {
+    if (const char *pRoot = std::getenv("OPENYAMM_REGRESSION_RUNTIME_ROOT"))
+    {
+        OpenYAMM::Engine::AssetFileSystem files;
+        REQUIRE(files.initialize(pRoot, pRoot, OpenYAMM::Engine::AssetScaleTier::X1, "mm8"));
+        const std::string name = std::filesystem::path(pRelativeScenePath).filename().string();
+        const std::string stem = name.substr(0, name.find('.'));
+        const auto mapBytes = files.readBinaryFile("worlds/mm8/maps/" + stem + ".odm");
+        const auto deltaBytes = files.readBinaryFile("worlds/mm8/maps/" + stem + ".ddm");
+        REQUIRE(mapBytes.has_value());
+        REQUIRE(deltaBytes.has_value());
+        const auto map = OpenYAMM::Game::OutdoorMapDataLoader().loadFromBytes(*mapBytes);
+        REQUIRE(map.has_value());
+        const auto delta = OpenYAMM::Game::MapDeltaDataLoader().loadOutdoorFromBytes(*deltaBytes, *map);
+        REQUIRE(delta.has_value());
+        OpenYAMM::Game::OutdoorSceneData scene;
+        scene.initialState.chests = delta->chests;
+        return scene;
+    }
     const std::filesystem::path scenePath =
         std::filesystem::path(OPENYAMM_SOURCE_DIR) / pRelativeScenePath;
     std::ifstream sceneFile(scenePath);

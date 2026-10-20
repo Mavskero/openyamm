@@ -688,6 +688,52 @@ float calculateOutdoorFaceHeight(const OutdoorFaceGeometryData &geometry, float 
             / geometry.normal.z;
 }
 
+bool calculateOutdoorSupportFaceHeight(
+    const OutdoorFaceGeometryData &geometry, float x, float y, float xySlack, float &height)
+{
+    if (geometry.vertices.size() < 3 || xySlack < 0.0f
+        || (geometry.polygonType != OutdoorPolygonFloor
+            && (!geometry.hasPlane || std::fabs(geometry.normal.z) <= GeometryEpsilon)))
+    {
+        return false;
+    }
+
+    if (isPointInsideOutdoorPolygon(x, y, geometry.vertices))
+    {
+        height = calculateOutdoorFaceHeight(geometry, x, y);
+        return std::isfinite(height);
+    }
+
+    // Footprint slack can retain a real edge, but must not extend a steep plane beyond its finite face.
+    float closestDistanceSquared = xySlack * xySlack;
+    bool found = false;
+    for (size_t index = 0; index < geometry.vertices.size(); ++index)
+    {
+        const bx::Vec3 &first = geometry.vertices[index];
+        const bx::Vec3 &second = geometry.vertices[(index + 1) % geometry.vertices.size()];
+        const float dx = second.x - first.x;
+        const float dy = second.y - first.y;
+        const float edgeLengthSquared = dx * dx + dy * dy;
+        if (edgeLengthSquared <= GeometryEpsilon)
+        {
+            continue;
+        }
+
+        const float fraction = std::clamp(((x - first.x) * dx + (y - first.y) * dy) / edgeLengthSquared,
+            0.0f, 1.0f);
+        const float edgeX = first.x + fraction * dx;
+        const float edgeY = first.y + fraction * dy;
+        const float distanceSquared = (x - edgeX) * (x - edgeX) + (y - edgeY) * (y - edgeY);
+        if (distanceSquared <= closestDistanceSquared)
+        {
+            closestDistanceSquared = distanceSquared;
+            height = first.z + fraction * (second.z - first.z);
+            found = true;
+        }
+    }
+    return found;
+}
+
 bool isPointInsideOrNearOutdoorPolygon(float x, float y, const std::vector<bx::Vec3> &vertices, float slack)
 {
     if (isPointInsideOutdoorPolygon(x, y, vertices))
@@ -808,7 +854,11 @@ OutdoorSupportFloorSample sampleOutdoorSupportFloor(
                 continue;
             }
 
-            const float faceHeight = calculateOutdoorFaceHeight(geometry, x, y);
+            float faceHeight = 0.0f;
+            if (!calculateOutdoorSupportFaceHeight(geometry, x, y, xySlack, faceHeight))
+            {
+                continue;
+            }
 
             if (faceHeight < terrainHeight
                 || faceHeight > z + effectiveMaxRise

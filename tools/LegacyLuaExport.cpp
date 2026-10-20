@@ -8,12 +8,16 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <map>
 #include <optional>
+#include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -94,6 +98,7 @@ void trimTrailingTopLevelReturn(std::ostringstream &stream)
 enum class LegacyLuaOperation
 {
     Exit,
+    OriginalMm8NoOp,
     TriggerMouseOver,
     TriggerOnLoadMap,
     TriggerOnLeaveMap,
@@ -185,6 +190,7 @@ struct LegacyLuaInstruction
     uint16_t eventId = 0;
     uint8_t step = 0;
     LegacyLuaOperation operation = LegacyLuaOperation::Unknown;
+    LegacyEventVersion version = LegacyEventVersion::Mm8;
     std::vector<uint32_t> arguments;
     std::optional<uint8_t> jumpTargetStep;
     std::optional<std::string> text;
@@ -1222,10 +1228,20 @@ EvtVariable canonicalMm8Variable(uint32_t rawVariableId, uint32_t index)
 
 FormattedSelector formatSelector(
     uint32_t rawValue,
-    const std::unordered_map<uint32_t, uint32_t> &qbitRemaps)
+    const std::unordered_map<uint32_t, uint32_t> &qbitRemaps,
+    LegacyEventVersion version)
 {
     const uint32_t rawVariableId = rawValue & 0xFFFFu;
     const uint32_t index = rawValue >> 16;
+    // History selectors differ by two between MM7 and MM8. Resolve the source dialect
+    // before applying individual runtime-variable aliases (MM8 reputation overlaps MM7 History2).
+    const uint32_t historyBegin = version == LegacyEventVersion::Mm8 ? 0x0116u : 0x0114u;
+    if (version != LegacyEventVersion::Mm6
+        && rawVariableId >= historyBegin && rawVariableId < historyBegin + 29)
+    {
+        const uint32_t historyId = rawVariableId - historyBegin + 1;
+        return {"History(" + std::to_string(historyId) + ")", SelectorSemantic::History, historyId};
+    }
     const EvtVariable variableId = canonicalMm8Variable(rawVariableId, index);
 
     if (variableId == EvtVariable::QBits)
@@ -1638,6 +1654,16 @@ LegacyLuaOperation mapOperation(EvtOpcode opcode, LegacyEventVersion version)
     switch (opcode)
     {
         case EvtOpcode::Exit: return LegacyLuaOperation::Exit;
+        case EvtOpcode::LegacyCommand20:
+        case EvtOpcode::LegacyCommand27:
+        case EvtOpcode::LegacyCommand28:
+            // Both original MM8 executables dispatch these directly to the next-step path.
+            // Keep them as explicit actions so jump targets and following instructions survive.
+            if (version != LegacyEventVersion::Mm8)
+            {
+                throw std::runtime_error("Legacy command no-op semantics are verified only for MM8");
+            }
+            return LegacyLuaOperation::OriginalMm8NoOp;
         case EvtOpcode::MouseOver: return LegacyLuaOperation::TriggerMouseOver;
         case EvtOpcode::OnMapReload: return LegacyLuaOperation::TriggerOnLoadMap;
         case EvtOpcode::OnMapLeave: return LegacyLuaOperation::TriggerOnLeaveMap;
@@ -2024,10 +2050,12 @@ LegacyLuaInstruction decodeInstruction(
     const EvtInstruction &instruction,
     const StrTable &strTable,
     const LegacyLuaExportLookups &lookups,
+    LegacyLuaExportScope scope,
     LegacyEventVersion version)
 {
     LegacyLuaInstruction decoded = {};
     decoded.eventId = eventId;
+    decoded.version = version;
     decoded.step = instruction.step;
     decoded.operation = mapOperation(instruction.opcode, version);
     decoded.jumpTargetStep = instruction.targetStep;
@@ -2054,21 +2082,44 @@ LegacyLuaInstruction decodeInstruction(
 
     decoded.text = resolveInstructionText(instruction, strTable, lookups);
 
+    if (decoded.operation == LegacyLuaOperation::OriginalMm8NoOp)
+    {
+        std::ostringstream description;
+        description << "Original MM8 ignores command " << unsigned(instruction.opcode) << "; payload";
+        for (uint8_t byte : instruction.rawPayload)
+        {
+            description << ' ' << std::hex << std::setw(2) << std::setfill('0') << unsigned(byte);
+        }
+        decoded.text = description.str();
+    }
+
     if (decoded.operation == LegacyLuaOperation::InputString && decoded.arguments.size() >= 2)
     {
-        for (size_t argumentIndex = 1; argumentIndex < decoded.arguments.size(); ++argumentIndex)
+        const auto binding = std::find_if(lookups.inputStringAnswerBindings.begin(),
+            lookups.inputStringAnswerBindings.end(), [&](const LegacyInputStringAnswerBinding &candidate)
         {
-            const uint32_t answerTextId = decoded.arguments[argumentIndex];
-            std::optional<std::string> answer = strTable.get(answerTextId);
-
-            if (!answer)
+            return candidate.scope == scope && candidate.eventId == eventId && candidate.step == instruction.step;
+        });
+        if (binding != lookups.inputStringAnswerBindings.end())
+        {
+            decoded.inputAnswers = binding->answers;
+        }
+        else
+        {
+            for (size_t argumentIndex = 1; argumentIndex < decoded.arguments.size(); ++argumentIndex)
             {
-                answer = lookupText(lookups.inputStringAnswerTexts, answerTextId);
-            }
+                const uint32_t answerTextId = decoded.arguments[argumentIndex];
+                std::optional<std::string> answer = strTable.get(answerTextId);
 
-            if (answer && !answer->empty())
-            {
-                decoded.inputAnswers.push_back(*answer);
+                if (!answer)
+                {
+                    answer = lookupText(lookups.inputStringAnswerTexts, answerTextId);
+                }
+
+                if (answer && !answer->empty())
+                {
+                    decoded.inputAnswers.push_back(*answer);
+                }
             }
         }
     }
@@ -2314,6 +2365,7 @@ std::vector<LegacyLuaEvent> decodeEvents(
     const EvtProgram &evtProgram,
     const StrTable &strTable,
     const LegacyLuaExportLookups &lookups,
+    LegacyLuaExportScope scope,
     LegacyEventVersion version)
 {
     std::vector<LegacyLuaEvent> decodedEvents;
@@ -2328,7 +2380,7 @@ std::vector<LegacyLuaEvent> decodeEvents(
         for (const EvtInstruction &instruction : event.instructions)
         {
             decodedEvent.instructions.push_back(
-                decodeInstruction(event.eventId, instruction, strTable, lookups, version));
+                decodeInstruction(event.eventId, instruction, strTable, lookups, scope, version));
         }
 
         decodedEvents.push_back(std::move(decodedEvent));
@@ -3401,7 +3453,8 @@ bool formatReadableConditionInstruction(
                 return false;
             }
 
-            const FormattedSelector selector = formatSelector(instruction.arguments[0], lookups.qbitRemaps);
+            const FormattedSelector selector = formatSelector(
+                instruction.arguments[0], lookups.qbitRemaps, instruction.version);
             condition = formatCompareExpression(selector, instruction.arguments[1]);
             comment = resolveSelectorComment(selector, lookups);
             return true;
@@ -3491,6 +3544,10 @@ bool emitReadableActionInstruction(
 {
     switch (instruction.operation)
     {
+        case LegacyLuaOperation::OriginalMm8NoOp:
+            emitIndentedLineWithComment(stream, "do end", instruction.text, indentLevel);
+            return true;
+
         case LegacyLuaOperation::PlaySound:
             if (instruction.arguments.size() >= 3)
             {
@@ -3522,7 +3579,8 @@ bool emitReadableActionInstruction(
         case LegacyLuaOperation::Add:
             if (instruction.arguments.size() >= 2)
             {
-                const FormattedSelector selector = formatSelector(instruction.arguments[0], lookups.qbitRemaps);
+                const FormattedSelector selector = formatSelector(
+                    instruction.arguments[0], lookups.qbitRemaps, instruction.version);
                 emitIndentedLineWithComment(
                     stream,
                     formatAddExpression(selector, instruction.arguments[1]),
@@ -3536,7 +3594,8 @@ bool emitReadableActionInstruction(
         case LegacyLuaOperation::Subtract:
             if (instruction.arguments.size() >= 2)
             {
-                const FormattedSelector selector = formatSelector(instruction.arguments[0], lookups.qbitRemaps);
+                const FormattedSelector selector = formatSelector(
+                    instruction.arguments[0], lookups.qbitRemaps, instruction.version);
                 if (subtractRequiresSufficientValue(selector))
                 {
                     const int32_t value = static_cast<int32_t>(instruction.arguments[1]);
@@ -3562,7 +3621,8 @@ bool emitReadableActionInstruction(
         case LegacyLuaOperation::Set:
             if (instruction.arguments.size() >= 2)
             {
-                const FormattedSelector selector = formatSelector(instruction.arguments[0], lookups.qbitRemaps);
+                const FormattedSelector selector = formatSelector(
+                    instruction.arguments[0], lookups.qbitRemaps, instruction.version);
                 emitIndentedLineWithComment(
                     stream,
                     formatSetExpression(selector, instruction.arguments[1]),
@@ -8338,6 +8398,10 @@ void emitNormalInstruction(
 
     switch (instruction.operation)
     {
+        case LegacyLuaOperation::OriginalMm8NoOp:
+            emitIndentedLineWithComment(stream, "do end", instruction.text, 2);
+            break;
+
         case LegacyLuaOperation::Exit:
             emitIndentedLineWithComment(stream, "return nil", std::nullopt, 2);
             stepTerminated = true;
@@ -8370,7 +8434,8 @@ void emitNormalInstruction(
         case LegacyLuaOperation::Compare:
             if (instruction.arguments.size() >= 2 && instruction.jumpTargetStep)
             {
-                const FormattedSelector selector = formatSelector(instruction.arguments[0], lookups.qbitRemaps);
+                const FormattedSelector selector = formatSelector(
+                    instruction.arguments[0], lookups.qbitRemaps, instruction.version);
                 emitIndentedLineWithComment(
                     stream,
                     "if " + formatCompareExpression(selector, instruction.arguments[1]) + " then return "
@@ -8426,7 +8491,8 @@ void emitNormalInstruction(
         case LegacyLuaOperation::Add:
             if (instruction.arguments.size() >= 2)
             {
-                const FormattedSelector selector = formatSelector(instruction.arguments[0], lookups.qbitRemaps);
+                const FormattedSelector selector = formatSelector(
+                    instruction.arguments[0], lookups.qbitRemaps, instruction.version);
                 emitIndentedLineWithComment(
                     stream,
                     formatAddExpression(selector, instruction.arguments[1]),
@@ -8438,7 +8504,8 @@ void emitNormalInstruction(
         case LegacyLuaOperation::Subtract:
             if (instruction.arguments.size() >= 2)
             {
-                const FormattedSelector selector = formatSelector(instruction.arguments[0], lookups.qbitRemaps);
+                const FormattedSelector selector = formatSelector(
+                    instruction.arguments[0], lookups.qbitRemaps, instruction.version);
                 if (subtractRequiresSufficientValue(selector))
                 {
                     const int32_t value = static_cast<int32_t>(instruction.arguments[1]);
@@ -8462,7 +8529,8 @@ void emitNormalInstruction(
         case LegacyLuaOperation::Set:
             if (instruction.arguments.size() >= 2)
             {
-                const FormattedSelector selector = formatSelector(instruction.arguments[0], lookups.qbitRemaps);
+                const FormattedSelector selector = formatSelector(
+                    instruction.arguments[0], lookups.qbitRemaps, instruction.version);
                 emitIndentedLineWithComment(
                     stream,
                     formatSetExpression(selector, instruction.arguments[1]),
@@ -9637,7 +9705,7 @@ bool isAlwaysTrueCompactCondition(const LegacyLuaInstruction &instruction)
         return false;
     }
 
-    const FormattedSelector selector = formatSelector(instruction.arguments[0], {});
+    const FormattedSelector selector = formatSelector(instruction.arguments[0], {}, instruction.version);
     return selector.semantic == SelectorSemantic::MapVar && instruction.arguments[1] == 0;
 }
 
@@ -12617,8 +12685,21 @@ std::string generateLegacyEventLuaChunk(
     LegacyLuaExportScope scope,
     LegacyEventVersion version)
 {
+    std::set<std::tuple<LegacyLuaExportScope, uint16_t, uint8_t>> boundInputInstructions;
+    for (const LegacyInputStringAnswerBinding &binding : lookups.inputStringAnswerBindings)
+    {
+        if (binding.answers.empty() || std::any_of(binding.answers.begin(), binding.answers.end(),
+            [](const std::string &answer) { return answer.empty(); }))
+        {
+            throw std::runtime_error("Empty explicit legacy input answer binding");
+        }
+        if (!boundInputInstructions.emplace(binding.scope, binding.eventId, binding.step).second)
+        {
+            throw std::runtime_error("Duplicate explicit legacy input answer binding");
+        }
+    }
     const std::string_view scopeTableName = scope == LegacyLuaExportScope::Global ? LuaScopeGlobal : LuaScopeMap;
-    const std::vector<LegacyLuaEvent> decodedEvents = decodeEvents(evtProgram, strTable, lookups, version);
+    const std::vector<LegacyLuaEvent> decodedEvents = decodeEvents(evtProgram, strTable, lookups, scope, version);
     const std::vector<SyntheticTriggerEvent> syntheticTriggerEvents = collectSyntheticTriggerEvents(evtProgram);
     std::ostringstream stream;
 

@@ -38,6 +38,7 @@ enum class MonsterSpecialAttackKind : uint8_t
     BreakWeapon,
     Aging,
     ManaDrain,
+    Steal, // Appended to preserve serialized native enum values.
 };
 
 enum class MonsterKind : uint32_t

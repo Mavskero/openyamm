@@ -24,6 +24,7 @@ void GameDataRepository::clear()
     m_pObjectTable = nullptr;
     m_pSpellTable = nullptr;
     m_pCombatTextTable = nullptr;
+    m_pBreachAlvarCompanionProfile = nullptr;
     m_pHouseServiceTextTable = nullptr;
     m_pItemTable = nullptr;
     m_pStandardItemEnchantTable = nullptr;
@@ -47,6 +48,7 @@ void GameDataRepository::clear()
     m_pCharacterDollTable = nullptr;
     m_pCharacterInspectTable = nullptr;
     m_pRaceStartingStatsTable = nullptr;
+    m_pMergedClassStartingStatsSourceTable = nullptr;
     m_pReadableScrollTable = nullptr;
     m_pPotionMixingTable = nullptr;
     m_pArcomageLibrary = nullptr;
@@ -85,6 +87,7 @@ void GameDataRepository::bind(const GameDataLoader &loader)
     m_pObjectTable = &loader.getObjectTable();
     m_pSpellTable = &loader.getSpellTable();
     m_pCombatTextTable = &loader.getCombatTextTable();
+    m_pBreachAlvarCompanionProfile = &loader.getBreachAlvarCompanionProfile();
     m_pHouseServiceTextTable = &loader.getHouseServiceTextTable();
     m_pItemTable = &loader.getItemTable();
     m_pStandardItemEnchantTable = &loader.getStandardItemEnchantTable();
@@ -108,6 +111,7 @@ void GameDataRepository::bind(const GameDataLoader &loader)
     m_pCharacterDollTable = &loader.getCharacterDollTable();
     m_pCharacterInspectTable = &loader.getCharacterInspectTable();
     m_pRaceStartingStatsTable = &loader.getRaceStartingStatsTable();
+    m_pMergedClassStartingStatsSourceTable = &loader.getMergedClassStartingStatsSourceTable();
     m_pReadableScrollTable = &loader.getReadableScrollTable();
     m_pPotionMixingTable = &loader.getPotionMixingTable();
     m_pPotionNoteTable = &loader.getPotionNoteTable();
@@ -142,6 +146,11 @@ void GameDataRepository::bind(const GameDataLoader &loader)
 bool GameDataRepository::isBound() const
 {
     return m_pMapStats != nullptr;
+}
+
+const std::optional<BreachAlvarCompanionProfile> &GameDataRepository::breachAlvarCompanionProfile() const
+{
+    return requireBound(m_pBreachAlvarCompanionProfile);
 }
 
 const CombatTextTable &GameDataRepository::combatTextTable() const
@@ -292,6 +301,11 @@ const CharacterInspectTable &GameDataRepository::characterInspectTable() const
 const RaceStartingStatsTable &GameDataRepository::raceStartingStatsTable() const
 {
     return requireBound(m_pRaceStartingStatsTable);
+}
+
+const MergedClassStartingStatTable &GameDataRepository::mergedClassStartingStatsSourceTable() const
+{
+    return requireBound(m_pMergedClassStartingStatsSourceTable);
 }
 
 const ReadableScrollTable &GameDataRepository::readableScrollTable() const

@@ -137,17 +137,18 @@ struct MissileBinding
     int objectId;
     const char *pObjectName;
     int impactId;
+    uint8_t sourceMissileId;
 };
 
 // MM8 object identities checked against the owned ObjList. The supplied
 // MM8patch's comparison hook at 0x452670 leaves FireAr as missile 2 and Rock as
 // missile 6 (Earth), while Dagger resolves to zero. See COMBAT_IMPORT_PROFILE.md.
 const std::vector<MissileBinding> MissileBindings = {
-    {"Arrow", 545, "Arrow", 0}, {"ArrowF", 550, "FireArrow", 0}, {"FireAr", 550, "FireArrow", 0},
-    {"Fire", 510, "Fire", 0}, {"Air", 500, "Air", 0}, {"Water", 515, "Water", 0},
-    {"Earth", 505, "Earth", 0}, {"Rock", 505, "Earth", 0}, {"Spirit", 530, "Spirit", 0},
-    {"Mind", 525, "Mind", 0}, {"Body", 520, "Body", 0}, {"Light", 535, "Light", 0},
-    {"Dark", 540, "Dark", 0}, {"Ener", 555, "Laser", 556},
+    {"Arrow", 545, "Arrow", 0, 1}, {"ArrowF", 550, "FireArrow", 0, 2}, {"FireAr", 550, "FireArrow", 0, 2},
+    {"Fire", 510, "Fire", 0, 3}, {"Air", 500, "Air", 0, 4}, {"Water", 515, "Water", 0, 5},
+    {"Earth", 505, "Earth", 0, 6}, {"Rock", 505, "Earth", 0, 6}, {"Spirit", 530, "Spirit", 0, 7},
+    {"Mind", 525, "Mind", 0, 8}, {"Body", 520, "Body", 0, 9}, {"Light", 535, "Light", 0, 10},
+    {"Dark", 540, "Dark", 0, 11}, {"Ener", 555, "Laser", 556, 13},
 };
 }
 
@@ -216,7 +217,8 @@ void convertCombatResources(const std::filesystem::path &source, const std::file
             const Game::ObjectEntry *pImpact = objects.findByObjectId(binding.impactId);
             require(pImpact && pImpact->internalName == "explosion", "Missing projectile impact object");
         }
-        missiles.push_back({binding.pToken, std::to_string(binding.objectId), std::to_string(binding.impactId)});
+        missiles.push_back({binding.pToken, std::to_string(binding.objectId), std::to_string(binding.impactId),
+            std::to_string(binding.sourceMissileId)});
     }
     Game::MonsterProjectileTable projectileCheck;
     require(projectileCheck.loadFromRows(missiles), "Projectile mapping failed typed validation");

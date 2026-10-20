@@ -2,6 +2,7 @@
 
 #include "game/audio/SoundRef.h"
 #include "game/events/EvtEnums.h"
+#include "game/events/OutdoorLightTimeOverride.h"
 #include "game/events/ScriptedEventProgram.h"
 #include "game/gameplay/NpcFollowerTypes.h"
 #include "game/maps/MapDeltaData.h"
@@ -22,6 +23,9 @@
 
 namespace OpenYAMM::Game
 {
+inline constexpr char BreachAlvarChaosDoorKeysPrefix[] = "MMerge.BrAlvar.Chaos.DoorKeys.";
+
+class IGameplayWorldRuntime;
 class Party;
 class ISceneEventContext;
 class HouseTable;
@@ -80,6 +84,9 @@ enum class EventRuntimeHookKind : uint8_t
     InventoryOpen,
     OutdoorStep,
     TownPortal,
+    GotItem,
+    DimensionDoorActivated,
+    MapBoundary,
 };
 
 struct RuntimeMechanismState
@@ -100,6 +107,9 @@ struct RuntimeDestructibleState
 
 struct EventRuntimeState
 {
+    // Live screen context; rebuilt by GameSession, deliberately absent from saves.
+    bool normalGameplayScreen = false;
+    bool dimensionDoorActive = false;
     struct OutdoorModelMechanismDefinition
     {
         uint32_t mechanismId = 0;
@@ -141,6 +151,16 @@ struct EventRuntimeState
         std::string traceDestinationName;
     };
 
+    struct PendingDelayedMapMove
+    {
+        PendingMapMove move;
+        uint32_t messageDelayMilliseconds = 0;
+        uint32_t afterCloseDelayMilliseconds = 0;
+        // Transient App real-clock progress; never part of a save or a game-time timer.
+        std::optional<uint64_t> phaseStartedMilliseconds;
+        bool dialogClosed = false;
+    };
+
     struct MapNoteSourcePoint
     {
         int32_t x = 0;
@@ -150,6 +170,7 @@ struct EventRuntimeState
     struct PendingDialogueContext
     {
         DialogueContextKind kind = DialogueContextKind::None;
+        bool npcEnterPending = false; // Lua SpeakNPC dispatches enter once at actual presentation; not saved.
         uint32_t sourceId = 0;
         std::optional<uint32_t> sourceActorIndex;
         uint32_t hostHouseId = 0;
@@ -169,9 +190,65 @@ struct EventRuntimeState
         bool restoreAfterPlayback = false;
     };
 
+    struct PendingBreachAlvarCompanionRequest
+    {
+        enum class Kind : uint8_t { Split, Return };
+        Kind kind = Kind::Split;
+        uint16_t sourceEventId = 0;
+        bool executingGlobalHandler = false;
+        std::string sourceMapName;
+        uint32_t npcId = 0;
+        DialogueContextKind dialogueKind = DialogueContextKind::None;
+        uint32_t sourceNpcId = 0;
+        uint32_t hostHouseId = 0;
+        std::optional<uint32_t> sourceActorIndex;
+        std::optional<uint32_t> stableActorId;
+        bool operator==(const PendingBreachAlvarCompanionRequest &) const = default;
+    };
+
+    struct PendingBreachMazeTransitionRequest
+    {
+        enum class Kind : uint8_t { BrAlvar53, BrAlvar54, Breach54, Up, Down };
+        Kind kind = Kind::BrAlvar53;
+        uint16_t sourceEventId = 0;
+        std::string sourceMapName;
+        std::string sourceCanonicalMapId;
+        int32_t sourceMapId = 0;
+        // App rechecks this lifecycle identity before confirmation and publication.
+        bool expectedRunPresent = false;
+        bool expectedInside = false;
+        uint64_t expectedEpoch = 0;
+        uint64_t expectedRevision = 0;
+        uint32_t expectedLevel = 0;
+        uint64_t expectedGenerationSerial = 0;
+        bool operator==(const PendingBreachMazeTransitionRequest &) const = default;
+    };
+
+    struct PendingBreachAlvarChaosRequest
+    {
+        enum class Kind : uint8_t { ClosedHouse5, Return81 };
+        Kind kind = Kind::ClosedHouse5;
+        uint16_t sourceEventId = 0;
+        std::string sourceMapName;
+        std::string sourceCanonicalMapId;
+        int32_t sourceMapId = 0;
+        std::vector<uint64_t> sourceMemberIds;
+        // ClosedHouse5 captures the original integer Party coordinate key and its source gate.
+        int32_t doorKey = 0;
+        bool expectedDoorUsed = false;
+        bool expectedHint2 = false;
+        bool expectedHint3 = false;
+        bool expectedCaught = false;
+        bool operator==(const PendingBreachAlvarChaosRequest &) const = default;
+    };
+
     struct PendingWinGame
     {
         uint32_t houseId = 0;
+        // Native Breach certificate presentation does not select a base-game ending movie.
+        bool certificateOnly = false;
+        std::string backgroundTexture;
+        std::string endingText;
     };
 
     struct PendingInputPrompt
@@ -187,6 +264,7 @@ struct EventRuntimeState
         uint8_t continueStep = 0;
         uint8_t correctStep = 0;
         uint32_t textId = 0;
+        bool trimWhitespace = true;
         std::vector<uint32_t> answerTextIds;
         std::vector<std::string> answers;
         std::vector<uint8_t> answerContinueSteps;
@@ -248,6 +326,9 @@ struct EventRuntimeState
 
     struct DialogueRuntimeState
     {
+        // Ephemeral script branch, rebuilt on NPC enter; omitted from save data.
+        uint32_t scriptedBranchNpcId = 0;
+        std::string scriptedBranch;
         uint32_t hostHouseId = 0;
         std::vector<DialogueMenuId> menuStack;
         std::optional<DialogueOfferState> currentOffer;
@@ -412,6 +493,7 @@ struct EventRuntimeState
         uint32_t boundaryEdge = 0;
         uint32_t chestId = 0;
         uint32_t heldItemId = 0;
+        uint32_t acquiredItemId = 0;
         uint32_t inventorySource = 0;
         uint32_t inventorySourceIndex = 0;
         uint32_t inventoryPage = 0;
@@ -455,6 +537,7 @@ struct EventRuntimeState
     uint64_t indoorLightRevision = 0;
     std::optional<bool> snowEnabled;
     std::optional<bool> rainEnabled;
+    std::optional<OutdoorLightTimeOverride> outdoorLightTimeOverride;
     std::optional<std::string> outdoorSkyTextureOverride;
     std::optional<int32_t> outdoorFogWeakDistanceOverride;
     std::optional<int32_t> outdoorFogStrongDistanceOverride;
@@ -480,6 +563,8 @@ struct EventRuntimeState
     std::unordered_map<uint32_t, uint32_t> npcGroupNews;
     std::unordered_map<uint32_t, uint32_t> npcGreetingOverrides;
     std::unordered_map<uint32_t, uint32_t> npcGreetingDisplayCounts;
+    // Map-session primary text only; never copied to Party or serialized in saves.
+    std::unordered_map<uint32_t, std::string> npcPrimaryGreetingTextOverrides;
     std::unordered_map<uint32_t, uint32_t> npcHouseOverrides;
     std::unordered_map<uint32_t, std::string> npcNameOverrides;
     std::unordered_map<uint32_t, uint32_t> npcPictureOverrides;
@@ -503,6 +588,12 @@ struct EventRuntimeState
     std::vector<std::string> statusMessages;
     std::vector<uint32_t> openedChestIds;
     std::vector<OpenedChestRequest> openedChestRequests;
+    struct ChestItemInsertion
+    {
+        uint32_t chestId = 0;
+        uint32_t itemId = 0;
+    };
+    std::vector<ChestItemInsertion> pendingChestItemInsertions;
     bool activeEventOpenedByTelekinesis = false;
     uint32_t activeEventSpellId = 0;
     std::vector<InventoryItem> grantedItems;
@@ -518,6 +609,16 @@ struct EventRuntimeState
     std::optional<PendingMovie> pendingMovie;
     std::optional<PendingWinGame> pendingWinGame;
     bool pendingReturnToMainMenu = false;
+    // Transient script intent. App starts a fresh campaign only after the current event completes.
+    std::optional<std::string> pendingCampaignRestartMap;
+    std::optional<PendingDelayedMapMove> pendingDelayedMapMove;
+    // A transient request with captured engine context, not evidence of a committed split/return.
+    std::optional<PendingBreachAlvarCompanionRequest> pendingBreachAlvarCompanionRequest;
+    // Transient source event intent; only App may confirm and commit a prepared maze transition.
+    std::optional<PendingBreachMazeTransitionRequest> pendingBreachMazeTransitionRequest;
+    // Source-authenticated intent only; App owns the complete door or return transaction.
+    std::optional<PendingBreachAlvarChaosRequest> pendingBreachAlvarChaosRequest;
+    bool pendingCloseNpcDialogue = false;
     std::optional<PendingInputPrompt> pendingInputPrompt;
     std::optional<PendingArcomageGame> pendingArcomageGame;
     std::vector<PendingSound> pendingSounds;
@@ -593,6 +694,13 @@ public:
         Party *pParty = nullptr,
         ISceneEventContext *pSceneEventContext = nullptr
     ) const;
+    bool executeGlobalAfterLoadEvents(
+        const std::optional<ScriptedEventProgram> &localProgram,
+        const std::optional<ScriptedEventProgram> &globalProgram,
+        EventRuntimeState &runtimeState,
+        Party *pParty = nullptr,
+        ISceneEventContext *pSceneEventContext = nullptr) const;
+
     bool executeOnLeaveEvents(
         const std::optional<ScriptedEventProgram> &localProgram,
         const std::optional<ScriptedEventProgram> &globalProgram,
@@ -605,6 +713,7 @@ public:
         const std::optional<ScriptedEventProgram> &globalProgram,
         EventRuntimeBindingReport &report
     ) const;
+    std::optional<std::string> lastScriptError() const;
     bool executeEventById(
         const std::optional<ScriptedEventProgram> &localProgram,
         const std::optional<ScriptedEventProgram> &globalProgram,
@@ -615,7 +724,9 @@ public:
         std::optional<uint8_t> continueStep = std::nullopt,
         bool allowGlobalFallback = true,
         std::optional<ScriptedEventScope> requiredScope = std::nullopt,
-        bool preservePendingOutputsOnBegin = false
+        bool preservePendingOutputsOnBegin = false,
+        // Set only by the native world timer dispatcher, never by Lua event selection.
+        bool dispatchingTimer = false
     ) const;
     bool executeNpcTopicEventById(
         const std::optional<ScriptedEventProgram> &localProgram,
@@ -746,6 +857,8 @@ public:
         uint32_t qbitId,
         bool value,
         const std::vector<size_t> &targetMemberIndices = {});
+    static uint32_t randomValue(EventRuntimeState &state, uint32_t eventId, uint8_t step = 0);
+    static std::pair<bool, bool> enemyDetectorState(const IGameplayWorldRuntime &world);
     static void applyMechanismAction(
         RuntimeMechanismState &runtimeMechanism,
         const MapDeltaDoor *pDoor,

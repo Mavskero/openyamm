@@ -6592,7 +6592,7 @@ int HeadlessGameplayDiagnostics::runOpenActor(
     if (const OutdoorWorldRuntime::MapActorState *pActorState = outdoorWorldRuntime.mapActorState(actorIndex))
     {
         std::cout << "  runtime monster=" << pActorState->monsterId
-                  << " hp=" << pActorState->currentHp << "/" << pActorState->maxHp
+                  << " hp=" << pActorState->currentHp << "/" << pActorState->combatState.maximumHitPoints()
                   << " hostile=" << (pActorState->hostileToParty ? "yes" : "no")
                   << " hostilityType=" << static_cast<unsigned>(pActorState->hostilityType)
                   << '\n';
@@ -12097,13 +12097,13 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
                 return false;
             }
 
-            if (pPeasant->monsterId != 1 || pPeasant->maxHp != 13 || pPeasant->hostileToParty)
+            if (pPeasant->monsterId != 1 || pPeasant->combatState.maximumHitPoints() != 13 || pPeasant->hostileToParty)
             {
                 failure = "unexpected peasant runtime state";
                 return false;
             }
 
-            if (pSergeant->monsterId != 5 || pSergeant->maxHp != 21 || pSergeant->hostileToParty)
+            if (pSergeant->monsterId != 5 || pSergeant->combatState.maximumHitPoints() != 21 || pSergeant->hostileToParty)
             {
                 failure = "unexpected sergeant runtime state";
                 return false;
@@ -20371,7 +20371,7 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
                 return false;
             }
 
-            const float wakeMinuteOfDay = std::fmod(std::max(0.0f, pWorld->gameMinutes()), 1440.0f);
+            const float wakeMinuteOfDay = std::fmod(std::max(0.0, pWorld->gameMinutes()), 1440.0);
 
             if (std::abs(wakeMinuteOfDay - 360.0f) > 0.01f)
             {

@@ -1,4 +1,5 @@
 #include "game/party/Party.h"
+#include "game/tables/ClassMultiplierTable.h"
 
 #include "game/events/EventRuntime.h"
 #include "game/debug/GameplayDebugTrace.h"
@@ -183,12 +184,37 @@ uint32_t resolveAdventurersInnPortraitPictureId(
 
 uint32_t remapCasterMemberIndexAfterDismiss(uint32_t casterMemberIndex, size_t dismissedMemberIndex)
 {
+    if (casterMemberIndex == Party::NoActiveMember)
+    {
+        return casterMemberIndex;
+    }
     if (casterMemberIndex > dismissedMemberIndex)
     {
         return casterMemberIndex - 1;
     }
 
-    return casterMemberIndex == dismissedMemberIndex ? 0 : casterMemberIndex;
+    return casterMemberIndex == dismissedMemberIndex ? Party::NoActiveMember : casterMemberIndex;
+}
+
+void resolveCharacterBuffCaster(CharacterBuffState &buff, const std::vector<Character> &members)
+{
+    if (!buff.active() && buff.casterMemberId == 0)
+    {
+        return;
+    }
+    if (buff.casterMemberId == 0 && buff.casterMemberIndex < members.size())
+    {
+        buff.casterMemberId = members[buff.casterMemberIndex].memberId;
+    }
+    buff.casterMemberIndex = Party::NoActiveMember;
+    for (size_t index = 0; index < members.size(); ++index)
+    {
+        if (buff.casterMemberId != 0 && members[index].memberId == buff.casterMemberId)
+        {
+            buff.casterMemberIndex = uint32_t(index);
+            break;
+        }
+    }
 }
 
 bool characterNeedsTempleHealing(const Character &member)
@@ -618,6 +644,7 @@ Character buildCharacterFromRosterEntry(
 {
     Character member = {};
     member.name = rosterEntry.name;
+    member.biography = rosterEntry.blurb;
     member.className = canonicalClassName(rosterEntry.className);
     member.role = normalizeRoleName(member.className);
     member.portraitTextureName = portraitTextureNameFromPictureId(rosterEntry.pictureId);
@@ -2432,6 +2459,10 @@ Party::Snapshot Party::snapshot() const
     snapshot.continentReputations = m_continentReputations;
     snapshot.questBits = m_questBits;
     snapshot.eventVariables = m_eventVariables;
+    snapshot.pendingItemDeliveries = m_pendingItemDeliveries;
+    snapshot.detachedMembers = m_detachedMembers;
+    snapshot.completedDetachmentOwners = m_completedDetachmentOwners;
+    snapshot.nextMemberId = m_nextMemberId;
     snapshot.npcTopicOverrides = m_npcTopicOverrides;
     snapshot.npcGroupNews = m_npcGroupNews;
     snapshot.npcGreetingOverrides = m_npcGreetingOverrides;
@@ -2479,6 +2510,10 @@ void Party::restoreSnapshot(const Snapshot &snapshot)
     m_continentReputations = snapshot.continentReputations;
     m_questBits = snapshot.questBits;
     m_eventVariables = snapshot.eventVariables;
+    m_pendingItemDeliveries = snapshot.pendingItemDeliveries;
+    m_detachedMembers = snapshot.detachedMembers;
+    m_completedDetachmentOwners = snapshot.completedDetachmentOwners;
+    m_nextMemberId = snapshot.nextMemberId;
     m_npcTopicOverrides = snapshot.npcTopicOverrides;
     m_npcGroupNews = snapshot.npcGroupNews;
     m_npcGreetingOverrides = snapshot.npcGreetingOverrides;
@@ -2493,6 +2528,15 @@ void Party::restoreSnapshot(const Snapshot &snapshot)
     {
         m_houseStockStates[state.houseId] = state;
     }
+
+    // Programmatic snapshots and old saves may predate Party-local identities.
+    Snapshot identities = this->snapshot();
+    initializeLegacyMemberIdentities(identities);
+    m_members = std::move(identities.members);
+    m_adventurersInnMembers = std::move(identities.adventurersInnMembers);
+    m_detachedMembers = std::move(identities.detachedMembers);
+    m_characterBuffs = identities.characterBuffs;
+    m_nextMemberId = identities.nextMemberId;
 
     for (Character &member : m_members)
     {
@@ -2525,7 +2569,7 @@ void Party::restoreSnapshot(const Snapshot &snapshot)
     m_heldItemIdForQueries = 0;
     m_pendingAudioRequests.clear();
     recordEverOwnedItemsFromCurrentState();
-    rebuildMagicalBonusesFromBuffs();
+    rebuildMagicalBonusesPreservingProgress();
     ++m_dialogueEligibilityRevision;
 }
 
@@ -2533,6 +2577,13 @@ void Party::seed(const PartySeed &seed)
 {
     m_members = seed.members;
     m_adventurersInnMembers.clear();
+    m_detachedMembers.clear();
+    m_completedDetachmentOwners.clear();
+    m_nextMemberId = 1;
+    for (Character &member : m_members)
+    {
+        member.memberId = m_nextMemberId++;
+    }
     m_activeMemberIndex = 0;
     m_partyBuffs = {};
     m_characterBuffs = {};
@@ -2549,6 +2600,7 @@ void Party::seed(const PartySeed &seed)
     m_continentReputations.clear();
     m_questBits.clear();
     m_eventVariables.clear();
+    m_pendingItemDeliveries.clear();
     m_npcTopicOverrides.clear();
     m_npcGroupNews.clear();
     m_npcGreetingOverrides.clear();
@@ -2664,6 +2716,7 @@ void Party::seed(const PartySeed &seed)
         fallbackMember.role = "Knight";
         fallbackMember.level = 1;
         fallbackMember.skillPoints = 0;
+        fallbackMember.memberId = m_nextMemberId++;
         fallbackMember.maxHealth = 100;
         fallbackMember.health = 100;
         m_members.push_back(fallbackMember);
@@ -3191,6 +3244,46 @@ std::optional<size_t> Party::chooseMonsterAttackTarget(uint32_t attackPreference
     return candidates[selectionSeed % candidates.size()];
 }
 
+std::vector<size_t> Party::chooseMergeMonsterAttackTargets(
+    uint32_t sourcePreferences, uint8_t targetCount, uint32_t seedHint)
+{
+    // Source MM8 preference bits and merged Class Extra kinds are separate registries.
+    static constexpr std::array<uint32_t, 8> SourceClassKinds = {15, 2, 6, 12, 7, 3, 13, 4};
+    std::vector<size_t> preferred;
+    std::vector<size_t> eligible;
+    for (size_t index = 0; index < m_members.size(); ++index)
+    {
+        const Character &member = m_members[index];
+        if (!isValidMonsterAttackTarget(member)) continue;
+        eligible.push_back(index);
+        const ClassMultiplierEntry *pClass = m_pClassMultiplierTable != nullptr
+            ? m_pClassMultiplierTable->get(member.className.empty() ? member.role : member.className) : nullptr;
+        bool matches = member.characterDataId != 0
+            && (((sourcePreferences & 0x100) != 0 && member.sexId == CharacterSexMale)
+                || ((sourcePreferences & 0x200) != 0 && member.sexId == CharacterSexFemale));
+        for (size_t bit = 0; bit < SourceClassKinds.size(); ++bit)
+        {
+            matches = matches || (pClass != nullptr && (sourcePreferences & (uint32_t(1) << bit)) != 0
+                && pClass->classKind == SourceClassKinds[bit]);
+        }
+        if (matches) preferred.push_back(index);
+    }
+    std::vector<size_t> result;
+    const size_t count = std::min(eligible.size(), size_t(std::max(uint8_t(1), targetCount)));
+    while (result.size() < count)
+    {
+        const std::vector<size_t> &candidates = preferred.empty() ? eligible : preferred;
+        const uint32_t selectionSeed = seedHint * 1103515245u
+            + m_monsterTargetSelectionCounter * 2654435761u + 12345u;
+        ++m_monsterTargetSelectionCounter;
+        const size_t index = candidates[selectionSeed % candidates.size()];
+        result.push_back(index);
+        std::erase(preferred, index);
+        std::erase(eligible, index);
+    }
+    return result;
+}
+
 void Party::addGold(int amount)
 {
     const int previousGold = m_gold;
@@ -3289,6 +3382,98 @@ bool Party::tryGrantInventoryItemToMember(size_t memberIndex, const InventoryIte
     return true;
 }
 
+bool Party::validPendingItemDelivery(const PendingItemDelivery &delivery, size_t memberCount)
+{
+    return delivery.item.objectDescriptionId != 0 && delivery.item.quantity != 0
+        && delivery.recipientMemberIndex >= -1
+        && (delivery.recipientMemberIndex == -1 || size_t(delivery.recipientMemberIndex) < memberCount);
+}
+
+bool Party::grantOwnedQuestItem(
+    const InventoryItem &item, int32_t recipientMemberIndex, bool allowDropProtectedHeldItem)
+{
+    const PendingItemDelivery delivery{item, recipientMemberIndex, allowDropProtectedHeldItem};
+    if (!validPendingItemDelivery(delivery, memberCount()))
+    {
+        return false;
+    }
+    if (recipientMemberIndex >= 0 && tryGrantInventoryItemToMember(size_t(recipientMemberIndex), item))
+    {
+        return true;
+    }
+    if (!canQueueItemDeliveries(1))
+    {
+        return false;
+    }
+    m_pendingItemDeliveries.push_back(delivery);
+    markArtifactItemFoundIfRelevant(item);
+    recordEverOwnedItemIfRelevant(item);
+    return true;
+}
+
+bool Party::canQueueItemDeliveries(size_t count) const
+{
+    const size_t queued = totalPendingItemDeliveries();
+    return queued <= MaxPendingItemDeliveries && count <= MaxPendingItemDeliveries - queued;
+}
+
+const std::vector<Party::PendingItemDelivery> &Party::pendingItemDeliveries() const
+{
+    return m_pendingItemDeliveries;
+}
+
+void Party::completeFirstPendingItemDelivery()
+{
+    if (!m_pendingItemDeliveries.empty())
+    {
+        m_pendingItemDeliveries.erase(m_pendingItemDeliveries.begin());
+    }
+}
+
+bool Party::ownsPendingItem(uint32_t itemId) const
+{
+    return std::any_of(m_pendingItemDeliveries.begin(), m_pendingItemDeliveries.end(),
+        [itemId](const PendingItemDelivery &delivery) { return delivery.item.objectDescriptionId == itemId; });
+}
+
+int Party::pendingItemCount(uint32_t itemId, std::optional<size_t> memberIndex) const
+{
+    int count = 0;
+    for (const PendingItemDelivery &delivery : m_pendingItemDeliveries)
+    {
+        if (delivery.item.objectDescriptionId == itemId
+            && (!memberIndex || delivery.recipientMemberIndex == int32_t(*memberIndex)))
+        {
+            count += int(delivery.item.quantity);
+        }
+    }
+    return count;
+}
+
+bool Party::removePendingItem(uint32_t itemId, std::optional<size_t> memberIndex)
+{
+    const auto found = std::find_if(m_pendingItemDeliveries.begin(), m_pendingItemDeliveries.end(),
+        [itemId, memberIndex](const PendingItemDelivery &delivery)
+        {
+            return delivery.item.objectDescriptionId == itemId
+                && (!memberIndex || delivery.recipientMemberIndex == -1
+                    || delivery.recipientMemberIndex == int32_t(*memberIndex));
+        });
+    if (found == m_pendingItemDeliveries.end())
+    {
+        return false;
+    }
+    if (found->item.quantity > 1)
+    {
+        found->item.quantity -= 1;
+    }
+    else
+    {
+        m_pendingItemDeliveries.erase(found);
+    }
+    return true;
+}
+
 bool Party::tryGrantInventoryItemStartingAt(
     size_t firstMemberIndex,
     const InventoryItem &item,
@@ -3348,7 +3533,7 @@ bool Party::removeItem(uint32_t objectDescriptionId, uint32_t quantity)
         return false;
     }
 
-    uint32_t availableCount = 0;
+    uint32_t availableCount = uint32_t(pendingItemCount(objectDescriptionId));
 
     for (const Character &member : m_members)
     {
@@ -3374,6 +3559,11 @@ bool Party::removeItem(uint32_t objectDescriptionId, uint32_t quantity)
         {
             removedCount += 1;
         }
+    }
+
+    while (removedCount < quantity && removePendingItem(objectDescriptionId))
+    {
+        removedCount += 1;
     }
 
     return removedCount == quantity;
@@ -3730,14 +3920,29 @@ bool Party::isFull() const
     return m_members.size() >= MaxMembers;
 }
 
+Character Party::makeRosterCharacter(const RosterEntry &rosterEntry) const
+{
+    Character character = buildCharacterFromRosterEntry(rosterEntry, m_pClassMultiplierTable);
+    applyCharacterIdentityFromDollTable(character, m_pCharacterDollTable);
+    initializePortraitRuntimeState(character);
+    grantRosterInventoryToCharacter(character, rosterEntry, m_pItemTable,
+        m_pStandardItemEnchantTable, m_pSpecialItemEnchantTable);
+    return character;
+}
+
 bool Party::recruitRosterMember(const RosterEntry &rosterEntry)
 {
-    if (isFull())
+    if (isFull() || hasDetachedRosterMember(rosterEntry.id))
     {
         return false;
     }
 
-    m_members.push_back(buildCharacterFromRosterEntry(rosterEntry, m_pClassMultiplierTable));
+    Character character = buildCharacterFromRosterEntry(rosterEntry, m_pClassMultiplierTable);
+    if (!assignMemberIdentity(character))
+    {
+        return false;
+    }
+    m_members.push_back(std::move(character));
     applyCharacterIdentityFromDollTable(m_members.back(), m_pCharacterDollTable);
     initializePortraitRuntimeState(m_members.back());
     grantRosterInventoryToCharacter(
@@ -3747,18 +3952,25 @@ bool Party::recruitRosterMember(const RosterEntry &rosterEntry)
         m_pStandardItemEnchantTable,
         m_pSpecialItemEnchantTable);
 
+    m_characterBuffs[m_members.size() - 1] = {};
+    synchronizeCharacterBuffCasters();
     m_lastStatus = "party member recruited";
     return true;
 }
 
 bool Party::recruitCharacter(const Character &character)
 {
-    if (isFull())
+    if (isFull() || hasDetachedRosterMember(character.rosterId))
     {
         return false;
     }
 
-    m_members.push_back(character);
+    Character admitted = character;
+    if (!assignMemberIdentity(admitted))
+    {
+        return false;
+    }
+    m_members.push_back(std::move(admitted));
     applyCharacterIdentityFromDollTable(m_members.back(), m_pCharacterDollTable);
     m_members.back().className = canonicalClassName(
         m_members.back().className.empty() ? m_members.back().role : m_members.back().className);
@@ -3773,6 +3985,8 @@ bool Party::recruitCharacter(const Character &character)
 
     GameMechanics::refreshCharacterBaseResources(m_members.back(), true, m_pClassMultiplierTable);
     initializePortraitRuntimeState(m_members.back());
+    m_characterBuffs[m_members.size() - 1] = {};
+    synchronizeCharacterBuffCasters();
     m_lastStatus = "party member recruited";
     return true;
 }
@@ -3795,8 +4009,16 @@ bool Party::addAdventurersInnMember(const RosterEntry &rosterEntry, uint32_t por
 
 bool Party::addAdventurersInnMember(const Character &character, uint32_t portraitPictureId)
 {
+    if (hasDetachedRosterMember(character.rosterId))
+    {
+        return false;
+    }
     AdventurersInnMember member = {};
     member.character = character;
+    if (!assignMemberIdentity(member.character))
+    {
+        return false;
+    }
     applyCharacterIdentityFromDollTable(member.character, m_pCharacterDollTable);
     member.character.className = canonicalClassName(
         member.character.className.empty() ? member.character.role : member.character.className);
@@ -3829,6 +4051,8 @@ bool Party::hireAdventurersInnMember(size_t innIndex)
     m_members.push_back(m_adventurersInnMembers[innIndex].character);
     applyCharacterIdentityFromDollTable(m_members.back(), m_pCharacterDollTable);
     m_adventurersInnMembers.erase(m_adventurersInnMembers.begin() + innIndex);
+    m_characterBuffs[m_members.size() - 1] = {};
+    synchronizeCharacterBuffCasters();
     m_lastStatus = "adventurer hired from inn";
     return true;
 }
@@ -3846,12 +4070,22 @@ bool Party::dismissMemberToAdventurersInn(size_t memberIndex)
         dismissedMember.portraitPictureId,
         m_pCharacterDollTable);
 
-    if (!addAdventurersInnMember(dismissedMember, portraitPictureId))
-    {
-        return false;
-    }
-
+    synchronizeCharacterBuffCasters();
+    m_adventurersInnMembers.push_back({dismissedMember, portraitPictureId});
     m_members.erase(m_members.begin() + memberIndex);
+
+    for (PendingItemDelivery &delivery : m_pendingItemDeliveries)
+    {
+        if (delivery.recipientMemberIndex == int32_t(memberIndex))
+        {
+            // The party still owns the item when its intended recipient leaves; deliver it to the mouse.
+            delivery.recipientMemberIndex = -1;
+        }
+        else if (delivery.recipientMemberIndex > int32_t(memberIndex))
+        {
+            delivery.recipientMemberIndex -= 1;
+        }
+    }
 
     for (size_t index = memberIndex; index + 1 < m_characterBuffs.size(); ++index)
     {
@@ -3862,16 +4096,16 @@ bool Party::dismissMemberToAdventurersInn(size_t memberIndex)
 
     for (PartyBuffState &buff : m_partyBuffs)
     {
-        buff.casterMemberIndex = remapCasterMemberIndexAfterDismiss(buff.casterMemberIndex, memberIndex);
-    }
-
-    for (auto &memberBuffs : m_characterBuffs)
-    {
-        for (CharacterBuffState &buff : memberBuffs)
+        if (buff.casterMemberIndex == memberIndex)
+        {
+            buff = {};
+        }
+        else
         {
             buff.casterMemberIndex = remapCasterMemberIndexAfterDismiss(buff.casterMemberIndex, memberIndex);
         }
     }
+    synchronizeCharacterBuffCasters();
 
     m_pendingAudioRequests.erase(
         std::remove_if(
@@ -3918,12 +4152,27 @@ bool Party::dismissMemberToAdventurersInn(size_t memberIndex)
 
 bool Party::replaceMemberWithRosterEntry(size_t memberIndex, const RosterEntry &rosterEntry)
 {
-    if (memberIndex >= m_members.size())
+    if (memberIndex >= m_members.size() || hasDetachedRosterMember(rosterEntry.id))
     {
         return false;
     }
 
-    m_members[memberIndex] = buildCharacterFromRosterEntry(rosterEntry, m_pClassMultiplierTable);
+    Character replacement = buildCharacterFromRosterEntry(rosterEntry, m_pClassMultiplierTable);
+    if (!assignMemberIdentity(replacement))
+    {
+        return false;
+    }
+    synchronizeCharacterBuffCasters();
+    m_members[memberIndex] = std::move(replacement);
+    m_characterBuffs[memberIndex] = {};
+    for (PartyBuffState &buff : m_partyBuffs)
+    {
+        if (buff.casterMemberIndex == memberIndex)
+        {
+            buff = {};
+        }
+    }
+    synchronizeCharacterBuffCasters();
     applyCharacterIdentityFromDollTable(m_members[memberIndex], m_pCharacterDollTable);
     applyCharacterIdentityFromDollTable(m_members[memberIndex], m_pCharacterDollTable);
     initializePortraitRuntimeState(m_members[memberIndex]);
@@ -3961,8 +4210,524 @@ bool Party::hasRosterMember(uint32_t rosterId) const
             return true;
         }
     }
+    return hasDetachedRosterMember(rosterId);
+}
 
-    return false;
+bool Party::hasDetachedRosterMember(uint32_t rosterId) const
+{
+    return rosterId != 0 && std::any_of(m_detachedMembers.begin(), m_detachedMembers.end(),
+        [rosterId](const DetachedPartyMember &member) { return member.character.rosterId == rosterId; });
+}
+
+bool Party::assignMemberIdentity(Character &character)
+{
+    // A stored identity returns only through an ownership transfer, never a fresh recruit.
+    if (character.memberId != 0 || m_nextMemberId == 0
+        || m_nextMemberId == std::numeric_limits<uint64_t>::max())
+    {
+        return false;
+    }
+    character.memberId = m_nextMemberId++;
+    return true;
+}
+
+void Party::initializeLegacyMemberIdentities(Snapshot &snapshot)
+{
+    uint64_t largestId = 0;
+    const auto includeId = [&largestId](const Character &member)
+    {
+        largestId = std::max(largestId, member.memberId);
+    };
+    for (const Character &member : snapshot.members)
+    {
+        includeId(member);
+    }
+    for (const AdventurersInnMember &member : snapshot.adventurersInnMembers)
+    {
+        includeId(member.character);
+    }
+    for (const DetachedPartyMember &member : snapshot.detachedMembers)
+    {
+        includeId(member.character);
+    }
+    if (largestId == std::numeric_limits<uint64_t>::max())
+    {
+        return;
+    }
+    snapshot.nextMemberId = std::max(snapshot.nextMemberId, largestId + 1);
+    const auto assignId = [&snapshot](Character &member)
+    {
+        if (member.memberId == 0 && snapshot.nextMemberId < std::numeric_limits<uint64_t>::max())
+        {
+            member.memberId = snapshot.nextMemberId++;
+        }
+    };
+    for (Character &member : snapshot.members)
+    {
+        assignId(member);
+    }
+    for (AdventurersInnMember &member : snapshot.adventurersInnMembers)
+    {
+        assignId(member.character);
+    }
+    for (DetachedPartyMember &member : snapshot.detachedMembers)
+    {
+        assignId(member.character);
+    }
+    for (auto &buffs : snapshot.characterBuffs)
+    {
+        for (CharacterBuffState &buff : buffs)
+        {
+            resolveCharacterBuffCaster(buff, snapshot.members);
+        }
+    }
+    for (DetachedPartyMember &member : snapshot.detachedMembers)
+    {
+        for (CharacterBuffState &buff : member.characterBuffs)
+        {
+            resolveCharacterBuffCaster(buff, snapshot.members);
+        }
+    }
+}
+
+bool Party::validMemberOwnership(const Snapshot &snapshot, std::string &error)
+{
+    const auto fail = [&error](const char *message)
+    {
+        error = message;
+        return false;
+    };
+    error.clear();
+    if (snapshot.members.size() > MaxMembers || snapshot.detachedMembers.size() > MaxDetachedMembers
+        || snapshot.completedDetachmentOwners.size() > MaxDetachmentBatches || snapshot.nextMemberId == 0)
+    {
+        return fail("Invalid party member ownership limits");
+    }
+    if ((!snapshot.members.empty() && snapshot.activeMemberIndex >= snapshot.members.size())
+        || (snapshot.members.empty() && !snapshot.detachedMembers.empty()))
+    {
+        return fail("Invalid active party member selection");
+    }
+    std::unordered_set<uint64_t> memberIds;
+    const auto validId = [&snapshot, &memberIds](const Character &member)
+    {
+        return member.memberId != 0 && member.memberId < snapshot.nextMemberId
+            && memberIds.insert(member.memberId).second;
+    };
+    for (const Character &member : snapshot.members)
+    {
+        if (!validId(member))
+        {
+            return fail("Invalid or duplicate party member identity");
+        }
+    }
+    for (const AdventurersInnMember &member : snapshot.adventurersInnMembers)
+    {
+        if (!validId(member.character))
+        {
+            return fail("Invalid or duplicate inn member identity");
+        }
+    }
+    std::unordered_set<std::string> owners;
+    for (const std::string &owner : snapshot.completedDetachmentOwners)
+    {
+        if (owner.empty() || owner.size() > 128 || owner.find('\0') != std::string::npos
+            || !owners.insert(owner).second)
+        {
+            return fail("Invalid or duplicate detachment receipt");
+        }
+    }
+    size_t pendingCount = snapshot.pendingItemDeliveries.size();
+    for (const PendingItemDelivery &delivery : snapshot.pendingItemDeliveries)
+    {
+        if (!validPendingItemDelivery(delivery, snapshot.members.size()))
+        {
+            return fail("Invalid active pending item recipient");
+        }
+    }
+    std::unordered_map<std::string, std::unordered_set<uint32_t>> slots;
+    for (const DetachedPartyMember &member : snapshot.detachedMembers)
+    {
+        if (!validId(member.character) || !owners.contains(member.ownerKey) || member.slotId == 0
+            || !slots[member.ownerKey].insert(member.slotId).second)
+        {
+            return fail("Invalid detached member identity or owner slot");
+        }
+        pendingCount += member.pendingItemDeliveries.size();
+        for (const PendingItemDelivery &delivery : member.pendingItemDeliveries)
+        {
+            if (delivery.recipientMemberIndex != 0 || !validPendingItemDelivery(delivery, 1))
+            {
+                return fail("Invalid detached pending item recipient");
+            }
+        }
+    }
+    if (pendingCount > MaxPendingItemDeliveries)
+    {
+        return fail("Too many owned pending item deliveries");
+    }
+    const auto validCaster = [&snapshot](const CharacterBuffState &buff)
+    {
+        if (!buff.active() && buff.casterMemberId == 0)
+        {
+            return true;
+        }
+        if (buff.casterMemberId >= snapshot.nextMemberId)
+        {
+            return false;
+        }
+        uint32_t expectedIndex = NoActiveMember;
+        for (size_t index = 0; index < snapshot.members.size(); ++index)
+        {
+            if (buff.casterMemberId != 0 && snapshot.members[index].memberId == buff.casterMemberId)
+            {
+                expectedIndex = uint32_t(index);
+                break;
+            }
+        }
+        return buff.casterMemberIndex == expectedIndex;
+    };
+    for (const auto &buffs : snapshot.characterBuffs)
+    {
+        for (const CharacterBuffState &buff : buffs)
+        {
+            if (!validCaster(buff))
+            {
+                return fail("Invalid active buff caster identity");
+            }
+        }
+    }
+    for (const DetachedPartyMember &member : snapshot.detachedMembers)
+    {
+        for (const CharacterBuffState &buff : member.characterBuffs)
+        {
+            if (!validCaster(buff))
+            {
+                return fail("Invalid detached buff caster identity");
+            }
+        }
+    }
+    return true;
+}
+
+size_t Party::totalPendingItemDeliveries() const
+{
+    size_t count = m_pendingItemDeliveries.size();
+    for (const DetachedPartyMember &member : m_detachedMembers)
+    {
+        count += member.pendingItemDeliveries.size();
+    }
+    return count;
+}
+
+void Party::synchronizeCharacterBuffCasters()
+{
+    for (auto &buffs : m_characterBuffs)
+    {
+        for (CharacterBuffState &buff : buffs)
+        {
+            resolveCharacterBuffCaster(buff, m_members);
+        }
+    }
+    for (DetachedPartyMember &member : m_detachedMembers)
+    {
+        for (CharacterBuffState &buff : member.characterBuffs)
+        {
+            resolveCharacterBuffCaster(buff, m_members);
+        }
+    }
+}
+
+void Party::rebuildMagicalBonusesPreservingProgress()
+{
+    std::vector<std::array<float, 2>> progress;
+    progress.reserve(m_members.size());
+    for (const Character &member : m_members)
+    {
+        progress.push_back({member.healthRegenAccumulator, member.spellRegenAccumulator});
+    }
+    rebuildMagicalBonusesFromBuffs();
+    for (size_t index = 0; index < m_members.size(); ++index)
+    {
+        m_members[index].healthRegenAccumulator = progress[index][0];
+        m_members[index].spellRegenAccumulator = progress[index][1];
+    }
+}
+
+bool Party::hasDetachedBatch(const std::string &ownerKey) const
+{
+    return std::find(m_completedDetachmentOwners.begin(), m_completedDetachmentOwners.end(), ownerKey)
+        != m_completedDetachmentOwners.end();
+}
+
+const Party::DetachedPartyMember *Party::detachedMember(const std::string &ownerKey, uint32_t slotId) const
+{
+    const auto found = std::find_if(m_detachedMembers.begin(), m_detachedMembers.end(),
+        [&ownerKey, slotId](const DetachedPartyMember &member)
+        { return member.ownerKey == ownerKey && member.slotId == slotId; });
+    return found != m_detachedMembers.end() ? &*found : nullptr;
+}
+
+const std::vector<Party::DetachedPartyMember> &Party::detachedMembers() const
+{
+    return m_detachedMembers;
+}
+
+bool Party::detachMembers(const std::string &ownerKey, const std::vector<DetachmentAssignment> &assignments)
+{
+    if (ownerKey.empty() || ownerKey.size() > 128 || ownerKey.find('\0') != std::string::npos
+        || m_members.empty() || hasDetachedBatch(ownerKey) || assignments.size() >= m_members.size()
+        || m_detachedMembers.size() + assignments.size() > MaxDetachedMembers
+        || m_completedDetachmentOwners.size() >= MaxDetachmentBatches)
+    {
+        return false;
+    }
+    std::unordered_set<size_t> selected;
+    std::unordered_set<uint32_t> slots;
+    for (const DetachmentAssignment &assignment : assignments)
+    {
+        if (assignment.memberIndex == 0 || assignment.memberIndex >= m_members.size() || assignment.slotId == 0
+            || !selected.insert(assignment.memberIndex).second || !slots.insert(assignment.slotId).second)
+        {
+            return false;
+        }
+    }
+
+    Party candidate = *this;
+    candidate.synchronizeCharacterBuffCasters();
+    std::string initialError;
+    if (!validMemberOwnership(candidate.snapshot(), initialError))
+    {
+        return false;
+    }
+    const uint64_t selectedMemberId = m_members[std::min(m_activeMemberIndex, m_members.size() - 1)].memberId;
+    std::vector<uint32_t> newIndex(m_members.size(), NoActiveMember);
+    std::vector<size_t> detachedIndex(m_members.size(), MaxDetachedMembers);
+    for (const DetachmentAssignment &assignment : assignments)
+    {
+        DetachedPartyMember member;
+        member.ownerKey = ownerKey;
+        member.slotId = assignment.slotId;
+        member.character = candidate.m_members[assignment.memberIndex];
+        member.characterBuffs = candidate.m_characterBuffs[assignment.memberIndex];
+        detachedIndex[assignment.memberIndex] = candidate.m_detachedMembers.size();
+        candidate.m_detachedMembers.push_back(std::move(member));
+    }
+    candidate.m_members.clear();
+    candidate.m_characterBuffs = {};
+    for (size_t index = 0; index < m_members.size(); ++index)
+    {
+        if (selected.contains(index))
+        {
+            continue;
+        }
+        newIndex[index] = uint32_t(candidate.m_members.size());
+        candidate.m_members.push_back(m_members[index]);
+        candidate.m_characterBuffs[newIndex[index]] = m_characterBuffs[index];
+        for (CharacterBuffState &buff : candidate.m_characterBuffs[newIndex[index]])
+        {
+            resolveCharacterBuffCaster(buff, m_members);
+        }
+    }
+    candidate.m_pendingItemDeliveries.clear();
+    for (PendingItemDelivery delivery : m_pendingItemDeliveries)
+    {
+        if (delivery.recipientMemberIndex >= 0 && selected.contains(size_t(delivery.recipientMemberIndex)))
+        {
+            const size_t target = detachedIndex[size_t(delivery.recipientMemberIndex)];
+            delivery.recipientMemberIndex = 0;
+            candidate.m_detachedMembers[target].pendingItemDeliveries.push_back(std::move(delivery));
+        }
+        else
+        {
+            if (delivery.recipientMemberIndex >= 0)
+            {
+                delivery.recipientMemberIndex = int32_t(newIndex[size_t(delivery.recipientMemberIndex)]);
+            }
+            candidate.m_pendingItemDeliveries.push_back(std::move(delivery));
+        }
+    }
+    for (PartyBuffState &buff : candidate.m_partyBuffs)
+    {
+        if (selected.contains(buff.casterMemberIndex))
+        {
+            buff = {}; // Original MM8 DismissCharacter removes the departed caster's party spells.
+        }
+        else if (buff.casterMemberIndex < newIndex.size())
+        {
+            buff.casterMemberIndex = newIndex[buff.casterMemberIndex];
+        }
+    }
+    candidate.m_pendingAudioRequests.erase(
+        std::remove_if(candidate.m_pendingAudioRequests.begin(), candidate.m_pendingAudioRequests.end(),
+            [&selected, &newIndex](PendingAudioRequest &request)
+            {
+                if (request.kind != PendingAudioRequest::Kind::Speech)
+                {
+                    return false;
+                }
+                if (request.memberIndex >= newIndex.size() || selected.contains(request.memberIndex))
+                {
+                    return true;
+                }
+                request.memberIndex = newIndex[request.memberIndex];
+                return false;
+            }), candidate.m_pendingAudioRequests.end());
+    candidate.m_activeMemberIndex = 0;
+    for (size_t index = 0; index < candidate.m_members.size(); ++index)
+    {
+        if (candidate.m_members[index].memberId == selectedMemberId)
+        {
+            candidate.m_activeMemberIndex = index;
+        }
+    }
+    candidate.m_completedDetachmentOwners.push_back(ownerKey);
+    candidate.synchronizeCharacterBuffCasters();
+    std::string error;
+    if (!validMemberOwnership(candidate.snapshot(), error))
+    {
+        return false;
+    }
+    candidate.rebuildMagicalBonusesPreservingProgress();
+    ++candidate.m_dialogueEligibilityRevision;
+    candidate.m_lastStatus = "party members detached";
+    *this = std::move(candidate);
+    return true;
+}
+
+bool Party::detachMembersWithReserves(const std::string &ownerKey,
+    const std::vector<DetachmentAssignment> &assignments, const std::vector<ReservedDetachment> &reserves)
+{
+    std::unordered_set<uint32_t> slots;
+    std::unordered_set<uint64_t> identities;
+    for (const DetachmentAssignment &assignment : assignments)
+    {
+        if (!slots.insert(assignment.slotId).second || assignment.memberIndex >= m_members.size()
+            || !identities.insert(m_members[assignment.memberIndex].memberId).second) return false;
+    }
+    for (const ReservedDetachment &reserve : reserves)
+    {
+        if (reserve.slotId == 0 || !slots.insert(reserve.slotId).second
+            || (reserve.memberId != 0 && !identities.insert(reserve.memberId).second)
+            || (reserve.generated && !reserve.replacement)) return false;
+    }
+    Party candidate = *this;
+    std::unordered_set<uint64_t> generatedIds;
+    // The existing active-member operation preserves caster identities and redirects pending deliveries.
+    // An empty assignment list also establishes the batch for a leader-only source Party.
+    if (!candidate.detachMembers(ownerKey, assignments)) return false;
+    for (const ReservedDetachment &reserve : reserves)
+    {
+        DetachedPartyMember detached;
+        if (reserve.memberId == 0)
+        {
+            if (!reserve.replacement || reserve.replacement->memberId != 0) return false;
+            const uint32_t rosterId = reserve.replacement->rosterId;
+            if (rosterId != 0 && (std::any_of(candidate.m_members.begin(), candidate.m_members.end(),
+                    [rosterId](const Character &member) { return member.rosterId == rosterId; })
+                || std::any_of(candidate.m_adventurersInnMembers.begin(), candidate.m_adventurersInnMembers.end(),
+                    [rosterId](const AdventurersInnMember &member) { return member.character.rosterId == rosterId; })
+                || candidate.hasDetachedRosterMember(rosterId))) return false;
+            detached.character = *reserve.replacement;
+            if (!candidate.assignMemberIdentity(detached.character)) return false;
+            initializePortraitRuntimeState(detached.character);
+        }
+        else
+        {
+            if (std::any_of(candidate.m_members.begin(), candidate.m_members.end(), [&](const Character &member)
+                { return member.memberId == reserve.memberId; })) return false;
+            const auto inn = std::find_if(candidate.m_adventurersInnMembers.begin(),
+                candidate.m_adventurersInnMembers.end(), [&](const AdventurersInnMember &member)
+                { return member.character.memberId == reserve.memberId; });
+            if (inn != candidate.m_adventurersInnMembers.end())
+            {
+                detached.character = inn->character;
+                candidate.m_adventurersInnMembers.erase(inn);
+            }
+            else
+            {
+                const auto existing = std::find_if(candidate.m_detachedMembers.begin(),
+                    candidate.m_detachedMembers.end(), [&](const DetachedPartyMember &member)
+                    { return member.character.memberId == reserve.memberId; });
+                if (existing == candidate.m_detachedMembers.end() || existing->ownerKey == ownerKey) return false;
+                detached = *existing;
+                candidate.m_detachedMembers.erase(existing);
+            }
+            if (reserve.replacement)
+            {
+                if (reserve.replacement->memberId != reserve.memberId
+                    || reserve.replacement->rosterId != detached.character.rosterId) return false;
+                detached.character = *reserve.replacement;
+                initializePortraitRuntimeState(detached.character);
+            }
+        }
+        detached.ownerKey = ownerKey;
+        detached.slotId = reserve.slotId;
+        if (candidate.m_detachedMembers.size() >= MaxDetachedMembers) return false;
+        if (reserve.generated) generatedIds.insert(detached.character.memberId);
+        if (reserve.generated || reserve.memberId == 0)
+            candidate.recordEverOwnedItemsFromCharacter(detached.character);
+        candidate.m_detachedMembers.push_back(std::move(detached));
+    }
+    candidate.synchronizeCharacterBuffCasters();
+    std::string error;
+    if (!validMemberOwnership(candidate.snapshot(), error)) return false;
+    candidate.rebuildMagicalBonusesPreservingProgress();
+    for (DetachedPartyMember &detached : candidate.m_detachedMembers)
+    {
+        if (!generatedIds.contains(detached.character.memberId)) continue;
+        // This copy is a calculation context, never a recruit or an admitted active Party.
+        // Slot zero supplies the generated member's own buffs; the actual active members
+        // still contribute their equipment and carried party effects through the shared path.
+        Party projection = candidate;
+        std::erase_if(projection.m_detachedMembers, [&detached](const DetachedPartyMember &member)
+            { return member.character.memberId == detached.character.memberId; });
+        projection.m_members.insert(projection.m_members.begin(), detached.character);
+        projection.m_characterBuffs = {};
+        projection.m_characterBuffs[0] = detached.characterBuffs;
+        for (size_t index = 0; index < candidate.m_members.size() && index + 1 < MaxMembers; ++index)
+            projection.m_characterBuffs[index + 1] = candidate.m_characterBuffs[index];
+        projection.synchronizeCharacterBuffCasters();
+        projection.rebuildMagicalBonusesPreservingProgress();
+        detached.character = std::move(projection.m_members.front());
+        GameMechanics::refreshCharacterBaseResources(detached.character, true, candidate.m_pClassMultiplierTable);
+    }
+    ++candidate.m_dialogueEligibilityRevision;
+    candidate.m_lastStatus = "party members detached";
+    *this = std::move(candidate);
+    return true;
+}
+
+bool Party::joinDetachedMember(const std::string &ownerKey, uint32_t slotId)
+{
+    if (isFull() || detachedMember(ownerKey, slotId) == nullptr)
+    {
+        return false;
+    }
+    Party candidate = *this;
+    const auto found = std::find_if(candidate.m_detachedMembers.begin(), candidate.m_detachedMembers.end(),
+        [&ownerKey, slotId](const DetachedPartyMember &member)
+        { return member.ownerKey == ownerKey && member.slotId == slotId; });
+    const size_t newIndex = candidate.m_members.size();
+    candidate.m_members.push_back(std::move(found->character));
+    candidate.m_characterBuffs[newIndex] = found->characterBuffs;
+    for (PendingItemDelivery &delivery : found->pendingItemDeliveries)
+    {
+        delivery.recipientMemberIndex = int32_t(newIndex);
+        candidate.m_pendingItemDeliveries.push_back(std::move(delivery));
+    }
+    candidate.m_detachedMembers.erase(found);
+    candidate.synchronizeCharacterBuffCasters();
+    std::string error;
+    if (!validMemberOwnership(candidate.snapshot(), error))
+    {
+        return false;
+    }
+    candidate.rebuildMagicalBonusesPreservingProgress();
+    ++candidate.m_dialogueEligibilityRevision;
+    candidate.m_lastStatus = "detached party member joined";
+    *this = std::move(candidate);
+    return true;
 }
 
 bool Party::hasQuestBit(uint32_t questBitId) const
@@ -4018,18 +4783,18 @@ void Party::applyGlobalNpcStateTo(EventRuntimeState &runtimeState) const
     const auto staleFollowerIt = std::remove_if(
         runtimeState.hiredNpcFollowers.begin(),
         runtimeState.hiredNpcFollowers.end(),
-        [&partyFollowerIds](const HiredNpcFollower &follower)
+        [&partyFollowerIds, &runtimeState](const HiredNpcFollower &follower)
         {
-            return follower.npcId != 0 && !partyFollowerIds.contains(follower.npcId);
+            const bool stale = follower.npcId != 0 && !partyFollowerIds.contains(follower.npcId);
+            if (stale)
+            {
+                runtimeState.unavailableNpcIds.erase(follower.npcId);
+            }
+            return stale;
         });
 
     if (staleFollowerIt != runtimeState.hiredNpcFollowers.end())
     {
-        for (auto iterator = staleFollowerIt; iterator != runtimeState.hiredNpcFollowers.end(); ++iterator)
-        {
-            runtimeState.unavailableNpcIds.erase(iterator->npcId);
-        }
-
         runtimeState.hiredNpcFollowers.erase(staleFollowerIt, runtimeState.hiredNpcFollowers.end());
     }
 
@@ -4126,6 +4891,12 @@ void Party::setNpcGreetingOverride(uint32_t npcId, uint32_t greetingId)
 {
     m_npcGreetingOverrides[npcId] = greetingId;
     m_npcGreetingDisplayCounts[npcId] = 0;
+}
+
+void Party::recordNpcGreetingDisplay(uint32_t npcId, uint32_t displayCount)
+{
+    // Called only for the NPC whose greeting was actually presented, never for cached map state.
+    m_npcGreetingDisplayCounts[npcId] = displayCount;
 }
 
 void Party::setNpcHouseOverride(uint32_t npcId, uint32_t houseId)
@@ -4421,7 +5192,8 @@ void Party::clearHeldItemForQueries()
 bool Party::hasItemAnywhere(uint32_t objectDescriptionId) const
 {
     return objectDescriptionId != 0
-        && (inventoryItemCount(objectDescriptionId) > 0 || m_heldItemIdForQueries == objectDescriptionId);
+        && (inventoryItemCount(objectDescriptionId) > 0 || m_heldItemIdForQueries == objectDescriptionId
+            || ownsPendingItem(objectDescriptionId));
 }
 
 bool Party::grantItemToMember(size_t memberIndex, uint32_t objectDescriptionId, uint32_t quantity)
@@ -5810,48 +6582,49 @@ void Party::advanceTimedStates(float deltaSeconds)
     }
 
     const auto updateTimedInventoryItem =
-        [&itemsChanged, deltaSeconds](InventoryItem &item)
+        [deltaSeconds](InventoryItem &item)
         {
             if (item.temporaryBonusRemainingSeconds <= 0.0f)
             {
-                return;
+                return false;
             }
 
             item.temporaryBonusRemainingSeconds = std::max(0.0f, item.temporaryBonusRemainingSeconds - deltaSeconds);
 
             if (item.temporaryBonusRemainingSeconds > 0.0f)
             {
-                return;
+                return false;
             }
 
             item.standardEnchantId = 0;
             item.standardEnchantPower = 0;
             item.specialEnchantId = 0;
-            itemsChanged = true;
+            return true;
         };
     const auto updateTimedEquippedItem =
-        [&itemsChanged, deltaSeconds](EquippedItemRuntimeState &item)
+        [deltaSeconds](EquippedItemRuntimeState &item)
         {
             if (item.temporaryBonusRemainingSeconds <= 0.0f)
             {
-                return;
+                return false;
             }
 
             item.temporaryBonusRemainingSeconds = std::max(0.0f, item.temporaryBonusRemainingSeconds - deltaSeconds);
 
             if (item.temporaryBonusRemainingSeconds > 0.0f)
             {
-                return;
+                return false;
             }
 
             item.standardEnchantId = 0;
             item.standardEnchantPower = 0;
             item.specialEnchantId = 0;
-            itemsChanged = true;
+            return true;
         };
 
-    for (Character &member : m_members)
+    const auto updateTimedCharacterItems = [&](Character &member)
     {
+        bool changed = false;
         for (TimedPrimaryStatBonus &bonus : member.timedPrimaryStatBonuses)
         {
             if (bonus.remainingSeconds <= 0.0f)
@@ -5862,31 +6635,31 @@ void Party::advanceTimedStates(float deltaSeconds)
             if (bonus.remainingSeconds <= 0.0f)
             {
                 bonus.power = 0;
-                buffsChanged = true;
+                changed = true;
             }
         }
 
         for (InventoryItem &item : member.inventory)
         {
-            updateTimedInventoryItem(item);
+            changed = updateTimedInventoryItem(item) || changed;
         }
 
-        updateTimedEquippedItem(member.equipmentRuntime.offHand);
-        updateTimedEquippedItem(member.equipmentRuntime.mainHand);
-        updateTimedEquippedItem(member.equipmentRuntime.bow);
-        updateTimedEquippedItem(member.equipmentRuntime.armor);
-        updateTimedEquippedItem(member.equipmentRuntime.helm);
-        updateTimedEquippedItem(member.equipmentRuntime.belt);
-        updateTimedEquippedItem(member.equipmentRuntime.cloak);
-        updateTimedEquippedItem(member.equipmentRuntime.gauntlets);
-        updateTimedEquippedItem(member.equipmentRuntime.boots);
-        updateTimedEquippedItem(member.equipmentRuntime.amulet);
-        updateTimedEquippedItem(member.equipmentRuntime.ring1);
-        updateTimedEquippedItem(member.equipmentRuntime.ring2);
-        updateTimedEquippedItem(member.equipmentRuntime.ring3);
-        updateTimedEquippedItem(member.equipmentRuntime.ring4);
-        updateTimedEquippedItem(member.equipmentRuntime.ring5);
-        updateTimedEquippedItem(member.equipmentRuntime.ring6);
+        changed = updateTimedEquippedItem(member.equipmentRuntime.offHand) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.mainHand) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.bow) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.armor) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.helm) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.belt) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.cloak) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.gauntlets) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.boots) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.amulet) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.ring1) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.ring2) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.ring3) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.ring4) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.ring5) || changed;
+        changed = updateTimedEquippedItem(member.equipmentRuntime.ring6) || changed;
 
         for (std::optional<LloydBeacon> &beacon : member.lloydsBeacons)
         {
@@ -5902,6 +6675,28 @@ void Party::advanceTimedStates(float deltaSeconds)
                 beacon.reset();
             }
         }
+        return changed;
+    };
+    for (Character &member : m_members)
+    {
+        itemsChanged = updateTimedCharacterItems(member) || itemsChanged;
+    }
+    for (DetachedPartyMember &member : m_detachedMembers)
+    {
+        for (CharacterBuffState &buff : member.characterBuffs)
+        {
+            if (!buff.active())
+            {
+                continue;
+            }
+            buff.remainingSeconds = std::max(0.0f, buff.remainingSeconds - deltaSeconds);
+            if (!buff.active())
+            {
+                buff.periodicAccumulatorSeconds = 0.0f;
+            }
+        }
+        // Absent characters do not contribute bonuses; rebuild their derived state only when they rejoin.
+        updateTimedCharacterItems(member.character);
     }
 
     if (buffsChanged || itemsChanged)
@@ -6029,6 +6824,22 @@ void Party::applyPartyBuff(
     rebuildMagicalBonusesFromBuffs();
 }
 
+bool Party::extendFeatherFall(float minimumRemainingSeconds)
+{
+    if (!std::isfinite(minimumRemainingSeconds) || minimumRemainingSeconds <= 0.0f)
+    {
+        return false;
+    }
+    PartyBuffState &buff = m_partyBuffs[size_t(PartyBuffId::FeatherFall)];
+    if (buff.remainingSeconds >= minimumRemainingSeconds)
+    {
+        return false;
+    }
+    // Source scripts can extend ExpireTime without replacing the original spell or caster metadata.
+    buff.remainingSeconds = minimumRemainingSeconds;
+    return true;
+}
+
 void Party::applyCharacterBuff(
     size_t memberIndex,
     CharacterBuffId buffId,
@@ -6051,6 +6862,8 @@ void Party::applyCharacterBuff(
     buff.skillMastery = skillMastery;
     buff.power = power;
     buff.casterMemberIndex = casterMemberIndex;
+    buff.casterMemberId = casterMemberIndex < m_members.size() ? m_members[casterMemberIndex].memberId : 0;
+    resolveCharacterBuffCaster(buff, m_members);
     rebuildMagicalBonusesFromBuffs();
 }
 
@@ -7059,7 +7872,7 @@ void Party::recordEverOwnedItemIfRelevant(const InventoryItem &item)
     recordEverOwnedItem(item.objectDescriptionId);
 }
 
-void Party::recordEverOwnedItemsFromCurrentState()
+void Party::recordEverOwnedItemsFromCharacter(const Character &member)
 {
     static constexpr EquipmentSlot EquipmentSlots[] = {
         EquipmentSlot::OffHand,
@@ -7080,17 +7893,22 @@ void Party::recordEverOwnedItemsFromCurrentState()
         EquipmentSlot::Ring6,
     };
 
+    for (const InventoryItem &item : member.inventory)
+    {
+        recordEverOwnedItemIfRelevant(item);
+    }
+
+    for (EquipmentSlot slot : EquipmentSlots)
+    {
+        recordEverOwnedItem(::OpenYAMM::Game::equippedItemId(member.equipment, slot));
+    }
+}
+
+void Party::recordEverOwnedItemsFromCurrentState()
+{
     for (const Character &member : m_members)
     {
-        for (const InventoryItem &item : member.inventory)
-        {
-            recordEverOwnedItemIfRelevant(item);
-        }
-
-        for (EquipmentSlot slot : EquipmentSlots)
-        {
-            recordEverOwnedItem(::OpenYAMM::Game::equippedItemId(member.equipment, slot));
-        }
+        recordEverOwnedItemsFromCharacter(member);
     }
 }
 }

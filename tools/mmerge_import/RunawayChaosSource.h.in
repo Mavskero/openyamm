@@ -1,0 +1,8 @@
+#pragma once
+
+#include <string_view>
+
+namespace OpenYAMM::Import
+{
+constexpr std::string_view RunawayChaosSource = R"OY_CHAOS(@OPENYAMM_RUNAWAY_CHAOS_SOURCE@)OY_CHAOS";
+}

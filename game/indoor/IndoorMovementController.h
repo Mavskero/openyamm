@@ -167,7 +167,8 @@ public:
         bool allowUnsupportedPathRecovery = false,
         bool allowBlockedWallRecovery = false,
         bool requireWalkableSupport = false,
-        float gravityPerSecond = 960.0f
+        float gravityPerSecond = 960.0f,
+        bool *pBlockingCollision = nullptr
     ) const;
     IndoorMoveState resolveFlyingActorMove(
         const IndoorMoveState &state,
@@ -394,7 +395,8 @@ private:
         bool allowUnsupportedPathRecovery,
         bool allowBlockedWallRecovery,
         bool requireWalkableSupport,
-        float gravityPerSecond
+        float gravityPerSecond,
+        bool *pBlockingCollision
     ) const;
     bool collidesAtPosition(
         const std::vector<IndoorVertex> &vertices,

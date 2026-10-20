@@ -7,6 +7,7 @@
 namespace OpenYAMM::Game
 {
 class GameplayScreenRuntime;
+struct GameplayHudPointerTarget;
 
 struct GameplayPartyPortraitInputConfig
 {
@@ -43,6 +44,11 @@ public:
     static void handlePartyPortraitInput(
         GameplayScreenRuntime &context,
         const GameplayPartyPortraitInputConfig &config);
+
+    // Read the same target geometry as the HUD handler without arming or consuming input.
+    static GameplayHudPointerTarget resolveGameplayHudButtonTarget(
+        const GameplayScreenRuntime &context,
+        const GameplayHudButtonInputConfig &config);
 
     static void handleGameplayHudButtonInput(
         GameplayScreenRuntime &context,

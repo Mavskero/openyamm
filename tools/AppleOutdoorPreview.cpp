@@ -24,8 +24,9 @@ namespace
 class PreviewHud final : public OpenYAMM::Game::MenuScreenBase
 {
 public:
-    explicit PreviewHud(const OpenYAMM::Engine::AssetFileSystem &files, size_t actors)
-        : MenuScreenBase(files), m_actorCount(actors)
+    explicit PreviewHud(const OpenYAMM::Engine::AssetFileSystem &files, size_t actors,
+        const std::string &mapName, bool inspection)
+        : MenuScreenBase(files), m_actorCount(actors), m_mapName(mapName), m_inspection(inspection)
     {
         setRenderViewId(254);
         setClearBackground(false);
@@ -45,15 +46,17 @@ private:
         const std::vector<uint8_t> panel = {22, 18, 14, 205};
         drawPixelsBgra("preview-panel", 1, 1, panel, {12 * scale, 12 * scale, 108 * scale, 42 * scale});
         m_textRendered = drawUtf8Text("返回", 22 * scale, 35 * scale, 16 * scale);
-        m_textRendered &= drawUtf8Text("新索匹格镇", 28 * scale, 142 * scale, 14 * scale, 0xffb7ddff);
+        m_textRendered &= drawUtf8Text(m_mapName, 28 * scale, 142 * scale, 14 * scale, 0xffb7ddff);
         const float top = float(frameHeight()) - 120 * scale;
         drawPixelsBgra("preview-panel", 1, 1, panel, {12 * scale, top, 650 * scale, 108 * scale});
         m_textRendered &= drawUtf8Text("左侧拖动移动 · 右侧拖动转向 · WASD / 鼠标 / 方向键",
             18 * scale, 24 * scale, top + 9 * scale);
         if (m_lastScale != scale)
         {
-            const std::string status = "已加载 " + std::to_string(m_actorCount)
-                + " 个角色外观；尚未接入人物 AI、对话、任务和存档。";
+            const std::string status = m_inspection
+                ? "资源检查：未执行原始地图 Lua；未开放正常旅行、任务和存档。"
+                : "已加载 " + std::to_string(m_actorCount)
+                    + " 个角色外观；尚未接入人物 AI、对话、任务和存档。";
             const std::optional<std::vector<std::string>> lines = OpenYAMM::Engine::wrapAppleText(
                 status, 18 * scale, 618 * scale);
             if (!lines)
@@ -72,6 +75,8 @@ private:
         }
     }
     size_t m_actorCount;
+    std::string m_mapName;
+    bool m_inspection = false;
     float m_lastScale = 0;
     std::vector<std::string> m_statusLines;
     bool m_textRendered = false;
@@ -128,13 +133,19 @@ bool checkBuildingCollision(const OpenYAMM::Game::MapAssetInfo &map, float x, fl
 }
 
 int runAppleOutdoorPreview(const std::filesystem::path &assets,
-    const std::filesystem::path &captureDirectory, bool automated)
+    const std::filesystem::path &captureDirectory, bool automated,
+    const std::filesystem::path &inspectionBase, const std::string &inspectionMap)
 {
     using namespace OpenYAMM;
     Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
-    config.appName = "OpenYAMM New Sorpigal scene preview";
+    const bool inspection = !inspectionBase.empty();
+    if (inspection && inspectionMap != "breach.odm" && inspectionMap != "bralvar.odm")
+    {
+        throw std::runtime_error("Outdoor inspection capture requires an audited Merge outdoor map");
+    }
+    config.appName = inspection ? "OpenYAMM Merge resource inspection" : "OpenYAMM New Sorpigal scene preview";
     config.assetRoot = assets.string();
-    config.activeWorldId = "mm6";
+    config.activeWorldId = inspection ? "mmmerge" : "mm6";
     config.verticalSync = true;
     // This scene diagnostic deliberately has no gameplay tables, events or save
     // callbacks. It exercises the production map loader, renderer and movement.
@@ -176,13 +187,42 @@ int runAppleOutdoorPreview(const std::filesystem::path &assets,
             entry.canonicalId = "mm6:oute3.odm";
             entry.fileName = "oute3.odm";
             entry.name = "New Sorpigal";
+            if (inspection)
+            {
+                // Explicitly mounted only by this resource diagnostic, with no events or save callbacks.
+                if (!files.mountDevelopmentRoot(inspectionBase))
+                {
+                    throw std::runtime_error("Cannot mount shared inspection tables");
+                }
+                const auto text = files.readTextFile("engine/data_tables/map_stats.txt");
+                const auto table = text ? Engine::TextTable::parseTabSeparated(*text) : std::nullopt;
+                std::vector<std::vector<std::string>> rows;
+                if (table)
+                {
+                    for (size_t index = 0; index < table->getRowCount(); ++index)
+                    {
+                        rows.push_back(table->getRow(index));
+                    }
+                }
+                Game::MapStats registry;
+                if (!registry.loadFromRows(rows))
+                {
+                    throw std::runtime_error("Cannot load inspection registry");
+                }
+                const Game::MapStatsEntry *pEntry = registry.findByFileName(inspectionMap);
+                if (!pEntry || pEntry->worldId != "mmmerge")
+                {
+                    throw std::runtime_error("Inspection world ownership changed");
+                }
+                entry = *pEntry;
+            }
             map = Game::MapAssetLoader().load(files, entry, data.monsterTable(), data.objectTable(),
                 Game::MapLoadPurpose::RenderSurfaces, {.allowSceneYml = false, .allowLegacyCompanion = false});
             if (!map || !map->outdoorMapData || !map->outdoorTerrainTextureAtlas || !map->outdoorBModelTextureSet)
             {
                 throw std::runtime_error("Scene preview is missing geometry or textures");
             }
-            map->outdoorMapData->skyTexture = "6sky05";
+            map->outdoorMapData->skyTexture = inspection ? "sky05" : "6sky05";
             const Game::OutdoorTerrainTextureAtlas &atlas = *map->outdoorTerrainTextureAtlas;
             for (uint8_t tile : map->outdoorMapData->tileMap)
             {
@@ -268,13 +308,14 @@ int runAppleOutdoorPreview(const std::filesystem::path &assets,
             pView->setCameraAngles(float(pStart->facing) * 6.28318530718f / 2048.0f, -0.1f);
             startX = pParty->partyX();
             startY = pParty->partyY();
-            if (automated && !checkBuildingCollision(*map, startX, startY, pParty->partyFootZ()))
+            if (automated && !inspection && !checkBuildingCollision(*map, startX, startY, pParty->partyFootZ()))
             {
                 throw std::runtime_error("Building collision check did not stop at a solid face");
             }
             started = SDL_GetTicks();
             pHud = std::make_unique<PreviewHud>(*pFiles, map->outdoorActorPreviewBillboardSet
-                ? map->outdoorActorPreviewBillboardSet->billboards.size() : 0);
+                ? map->outdoorActorPreviewBillboardSet->billboards.size() : 0,
+                inspection ? map->map.name : "新索匹格镇", inspection);
             bgfx::setDebug(BGFX_DEBUG_NONE);
             return true;
         },
@@ -292,14 +333,14 @@ int runAppleOutdoorPreview(const std::filesystem::path &assets,
             ++frames;
             input.updateFromEngineInput(width, height, wheel, settings, false, true, true, false, false);
             Game::GameplayInputFrame frame = input.frame();
-            const float step = automated ? 1.0f / 60.0f : std::min(delta, 0.05f);
+            const float step = inspection ? 0.0f : automated ? 1.0f / 60.0f : std::min(delta, 0.05f);
             if (automated)
             {
                 frame = {};
                 frame.screenWidth = width;
                 frame.screenHeight = height;
                 frame.actions[Game::keyboardActionIndex(Game::KeyboardAction::Forward)].held =
-                    frames >= 90 && frames < 210;
+                    !inspection && frames >= 90 && frames < 210;
             }
             float yaw = pView->cameraYawRadians() - frame.relativeMouseX * 0.002f;
             float pitch = pView->cameraPitchRadians() - frame.relativeMouseY * 0.002f;
@@ -314,7 +355,7 @@ int runAppleOutdoorPreview(const std::filesystem::path &assets,
             {
                 throw std::runtime_error("Unicode preview text rendering failed");
             }
-            if (frames == 30 || (automated && frames == 240))
+            if (frames == 30 || (automated && !inspection && frames == 240))
             {
                 bgfx::requestScreenShot(BGFX_INVALID_HANDLE, frames == 30 ? "outdoor-start" : "outdoor-end");
             }
@@ -344,7 +385,7 @@ int runAppleOutdoorPreview(const std::filesystem::path &assets,
                         << " unicode_text=" << pHud->textRendered() << std::endl;
                 }
             }
-            if ((automated && frames >= 300) || SDL_GetTicks() - started >= 60000)
+            if ((inspection && captures >= 1) || (automated && frames >= 300) || SDL_GetTicks() - started >= 60000)
             {
                 quit();
             }
@@ -360,5 +401,7 @@ int runAppleOutdoorPreview(const std::filesystem::path &assets,
             pParty.reset();
         });
     const int result = application.run();
-    return result != 0 ? result : (captures >= (automated ? 2u : 1u) && (!automated || distance > 100.0f) ? 0 : 5);
+    return result != 0 ? result
+        : (captures >= (automated && !inspection ? 2u : 1u)
+            && (inspection || !automated || distance > 100.0f) ? 0 : 5);
 }

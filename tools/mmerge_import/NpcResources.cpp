@@ -89,7 +89,7 @@ Rows parse(const std::string &text)
     return rows;
 }
 
-Rows readRows(const std::filesystem::path &root, const std::string &name, bool legacy)
+Rows readRows(const std::filesystem::path &root, const std::string &name, bool legacy, bool chinese = false)
 {
     const std::filesystem::path path = checkedPath(root, name);
     const uintmax_t size = std::filesystem::file_size(path);
@@ -100,7 +100,7 @@ Rows readRows(const std::filesystem::path &root, const std::string &name, bool l
     if (legacy)
     {
         size_t glyphs = 0;
-        text = decodeLegacyText(std::vector<uint8_t>(text.begin(), text.end()), false, glyphs);
+        text = decodeLegacyText(std::vector<uint8_t>(text.begin(), text.end()), chinese, glyphs);
     }
     return parse(text);
 }
@@ -173,7 +173,7 @@ void convertNpcResources(const std::filesystem::path &source, const std::filesys
         return readRows(assets, "engine/data_tables/" + name, false);
     };
     Rows professions = sourceRows("NPC professions.txt");
-    const Rows names = sourceRows("NPC names.txt");
+    Rows names = sourceRows("NPC names.txt");
     const Rows btb = sourceRows("NPC BTB.txt");
     const Rows area = sourceRows("News topics - area.txt");
     const Rows continent = sourceRows("News topics - continent.txt");
@@ -181,6 +181,30 @@ void convertNpcResources(const std::filesystem::path &source, const std::filesys
     require(professions.size() > 1 && professions[0] == ProfessionHeader && btb.size() > 1 && btb[0] == BtbHeader,
         "Unsupported NPC mechanics headers");
     require(names.size() > 1 && names[0] == Row{"Male", "Female"}, "Unsupported NPC names header");
+    const bool localized = std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod");
+    const std::string localizedNamesPath = "Data/Text localization/ZHCN_NPCNames.txt";
+    const bool localizedNames = localized && std::filesystem::exists(root / localizedNamesPath);
+    if (localizedNames)
+    {
+        const Rows translatedNames = readRows(root, localizedNamesPath, true, true);
+        require(translatedNames.size() == names.size() && translatedNames[0] == names[0],
+            "NPC name translation changes the source row count or header");
+        for (size_t index = 1; index < names.size(); ++index)
+        {
+            require(!names[index].empty() && names[index].size() <= 2
+                && !translatedNames[index].empty() && translatedNames[index].size() <= 2,
+                "Invalid translated NPC name row");
+            for (size_t sex = 0; sex < 2; ++sex)
+            {
+                const bool sourcePresent = names[index].size() > sex && !trim(names[index][sex]).empty();
+                const bool translatedPresent = translatedNames[index].size() > sex
+                    && !trim(translatedNames[index][sex]).empty();
+                require(sourcePresent == translatedPresent, "NPC name translation changes pool membership");
+            }
+        }
+        // LocalizeTables.lua replaces both pools in file order; repeated rows retain their random weight.
+        names = translatedNames;
+    }
     NpcDialogTable dialogs;
     MapStats maps;
     require(dialogs.loadNpcRows(assetRows("npc.txt")) && dialogs.loadTopicsFromRows(assetRows("npc_topic.txt"))
@@ -189,7 +213,6 @@ void convertNpcResources(const std::filesystem::path &source, const std::filesys
         && maps.loadFromRows(assetRows("map_stats.txt")), "Invalid NPC registry dependency");
     size_t glyphs = 0;
     const std::map<uint32_t, std::string> baseGlobal = globalTexts(root, false, glyphs);
-    const bool localized = std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod");
     const std::map<uint32_t, std::string> chineseGlobal = localized ? globalTexts(root, true, glyphs)
         : std::map<uint32_t, std::string>{};
     MergedNpcBtbTable btbTable;
@@ -368,7 +391,7 @@ void convertNpcResources(const std::filesystem::path &source, const std::filesys
         << ",\"explicit_npc_text_references\":" << explicitTextReferences
         << ",\"profession_news_label_differences\":" << professionLabelDifferences
         << ",\"typed_validation\":true,\"namespace_dialog_check\":true,\"follower_display_check\":true"
-        << ",\"random_names_localized\":false"
+        << ",\"random_names_localized\":" << (localizedNames ? "true" : "false")
         << ",\"original_news_selection_parity\":false,\"btb_gameplay_validated\":false,\"full_gameplay_loop\":false}\n";
     const std::map<std::string, Rows> tables = {{"npc_professions.txt", professions}, {"npc_names.txt", names},
         {"npc_btb.txt", btb}, {"news_topics_area.txt", area}, {"news_topics_continent.txt", continent},

@@ -10,8 +10,8 @@ bool CombatTextTable::loadFromRows(const std::vector<std::vector<std::string>> &
 {
     m_patterns = {};
     constexpr std::array<std::string_view, size_t(Message::Count)> keys{
-        "combat.melee_hit", "combat.projectile_hit", "combat.kill", "combat.stun", "combat.paralyze"};
-    if (rows.size() != keys.size()) return false;
+        "combat.melee_hit", "combat.projectile_hit", "combat.kill", "combat.stun", "combat.paralyze", "combat.enemy_nearby"};
+    if (rows.size() < keys.size() - 1 || rows.size() > keys.size()) return false;
     decltype(m_patterns) patterns;
     for (const auto &row : rows)
     {
@@ -24,7 +24,8 @@ bool CombatTextTable::loadFromRows(const std::vector<std::vector<std::string>> &
         const std::array<Argument, 3> arguments = message == Message::Kill
             ? std::array{Argument::Attacker, Argument::Damage, Argument::Target}
             : std::array{Argument::Attacker, Argument::Target, Argument::Damage};
-        const size_t count = message == Message::Stun || message == Message::Paralyze ? 2 : 3;
+        const size_t count = message == Message::EnemyNearby ? 0
+            : message == Message::Stun || message == Message::Paralyze ? 2 : 3;
         const std::string &text = row[1];
         size_t argumentIndex = 0;
         std::string literal;
@@ -58,6 +59,8 @@ bool CombatTextTable::loadFromRows(const std::vector<std::vector<std::string>> &
         if (argumentIndex != count) return false;
         if (!literal.empty()) patterns[index].push_back({Argument::Literal, std::move(literal)});
     }
+    for (size_t index = 0; index < size_t(Message::EnemyNearby); ++index)
+        if (patterns[index].empty()) return false;
     m_patterns = std::move(patterns);
     return true;
 }

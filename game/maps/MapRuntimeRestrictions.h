@@ -8,5 +8,6 @@ struct MapRuntimeRestrictions
     bool allowLloydsBeacon = true;
     bool allowRest = true;
     bool isArena = false;
+    bool townPortalUsesDimensionDoor = false;
 };
 }

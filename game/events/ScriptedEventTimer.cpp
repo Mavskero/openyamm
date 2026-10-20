@@ -224,7 +224,7 @@ std::vector<ScriptedEventTimerState> reconcileScriptedEventTimers(
 
         const bool rebuildAnchoredNativeTimer = definition.origin == ScriptedEventTimerOrigin::Native
             && definition.scheduleKind == ScriptedEventTimerScheduleKind::Interval;
-        if (!rebuildAnchoredNativeTimer
+        if (!definition.temporaryMapLifecycle && !rebuildAnchoredNativeTimer
             && !(resetLegacyTimers && definition.origin == ScriptedEventTimerOrigin::Legacy))
         {
             for (size_t savedIndex = 0; savedIndex < savedStates.size(); ++savedIndex)

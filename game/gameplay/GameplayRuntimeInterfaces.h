@@ -17,6 +17,7 @@
 namespace OpenYAMM::Game
 {
 class MergedBolsterMonsterTable;
+class GameSession;
 struct GameplayMinimapState;
 struct GameplayMinimapLineState;
 struct GameplayMinimapMarkerState;
@@ -72,6 +73,8 @@ struct GameplayWorldMovementFrameDiagnostics
 
 struct GameplayChestItemState
 {
+    // Logical item record, independent of the visible inventory grid. -1 means unassigned.
+    int32_t itemRecordIndex = -1;
     InventoryItem item = {};
     uint32_t itemId = 0;
     uint32_t quantity = 0;
@@ -86,6 +89,7 @@ struct GameplayChestItemState
 
 struct GameplayChestViewState
 {
+    uint32_t itemRecordCapacity = 0;
     uint32_t chestId = 0;
     uint16_t chestTypeId = 0;
     uint16_t flags = 0;
@@ -163,6 +167,7 @@ enum class GameplayActorAttackAbility : uint8_t
     Attack2 = 1,
     Spell1 = 2,
     Spell2 = 3,
+    Special = 4,
 };
 
 struct GameplayActorInspectState
@@ -390,6 +395,9 @@ struct GameplayCombatActorInfo
     int monsterLevel = 0;
     int maxHp = 0;
     uint32_t attackPreferences = 0;
+    bool usesMergeTargetPreferences = false;
+    uint32_t sourcePreferredTargets = 0;
+    uint8_t sourcePreferredTargetCount = 0;
     int attackBonus = 0;
     bool bolsterAffectsPlayerArmorClass = false;
     MonsterSpecialAttackKind specialAttackKind = MonsterSpecialAttackKind::None;
@@ -453,6 +461,10 @@ class IGameplayWorldRuntime
 public:
     virtual ~IGameplayWorldRuntime() = default;
 
+    // Non-owning live execution context. Never part of a world or save snapshot.
+    void bindGameSession(GameSession *pSession) { m_pBoundGameSession = pSession; }
+    GameSession *boundGameSession() const { return m_pBoundGameSession; }
+
     virtual const std::string &mapName() const = 0;
     virtual const MonsterTable *monsterTable() const
     {
@@ -461,6 +473,14 @@ public:
     virtual const MergedBolsterMonsterTable *mergedBolsterMonsterTable() const
     {
         return nullptr;
+    }
+    virtual std::optional<int32_t> resolvedMonsterTargetArmorClass(
+        uint32_t actorId, int32_t playerBaseLevel, int32_t originalArmorClass) const
+    {
+        (void)actorId;
+        (void)playerBaseLevel;
+        (void)originalArmorClass;
+        return std::nullopt;
     }
     virtual GameplayWorldPoint chooseBountyHuntSpawnPoint(uint32_t seed) const
     {
@@ -476,16 +496,20 @@ public:
     {
         return true;
     }
+    virtual bool townPortalUsesDimensionDoor() const
+    {
+        return false;
+    }
     virtual bool allowsRest() const
     {
         return true;
     }
-    virtual float gameMinutes() const = 0;
+    virtual double gameMinutes() const = 0;
     virtual int currentHour() const = 0;
     virtual const std::vector<uint8_t> *journalMapFullyRevealedCells() const = 0;
     virtual const std::vector<uint8_t> *journalMapPartiallyRevealedCells() const = 0;
     virtual int restFoodRequired() const = 0;
-    virtual void advanceGameMinutes(float minutes) = 0;
+    virtual void advanceGameMinutes(double minutes) = 0;
     virtual void applyMapReentryReset()
     {
     }
@@ -517,6 +541,10 @@ public:
         return false;
     }
     virtual bool partyIsFlyingForEventChecks() const
+    {
+        return false;
+    }
+    virtual bool partyFlyingModeForEvents() const
     {
         return false;
     }
@@ -581,6 +609,22 @@ public:
         (void)kind;
         return false;
     }
+
+    void notifyItemAcquired(uint32_t itemId)
+    {
+        EventRuntimeState *pState = eventRuntimeState();
+        if (pState == nullptr || itemId == 0)
+        {
+            return;
+        }
+        const std::optional<EventRuntimeState::ActiveHookContext> previous = pState->activeHookContext;
+        pState->activeHookContext = EventRuntimeState::ActiveHookContext{};
+        pState->activeHookContext->kind = EventRuntimeHookKind::GotItem;
+        pState->activeHookContext->acquiredItemId = itemId;
+        executeEventHooks(EventRuntimeHookKind::GotItem);
+        pState->activeHookContext = previous;
+    }
+
     bool executeOutdoorStepHook(int tileX, int tileY)
     {
         EventRuntimeState *pState = eventRuntimeState();
@@ -625,6 +669,14 @@ public:
         (void)actorIndex;
         (void)successRoll;
         (void)caughtRoll;
+        return false;
+    }
+    // Retains a complete item before the combat controller removes it from the member inventory.
+    // Returning false leaves the member's ownership unchanged; this hook must not mutate Party.
+    virtual bool retainMonsterStolenItem(uint32_t actorId, const InventoryItem &item)
+    {
+        (void)actorId;
+        (void)item;
         return false;
     }
     virtual bool actorInspectState(
@@ -843,5 +895,8 @@ public:
     virtual void commitActiveCorpseView() = 0;
     virtual bool takeActiveCorpseItem(size_t itemIndex, GameplayChestItemState &item) = 0;
     virtual void closeActiveCorpseView() = 0;
+
+private:
+    GameSession *m_pBoundGameSession = nullptr;
 };
 }

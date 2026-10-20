@@ -7960,6 +7960,89 @@ TEST_CASE("indoor party key jump uses OpenEnroth impulse and gravity")
     CHECK_FALSE(jumped.grounded);
     CHECK_EQ(jumped.verticalVelocity, doctest::Approx(470.0f));
     CHECK_EQ(jumped.footZ, doctest::Approx(470.0f / 128.0f));
+
+    // Explicit API fixture: exercise Party snapshot continuation, not original indoor evt.Jump content.
+    constexpr float movementStep = 1.0f / 128.0f;
+    partyRuntime.teleportPartyPosition(0.0f, 0.0f, 0.0f);
+    partyRuntime.requestSpecialJump(300.0f, 0.0f, 600.0f);
+    partyRuntime.update(0.0f, 0.0f, false, false, movementStep * 0.5f);
+    const OpenYAMM::Game::IndoorPartyRuntime::Snapshot pending = partyRuntime.snapshot();
+    REQUIRE(pending.movementState.grounded);
+    CHECK_EQ(pending.movementState.verticalVelocity, 0.0f);
+    CHECK_EQ(pending.movementState.x, 0.0f);
+    CHECK_EQ(pending.movementAccumulatorSeconds, doctest::Approx(movementStep * 0.5f));
+    REQUIRE(pending.jumpState.pendingSpecialJump);
+    CHECK_FALSE(pending.jumpState.specialJumpActive);
+    CHECK_EQ(pending.jumpState.pendingVelocityX, 300.0f);
+    CHECK_EQ(pending.jumpState.pendingVelocityY, 0.0f);
+    CHECK_EQ(pending.jumpState.pendingVelocityZ, 600.0f);
+
+    OpenYAMM::Game::IndoorPartyRuntime resumedRuntime(
+        OpenYAMM::Game::IndoorMovementController(mapData, &mapDeltaData, &eventRuntimeState), itemTable);
+    resumedRuntime.setParty(partyRuntime.party());
+    resumedRuntime.restoreSnapshot(pending);
+    const auto checkContinuation = [&]()
+    {
+        const OpenYAMM::Game::IndoorPartyRuntime::Snapshot live = partyRuntime.snapshot();
+        const OpenYAMM::Game::IndoorPartyRuntime::Snapshot resumed = resumedRuntime.snapshot();
+        CHECK_EQ(resumed.movementState.x, doctest::Approx(live.movementState.x));
+        CHECK_EQ(resumed.movementState.y, doctest::Approx(live.movementState.y));
+        CHECK_EQ(resumed.movementState.footZ, doctest::Approx(live.movementState.footZ));
+        CHECK_EQ(resumed.movementState.verticalVelocity, doctest::Approx(live.movementState.verticalVelocity));
+        CHECK_EQ(resumed.movementState.grounded, live.movementState.grounded);
+        CHECK_EQ(resumed.movementAccumulatorSeconds, doctest::Approx(live.movementAccumulatorSeconds));
+        CHECK(resumed.jumpState == live.jumpState);
+    };
+    checkContinuation();
+
+    partyRuntime.update(0.0f, 0.0f, false, false, movementStep * 0.5f);
+    resumedRuntime.update(0.0f, 0.0f, false, false, movementStep * 0.5f);
+    checkContinuation();
+    REQUIRE_FALSE(partyRuntime.movementState().grounded);
+    REQUIRE(partyRuntime.snapshot().jumpState.specialJumpActive);
+    CHECK_FALSE(partyRuntime.snapshot().jumpState.pendingSpecialJump);
+
+    // An active mid-flight snapshot must retain momentum, as must the pending snapshot above.
+    resumedRuntime.restoreSnapshot(partyRuntime.snapshot());
+    const float firstAirborneX = partyRuntime.movementState().x;
+    partyRuntime.update(0.0f, 0.0f, false, false, movementStep);
+    resumedRuntime.update(0.0f, 0.0f, false, false, movementStep);
+    checkContinuation();
+    CHECK(partyRuntime.movementState().x > firstAirborneX);
+
+    for (size_t step = 0; step < 256 && !partyRuntime.movementState().grounded; ++step)
+    {
+        partyRuntime.update(0.0f, 0.0f, false, false, movementStep);
+        resumedRuntime.update(0.0f, 0.0f, false, false, movementStep);
+        checkContinuation();
+    }
+    REQUIRE(partyRuntime.movementState().grounded);
+    const OpenYAMM::Game::PartyJumpState landed = partyRuntime.snapshot().jumpState;
+    CHECK_FALSE(landed.specialJumpActive);
+    CHECK_FALSE(landed.pendingSpecialJump);
+    CHECK_EQ(landed.velocityX, 0.0f);
+    CHECK_EQ(landed.velocityY, 0.0f);
+
+    partyRuntime.requestJump(360.0f, 4.0f);
+    const OpenYAMM::Game::IndoorPartyRuntime::Snapshot ordinaryPending = partyRuntime.snapshot();
+    REQUIRE(ordinaryPending.jumpState.pendingJumpRequested);
+    REQUIRE(ordinaryPending.jumpState.pendingJumpVelocity.has_value());
+    CHECK_EQ(*ordinaryPending.jumpState.pendingJumpVelocity, 360.0f);
+    CHECK_EQ(ordinaryPending.jumpState.pendingJumpLift, 4.0f);
+    resumedRuntime.restoreSnapshot(ordinaryPending);
+    checkContinuation();
+
+    partyRuntime.teleportPartyPosition(0.0f, 0.0f, 0.0f);
+    partyRuntime.requestSpecialJump(300.0f, 0.0f, 600.0f);
+    partyRuntime.update(0.0f, 0.0f, false, false, movementStep * 0.5f);
+    REQUIRE(partyRuntime.snapshot().jumpState.pendingSpecialJump);
+    partyRuntime.teleportPartyPosition(0.0f, 0.0f, 0.0f);
+    CHECK(partyRuntime.snapshot().jumpState == OpenYAMM::Game::PartyJumpState{});
+    CHECK_EQ(partyRuntime.snapshot().movementAccumulatorSeconds, 0.0f);
+    CHECK_EQ(partyRuntime.movementState().verticalVelocity, 0.0f);
+    partyRuntime.update(0.0f, 0.0f, false, false, movementStep);
+    CHECK(partyRuntime.movementState().grounded);
+    CHECK_EQ(partyRuntime.movementState().x, 0.0f);
 }
 
 TEST_CASE("indoor support sampling does not treat side-opening doors as carry platforms")

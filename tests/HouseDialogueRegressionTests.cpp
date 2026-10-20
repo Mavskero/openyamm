@@ -849,7 +849,7 @@ TEST_CASE("mm8 blackmail chain consumes the letter and rewards every member only
     CHECK_FALSE(harness.party().hasQuestBit(222));
     CHECK_EQ(harness.eventRuntimeState().npcTopicOverrides[ArionHunterNpcId][0], ArionBoatsTopicId);
     REQUIRE(harness.eventRuntimeState().historyEventTimesByContinent.contains(1));
-    CHECK(harness.eventRuntimeState().historyEventTimesByContinent.at(1).contains(5));
+    CHECK(harness.eventRuntimeState().historyEventTimesByContinent.at(1).contains(3));
 
     std::vector<uint32_t> experienceBeforeReward;
     experienceBeforeReward.reserve(harness.party().memberCount());
@@ -5789,7 +5789,7 @@ TEST_CASE("transport action spends gold advances time and queues map move")
     CHECK_FALSE(pendingMapMove->useMapStartPosition);
 }
 
-TEST_CASE("outdoor transition map move applies travel rest food and temporary reset")
+TEST_CASE("scripted outdoor map move preserves resources and temporary effects")
 {
     const OpenYAMM::Tests::RegressionGameData &gameData = requireRegressionGameData();
     OpenYAMM::Tests::HouseDialogueTestHarness harness(gameData);
@@ -5829,6 +5829,8 @@ TEST_CASE("outdoor transition map move applies travel rest food and temporary re
     pActiveMember->armorClassModifier = 40;
     pActiveMember->conditions.set(static_cast<size_t>(OpenYAMM::Game::CharacterCondition::Weak));
 
+    const int initialHealth = pActiveMember->health;
+    const int initialSpellPoints = pActiveMember->spellPoints;
     const float initialGameMinutes = harness.worldRuntime().gameMinutes();
     const OpenYAMM::Game::EventDialogContent &dialog = harness.presentPendingDialog(0, true);
     std::optional<size_t> confirmIndex;
@@ -5847,17 +5849,17 @@ TEST_CASE("outdoor transition map move applies travel rest food and temporary re
         harness.executeActiveDialogAction(*confirmIndex);
 
     CHECK(result.shouldCloseActiveDialog);
-    CHECK_EQ(harness.worldRuntime().gameMinutes(), doctest::Approx(initialGameMinutes + 5.0f * 24.0f * 60.0f));
-    CHECK_EQ(harness.party().food(), initialFood - 5);
+    CHECK_EQ(harness.worldRuntime().gameMinutes(), doctest::Approx(initialGameMinutes));
+    CHECK_EQ(harness.party().food(), initialFood);
 
     pActiveMember = harness.party().activeMember();
     REQUIRE(pActiveMember != nullptr);
-    CHECK_EQ(pActiveMember->health, pActiveMember->maxHealth);
-    CHECK_EQ(pActiveMember->spellPoints, pActiveMember->maxSpellPoints);
-    CHECK_EQ(pActiveMember->levelModifier, 0);
-    CHECK_EQ(pActiveMember->armorClassModifier, 0);
-    CHECK_FALSE(pActiveMember->conditions.test(static_cast<size_t>(OpenYAMM::Game::CharacterCondition::Weak)));
-    CHECK_FALSE(harness.party().hasPartyBuff(OpenYAMM::Game::PartyBuffId::TorchLight));
+    CHECK_EQ(pActiveMember->health, initialHealth);
+    CHECK_EQ(pActiveMember->spellPoints, initialSpellPoints);
+    CHECK_EQ(pActiveMember->levelModifier, 30);
+    CHECK_EQ(pActiveMember->armorClassModifier, 40);
+    CHECK(pActiveMember->conditions.test(static_cast<size_t>(OpenYAMM::Game::CharacterCondition::Weak)));
+    CHECK(harness.party().hasPartyBuff(OpenYAMM::Game::PartyBuffId::TorchLight));
 
     REQUIRE(harness.eventRuntimeState().pendingMapMove.has_value());
     CHECK_EQ(harness.eventRuntimeState().pendingMapMove->mapName, std::optional<std::string>("Out06.odm"));

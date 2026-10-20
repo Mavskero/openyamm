@@ -1,0 +1,11 @@
+#pragma once
+
+#include <string_view>
+
+namespace OpenYAMM::Import
+{
+constexpr std::string_view BreachAlvarCompanionMapSource =
+    R"OY_BA_MAP(@OPENYAMM_BREACH_ALVAR_COMPANION_MAP_SOURCE@)OY_BA_MAP";
+constexpr std::string_view BreachAlvarCompanionGlobalSource =
+    R"OY_BA_GLOBAL(@OPENYAMM_BREACH_ALVAR_COMPANION_GLOBAL_SOURCE@)OY_BA_GLOBAL";
+}

@@ -2112,20 +2112,7 @@ PartySpellCastResult PartySpellSystem::castSpell(
         }
         else if (spellId == SpellId::DivineIntervention)
         {
-            for (size_t memberIndex = 0; memberIndex < party.members().size(); ++memberIndex)
-            {
-                Character *pMember = party.member(memberIndex);
-
-                if (pMember == nullptr)
-                {
-                    continue;
-                }
-
-                pMember->conditions.reset();
-                pMember->conditionStartGameMinutes.fill(0.0f);
-                pMember->health = pMember->maxHealth;
-                pMember->spellPoints = pMember->maxSpellPoints;
-            }
+            applyDivineIntervention(party);
         }
 
         if (castSucceeded)
@@ -2411,6 +2398,11 @@ PartySpellCastResult PartySpellSystem::castSpell(
                 move.lookAngleDegrees = request.utilityMapMoveLookAngleDegrees;
                 move.useMapStartPosition = request.utilityMapMoveUseMapStartPosition;
                 move.useFullscreenLoading = request.utilityMapMoveUseFullscreenLoading;
+                if (worldRuntime.townPortalUsesDimensionDoor())
+                {
+                    move.traceSourceKind = "town_portal_dimension_door";
+                    move.traceDestinationName = request.utilityMapMoveMapName;
+                }
                 pEventRuntimeState->pendingMapMove = move;
                 castSucceeded = true;
             }
@@ -2952,6 +2944,19 @@ PartySpellCastResult PartySpellSystem::castSpell(
 
     result.status = PartySpellCastStatus::Succeeded;
     return result;
+}
+
+void PartySpellSystem::applyDivineIntervention(Party &party)
+{
+    for (size_t index = 0; index < party.memberCount(); ++index)
+    {
+        Character *member = party.member(index);
+        if (member == nullptr) continue;
+        member->conditions.reset();
+        member->conditionStartGameMinutes.fill(0.0f);
+        member->health = member->maxHealth;
+        member->spellPoints = member->maxSpellPoints;
+    }
 }
 
 std::optional<PartySpellDescriptor> PartySpellSystem::describeSpell(uint32_t spellId)

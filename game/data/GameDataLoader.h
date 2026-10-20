@@ -2,6 +2,9 @@
 
 #include "engine/AssetFileSystem.h"
 #include "game/arcomage/ArcomageTypes.h"
+#include "game/content/BreachAlvarCompanionProfile.h"
+#include "game/content/BreachMazeRuntimeProfile.h"
+#include "game/gameplay/MergeMonsterSourceProfile.h"
 #include "game/tables/AwardTable.h"
 #include "game/tables/ChestTable.h"
 #include "game/tables/CharacterInspectTable.h"
@@ -78,6 +81,10 @@ public:
         const Engine::AssetFileSystem &assetFileSystem,
         const std::string &fileName,
         const MapLoadProgressPump &progressPump = {});
+    bool loadPreparedIndoorMapForGameplay(
+        const Engine::AssetFileSystem &assetFileSystem,
+        const PreparedIndoorMapInstance &instance,
+        const MapLoadProgressPump &progressPump = {});
     bool loadMapByFileNameForHeadlessGameplay(
         const Engine::AssetFileSystem &assetFileSystem,
         const std::string &fileName
@@ -89,10 +96,17 @@ public:
     size_t lastReleasedMapRenderSourcePixelBytes() const;
     const MapStats &getMapStats() const;
     const MonsterTable &getMonsterTable() const;
+    // Explicit preparation boundary; ordinary table/map loading never requires this fixed source profile.
+    // Throws MergeMonsterSourceError on missing, stale, or unsupported source data.
+    const MergeMonsterSourceProfile &getOrCreateMergeMonsterSourceProfile(
+        const Engine::AssetFileSystem &assetFileSystem);
+    const BreachMazeRuntimeProfile &getOrCreateBreachMazeRuntimeProfile(
+        const Engine::AssetFileSystem &assetFileSystem);
     const MonsterProjectileTable &getMonsterProjectileTable() const;
     const ObjectTable &getObjectTable() const;
     const SpellTable &getSpellTable() const;
     const CombatTextTable &getCombatTextTable() const;
+    const std::optional<BreachAlvarCompanionProfile> &getBreachAlvarCompanionProfile() const;
     const HouseServiceTextTable &getHouseServiceTextTable() const;
     const ItemTable &getItemTable() const;
     const std::unordered_map<std::string, uint32_t> &getLoadedContentPackageSchemas() const;
@@ -175,7 +189,8 @@ private:
         const Engine::AssetFileSystem &assetFileSystem,
         int mapId,
         MapLoadPurpose mapLoadPurpose,
-        const MapLoadProgressPump &progressPump = {});
+        const MapLoadProgressPump &progressPump = {},
+        const PreparedIndoorMapInstance *pPreparedIndoorInstance = nullptr);
     void applyMergedContinentSettingsToSelectedMap(const Engine::AssetFileSystem &assetFileSystem);
     bool loadMapStats(const Engine::AssetFileSystem &assetFileSystem);
     bool loadMonsterTable(const Engine::AssetFileSystem &assetFileSystem);
@@ -235,10 +250,14 @@ private:
     MapRegistry m_mapRegistry;
     MapStats m_mapStats;
     MonsterTable m_monsterTable;
+    bool m_commonTablesLoaded = false;
+    std::optional<MergeMonsterSourceProfile> m_mergeMonsterSourceProfile;
+    std::optional<BreachMazeRuntimeProfile> m_breachMazeRuntimeProfile;
     MonsterProjectileTable m_monsterProjectileTable;
     ObjectTable m_objectTable;
     SpellTable m_spellTable;
     CombatTextTable m_combatTextTable;
+    std::optional<BreachAlvarCompanionProfile> m_breachAlvarCompanionProfile;
     HouseServiceTextTable m_houseServiceTextTable;
     ItemTable m_itemTable;
     std::unordered_map<std::string, uint32_t> m_loadedContentPackageSchemas = {{"engine", 1}};

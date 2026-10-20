@@ -3,6 +3,8 @@
 #include "engine/AssetFileSystem.h"
 #include "game/events/ScriptedEventProgram.h"
 #include "game/events/EventRuntime.h"
+#include "game/gameplay/GameplayActorCombatState.h"
+#include "game/gameplay/MergeMonsterGenerationState.h"
 #include "game/maps/MapDeltaData.h"
 #include "game/maps/MapItemSourceData.h"
 #include "game/indoor/IndoorMapData.h"
@@ -196,6 +198,7 @@ enum class AuthoredCompanionSource
     None,
     LegacyCompanion,
     SceneYml,
+    PreparedInstance,
 };
 
 struct MapCompanionLoadOptions
@@ -233,6 +236,8 @@ struct MapAssetInfo
     std::optional<MapDeltaData> outdoorMapDeltaData;
     std::optional<MapDeltaData> indoorMapDeltaData;
     std::optional<MapItemSourceData> itemSourceData;
+    std::vector<GameplayActorCombatState> preparedActorCombat;
+    std::optional<MergeMonsterGenerationState> preparedMonsterGeneration;
     std::optional<OutdoorWeatherProfile> outdoorWeatherProfile;
     std::optional<ScriptedEventProgram> localEventProgram;
     std::optional<ScriptedEventProgram> globalEventProgram;
@@ -294,6 +299,19 @@ struct MapAssetLoadSharedCache
     }
 };
 
+struct PreparedIndoorMapInstance
+{
+    std::string worldId;
+    std::string mapFileName;
+    IndoorMapData geometry;
+    MapDeltaData delta;
+    // Exact delta.actors order; installed before any simulation or legacy bolster refresh.
+    std::vector<GameplayActorCombatState> actorCombat;
+    std::optional<MergeMonsterGenerationState> monsterGeneration;
+    std::optional<MapItemSourceData> itemSources;
+    std::optional<MapRuntimeRestrictions> runtimeRestrictions;
+};
+
 class MapAssetLoader
 {
 public:
@@ -305,7 +323,8 @@ public:
         MapLoadPurpose purpose = MapLoadPurpose::Full,
         const MapCompanionLoadOptions &companionLoadOptions = {},
         const MapLoadProgressPump &progressPump = {},
-        MapAssetLoadSharedCache *pSharedCache = nullptr
+        MapAssetLoadSharedCache *pSharedCache = nullptr,
+        const PreparedIndoorMapInstance *pPreparedIndoorInstance = nullptr
     ) const;
 
 private:

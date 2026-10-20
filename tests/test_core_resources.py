@@ -91,7 +91,7 @@ def source(root, fault=None, chinese=True, table_mutator=None):
         541: "Identify Items", 542: "Repair Items", 561: "Sorry, come back another day",
         563: "Pack is Full", 569: "Done!", 570: "Good as New!", 663: "One day travel",
         164: "%s hits %s for %lu damage", 189: "%s shoots %s for %lu points",
-        175: "%s inflicts %lu points killing %s", 635: "%s stuns %s", 636: "%s paralyzes %s",
+        175: "%s inflicts %lu points killing %s", 635: "%s stuns %s", 636: "%s paralyzes %s", 480: "Enemies are nearby.",
     }
     tables = {
         "global.txt": [[str(id_), value] for id_, value in sorted(english_global.items())],
@@ -115,6 +115,7 @@ def source(root, fault=None, chinese=True, table_mutator=None):
     if chinese:
         chinese_global = {
             **english_global,
+            480: "附近有敌人。",
             56: "日", 57: "天", 68: "捐赠", 86: "购买食物", 97: "金币", 104: "治疗",
             113: "鉴定", 128: "旅行", 134: "购买标准物品", 140: "你的行囊已经装满了！",
             152: "购买特殊物品", 155: "你的金币不够", 159: "显示行囊", 160: "学习技能",
@@ -205,7 +206,7 @@ def test_complete_typed_conversion_preserves_ids_mechanics_and_source(tmp_path, 
     assert report["missing_map_geometry"] == [{"id": 193, "file": "zddb05.blv", "world": "mm6"}]
     assert report["map_translation_identity_mismatches"] == (1 if chinese else 0)
     assert report["unused_monster_translation_count"] == (1 if chinese else 0)
-    assert report["combat_text_count"] == 5
+    assert report["combat_text_count"] == 6
     assert report["combat_text_source"] == (
         "Data/10 LocZHCN.EnglishT.lod::global.txt" if chinese else "Data/mmmerge.T.lod::global.txt")
     assert report["house_service_text_count"] == 72
@@ -231,11 +232,13 @@ def test_complete_typed_conversion_preserves_ids_mechanics_and_source(tmp_path, 
         [["combat.melee_hit", "%s攻击%s，造成%lu点破坏"],
          ["combat.projectile_hit", "%s射击%s，造成%lu点伤害"],
          ["combat.kill", "%s造成%lu点伤害，杀死%s"],
-         ["combat.stun", "%s打昏了%s"], ["combat.paralyze", "%s麻痹了%s"]] if chinese else
+         ["combat.stun", "%s打昏了%s"], ["combat.paralyze", "%s麻痹了%s"],
+         ["combat.enemy_nearby", "附近有敌人。"]] if chinese else
         [["combat.melee_hit", "%s hits %s for %lu damage"],
          ["combat.projectile_hit", "%s shoots %s for %lu points"],
          ["combat.kill", "%s inflicts %lu points killing %s"],
-         ["combat.stun", "%s stuns %s"], ["combat.paralyze", "%s paralyzes %s"]])
+         ["combat.stun", "%s stuns %s"], ["combat.paralyze", "%s paralyzes %s"],
+         ["combat.enemy_nearby", "Enemies are nearby."]])
     assert before == {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
 
 

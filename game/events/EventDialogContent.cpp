@@ -4,7 +4,6 @@
 #include "game/gameplay/HouseInteraction.h"
 #include "game/gameplay/MasteryTeacherDialog.h"
 #include "game/gameplay/ReputationRuntime.h"
-#include "game/gameplay/TravelRuntime.h"
 #include "game/StringUtils.h"
 #include "game/tables/MergedBaseTables.h"
 
@@ -1099,9 +1098,10 @@ EventDialogContent buildEventDialogContent(
         }
         dialog.videoDirectory = !dialog.videoName.empty() ? TransitionVideoDirectory : std::string();
 
-        const int travelDays = context.transitionMapMove.has_value()
-            ? outdoorMapMoveTravelDays(currentMapName, transitionMapName)
-            : ((pTransition != nullptr && pTransition->has_value()) ? (*pTransition)->travelDays : 0);
+        // A positioned script move has no implicit journey duration. Only an explicit edge route
+        // supplies days here; two outdoor filenames alone do not describe a walking journey.
+        const int travelDays = !context.transitionMapMove.has_value()
+            && pTransition != nullptr && pTransition->has_value() ? (*pTransition)->travelDays : 0;
         if (travelDays > 0)
         {
             dialog.lines.push_back(
@@ -1356,9 +1356,12 @@ EventDialogContent buildEventDialogContent(
             && pGreeting != nullptr)
         {
             const uint32_t greetingDisplayCount = npcRuntimeState.npcGreetingDisplayCounts[dialog.sourceId];
+            const bool primaryGreeting = greetingDisplayCount == 0 || pGreeting->greetingSecondary.empty();
+            const auto primaryOverride = npcRuntimeState.npcPrimaryGreetingTextOverrides.find(dialog.sourceId);
             const std::string &greetingText =
-                (greetingDisplayCount == 0 || pGreeting->greetingSecondary.empty())
-                ? pGreeting->greetingPrimary
+                primaryGreeting
+                ? (primaryOverride != npcRuntimeState.npcPrimaryGreetingTextOverrides.end()
+                    ? primaryOverride->second : pGreeting->greetingPrimary)
                 : pGreeting->greetingSecondary;
 
             if (!greetingText.empty())
@@ -1367,6 +1370,7 @@ EventDialogContent buildEventDialogContent(
                     wrapDialogText(greetingText, MaxLineWidth);
                 dialog.lines.insert(dialog.lines.end(), wrappedGreeting.begin(), wrappedGreeting.end());
                 eventRuntimeState.npcGreetingDisplayCounts[dialog.sourceId] = greetingDisplayCount + 1;
+                dialog.displayedNpcGreetingCount = greetingDisplayCount + 1;
             }
         }
 

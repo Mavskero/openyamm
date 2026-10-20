@@ -17,6 +17,7 @@ struct ItemDefinition;
 struct ItemContentEffect;
 enum class CharacterAttackMode;
 struct ElementalDamageBonuses;
+class FixedItemGenerationRandom;
 
 enum class ItemEnchantCategory : uint8_t
 {
@@ -55,6 +56,17 @@ public:
         int treasureLevel,
         std::mt19937 &rng);
     static int generateStandardEnchantPower(StandardItemEnchantKind kind, int treasureLevel, std::mt19937 &rng);
+    static std::optional<uint16_t> chooseStandardEnchantId(
+        const ItemDefinition &itemDefinition,
+        const StandardItemEnchantTable &table,
+        FixedItemGenerationRandom &rng);
+    static std::optional<uint16_t> chooseSpecialEnchantId(
+        const ItemDefinition &itemDefinition,
+        const SpecialItemEnchantTable &table,
+        int treasureLevel,
+        FixedItemGenerationRandom &rng);
+    static int generateStandardEnchantPower(
+        StandardItemEnchantKind kind, int treasureLevel, FixedItemGenerationRandom &rng);
     static std::string displayName(
         const InventoryItem &item,
         const ItemDefinition &itemDefinition,

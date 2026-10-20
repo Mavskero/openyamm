@@ -108,9 +108,11 @@ OutdoorMovementDriver::OutdoorMovementDriver(
 {
 }
 
-void OutdoorMovementDriver::initialize(float x, float y, float footZHint)
+void OutdoorMovementDriver::initialize(
+    float x, float y, float footZHint, OutdoorPlacementPolicy placementPolicy)
 {
-    m_state = m_movementController.initializeStateForBody(x, y, footZHint, m_bodyDimensions.radius);
+    m_state = m_movementController.initializeStateForBody(
+        x, y, footZHint, m_bodyDimensions.radius, placementPolicy, m_bodyDimensions.maxStepHeight);
     m_partyMovementState = {};
     m_tuning = {};
     m_lastEvents = {};
@@ -118,12 +120,8 @@ void OutdoorMovementDriver::initialize(float x, float y, float footZHint)
     m_pendingEffects = {};
     m_jumpHeld = false;
     m_flyUpHeld = false;
-    m_pendingJumpPress = false;
-    m_pendingJumpVelocity.reset();
-    m_pendingJumpLift = 1.0f;
-    m_pendingImpulseVelocityX = 0.0f;
-    m_pendingImpulseVelocityY = 0.0f;
-    m_pendingImpulseVelocityZ = 0.0f;
+    m_jumpState = {};
+    m_jumpState.pendingJumpLift = 1.0f;
     m_flyingAvailable = false;
     m_movementAccumulatorSeconds = 0.0f;
     m_startedFallingEventSeconds = 0.0f;
@@ -145,7 +143,9 @@ void OutdoorMovementDriver::initialize(float x, float y, float footZHint)
 
 void OutdoorMovementDriver::restoreState(
     const OutdoorMoveState &state,
-    const OutdoorPartyMovementState &partyMovementState)
+    const OutdoorPartyMovementState &partyMovementState,
+    float movementAccumulatorSeconds,
+    const PartyJumpState &jumpState)
 {
     m_state = state;
     m_partyMovementState = partyMovementState;
@@ -155,13 +155,8 @@ void OutdoorMovementDriver::restoreState(
     m_pendingEffects = {};
     m_jumpHeld = false;
     m_flyUpHeld = false;
-    m_pendingJumpPress = false;
-    m_pendingJumpVelocity.reset();
-    m_pendingJumpLift = 1.0f;
-    m_pendingImpulseVelocityX = 0.0f;
-    m_pendingImpulseVelocityY = 0.0f;
-    m_pendingImpulseVelocityZ = 0.0f;
-    m_movementAccumulatorSeconds = 0.0f;
+    m_jumpState = jumpState;
+    m_movementAccumulatorSeconds = movementAccumulatorSeconds;
     m_startedFallingEventSeconds = 0.0f;
     m_landedEventSeconds = 0.0f;
     m_enteredWaterEventSeconds = 0.0f;
@@ -179,6 +174,18 @@ void OutdoorMovementDriver::restoreState(
     m_speedMultiplier = 1.0f;
 }
 
+void OutdoorMovementDriver::setPositionForEvents(float x, float y, float footZ)
+{
+    m_state.x = x;
+    m_state.y = y;
+    m_state.footZ = footZ;
+}
+
+void OutdoorMovementDriver::setDecorationFlags(const std::vector<uint16_t> &decorationFlags)
+{
+    m_movementController.setDecorationFlags(decorationFlags);
+}
+
 void OutdoorMovementDriver::update(
     const OutdoorMovementInput &input,
     float deltaSeconds,
@@ -187,7 +194,11 @@ void OutdoorMovementDriver::update(
     const uint64_t totalBeginTickCount = pPerformanceDiagnostics != nullptr ? SDL_GetTicksNS() : 0;
     const bool jumpPressed = input.jump && !m_jumpHeld;
     m_jumpHeld = input.jump;
-    m_pendingJumpPress = m_pendingJumpPress || jumpPressed;
+    if (jumpPressed && !m_jumpState.pendingJumpRequested)
+    {
+        m_jumpState.pendingJumpRequested = true;
+        m_jumpState.pendingJumpLift = 1.0f;
+    }
     const bool flyUpPressed = input.flyUp && !m_flyUpHeld;
     m_flyUpHeld = input.flyUp;
 
@@ -203,6 +214,13 @@ void OutdoorMovementDriver::update(
         m_state.fallDistance = 0.0f;
     }
 
+    // Swimming uses the same swept three-dimensional movement as flight, but
+    // remains a map property: it never grants Fly or consumes its spell resources.
+    const bool floating = m_underwater || m_partyMovementState.flying;
+    if ((input.flyUp || input.flyDown) && (m_flyingAvailable || m_underwater))
+    {
+        clearSpecialJump();
+    }
     const float cosYaw = std::cos(input.yawRadians);
     const float sinYaw = std::sin(input.yawRadians);
     const float movementPitchRadians = input.usePitchForFlyingMovement ? input.pitchRadians : 0.0f;
@@ -222,15 +240,15 @@ void OutdoorMovementDriver::update(
     if (input.turbo)
     {
         const float forwardTurboMultiplier =
-            m_partyMovementState.flying && effectiveRunning
+            floating && effectiveRunning
                 ? m_tuning.flyingRunTurboMultiplier
                 : m_tuning.turboMultiplier;
         const float backwardTurboMultiplier =
-            m_partyMovementState.flying && effectiveRunning
+            floating && effectiveRunning
                 ? m_tuning.flyingRunTurboMultiplier
                 : m_tuning.turboMultiplier;
         const float sideTurboMultiplier =
-            m_partyMovementState.flying && effectiveRunning
+            floating && effectiveRunning
                 ? m_tuning.flyingRunTurboMultiplier
                 : m_tuning.turboMultiplier;
         const float sideTurboSpeed =
@@ -238,7 +256,7 @@ void OutdoorMovementDriver::update(
 
         if (input.forward)
         {
-            const bx::Vec3 &forwardVector = m_partyMovementState.flying ? forwardFlying : forward;
+            const bx::Vec3 &forwardVector = floating ? forwardFlying : forward;
             const float forwardSpeed = m_tuning.walkSpeed * forwardTurboMultiplier * speedMultiplier;
             moveVelocityX += forwardVector.x * forwardSpeed;
             moveVelocityY += forwardVector.y * forwardSpeed;
@@ -247,7 +265,7 @@ void OutdoorMovementDriver::update(
 
         if (input.backward)
         {
-            const bx::Vec3 &forwardVector = m_partyMovementState.flying ? forwardFlying : forward;
+            const bx::Vec3 &forwardVector = floating ? forwardFlying : forward;
             const float backwardSpeed = m_tuning.walkSpeed * backwardTurboMultiplier * speedMultiplier;
             moveVelocityX -= forwardVector.x * backwardSpeed;
             moveVelocityY -= forwardVector.y * backwardSpeed;
@@ -270,15 +288,15 @@ void OutdoorMovementDriver::update(
     {
         const float forwardSpeedMultiplier =
             effectiveRunning
-                ? (m_partyMovementState.flying ? m_tuning.flyingRunMultiplier : m_tuning.runForwardMultiplier)
+                ? (floating ? m_tuning.flyingRunMultiplier : m_tuning.runForwardMultiplier)
                 : 1.0f;
         const float backwardSpeedMultiplier =
-            m_partyMovementState.flying && effectiveRunning
+            floating && effectiveRunning
                 ? m_tuning.flyingRunMultiplier
                 : m_tuning.backwardWalkMultiplier;
         const float sideSpeedMultiplier =
             effectiveRunning
-                ? (m_partyMovementState.flying ? m_tuning.flyingRunMultiplier : m_tuning.runForwardMultiplier)
+                ? (floating ? m_tuning.flyingRunMultiplier : m_tuning.runForwardMultiplier)
                 : 1.0f;
         const float sideSpeed =
             m_tuning.walkSpeed * m_tuning.strafeMultiplier * sideSpeedMultiplier * speedMultiplier;
@@ -297,7 +315,7 @@ void OutdoorMovementDriver::update(
 
         if (input.forward)
         {
-            const bx::Vec3 &forwardVector = m_partyMovementState.flying ? forwardFlying : forward;
+            const bx::Vec3 &forwardVector = floating ? forwardFlying : forward;
             moveVelocityX += forwardVector.x * m_tuning.walkSpeed * forwardSpeedMultiplier * speedMultiplier;
             moveVelocityY += forwardVector.y * m_tuning.walkSpeed * forwardSpeedMultiplier * speedMultiplier;
             moveVelocityZ += forwardVector.z * m_tuning.walkSpeed * forwardSpeedMultiplier * speedMultiplier;
@@ -305,7 +323,7 @@ void OutdoorMovementDriver::update(
 
         if (input.backward)
         {
-            const bx::Vec3 &forwardVector = m_partyMovementState.flying ? forwardFlying : forward;
+            const bx::Vec3 &forwardVector = floating ? forwardFlying : forward;
             moveVelocityX -= forwardVector.x * m_tuning.walkSpeed * backwardSpeedMultiplier * speedMultiplier;
             moveVelocityY -= forwardVector.y * m_tuning.walkSpeed * backwardSpeedMultiplier * speedMultiplier;
             moveVelocityZ -= forwardVector.z * m_tuning.walkSpeed * backwardSpeedMultiplier * speedMultiplier;
@@ -332,27 +350,6 @@ void OutdoorMovementDriver::update(
             : MaxAccumulatedMovementSeconds;
     m_movementAccumulatorSeconds =
         std::min(m_movementAccumulatorSeconds + deltaSeconds, maxAccumulatedMovementSeconds);
-    float impulseVelocityX = 0.0f;
-    float impulseVelocityY = 0.0f;
-    float impulseVelocityZ = 0.0f;
-
-    if (m_movementAccumulatorSeconds >= OutdoorMovementStepSeconds)
-    {
-        impulseVelocityX = m_pendingImpulseVelocityX;
-        impulseVelocityY = m_pendingImpulseVelocityY;
-        impulseVelocityZ = m_pendingImpulseVelocityZ;
-        const bool hasPendingImpulse =
-            impulseVelocityX != 0.0f || impulseVelocityY != 0.0f || impulseVelocityZ != 0.0f;
-
-        if (hasPendingImpulse)
-        {
-            m_state.verticalVelocity = std::max(m_state.verticalVelocity, impulseVelocityZ);
-            m_pendingImpulseVelocityX = 0.0f;
-            m_pendingImpulseVelocityY = 0.0f;
-            m_pendingImpulseVelocityZ = 0.0f;
-        }
-    }
-
     if (pPerformanceDiagnostics != nullptr)
     {
         pPerformanceDiagnostics->movementInputNanoseconds += SDL_GetTicksNS() - totalBeginTickCount;
@@ -360,6 +357,17 @@ void OutdoorMovementDriver::update(
 
     while (m_movementAccumulatorSeconds >= OutdoorMovementStepSeconds)
     {
+        if (m_jumpState.pendingSpecialJump)
+        {
+            m_jumpState.specialJumpActive = true;
+            m_jumpState.velocityX = m_jumpState.pendingVelocityX;
+            m_jumpState.velocityY = m_jumpState.pendingVelocityY;
+            m_state.verticalVelocity = m_jumpState.pendingVelocityZ;
+            m_jumpState.pendingSpecialJump = false;
+            m_jumpState.pendingVelocityX = 0.0f;
+            m_jumpState.pendingVelocityY = 0.0f;
+            m_jumpState.pendingVelocityZ = 0.0f;
+        }
         if (pPerformanceDiagnostics != nullptr)
         {
             ++pPerformanceDiagnostics->movementStepCount;
@@ -367,25 +375,27 @@ void OutdoorMovementDriver::update(
 
         m_collisionTraceClockSeconds += OutdoorMovementStepSeconds;
         const OutdoorMoveState previousState = m_state;
-        const bool jumpRequestedThisStep = m_pendingJumpPress;
+        const bool jumpRequestedThisStep =
+            m_jumpState.pendingJumpRequested && !m_jumpState.specialJumpActive;
         const float jumpVelocityThisStep =
-            m_pendingJumpVelocity.value_or(m_tuning.jumpVelocity * speedMultiplier);
-        const float jumpLiftThisStep = m_pendingJumpLift;
+            m_jumpState.pendingJumpVelocity.value_or(m_tuning.jumpVelocity * speedMultiplier);
+        const float jumpLiftThisStep = m_jumpState.pendingJumpLift;
         std::vector<size_t> contactedActorIndices;
         const bool traceOutdoorMovement = m_collisionTraceEnabled || gameplayDebugTraceEnabled();
         OutdoorMoveDebugInfo debugInfo = {};
         OutdoorMoveDebugInfo *pDebugInfo = traceOutdoorMovement ? &debugInfo : nullptr;
+        bool blockingCollision = false;
         const uint64_t collisionBeginTickCount = pPerformanceDiagnostics != nullptr ? SDL_GetTicksNS() : 0;
         m_state = m_movementController.resolveMoveForBody(
             m_state,
             m_bodyDimensions,
-            moveVelocityX + impulseVelocityX,
-            moveVelocityY + impulseVelocityY,
+            m_jumpState.specialJumpActive ? m_jumpState.velocityX : moveVelocityX,
+            m_jumpState.specialJumpActive ? m_jumpState.velocityY : moveVelocityY,
             moveVelocityZ,
             jumpRequestedThisStep,
             input.flyUp,
             input.flyDown,
-            m_partyMovementState.flying,
+            floating && !m_jumpState.specialJumpActive,
             m_partyMovementState.waterWalk,
             jumpVelocityThisStep,
             m_tuning.flyVerticalSpeed * speedMultiplier,
@@ -394,17 +404,24 @@ void OutdoorMovementDriver::update(
             &contactedActorIndices,
             std::nullopt,
             jumpLiftThisStep,
-            pDebugInfo
+            pDebugInfo,
+            &blockingCollision
         );
+        if (m_jumpState.specialJumpActive
+            && (blockingCollision || m_state.landedThisFrame
+                || (!m_state.airborne && m_state.verticalVelocity <= 0.0f)))
+        {
+            clearSpecialJump();
+        }
 
         if (pPerformanceDiagnostics != nullptr)
         {
             pPerformanceDiagnostics->movementCollisionNanoseconds += SDL_GetTicksNS() - collisionBeginTickCount;
         }
 
-        m_pendingJumpPress = false;
-        m_pendingJumpVelocity.reset();
-        m_pendingJumpLift = 1.0f;
+        m_jumpState.pendingJumpRequested = false;
+        m_jumpState.pendingJumpVelocity.reset();
+        m_jumpState.pendingJumpLift = 1.0f;
 
         const uint64_t traceBeginTickCount = pPerformanceDiagnostics != nullptr ? SDL_GetTicksNS() : 0;
         if (traceOutdoorMovement)
@@ -419,13 +436,13 @@ void OutdoorMovementDriver::update(
                 || previousState.supportFaceIndex != m_state.supportFaceIndex;
             const bool suspiciousUpwardMove =
                 deltaZ > 96.0f
-                && !m_partyMovementState.flying
+                && !floating
                 && !jumpRequestedThisStep;
             const bool suspiciousHorizontalRaise =
                 debugInfo.horizontalPassRaisedZ
                 && !debugInfo.verticalPassRan
                 && deltaZ > 32.0f
-                && !m_partyMovementState.flying;
+                && !floating;
             const bool periodicProbe = m_collisionTraceClockSeconds >= m_nextCollisionTraceSeconds;
             const bool suspicious = suspiciousUpwardMove || suspiciousHorizontalRaise;
 
@@ -451,6 +468,7 @@ void OutdoorMovementDriver::update(
                     << "," << debugInfo.requestedVelocityZ << ")"
                     << " input_velocity_z_before_collision=" << debugInfo.inputVelocityZBeforeCollision
                     << " flying=" << (m_partyMovementState.flying ? "true" : "false")
+                    << " underwater=" << (m_underwater ? "true" : "false")
                     << " jump_requested=" << (jumpRequestedThisStep ? "true" : "false")
                     << " fly_up=" << (input.flyUp ? "true" : "false")
                     << " fly_down=" << (input.flyDown ? "true" : "false")
@@ -590,7 +608,7 @@ void OutdoorMovementDriver::update(
     m_lastEvents.leftBurning = m_leftBurningEventSeconds > 0.0f;
     m_lastEvents.hardLanding = m_lastEvents.landed && m_lastEvents.landingFallDistance > HardLandingDistance;
 
-    if (m_partyMovementState.flying || m_partyMovementState.featherFall)
+    if (floating || m_partyMovementState.featherFall)
     {
         m_state.fallStartZ = m_state.footZ;
         m_state.fallDistance = 0.0f;
@@ -599,7 +617,7 @@ void OutdoorMovementDriver::update(
     if (!input.turnBasedPhysicsStep
         && m_state.supportOnWater
         && !m_partyMovementState.waterWalk
-        && !m_partyMovementState.flying)
+        && !floating)
     {
         m_waterDamageTimerSeconds += deltaSeconds;
 
@@ -615,7 +633,7 @@ void OutdoorMovementDriver::update(
         m_waterDamageTimerSeconds = 0.0f;
     }
 
-    if (!input.turnBasedPhysicsStep && m_state.supportOnBurning && !m_partyMovementState.flying)
+    if (!input.turnBasedPhysicsStep && m_state.supportOnBurning && !floating)
     {
         m_burningDamageTimerSeconds += deltaSeconds;
 
@@ -652,7 +670,7 @@ void OutdoorMovementDriver::update(
 
     if (m_lastEvents.hardLanding
         && !m_partyMovementState.featherFall
-        && !m_partyMovementState.flying)
+        && !floating)
     {
         m_fallDamageConsequenceSeconds = EventHoldSeconds;
         m_lastConsequences.fallDamageDistance = m_lastEvents.landingFallDistance;
@@ -742,6 +760,7 @@ void OutdoorMovementDriver::toggleFlying()
     }
 
     m_partyMovementState.flying = !m_partyMovementState.flying;
+    clearSpecialJump();
 
     if (m_partyMovementState.flying)
     {
@@ -769,12 +788,17 @@ void OutdoorMovementDriver::toggleFeatherFall()
 
 void OutdoorMovementDriver::setFlying(bool active)
 {
+    if (active == m_partyMovementState.flying)
+    {
+        return;
+    }
     if (active && !canActivateFlying())
     {
         return;
     }
 
     m_partyMovementState.flying = active;
+    clearSpecialJump();
 
     if (m_partyMovementState.flying)
     {
@@ -784,7 +808,7 @@ void OutdoorMovementDriver::setFlying(bool active)
     }
 }
 
-void OutdoorMovementDriver::setFlyingAvailable(bool active)
+void OutdoorMovementDriver::setFlyingAvailable(bool active) noexcept
 {
     m_flyingAvailable = active;
 
@@ -794,17 +818,33 @@ void OutdoorMovementDriver::setFlyingAvailable(bool active)
     }
 }
 
+void OutdoorMovementDriver::setUnderwater(bool active)
+{
+    if (active == m_underwater)
+    {
+        return;
+    }
+    m_underwater = active;
+    clearSpecialJump();
+    if (m_underwater)
+    {
+        m_state.verticalVelocity = 0.0f;
+        m_state.fallStartZ = m_state.footZ;
+        m_state.fallDistance = 0.0f;
+    }
+}
+
 void OutdoorMovementDriver::setRunning(bool active)
 {
     m_partyMovementState.running = active;
 }
 
-void OutdoorMovementDriver::setWaterWalkActive(bool active)
+void OutdoorMovementDriver::setWaterWalkActive(bool active) noexcept
 {
     m_partyMovementState.waterWalk = active;
 }
 
-void OutdoorMovementDriver::setFeatherFallActive(bool active)
+void OutdoorMovementDriver::setFeatherFallActive(bool active) noexcept
 {
     m_partyMovementState.featherFall = active;
 
@@ -844,16 +884,42 @@ void OutdoorMovementDriver::setCollisionTraceEnabled(bool enabled, std::string m
 
 void OutdoorMovementDriver::requestJump(std::optional<float> verticalVelocity, float lift)
 {
-    m_pendingJumpPress = true;
-    m_pendingJumpVelocity = verticalVelocity;
-    m_pendingJumpLift = std::max(1.0f, lift);
+    m_jumpState.pendingJumpRequested = true;
+    m_jumpState.pendingJumpVelocity = verticalVelocity;
+    m_jumpState.pendingJumpLift = std::max(1.0f, lift);
 }
 
 void OutdoorMovementDriver::requestSpecialJump(float velocityX, float velocityY, float velocityZ)
 {
-    m_pendingImpulseVelocityX = velocityX;
-    m_pendingImpulseVelocityY = velocityY;
-    m_pendingImpulseVelocityZ = velocityZ;
+    if (m_jumpState.specialJumpActive || m_jumpState.pendingSpecialJump)
+    {
+        return;
+    }
+    m_jumpState.pendingSpecialJump = true;
+    m_jumpState.pendingVelocityX = velocityX;
+    m_jumpState.pendingVelocityY = velocityY;
+    m_jumpState.pendingVelocityZ = velocityZ;
+}
+
+void OutdoorMovementDriver::clearSpecialJump()
+{
+    m_jumpState.specialJumpActive = false;
+    m_jumpState.velocityX = 0.0f;
+    m_jumpState.velocityY = 0.0f;
+    m_jumpState.pendingSpecialJump = false;
+    m_jumpState.pendingVelocityX = 0.0f;
+    m_jumpState.pendingVelocityY = 0.0f;
+    m_jumpState.pendingVelocityZ = 0.0f;
+}
+
+const PartyJumpState &OutdoorMovementDriver::jumpState() const noexcept
+{
+    return m_jumpState;
+}
+
+float OutdoorMovementDriver::movementAccumulatorSeconds() const noexcept
+{
+    return m_movementAccumulatorSeconds;
 }
 
 void OutdoorMovementDriver::setActorColliders(const std::vector<OutdoorActorCollision> &actorColliders)

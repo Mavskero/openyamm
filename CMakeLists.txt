@@ -176,6 +176,16 @@ if (APPLE)
         tools/mmerge_import/CrossContinentsResources.cpp
         tools/mmerge_import/DimensionDoorResources.cpp
         tools/mmerge_import/HarmondaleCastleResources.cpp
+        tools/mmerge_import/SmugglersCoveResources.cpp
+        tools/mmerge_import/Mm6HiveResources.cpp
+        tools/mmerge_import/Mm7ShoalsResources.cpp
+        tools/mmerge_import/Mm8EndgameResources.cpp
+        tools/mmerge_import/QuestItemCapacityResources.cpp
+        tools/mmerge_import/RunawayChaosResources.cpp
+        tools/mmerge_import/BreachMazeTemplateResources.cpp
+        tools/mmerge_import/BreachMazePopulationResources.cpp
+        tools/mmerge_import/BreachMazeRuntimeResources.cpp
+        tools/mmerge_import/BreachAlvarCompanionResources.cpp
         tools/LegacyLuaExport.cpp tools/legacy_events/EvtProgram.cpp tools/legacy_events/StrTable.cpp)
     file(READ "${CMAKE_SOURCE_DIR}/assets_dev/engine/scripts/common/event_support.lua" OPENYAMM_EVENT_SUPPORT_SOURCE)
     configure_file(tools/mmerge_import/EventSupportSource.h.in generated/EventSupportSource.h @ONLY)
@@ -185,12 +195,56 @@ if (APPLE)
         "${CMAKE_SOURCE_DIR}/assets_dev/engine/scripts/common/event_support.lua"
         "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Global_mmmerge_cross_continents_intro.lua")
     configure_file(tools/mmerge_import/CrossContinentsIntroSource.h.in generated/CrossContinentsIntroSource.h @ONLY)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mm6_hive.lua" OPENYAMM_MM6_HIVE_SOURCE)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mm6_hive.lua")
+    configure_file(tools/mmerge_import/Mm6HiveSource.h.in generated/Mm6HiveSource.h @ONLY)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mm7_out14.lua" OPENYAMM_MM7_AVLEE_SOURCE)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mm7_7out15.lua" OPENYAMM_MM7_SHOALS_SOURCE)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mm7_7d23.lua" OPENYAMM_MM7_LINCOLN_SOURCE)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mm7_out14.lua"
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mm7_7out15.lua"
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mm7_7d23.lua")
+    configure_file(tools/mmerge_import/Mm7ShoalsSource.h.in generated/Mm7ShoalsSource.h @ONLY)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Global_mmmerge_runaway_chaos.lua"
+        OPENYAMM_RUNAWAY_CHAOS_SOURCE)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Global_mmmerge_runaway_chaos.lua")
+    configure_file(tools/mmerge_import/RunawayChaosSource.h.in generated/RunawayChaosSource.h @ONLY)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Global_mmmerge_quest_item_capacity.lua"
+        OPENYAMM_QUEST_ITEM_CAPACITY_SOURCE)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Global_mmmerge_quest_item_capacity.lua")
+    configure_file(tools/mmerge_import/QuestItemCapacitySource.h.in generated/QuestItemCapacitySource.h @ONLY)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mmmerge_br_alvar_companions.lua"
+        OPENYAMM_BREACH_ALVAR_COMPANION_MAP_SOURCE)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Global_mmmerge_br_alvar_companions.lua"
+        OPENYAMM_BREACH_ALVAR_COMPANION_GLOBAL_SOURCE)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mmmerge_br_alvar_companions.lua"
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Global_mmmerge_br_alvar_companions.lua")
+    configure_file(tools/mmerge_import/BreachAlvarCompanionSource.h.in
+        generated/BreachAlvarCompanionSource.h @ONLY)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mmmerge_br_alvar_maze.lua"
+        OPENYAMM_BREACH_MAZE_BR_ALVAR_MAP_SOURCE)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mmmerge_breach_maze.lua"
+        OPENYAMM_BREACH_MAZE_BREACH_MAP_SOURCE)
+    file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mmmerge_br_base_maze.lua"
+        OPENYAMM_BREACH_MAZE_BR_BASE_MAP_SOURCE)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mmmerge_br_alvar_maze.lua"
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mmmerge_breach_maze.lua"
+        "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Map_mmmerge_br_base_maze.lua")
+    configure_file(tools/mmerge_import/BreachMazeEventSource.h.in generated/BreachMazeEventSource.h @ONLY)
     target_include_directories(openyamm_event_import PRIVATE "${CMAKE_BINARY_DIR}/generated")
     target_link_libraries(openyamm_event_import PUBLIC openyamm_menu_import openyamm_game openyamm_text_import)
     target_link_libraries(openyamm_event_import PRIVATE openyamm_engine)
+    target_link_libraries(openyamm_story_import PRIVATE openyamm_event_import)
     add_library(openyamm_runtime_import STATIC tools/mmerge_import/RuntimeResources.cpp
         tools/mmerge_import/RuntimeZip.cpp tools/mmerge_import/SceneResources.cpp
         tools/mmerge_import/ObjectPresentationResources.cpp)
+    target_include_directories(openyamm_runtime_import PRIVATE "${CMAKE_BINARY_DIR}/generated")
     target_link_libraries(openyamm_runtime_import PUBLIC openyamm_menu_import openyamm_core_import
         openyamm_story_import openyamm_combat_import openyamm_service_import openyamm_journal_import
         openyamm_class_import openyamm_inspection_import openyamm_race_import openyamm_inventory_import
@@ -213,6 +267,8 @@ if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_link_libraries(indoor_import PRIVATE openyamm_runtime_import)
     add_executable(scene_import_runtime_check tests/SceneImportRuntimeCheck.cpp)
     target_link_libraries(scene_import_runtime_check PRIVATE openyamm_runtime_import openyamm_game openyamm_engine)
+    add_executable(merge_scene_resource_check tests/MergeSceneResourceCheck.cpp)
+    target_link_libraries(merge_scene_resource_check PRIVATE openyamm_game openyamm_engine)
     add_executable(minimap_arrow_check tests/MinimapArrowCheck.cpp)
     target_link_libraries(minimap_arrow_check PRIVATE openyamm_game openyamm_engine)
     add_executable(indoor_session_check tools/IndoorSessionCheck.cpp)
@@ -226,7 +282,158 @@ if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_include_directories(cross_continents_intro_check PRIVATE
         "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
     target_link_libraries(cross_continents_intro_check PRIVATE openyamm_event_import openyamm_engine)
+    add_executable(merge_invitation_check tests/UnitTestMain.cpp tests/MergeInvitationTests.cpp
+        tests/ChestRegressionTests.cpp tests/RegressionGameData.cpp)
+    target_include_directories(merge_invitation_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(merge_invitation_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(merge_invitation_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
     add_executable(town_portal_contact_check tests/UnitTestMain.cpp tests/TownPortalContactTests.cpp)
+    add_executable(merge_quest_lifecycle_check tests/UnitTestMain.cpp tests/MergeQuestLifecycleTests.cpp)
+    target_include_directories(merge_quest_lifecycle_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(merge_quest_lifecycle_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(merge_quest_lifecycle_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(verdant_encounter_check tests/UnitTestMain.cpp tests/VerdantEncounterTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(verdant_encounter_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(verdant_encounter_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(verdant_encounter_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(verdant_dialogue_check tests/UnitTestMain.cpp tests/VerdantDialogueTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(verdant_dialogue_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(verdant_dialogue_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(verdant_dialogue_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(connector_stone_check tests/UnitTestMain.cpp tests/ConnectorStoneTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(connector_stone_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(connector_stone_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(connector_stone_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(continent_rewards_check tests/UnitTestMain.cpp tests/ContinentRewardTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(continent_rewards_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(continent_rewards_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(continent_rewards_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(pending_item_delivery_check tests/UnitTestMain.cpp tests/PendingItemDeliveryTests.cpp)
+    target_include_directories(pending_item_delivery_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_link_libraries(pending_item_delivery_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(event_item_ownership_check tests/UnitTestMain.cpp tests/EventItemOwnershipTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(event_item_ownership_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(event_item_ownership_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(event_item_ownership_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(quest_item_capacity_check tests/UnitTestMain.cpp tests/QuestItemCapacityTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(quest_item_capacity_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(quest_item_capacity_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(quest_item_capacity_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(npc_follower_persistence_check tests/UnitTestMain.cpp tests/NpcFollowerPersistenceTests.cpp)
+    target_include_directories(npc_follower_persistence_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_link_libraries(npc_follower_persistence_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(mm6_hive_endgame_check tests/UnitTestMain.cpp tests/Mm6HiveEndgameTests.cpp)
+    target_include_directories(mm6_hive_endgame_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(mm6_hive_endgame_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(mm6_hive_endgame_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(runaway_chaos_check tests/UnitTestMain.cpp tests/RunawayChaosTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(runaway_chaos_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(runaway_chaos_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(runaway_chaos_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(breach_maze_layout_check tests/UnitTestMain.cpp tests/BreachMazeLayoutTests.cpp)
+    add_executable(breach_maze_capture tools/BreachMazeCapture.cpp)
+    target_link_libraries(breach_maze_capture PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    target_include_directories(breach_maze_layout_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(breach_maze_layout_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(breach_maze_layout_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(breach_maze_scene_check tests/UnitTestMain.cpp tests/BreachMazeSceneBuilderTests.cpp)
+    target_include_directories(breach_maze_scene_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(breach_maze_scene_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(breach_maze_scene_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(breach_maze_lifecycle_check tests/UnitTestMain.cpp tests/BreachMazeLifecycleTests.cpp)
+    target_include_directories(breach_maze_lifecycle_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(breach_maze_lifecycle_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(breach_maze_lifecycle_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(breach_alvar_split_plan_check tests/UnitTestMain.cpp tests/BreachAlvarSplitPlanTests.cpp)
+    target_include_directories(breach_alvar_split_plan_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_link_libraries(breach_alvar_split_plan_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(breach_alvar_companion_check tests/UnitTestMain.cpp tests/BreachAlvarCompanionTests.cpp)
+    target_include_directories(breach_alvar_companion_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_link_libraries(breach_alvar_companion_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(breach_alvar_session_check tests/UnitTestMain.cpp tests/BreachAlvarSessionTests.cpp)
+    target_include_directories(breach_alvar_session_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_link_libraries(breach_alvar_session_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(breach_alvar_save_check tests/UnitTestMain.cpp tests/BreachAlvarSaveTests.cpp)
+    target_include_directories(breach_alvar_save_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(breach_alvar_save_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(breach_alvar_save_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(breach_alvar_resource_check tests/UnitTestMain.cpp tests/BreachAlvarCompanionResourceTests.cpp)
+    target_include_directories(breach_alvar_resource_check PRIVATE
+        "${CMAKE_SOURCE_DIR}/third_party/doctest" "${CMAKE_BINARY_DIR}/generated")
+    target_compile_definitions(breach_alvar_resource_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(breach_alvar_resource_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(breach_alvar_world_actor_check tests/UnitTestMain.cpp tests/BreachAlvarWorldActorTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(breach_alvar_world_actor_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(breach_alvar_world_actor_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(breach_alvar_world_actor_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(outdoor_runtime_npc_picking_check tests/UnitTestMain.cpp tests/OutdoorRuntimeNpcPickingTests.cpp)
+    target_include_directories(outdoor_runtime_npc_picking_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_link_libraries(outdoor_runtime_npc_picking_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(gameplay_world_mouse_activation_check
+        tests/UnitTestMain.cpp tests/GameplayWorldMouseActivationTests.cpp)
+    target_include_directories(gameplay_world_mouse_activation_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_link_libraries(gameplay_world_mouse_activation_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(gameplay_bolster_check tests/UnitTestMain.cpp tests/GameplayBolsterRuntimeTests.cpp)
+    target_include_directories(gameplay_bolster_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_link_libraries(gameplay_bolster_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(merge_bolster_profile_check tests/UnitTestMain.cpp tests/MergeBolsterProfileTests.cpp
+        game/gameplay/MergeBolsterProfile.cpp)
+    target_include_directories(merge_bolster_profile_check PRIVATE
+        "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(merge_bolster_profile_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    add_executable(breach_maze_population_check tests/UnitTestMain.cpp tests/BreachMazePopulationTests.cpp)
+    target_include_directories(breach_maze_population_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(breach_maze_population_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(breach_maze_population_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(outdoor_load_ordering_check tests/UnitTestMain.cpp tests/OutdoorLoadOrderingTests.cpp)
+    target_include_directories(outdoor_load_ordering_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_link_libraries(outdoor_load_ordering_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(mm7_shoals_check tests/UnitTestMain.cpp tests/Mm7ShoalsTests.cpp
+        tests/OutdoorUnderwaterMovementTests.cpp)
+    target_include_directories(mm7_shoals_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(mm7_shoals_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(mm7_shoals_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(mm8_endgame_check tests/UnitTestMain.cpp tests/Mm8EndgameTests.cpp tests/Mm8HeartSourceTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(mm8_endgame_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(mm8_endgame_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(mm8_endgame_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(event_inventory_consumption_check tests/UnitTestMain.cpp
+        tests/EventInventoryConsumptionTests.cpp tests/RegressionGameData.cpp)
+    target_include_directories(event_inventory_consumption_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(event_inventory_consumption_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(event_inventory_consumption_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(detached_party_member_check tests/UnitTestMain.cpp tests/DetachedPartyMemberTests.cpp)
+    target_include_directories(detached_party_member_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(detached_party_member_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(detached_party_member_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(party_regression_check tests/UnitTestMain.cpp tests/PartyRegressionTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(party_regression_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(party_regression_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(party_regression_check PRIVATE openyamm_game openyamm_engine)
     target_include_directories(town_portal_contact_check PRIVATE
         "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
     target_link_libraries(town_portal_contact_check PRIVATE openyamm_game openyamm_engine)
@@ -248,11 +455,17 @@ if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
         "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
     target_compile_definitions(harmondale_castle_import_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
     target_link_libraries(harmondale_castle_import_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
-    add_executable(mm8_blackmail_import_check tests/UnitTestMain.cpp tests/Mm8BlackmailImportTests.cpp)
+    add_executable(mm8_blackmail_import_check tests/UnitTestMain.cpp
+        tests/Mm8BlackmailImportTests.cpp tests/SmugglersCoveImportTests.cpp)
     target_include_directories(mm8_blackmail_import_check PRIVATE
         "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
     target_compile_definitions(mm8_blackmail_import_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
     target_link_libraries(mm8_blackmail_import_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(mm8_legacy_command_check tests/UnitTestMain.cpp tests/Mm8LegacyCommandTests.cpp)
+    target_include_directories(mm8_legacy_command_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(mm8_legacy_command_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(mm8_legacy_command_check PRIVATE openyamm_event_import openyamm_game openyamm_engine)
     add_executable(mm8_blackmail_dialog_check tests/UnitTestMain.cpp
         tests/HouseDialogueRegressionTests.cpp tests/RegressionGameData.cpp)
     target_include_directories(mm8_blackmail_dialog_check PRIVATE
@@ -355,6 +568,49 @@ if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_link_libraries(openyamm_input_check PRIVATE openyamm_game openyamm_engine)
     add_executable(application_scene_capture tools/ApplicationSceneCapture.cpp)
     target_link_libraries(application_scene_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(mac_endurance_capture tools/MacEnduranceCapture.cpp)
+    target_link_libraries(mac_endurance_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(imported_map_capture tools/ImportedMapCapture.cpp)
+    target_link_libraries(imported_map_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(merge_quest_capture tools/MergeQuestCapture.cpp)
+    target_link_libraries(merge_quest_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(connector_stone_capture tools/ConnectorStoneCapture.cpp)
+    target_link_libraries(connector_stone_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(continent_reward_capture tools/ContinentRewardCapture.cpp)
+    target_link_libraries(continent_reward_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(mm6_hive_capture tools/Mm6HiveCapture.cpp)
+    target_link_libraries(mm6_hive_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(mm7_shoals_capture tools/Mm7ShoalsCapture.cpp)
+    target_link_libraries(mm7_shoals_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(mm8_endgame_capture tools/Mm8EndgameCapture.cpp)
+    target_link_libraries(mm8_endgame_capture PRIVATE openyamm_event_import openyamm_game openyamm_engine)
+    add_executable(journal_text_capture tools/JournalTextCapture.cpp)
+    target_link_libraries(journal_text_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(breach_alvar_capture tools/BreachAlvarCapture.cpp)
+    target_link_libraries(breach_alvar_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(source_jump_capture tools/SourceJumpCapture.cpp)
+    target_link_libraries(source_jump_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(br_alvar_daylight_capture tools/BrAlvarDaylightCapture.cpp)
+    target_link_libraries(br_alvar_daylight_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(br_alvar_admission_capture tools/BrAlvarAdmissionCapture.cpp)
+    target_link_libraries(br_alvar_admission_capture PRIVATE openyamm_game openyamm_engine)
+
+    add_executable(breach_continuation_capture tools/BreachContinuationCapture.cpp)
+    target_link_libraries(breach_continuation_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(source_jump_state_check tests/UnitTestMain.cpp tests/GameplayRuleRegressionTests.cpp
+        tests/RegressionGameData.cpp)
+    target_include_directories(source_jump_state_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(source_jump_state_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(source_jump_state_check PRIVATE openyamm_game openyamm_engine)
+
+    add_executable(video_streaming_check tests/VideoStreamingTests.cpp)
+    target_include_directories(video_streaming_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(video_streaming_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(video_streaming_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(runaway_chaos_capture tools/RunawayChaosCapture.cpp)
+    target_link_libraries(runaway_chaos_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(loading_ui_capture tools/LoadingUiCapture.cpp)
+    target_link_libraries(loading_ui_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(cross_world_travel_capture tools/CrossWorldTravelCapture.cpp)
     target_link_libraries(cross_world_travel_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(house_dialogue_layout_capture tools/HouseDialogueLayoutCapture.cpp)
@@ -374,6 +630,16 @@ if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     add_executable(travel_prompt_check tests/UnitTestMain.cpp tests/TravelPromptTests.cpp)
     target_include_directories(travel_prompt_check PRIVATE ${CMAKE_SOURCE_DIR}/third_party/doctest)
     target_link_libraries(travel_prompt_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(scripted_map_travel_check tests/UnitTestMain.cpp tests/TravelPromptTests.cpp
+        tests/ScriptedMapTravelTests.cpp tests/RegressionGameData.cpp)
+    target_include_directories(scripted_map_travel_check PRIVATE
+        "${CMAKE_BINARY_DIR}/generated" "${CMAKE_SOURCE_DIR}/third_party/doctest")
+    target_compile_definitions(scripted_map_travel_check PRIVATE OPENYAMM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(scripted_map_travel_check PRIVATE openyamm_game openyamm_engine)
+    add_executable(journal_text_layout_check tests/UnitTestMain.cpp tests/JournalTextLayoutTests.cpp
+        game/ui/JournalTextLayout.cpp)
+    target_include_directories(journal_text_layout_check PRIVATE
+        "${CMAKE_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}/third_party/doctest")
     add_executable(history_event_check
         tests/UnitTestMain.cpp tests/HistoryEventTests.cpp tests/HistorySessionTests.cpp)
     target_include_directories(history_event_check PRIVATE ${CMAKE_SOURCE_DIR}/third_party/doctest)

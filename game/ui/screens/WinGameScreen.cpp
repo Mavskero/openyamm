@@ -1,4 +1,8 @@
 #include "game/ui/screens/WinGameScreen.h"
+#include "game/ui/Utf8Text.h"
+#if defined(__APPLE__)
+#include "engine/AppleText.h"
+#endif
 
 #include <SDL3/SDL.h>
 
@@ -14,7 +18,6 @@ namespace
 constexpr float ReferenceWidth = 640.0f;
 constexpr float ReferenceHeight = 480.0f;
 constexpr float MaxUiScale = 8.0f;
-constexpr const char *WinBackgroundTexture = "winBG";
 constexpr const char *EndgameFontName = "ENDGAME";
 constexpr uint32_t TextColor = 0xffffffffu;
 }
@@ -77,6 +80,14 @@ std::vector<std::string> WinGameScreen::wrapText(
     float maxWidth,
     float scale)
 {
+#if defined(__APPLE__)
+    if (hasUtf8MultibyteText(text))
+    {
+        const std::optional<std::vector<std::string>> wrapped = Engine::wrapAppleText(
+            text, fontHeight(fontName) * scale, std::max(1.0f, maxWidth - 4.0f));
+        if (wrapped) return *wrapped;
+    }
+#endif
     std::vector<std::string> lines;
     std::istringstream input(text);
     std::string word;
@@ -121,9 +132,10 @@ void WinGameScreen::drawScreen(float)
     const float viewportY = std::round((static_cast<float>(frameHeight()) - viewportHeight) * 0.5f);
     const Rect viewport = {viewportX, viewportY, viewportWidth, viewportHeight};
 
-    drawTexture(WinBackgroundTexture, viewport);
+    drawTexture(m_certificate.backgroundTexture, viewport);
 
-    drawCenteredText(EndgameFontName, "Congratulations!", 155.0f, scale, viewportX, viewportY, viewportWidth, TextColor);
+    drawCenteredText(
+        EndgameFontName, "Congratulations!", 155.0f, scale, viewportX, viewportY, viewportWidth, TextColor);
     drawCenteredText(
         EndgameFontName,
         m_certificate.characterLine,
@@ -134,24 +146,44 @@ void WinGameScreen::drawScreen(float)
         viewportWidth,
         TextColor);
 
-    const std::vector<std::string> endingLines = wrapText(
-        EndgameFontName,
-        m_certificate.endingText,
-        520.0f * scale,
-        scale);
-    const float lineHeight = static_cast<float>(fontHeight(EndgameFontName) + 3) * scale;
-    float endingY = 230.0f;
+    constexpr float EndingTop = 230.0f;
+    constexpr float TotalTimeTop = 355.0f;
+    const float availableEndingHeight = (TotalTimeTop - EndingTop - 12.0f) * scale;
+    float endingScale = scale;
+    float lineHeight = 0.0f;
+    std::vector<std::string> endingLines;
+    for (unsigned fit = 0; fit < 16; ++fit)
+    {
+        endingLines = wrapText(EndgameFontName, m_certificate.endingText, 520.0f * scale, endingScale);
+        lineHeight = static_cast<float>(fontHeight(EndgameFontName) + 3) * endingScale;
+#if defined(__APPLE__)
+        for (const std::string &line : endingLines)
+        {
+            if (!hasUtf8MultibyteText(line)) continue;
+            const std::optional<Engine::AppleTextImageSize> bounds =
+                Engine::measureAppleTextImageSize(line, fontHeight(EndgameFontName) * endingScale);
+            if (bounds)
+            {
+                lineHeight = std::max(lineHeight, float(bounds->height) + 2.0f);
+            }
+        }
+#endif
+        if (lineHeight * float(endingLines.size()) <= availableEndingHeight) break;
+        if (fit + 1 < 16) endingScale *= 0.9f;
+    }
+    float endingY = EndingTop * scale;
 
     for (const std::string &line : endingLines)
     {
-        drawCenteredText(EndgameFontName, line, endingY, scale, viewportX, viewportY, viewportWidth, TextColor);
-        endingY += lineHeight / scale;
+        drawCenteredText(
+            EndgameFontName, line, endingY / endingScale, endingScale, viewportX, viewportY, viewportWidth, TextColor);
+        endingY += lineHeight;
     }
 
     drawCenteredText(
         EndgameFontName,
         m_certificate.totalTimeLine,
-        355.0f,
+        TotalTimeTop,
         scale,
         viewportX,
         viewportY,

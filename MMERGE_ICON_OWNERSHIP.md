@@ -1,5 +1,11 @@
 # MMMerge icon ownership for the Apple import work
 
+Checkpoint132 adds the production loading component's17dynamic references: loading1–5, loadprog,
+bardata and ia02-001–010, using the existing explicit UI archive precedence (selectedUI3=6UI.icons.lod).
+Seven package entries are new; ten existing generic hourglass entries now use the selectedUI originalframes.
+No source artwork is edited. Nine actualMetal componentcaptures and progress0/100 and25/100 differences pass.
+The existing22missingUIreferences/zero missingfonts match085. See BATCH_123_132_VALIDATION.md and132reports.
+
 Checkpoint 085 preserves original palettes and pixel indices for all 910 typed inventory images
 and IFT icon frames. Both stages produce identical bytes for their shared images; existing owner
 and collision rules remain unchanged. Portrait frames and other callers keep RGB output, and wrapped

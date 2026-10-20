@@ -16,8 +16,7 @@ namespace OpenYAMM::Game
 {
 namespace
 {
-constexpr int MaximumBolsteredHitPoints = 5000;
-constexpr int BolsteredHitPointSoftCapStart = 3000;
+constexpr int MaximumBolsteredHitPoints = 30000;
 constexpr int BolsterLevelEaseOutStart = 130;
 constexpr double BolsterLevelEaseOutMultiplier = 0.6;
 constexpr double BolsterLevelCatchUpMultiplier = 0.7;
@@ -169,15 +168,9 @@ int defaultMonsterHitPointsForLevel(int level)
 
 int applyBolsteredHitPointCap(int hitPoints)
 {
-    if (hitPoints <= BolsteredHitPointSoftCapStart)
-    {
-        return std::max(1, hitPoints);
-    }
-
-    const int softenedHitPoints =
-        BolsteredHitPointSoftCapStart + static_cast<int>(
-            std::lround(static_cast<double>(hitPoints - BolsteredHitPointSoftCapStart) * 0.5));
-    return std::clamp(softenedHitPoints, 1, MaximumBolsteredHitPoints);
+    // Merge caps the prepared monster template after its HP formula, without a soft cap.
+    // The preceding native pseudo-level formula remains a separate compatibility gap.
+    return std::clamp(hitPoints, 1, MaximumBolsteredHitPoints);
 }
 
 int monsterBaseBolsterLevel(const MonsterTable::MonsterStatsEntry &stats)

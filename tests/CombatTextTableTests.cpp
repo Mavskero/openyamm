@@ -124,3 +124,18 @@ TEST_CASE("actual attack presentation uses applied damage and status priority")
     attack.canAttack = false;
     CHECK(format(false).empty());
 }
+
+TEST_CASE("connector enemy message is optional for old packages, literal and strictly unique")
+{
+    CombatTextTable text;
+    auto rows = chineseRows();
+    REQUIRE(text.loadFromRows(rows));
+    CHECK(text.format(Message::EnemyNearby, {}, {}, 0).empty());
+    rows.push_back({"combat.enemy_nearby", "附近有敌人！"});
+    REQUIRE(text.loadFromRows(rows));
+    CHECK_EQ(text.format(Message::EnemyNearby, {}, {}, 0), "附近有敌人！");
+    rows.back()[1] = "%s"; CHECK_FALSE(text.loadFromRows(rows));
+    rows.back()[1] = "附近有敌人！"; rows.push_back(rows.back()); CHECK_FALSE(text.loadFromRows(rows));
+    rows = chineseRows(); rows[0] = {"combat.enemy_nearby", "Enemies nearby!"};
+    CHECK_FALSE(text.loadFromRows(rows));
+}

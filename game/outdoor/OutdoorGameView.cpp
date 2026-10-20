@@ -3681,6 +3681,75 @@ const SpriteFrameTable *OutdoorGameView::actorSpriteFrameTable() const
         : nullptr;
 }
 
+bool OutdoorGameView::prepareMonsterVisualResourcesForTransaction(int16_t monsterId, std::string &error)
+{
+    error.clear();
+    const auto fail = [&error](const std::string &message)
+    {
+        error = "Story actor visual preparation: " + message;
+        return false;
+    };
+    if (!SDL_IsMainThread() || !m_isInitialized || m_pAssetFileSystem == nullptr
+        || !bgfx::isValid(m_outdoorLitBillboardProgramHandle))
+    {
+        return fail("requires an initialized view on the main/API thread");
+    }
+    const MonsterEntry *pMonster = m_gameSession.data().monsterTable().findById(monsterId);
+    if (pMonster == nullptr || !ensureMonsterVisualResources(monsterId) || actorSpriteFrameTable() == nullptr)
+    {
+        return fail("missing monster or sprite frame resources");
+    }
+    const SpriteFrameTable &frames = *actorSpriteFrameTable();
+    bool hasAuthoredAction = false;
+    for (const std::string &sprite : pMonster->spriteNames)
+    {
+        if (sprite.empty() || toLowerCopy(sprite) == "null")
+        {
+            continue;
+        }
+        hasAuthoredAction = true;
+        const std::optional<uint16_t> first = frames.findFrameIndexBySpriteName(sprite);
+        if (!first || *first == 0)
+        {
+            return fail("missing authored action " + sprite);
+        }
+        bool complete = false;
+        for (uint32_t index = *first; index <= std::numeric_limits<uint16_t>::max(); ++index)
+        {
+            const SpriteFrameEntry *pFrame = frames.getFrame(uint16_t(index), 0);
+            if (pFrame == nullptr)
+            {
+                return fail("truncated animation " + sprite);
+            }
+            for (int octant = 0; octant < 8; ++octant)
+            {
+                const ResolvedSpriteTexture resolved = SpriteFrameTable::resolveTexture(*pFrame, octant);
+                if (resolved.textureName.empty())
+                {
+                    return fail("empty texture in " + sprite);
+                }
+                const BillboardTextureHandle *pTexture = OutdoorBillboardRenderer::ensureSpriteBillboardTexture(
+                    *this, resolved.textureName, pFrame->paletteId, "story_actor_prepare");
+                if (pTexture == nullptr || pTexture->physicalWidth <= 0 || pTexture->physicalHeight <= 0
+                    || !bgfx::isValid(pTexture->textureHandle))
+                {
+                    return fail("unreadable pixels or failed upload for " + resolved.textureName);
+                }
+            }
+            if (!SpriteFrameTable::hasFlag(pFrame->flags, SpriteFrameFlag::HasMore))
+            {
+                complete = true;
+                break;
+            }
+        }
+        if (!complete)
+        {
+            return fail("unterminated animation " + sprite);
+        }
+    }
+    return hasAuthoredAction || fail("monster has no authored action");
+}
+
 GameplayWorldUiRenderState OutdoorGameView::gameplayUiRenderState(int width, int height) const
 {
     return GameplayWorldUiRenderState{
@@ -4142,7 +4211,7 @@ void OutdoorGameView::shutdown()
     characterScreen.adventurersInnScrollOffset = 0;
     m_lastAdventurersInnPortraitClickTicks = 0;
     m_lastAdventurersInnPortraitClickedIndex = std::nullopt;
-    GameplayHeldItemController::clearHeldInventoryItem(heldInventoryItem());
+    // Cursor ownership survives map/view teardown; new session and save restoration own its reset.
     screenRuntime.actorInspectOverlay() = {};
     screenRuntime.spellInspectOverlay() = {};
     screenRuntime.readableScrollOverlay() = {};

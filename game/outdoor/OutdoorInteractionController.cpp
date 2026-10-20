@@ -1455,6 +1455,13 @@ uint16_t OutdoorInteractionController::resolveDecorationBillboardSpriteId(
     hidden = false;
     uint16_t spriteId = billboard.spriteId;
 
+    if (view.m_pOutdoorWorldRuntime != nullptr
+        && !view.m_pOutdoorWorldRuntime->isMapDecorationVisible(billboard.entityIndex))
+    {
+        hidden = true;
+        return spriteId;
+    }
+
     if (!view.m_outdoorDecorationBillboardSet || view.m_pOutdoorWorldRuntime == nullptr)
     {
         return spriteId;
@@ -1481,7 +1488,7 @@ uint16_t OutdoorInteractionController::resolveDecorationBillboardSpriteId(
         return spriteId;
     }
 
-    hidden = overrideIterator->second.hidden;
+    // Indexed DDM flags already resolve visibility; this legacy record still owns texture overrides.
 
     if (!overrideIterator->second.textureName.has_value() || overrideIterator->second.textureName->empty())
     {
@@ -3706,6 +3713,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                         cogTriggeredNumber = runtimeCogTriggeredNumber.value_or(cogTriggeredNumber);
                     }
 
+                    bestHit = {};
                     bestHit.hasHit = true;
                     bestHit.kind = "face";
                     bestHit.bModelIndex = pGeometry->bModelIndex;
@@ -3821,6 +3829,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                             cogTriggeredNumber = runtimeCogTriggeredNumber.value_or(cogTriggeredNumber);
                         }
 
+                        bestHit = {};
                         bestHit.hasHit = true;
                         bestHit.kind = "face";
                         bestHit.bModelIndex = bModelIndex;
@@ -3845,7 +3854,9 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
     {
         const OutdoorEntity &entity = outdoorMapData.entities[entityIndex];
 
-        if (isInteractiveDecorationHidden(view, entityIndex))
+        if ((view.m_pOutdoorWorldRuntime != nullptr
+                && !view.m_pOutdoorWorldRuntime->isMapDecorationVisible(entityIndex))
+            || isInteractiveDecorationHidden(view, entityIndex))
         {
             continue;
         }
@@ -3873,6 +3884,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
             && isVisibleInspectDistance(distance)
             && (!bestHit.hasHit || distance < bestHit.distance))
         {
+            bestHit = {};
             bestHit.hasHit = true;
             bestHit.kind = "entity";
             bestHit.bModelIndex = entityIndex;
@@ -3912,6 +3924,13 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
             hidden = false;
             uint16_t spriteId = billboard.spriteId;
 
+            if (view.m_pOutdoorWorldRuntime != nullptr
+                && !view.m_pOutdoorWorldRuntime->isMapDecorationVisible(billboard.entityIndex))
+            {
+                hidden = true;
+                return spriteId;
+            }
+
             if (!view.m_outdoorDecorationBillboardSet || view.m_pOutdoorWorldRuntime == nullptr)
             {
                 return spriteId;
@@ -3938,7 +3957,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                 return spriteId;
             }
 
-            hidden = overrideIterator->second.hidden;
+            // Indexed DDM flags already resolve visibility; this legacy record still owns texture overrides.
 
             if (!overrideIterator->second.textureName.has_value() || overrideIterator->second.textureName->empty())
             {
@@ -3980,7 +3999,12 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
             if (view.m_pOutdoorMapData && decoration.entityIndex < view.m_pOutdoorMapData->entities.size())
             {
                 const OutdoorEntity &entity = view.m_pOutdoorMapData->entities[decoration.entityIndex];
-                directEventId = resolveOutdoorEntityScriptEventId(entity);
+                const uint16_t eventId = resolveOutdoorEntityScriptEventId(entity);
+
+                if (eventId != 0)
+                {
+                    directEventId = eventId;
+                }
             }
             const bool interactiveDecoration = interactiveEventId.has_value() || directEventId.has_value();
             const DecorationEntry *pDecorationEntry =
@@ -4087,6 +4111,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                     || bestHitIsPassiveSpawn(bestHit)
                     || bestHitIsPassiveObject(bestHit)))
             {
+                bestHit = {};
                 bestHit.hasHit = true;
                 bestHit.kind = "decoration";
                 bestHit.bModelIndex = decorationIndex;
@@ -4097,8 +4122,12 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                 if (view.m_pOutdoorMapData && decoration.entityIndex < view.m_pOutdoorMapData->entities.size())
                 {
                     const OutdoorEntity &entity = view.m_pOutdoorMapData->entities[decoration.entityIndex];
+                    bestHit.decorationListId = entity.decorationListId;
                     bestHit.eventIdPrimary = entity.eventIdPrimary;
                     bestHit.eventIdSecondary = entity.eventIdSecondary;
+                    bestHit.variablePrimary = entity.variablePrimary;
+                    bestHit.variableSecondary = entity.variableSecondary;
+                    bestHit.specialTrigger = entity.specialTrigger;
                 }
             }
         }
@@ -4123,6 +4152,14 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
             }
 
             const OutdoorWorldRuntime::MapActorState *pActorState = runtimeActorStateForBillboard(view, actor);
+
+            // An in-range runtime binding with no public actor is a removed actor, not an unbound preview.
+            if (view.m_pOutdoorWorldRuntime != nullptr
+                && actor.runtimeActorIndex < view.m_pOutdoorWorldRuntime->mapActorCount()
+                && pActorState == nullptr)
+            {
+                continue;
+            }
 
             if (pActorState != nullptr && actor.runtimeActorIndex < coveredRuntimeActors.size())
             {
@@ -4214,6 +4251,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                     actor.runtimeActorIndex != static_cast<size_t>(-1)
                         ? findActorPreviewBillboardForRuntimeActorIndex(view, actor.runtimeActorIndex, &previewBillboardIndex)
                         : nullptr;
+                bestHit = {};
                 bestHit.hasHit = true;
                 bestHit.kind = "actor";
                 bestHit.bModelIndex = pPreviewBillboard != nullptr ? previewBillboardIndex : actorIndex;
@@ -4340,6 +4378,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                 size_t previewBillboardIndex = actorIndex;
                 const ActorPreviewBillboard *pPreviewBillboard =
                     findActorPreviewBillboardForRuntimeActorIndex(view, actorIndex, &previewBillboardIndex);
+                bestHit = {};
                 bestHit.hasHit = true;
                 bestHit.kind = "actor";
                 bestHit.bModelIndex = pPreviewBillboard != nullptr ? previewBillboardIndex : actorIndex;
@@ -4349,7 +4388,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                     : pActorState->displayName;
                 bestHit.distance = distance;
                 bestHit.isFriendly = !pActorState->hostileToParty;
-                bestHit.npcId = pPreviewBillboard != nullptr ? pPreviewBillboard->npcId : 0;
+                bestHit.npcId = pPreviewBillboard != nullptr ? pPreviewBillboard->npcId : pActorState->npcId;
                 bestHit.actorGroup = pPreviewBillboard != nullptr ? pPreviewBillboard->group : pActorState->group;
                 bestHit.runtimeActorIndex = actorIndex;
                 bestHit.spawnSummary.clear();
@@ -4394,6 +4433,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                     || bestHitIsPassiveSpawn(bestHit)
                     || bestHitIsPassiveObject(bestHit)))
             {
+                bestHit = {};
                 bestHit.hasHit = true;
                 bestHit.kind = "world_item";
                 bestHit.bModelIndex = worldItemIndex;
@@ -4437,6 +4477,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
                 && isVisibleInspectDistance(distance)
                 && (!bestHit.hasHit || distance < bestHit.distance))
             {
+                bestHit = {};
                 bestHit.hasHit = true;
                 bestHit.kind = "object";
                 bestHit.bModelIndex = objectIndex;
@@ -4452,6 +4493,7 @@ OutdoorGameView::InspectHit OutdoorInteractionController::inspectBModelFace(
 
     if (!bestHit.hasHit && terrainBlockDistance < std::numeric_limits<float>::max())
     {
+        bestHit = {};
         bestHit.hasHit = true;
         bestHit.kind = "terrain";
         bestHit.name = "terrain";

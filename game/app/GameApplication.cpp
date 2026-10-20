@@ -1,4 +1,5 @@
 #include "game/app/GameApplication.h"
+#include "game/content/BreachMazeLifecycle.h"
 #include "engine/WindowPointer.h"
 
 #include "game/StringUtils.h"
@@ -1346,6 +1347,11 @@ const IndoorSceneRuntime::Snapshot *findSavedIndoorSceneState(
     const GameSession &session,
     const MapAssetInfo &mapAssetInfo)
 {
+    if (mapAssetInfo.map.worldId == "mmmerge" && sameMapFileName(mapAssetInfo.map.fileName, "brbase.blv")
+        && session.breachMazeRunData() && session.breachMazeRunData()->inside)
+    {
+        return &session.breachMazeRunData()->floors.at(session.breachMazeRunData()->currentLevel).runtime.scene;
+    }
     const std::unordered_map<std::string, IndoorSceneRuntime::Snapshot> &states = session.indoorSceneStates();
     std::unordered_map<std::string, IndoorSceneRuntime::Snapshot>::const_iterator stateIt = states.end();
 
@@ -5506,7 +5512,8 @@ void GameApplication::finishPendingInputPrompt(bool accepted)
         return;
     }
 
-    const std::string normalizedInput = normalizePromptAnswer(submittedInput);
+    const std::string normalizedInput = prompt.trimWhitespace
+        ? normalizePromptAnswer(submittedInput) : toLowerCopy(submittedInput);
 
     bool matchedAnswer = false;
     size_t matchedAnswerIndex = 0;
@@ -5515,7 +5522,8 @@ void GameApplication::finishPendingInputPrompt(bool accepted)
     for (size_t answerIndex = 0; answerIndex < answers.size(); ++answerIndex)
     {
         const std::string &answer = answers[answerIndex];
-        const std::string normalizedAnswer = normalizePromptAnswer(answer);
+        const std::string normalizedAnswer = prompt.trimWhitespace
+            ? normalizePromptAnswer(answer) : toLowerCopy(answer);
 
         if (!answer.empty() && normalizedAnswer == normalizedInput)
         {
@@ -5612,36 +5620,13 @@ void GameApplication::presentPendingInputPromptDialogResult(size_t previousMessa
     IGameplayWorldRuntime *pWorldRuntime = m_gameSession.activeWorldRuntime();
     EventRuntimeState *pRuntimeState = pWorldRuntime != nullptr ? pWorldRuntime->eventRuntimeState() : nullptr;
 
-    if (pWorldRuntime == nullptr || pRuntimeState == nullptr || !pRuntimeState->pendingDialogueContext)
+    if (pWorldRuntime == nullptr || pRuntimeState == nullptr
+        || (!pRuntimeState->pendingDialogueContext && !pRuntimeState->pendingCloseNpcDialogue))
     {
         return;
     }
 
-    const MapStatsEntry *pCurrentMap =
-        m_gameDataLoader.getMapStats().findByFileName(m_gameSession.currentMapFileName());
-
-    m_gameSession.gameplayScreenRuntime().activeEventDialog() = buildEventDialogContent(
-        *pRuntimeState,
-        previousMessageCount,
-        true,
-        pWorldRuntime->globalEventProgram(),
-        &m_gameDataLoader.getHouseTable(),
-        &m_gameDataLoader.getClassSkillTable(),
-        &m_gameDataLoader.getNpcDialogTable(),
-        &m_gameDataLoader.getTransitionTable(),
-        pCurrentMap,
-        &m_gameDataLoader.getMapStats().getEntries(),
-        pWorldRuntime->party(),
-        pWorldRuntime,
-        pWorldRuntime->gameMinutes(),
-        &m_gameDataLoader.getMergedNpcProfessionTable(),
-        &m_gameDataLoader.getMergedNewsProfessionTopicTable(),
-        &m_gameDataLoader.getMergedNpcBtbTable(),
-        nullptr,
-        &m_gameDataLoader.getMergedContinentSettingTable(),
-        &m_gameDataLoader.getCharacterInspectTable(),
-        &m_gameDataLoader.getHouseServiceTextTable());
-
+    m_gameSession.gameplayScreenRuntime().presentPendingEventDialog(previousMessageCount, true);
 }
 
 std::vector<std::string> GameApplication::resolvePendingInputAnswers(
@@ -6261,10 +6246,17 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
             selectedMap->localEventProgram,
             selectedMap->globalEventProgram);
 
+        m_gameSession.bindActiveWorldRuntime(m_pOutdoorWorldRuntime.get());
         if (EventRuntimeState *pEventRuntimeState = m_pOutdoorWorldRuntime->eventRuntimeState())
         {
             m_gameSession.applyNamedGlobalVarsToRuntime(*pEventRuntimeState);
             m_gameSession.applyHistoryToRuntime(*pEventRuntimeState);
+            std::string companionError;
+            if (!m_gameSession.bindBreachAlvarCompanionRuntime(companionError))
+            {
+                std::cerr << "GameApplication: companion runtime binding failed: " << companionError << '\n';
+                return false;
+            }
 
             // A loaded runtime snapshot already contains entry/refill effects. Replaying
             // them here can reset a saved puzzle while retaining its textures and timers.
@@ -6332,7 +6324,7 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
         if (!initializeView)
         {
             releaseUnusedHeapPages();
-            return true;
+            return executeCurrentMapAfterLoadEvents();
         }
 
         const bool initialized = m_outdoorGameView.initialize(
@@ -6373,7 +6365,7 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
             releaseUnusedHeapPages();
         }
 
-        return initialized;
+        return initialized && executeCurrentMapAfterLoadEvents();
     }
 
     if (selectedMap->indoorMapData)
@@ -6395,8 +6387,21 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
         const int32_t currentMapDay = currentLocationDay(m_gameSession.gameMinutes());
         const IndoorSceneRuntime::Snapshot *pSavedIndoorState =
             findSavedIndoorSceneState(m_gameSession, *selectedMap);
+        const bool hasSavedResolvedActors = pSavedIndoorState != nullptr
+            && std::any_of(pSavedIndoorState->worldRuntime.mapActorAiStates.begin(),
+                pSavedIndoorState->worldRuntime.mapActorAiStates.end(),
+                [](const IndoorWorldRuntime::MapActorAiState &actor)
+                {
+                    return actor.combatState.resolved() != nullptr;
+                });
+        if (hasSavedResolvedActors && selectedMap->authoredCompanionSource != AuthoredCompanionSource::PreparedInstance)
+        {
+            std::cerr << "Generated indoor save requires its prepared floor geometry before initialization\n";
+            return false;
+        }
         const bool indoorTimedRespawn =
             pSavedIndoorState != nullptr
+            && !hasSavedResolvedActors
             && pSavedIndoorState->mapDeltaData
             && timedMapRespawnDue(
                 selectedMap->map,
@@ -6422,6 +6427,21 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
         indoorLocationInfo.lastRespawnDay = currentMapDay;
 
         std::optional<MapDeltaData> indoorMapDeltaDataForRuntime = selectedMap->indoorMapDeltaData;
+        std::vector<GameplayActorCombatState> preparedActorCombat = selectedMap->preparedActorCombat;
+        const MergeMonsterGenerationState *pMonsterGeneration = selectedMap->preparedMonsterGeneration
+            ? &*selectedMap->preparedMonsterGeneration : nullptr;
+        if (restoreSavedIndoorState && hasSavedResolvedActors)
+        {
+            indoorMapDeltaDataForRuntime = pSavedIndoorState->mapDeltaData;
+            pMonsterGeneration = pSavedIndoorState->worldRuntime.mergeMonsterGeneration
+                ? &*pSavedIndoorState->worldRuntime.mergeMonsterGeneration : nullptr;
+            preparedActorCombat.clear();
+            preparedActorCombat.reserve(pSavedIndoorState->worldRuntime.mapActorAiStates.size());
+            for (const IndoorWorldRuntime::MapActorAiState &actor : pSavedIndoorState->worldRuntime.mapActorAiStates)
+            {
+                preparedActorCombat.push_back(actor.combatState);
+            }
+        }
         if (indoorMapDeltaDataForRuntime && !restoreSavedIndoorState)
         {
             indoorMapDeltaDataForRuntime->locationInfo = indoorLocationInfo;
@@ -6459,7 +6479,12 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
             &m_gameDataLoader.getNpcDialogTable(),
             selectedMap->itemSourceData ? &*selectedMap->itemSourceData : nullptr,
             &m_gameDataLoader.getMm9MapTransitionTable(),
-            &m_gameDataLoader.getMm9TeacherScheduleTable()
+            &m_gameDataLoader.getMm9TeacherScheduleTable(),
+            preparedActorCombat,
+            pMonsterGeneration,
+            pMonsterGeneration != nullptr
+                ? &m_gameDataLoader.getOrCreateMergeMonsterSourceProfile(*m_pAssetFileSystem) : nullptr,
+            &m_gameDataLoader.getMergedBolsterFormulaTable()
         );
         timingLogger.stage("indoor runtime initialized");
 
@@ -6470,6 +6495,14 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
 
         IndoorSceneRuntime::Snapshot indoorTimeSnapshot = pIndoorSceneRuntime->snapshot();
         indoorTimeSnapshot.worldRuntime.gameMinutes = m_gameSession.gameMinutes();
+        if (!m_loadingSavedGameRuntime)
+        {
+            // A cached location retains its world state, but old party motion does not cross an entrance.
+            // Clear it before OnLoad so a new source jump request made there remains authoritative.
+            indoorTimeSnapshot.partyRuntime.jumpState = {};
+            indoorTimeSnapshot.partyRuntime.movementAccumulatorSeconds = 0.0f;
+            indoorTimeSnapshot.partyRuntime.movementState.verticalVelocity = 0.0f;
+        }
         if (indoorTimeSnapshot.mapDeltaData
             && (!restoreSavedIndoorState || indoorTimeSnapshot.mapDeltaData->locationInfo.lastRespawnDay <= 0))
         {
@@ -6606,9 +6639,13 @@ bool GameApplication::initializeSelectedMapRuntime(bool initializeView)
 
         m_pMapSceneRuntime = std::move(pIndoorSceneRuntime);
         m_gameplayController.bindRuntime(m_pMapSceneRuntime.get());
+        if (!bindBreachMazeInteractions())
+        {
+            return false;
+        }
         timingLogger.stage("indoor scene runtime bound");
         releaseUnusedHeapPages();
-        return true;
+        return executeCurrentMapAfterLoadEvents();
     }
 
     std::cerr
@@ -6707,6 +6744,7 @@ void GameApplication::synchronizeSessionFromRuntime()
     {
         const IndoorSceneRuntime *pIndoorRuntime = static_cast<const IndoorSceneRuntime *>(m_pMapSceneRuntime.get());
         const IndoorSceneRuntime::Snapshot snapshot = pIndoorRuntime->snapshot();
+        captureBreachMazeRuntime(snapshot, m_indoorRenderer.cameraYawRadians(), m_indoorRenderer.cameraPitchRadians());
         m_gameSession.captureIndoorRuntimeState(
             m_pMapSceneRuntime->currentMapFileName(),
             m_pMapSceneRuntime->party(),
@@ -6784,7 +6822,13 @@ bool GameApplication::loadCurrentSessionMap(
         timingLogger.beginStage("game data loader map load");
     }
 
-    if ((!selectedMapMatchesSession || forceReloadSelectedMap)
+    const bool restoreMaze = m_gameSession.breachMazeRunData() && m_gameSession.breachMazeRunData()->inside
+        && sameMapFileName(m_gameSession.currentMapFileName(), "brbase.blv");
+    if (restoreMaze && !restoreBreachMazeMapAssets())
+    {
+        return false;
+    }
+    if (!restoreMaze && (!selectedMapMatchesSession || forceReloadSelectedMap)
         && !m_gameDataLoader.loadMapByFileNameForGameplay(
                 *m_pAssetFileSystem,
                 m_gameSession.currentMapFileName(),
@@ -7466,6 +7510,8 @@ void GameApplication::restoreSavedOutdoorWorldStateForSelectedMap()
 
 void GameApplication::shutdownRenderer()
 {
+    m_pendingBreachMazeTransition.reset();
+    m_pendingBreachAlvarChaosReturn.reset();
     m_gameAudioSystem.stopAllPlayback();
     MenuScreenBase::shutdownSharedResources();
     m_mainMenuChildScreensPrepared = false;
@@ -7880,7 +7926,8 @@ bool GameApplication::quickSaveToPath(
 
     std::string error;
 
-    if (!saveGameDataToPath(path, *saveData, error))
+    const auto &companionProfile = m_gameDataLoader.getBreachAlvarCompanionProfile();
+    if (!saveGameDataToPath(path, *saveData, error, companionProfile ? &companionProfile->friendActor : nullptr))
     {
         GAMEPLAY_DEBUG_TRACE(
             "save_game_failed path=\"" + path.string() + "\""
@@ -7943,7 +7990,16 @@ bool GameApplication::quickLoadFromPath(const std::filesystem::path &path, bool 
         return false;
     }
 
-    if (!validateRequiredContentPackages(
+    const auto &companionProfile = m_gameDataLoader.getBreachAlvarCompanionProfile();
+    if (saveData->breachAlvarCompanions && !companionProfile)
+    {
+        cancelLoadingOverlay();
+        reportQuickSaveStatus("Quick load failed: save requires the Breach Alvar companion content profile");
+        return false;
+    }
+    if (!validateSavedBreachAlvarCompanions(
+            *saveData, error, companionProfile ? &companionProfile->friendActor : nullptr)
+        || !validateRequiredContentPackages(
             *saveData,
             m_gameDataLoader.getItemTable(),
             m_gameDataLoader.getHouseTable(),
@@ -7963,6 +8019,21 @@ bool GameApplication::quickLoadFromPath(const std::filesystem::path &path, bool 
     );
     renderLoadingOverlayProgress(20);
 
+    if (saveData->breachMaze)
+    {
+        try
+        {
+            const auto &profile = m_gameDataLoader.getOrCreateBreachMazeRuntimeProfile(*m_pAssetFileSystem);
+            const BreachMazeLifecycle lifecycle(profile.mazeTemplate);
+            (void)lifecycle.restore(*saveData->breachMaze);
+        }
+        catch (const std::exception &failure)
+        {
+            cancelLoadingOverlay();
+            reportQuickSaveStatus(std::string("Quick load failed: ") + failure.what());
+            return false;
+        }
+    }
     m_gameSession.restoreFromSaveData(*saveData);
     m_gameSession.setCurrentSavePath(path);
 
@@ -8879,6 +8950,12 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
     }
     recordFrameDiagnostics(m_framePerformanceDiagnostics.pendingStateNanoseconds, pendingPromptBeginTickCount);
 
+    if (!debugConsoleFreezesGameplay)
+    {
+        processPendingBreachAlvarCompanionRequest();
+        processPendingBreachAlvarChaosRequest();
+        processPendingBreachMazeTransitionRequest();
+    }
     IGameplayWorldRuntime *pWorldRuntime = m_gameSession.activeWorldRuntime();
 
     if (pWorldRuntime != nullptr && m_pMapSceneRuntime != nullptr && selectedMap)
@@ -9011,6 +9088,20 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
             return;
         }
 
+        if (!debugConsoleFreezesGameplay
+            && (processPendingCampaignRestart() || processPendingDelayedMapMove()))
+        {
+            recordFrameDiagnostics(m_framePerformanceDiagnostics.postWorldNanoseconds, postAudioBeginTickCount);
+            finishFrameDiagnostics();
+            return;
+        }
+
+        if (!debugConsoleFreezesGameplay)
+        {
+            processPendingBreachAlvarCompanionRequest();
+            processPendingBreachAlvarChaosRequest();
+            processPendingBreachMazeTransitionRequest();
+        }
         processPendingMapMove();
 
         if (processPendingQuickSaveInput())
@@ -9057,41 +9148,60 @@ bool GameApplication::processPendingMapMove(bool initializeView)
         return false;
     }
 
+    if (pendingMapMove->traceSourceKind == "breach_maze")
+    {
+        return commitBreachMazeTransition(*pendingMapMove, initializeView);
+    }
+    if (pendingMapMove->traceSourceKind == "breach_alvar_chaos_return")
+    {
+        return commitBreachAlvarChaosReturn(*pendingMapMove, initializeView);
+    }
+    if (pendingMapMove->traceSourceKind == "town_portal_dimension_door"
+        && m_gameSession.breachMazeRunData() && m_gameSession.breachMazeRunData()->inside)
+    {
+        return commitBreachMazePortalDeparture(*pendingMapMove, initializeView);
+    }
+    return applyMapMove(*pendingMapMove, initializeView);
+}
+
+bool GameApplication::applyMapMove(const EventRuntimeState::PendingMapMove &move, bool initializeView,
+    const std::function<void()> &commitArrival)
+{
     synchronizeSessionFromRuntime();
     closeTransientGameplayUiForMapMove();
 
     const bool isSameMapTeleport =
-        !pendingMapMove->mapName
-        || pendingMapMove->mapName->empty()
-        || *pendingMapMove->mapName == "0"
-        || *pendingMapMove->mapName == "0."
-        || (!pendingMapMove->useMapStartPosition
-            && sameMapFileName(*pendingMapMove->mapName, m_gameSession.currentMapFileName()));
+        !move.mapName
+        || move.mapName->empty()
+        || *move.mapName == "0"
+        || *move.mapName == "0."
+        || (!move.useMapStartPosition
+            && sameMapFileName(*move.mapName, m_gameSession.currentMapFileName()));
 
-    const auto applyMapMoveDirection = [this, &pendingMapMove]()
+    const auto applyMapMoveDirection = [this, &move]()
     {
-        if ((!pendingMapMove->directionDegrees && !pendingMapMove->lookAngleDegrees) || m_pMapSceneRuntime == nullptr)
+        if ((!move.directionDegrees && !move.lookAngleDegrees) || m_pMapSceneRuntime == nullptr)
         {
             return;
         }
 
         if (m_pMapSceneRuntime->kind() == SceneKind::Outdoor)
         {
-            const float yawRadians = pendingMapMove->directionDegrees
-                ? mapMoveHeadingDegreesToYawRadians(*pendingMapMove->directionDegrees)
+            const float yawRadians = move.directionDegrees
+                ? mapMoveHeadingDegreesToYawRadians(*move.directionDegrees)
                 : m_outdoorGameView.cameraYawRadians();
-            const float pitchRadians = pendingMapMove->lookAngleDegrees
-                ? static_cast<float>(*pendingMapMove->lookAngleDegrees) * Pi / 180.0f
+            const float pitchRadians = move.lookAngleDegrees
+                ? static_cast<float>(*move.lookAngleDegrees) * Pi / 180.0f
                 : m_outdoorGameView.cameraPitchRadians();
             m_outdoorGameView.setCameraAngles(yawRadians, pitchRadians);
         }
         else if (m_pMapSceneRuntime->kind() == SceneKind::Indoor)
         {
-            const float yawRadians = pendingMapMove->directionDegrees
-                ? mapMoveHeadingDegreesToYawRadians(*pendingMapMove->directionDegrees)
+            const float yawRadians = move.directionDegrees
+                ? mapMoveHeadingDegreesToYawRadians(*move.directionDegrees)
                 : m_indoorRenderer.cameraYawRadians();
-            const float pitchRadians = pendingMapMove->lookAngleDegrees
-                ? static_cast<float>(*pendingMapMove->lookAngleDegrees) * Pi / 180.0f
+            const float pitchRadians = move.lookAngleDegrees
+                ? static_cast<float>(*move.lookAngleDegrees) * Pi / 180.0f
                 : m_indoorRenderer.cameraPitchRadians();
             m_indoorRenderer.setCameraAngles(yawRadians, pitchRadians);
         }
@@ -9104,29 +9214,30 @@ bool GameApplication::processPendingMapMove(bool initializeView)
             && m_pOutdoorPartyRuntime != nullptr)
         {
             m_pOutdoorPartyRuntime->teleportTo(
-                static_cast<float>(pendingMapMove->x),
-                static_cast<float>(pendingMapMove->y),
-                static_cast<float>(pendingMapMove->z)
+                static_cast<float>(move.x),
+                static_cast<float>(move.y),
+                static_cast<float>(move.z)
             );
         }
         else if (m_pMapSceneRuntime != nullptr && m_pMapSceneRuntime->kind() == SceneKind::Indoor)
         {
             IndoorSceneRuntime *pIndoorRuntime = static_cast<IndoorSceneRuntime *>(m_pMapSceneRuntime.get());
             pIndoorRuntime->partyRuntime().teleportPartyPosition(
-                static_cast<float>(pendingMapMove->x),
-                static_cast<float>(pendingMapMove->y),
-                static_cast<float>(pendingMapMove->z));
+                static_cast<float>(move.x),
+                static_cast<float>(move.y),
+                static_cast<float>(move.z));
         }
 
         applyMapMoveDirection();
 
         m_gameAudioSystem.playCommonSound(SoundId::Teleport, GameAudioSystem::PlaybackGroup::Ui);
+        if (commitArrival) commitArrival();
         synchronizeSessionFromRuntime();
         GAMEPLAY_DEBUG_TRACE_BLOCK(
             logMapArrived(
                 previousMapFileName,
                 m_gameSession.currentMapFileName(),
-                *pendingMapMove,
+                move,
                 true,
                 m_gameSession.gameMinutes());
         );
@@ -9140,13 +9251,23 @@ bool GameApplication::processPendingMapMove(bool initializeView)
         ? consumePendingMapLeaveOutputs(*pLeavingRuntimeState)
         : PendingMapLeaveOutputs{};
 
-    const std::string targetMapName = *pendingMapMove->mapName;
+    const std::string targetMapName = *move.mapName;
     const std::string previousMapFileName = m_gameSession.currentMapFileName();
 
     captureCurrentSceneState();
 
+    const std::optional<GameSaveData> rollbackState = m_gameSession.buildSaveData();
+    if (!rollbackState)
+    {
+        if (pLeavingRuntimeState != nullptr)
+        {
+            appendPendingMapLeaveOutputs(*pLeavingRuntimeState, std::move(onLeaveOutputs));
+        }
+        return false;
+    }
+
     m_gameSession.setCurrentMapFileName(targetMapName);
-    const LoadingOverlayScreen::Presentation loadingPresentation = pendingMapMove->useFullscreenLoading
+    const LoadingOverlayScreen::Presentation loadingPresentation = move.useFullscreenLoading
         ? LoadingOverlayScreen::Presentation::Fullscreen
         : LoadingOverlayScreen::Presentation::DungeonTransition;
     beginLoadingOverlay(loadingPresentation);
@@ -9159,13 +9280,24 @@ bool GameApplication::processPendingMapMove(bool initializeView)
                 renderLoadingOverlayProgress(remapLoadingProgress(localProgress, 20, 85));
             }))
     {
-        m_gameSession.setCurrentMapFileName(previousMapFileName);
-        const bool previousMapRestored = loadCurrentSessionMap(
+        m_gameSession.restoreFromSaveData(*rollbackState);
+        const bool previousLoading = m_loadingSavedGameRuntime;
+        m_loadingSavedGameRuntime = true;
+        bool previousMapRestored = loadCurrentSessionMap(
             initializeView,
             [this](int localProgress)
             {
                 renderLoadingOverlayProgress(remapLoadingProgress(localProgress, 20, 85));
-            });
+            }) && applyCurrentSessionToRuntime();
+        if (previousMapRestored)
+        {
+            previousMapRestored = m_gameSession.restoreTurnBasedCombatFromSaveData(*rollbackState);
+        }
+        if (previousMapRestored)
+        {
+            m_gameSession.restoreHeldInventoryItemFromSaveData(*rollbackState);
+        }
+        m_loadingSavedGameRuntime = previousLoading;
 
         if (previousMapRestored && m_pMapSceneRuntime != nullptr)
         {
@@ -9192,23 +9324,31 @@ bool GameApplication::processPendingMapMove(bool initializeView)
     if (m_pMapSceneRuntime != nullptr
         && m_pMapSceneRuntime->kind() == SceneKind::Outdoor
         && m_pOutdoorPartyRuntime != nullptr
-        && !pendingMapMove->useMapStartPosition)
+        && !move.useMapStartPosition)
     {
+        const PartyJumpState arrivalJump = m_pOutdoorPartyRuntime->snapshot().jumpState;
         m_pOutdoorPartyRuntime->teleportTo(
-            static_cast<float>(pendingMapMove->x),
-            static_cast<float>(pendingMapMove->y),
-            static_cast<float>(pendingMapMove->z)
+            static_cast<float>(move.x),
+            static_cast<float>(move.y),
+            static_cast<float>(move.z)
         );
+        OutdoorPartyRuntime::Snapshot arrival = m_pOutdoorPartyRuntime->snapshot();
+        arrival.jumpState = arrivalJump;
+        m_pOutdoorPartyRuntime->restoreSnapshot(arrival);
     }
     else if (m_pMapSceneRuntime != nullptr
              && m_pMapSceneRuntime->kind() == SceneKind::Indoor
-             && !pendingMapMove->useMapStartPosition)
+             && !move.useMapStartPosition)
     {
         IndoorSceneRuntime *pIndoorRuntime = static_cast<IndoorSceneRuntime *>(m_pMapSceneRuntime.get());
+        const PartyJumpState arrivalJump = pIndoorRuntime->partyRuntime().snapshot().jumpState;
         pIndoorRuntime->partyRuntime().teleportPartyPosition(
-            static_cast<float>(pendingMapMove->x),
-            static_cast<float>(pendingMapMove->y),
-            static_cast<float>(pendingMapMove->z));
+            static_cast<float>(move.x),
+            static_cast<float>(move.y),
+            static_cast<float>(move.z));
+        IndoorPartyRuntime::Snapshot arrival = pIndoorRuntime->partyRuntime().snapshot();
+        arrival.jumpState = arrivalJump;
+        pIndoorRuntime->partyRuntime().restoreSnapshot(arrival);
     }
 
     applyMapMoveDirection();
@@ -9218,7 +9358,7 @@ bool GameApplication::processPendingMapMove(bool initializeView)
         arrivedGameMinutes = pWorldRuntime->gameMinutes();
     }
     GAMEPLAY_DEBUG_TRACE_BLOCK(
-        logMapArrived(previousMapFileName, targetMapName, *pendingMapMove, false, arrivedGameMinutes);
+        logMapArrived(previousMapFileName, targetMapName, move, false, arrivedGameMinutes);
     );
 
     if (isDungeonMapFileName(targetMapName) && !sameMapFileName(previousMapFileName, targetMapName))
@@ -9236,6 +9376,7 @@ bool GameApplication::processPendingMapMove(bool initializeView)
         }
     }
 
+    if (commitArrival) commitArrival();
     synchronizeSessionFromRuntime();
     renderLoadingOverlayProgress(95);
     completeLoadingOverlay();
@@ -9274,6 +9415,35 @@ void GameApplication::closeTransientGameplayUiForMapMove()
     screenRuntime.closeInventoryNestedOverlay();
     screenRuntime.closeActiveEventDialog();
     screenRuntime.resetLootOverlayInteractionState();
+}
+
+void GameApplication::processPendingBreachAlvarCompanionRequest()
+{
+    EventRuntimeState *pState = m_gameplayController.eventRuntimeState();
+    if (pState == nullptr || !pState->pendingBreachAlvarCompanionRequest)
+    {
+        return;
+    }
+    // The Session verifies the still-queued request against the actual UI and live world.
+    // Consume even an unsafe request: retry requires a fresh interaction with fresh context.
+    const bool returning = pState->pendingBreachAlvarCompanionRequest->kind
+        == EventRuntimeState::PendingBreachAlvarCompanionRequest::Kind::Return;
+    const size_t previousMessageCount = pState->messages.size();
+    const BreachAlvarSessionResult result = m_gameSession.processBreachAlvarCompanionRequest(
+        *pState->pendingBreachAlvarCompanionRequest);
+    pState->pendingBreachAlvarCompanionRequest.reset();
+    if (returning && result.code == BreachAlvarSessionResult::Code::Committed)
+    {
+        // Lua's topic handler already presented the old NPC dialogue before this safe-point commit.
+        // Apply the committed street close or house reload through the normal presentation path.
+        m_gameSession.gameplayScreenRuntime().presentPendingEventDialog(previousMessageCount, true);
+    }
+    if (result.code == BreachAlvarSessionResult::Code::Rejected
+        || result.code == BreachAlvarSessionResult::Code::Unsafe)
+    {
+        GAMEPLAY_DEBUG_TRACE("breach_alvar_request_rejected reason=\"" + result.error + "\"");
+        reportQuickSaveStatus("Companion interaction could not complete. Finish the current action and try again.");
+    }
 }
 
 bool GameApplication::processPendingArcomageGame()
@@ -9351,6 +9521,28 @@ bool GameApplication::processPendingPartyDefeat()
         return false;
     }
 
+    EventRuntimeState *pRuntimeState = m_gameplayController.eventRuntimeState();
+    if (pRuntimeState != nullptr)
+    {
+        // A scripted ending owns presentation even if the party cannot act.
+        if (pRuntimeState->pendingMovie || pRuntimeState->pendingReturnToMainMenu)
+        {
+            return false;
+        }
+        const auto suppression = pRuntimeState->namedMapVars.find("OpenYAMM.SuppressDeathMovie");
+        if (suppression != pRuntimeState->namedMapVars.end() && suppression->second != 0)
+        {
+            const MapStartDestination destination = resolvePartyDefeatRespawnDestination();
+            m_pendingPartyDefeatRespawnMapFileName = destination.mapFileName;
+            m_pendingPartyDefeatRespawnStart = destination.start;
+            applyPartyDefeatConsequences();
+            respawnPartyAfterDefeat(true);
+            m_pendingPartyDefeatRespawnMapFileName.reset();
+            m_pendingPartyDefeatRespawnStart.reset();
+            return true;
+        }
+    }
+
     const MapStartDestination respawnDestination = resolvePartyDefeatRespawnDestination();
     m_pendingPartyDefeatRespawnMapFileName = respawnDestination.mapFileName;
     m_pendingPartyDefeatRespawnStart = respawnDestination.start;
@@ -9361,6 +9553,39 @@ bool GameApplication::processPendingPartyDefeat()
         PartyDefeatCutsceneDirectory,
         cutsceneStem,
         m_screenManager.currentMode()));
+    return true;
+}
+
+bool GameApplication::executeCurrentMapAfterLoadEvents()
+{
+    if (m_pMapSceneRuntime == nullptr || m_pMapSceneRuntime->eventRuntimeState() == nullptr)
+    {
+        return false;
+    }
+    // The view initializes a default outdoor pose. Restore the saved pose and
+    // camera before AfterLoad publishes the new runtime back into the session;
+    // otherwise that synchronization replaces the save with the default spawn.
+    if (m_loadingSavedGameRuntime && !applyCurrentSessionToRuntime())
+    {
+        return false;
+    }
+    EventRuntimeState &state = *m_pMapSceneRuntime->eventRuntimeState();
+    state.normalGameplayScreen = false; // Loading is not the normal gameplay screen.
+    if (!m_pMapSceneRuntime->executeGlobalAfterLoadEvents())
+    {
+        std::cerr << "GameApplication: global AfterLoad failed for " << state.mapFileName << '\n';
+        return false;
+    }
+    if (IGameplayWorldRuntime *pWorld = m_gameSession.activeWorldRuntime())
+    {
+        pWorld->applyEventRuntimeState(true);
+    }
+    m_pMapSceneRuntime->party().applyEventRuntimeState(state, false);
+    // Entry effects target the entering Party. Present them before a queued transaction changes its members.
+    m_gameSession.gameplayFxService().consumePendingEventFxRequests(m_gameSession.gameplayScreenRuntime());
+    m_gameSession.consumePendingGameplayAudioRequests();
+    processPendingBreachAlvarCompanionRequest();
+    synchronizeSessionFromRuntime();
     return true;
 }
 
@@ -9378,15 +9603,7 @@ bool GameApplication::executeCurrentMapOnLeaveEvents()
         return false;
     }
 
-    EventRuntime eventRuntime = {};
-    eventRuntime.bindHouseTable(&m_gameDataLoader.getHouseTable());
-    eventRuntime.bindNpcDialogTable(&m_gameDataLoader.getNpcDialogTable());
-    return eventRuntime.executeOnLeaveEvents(
-        m_pMapSceneRuntime->localEventProgram(),
-        m_pMapSceneRuntime->globalEventProgram(),
-        *pRuntimeState,
-        &m_pMapSceneRuntime->party(),
-        m_pMapSceneRuntime->sceneEventContext());
+    return m_pMapSceneRuntime->executeOnLeaveEvents();
 }
 
 WinGameCertificate GameApplication::buildWinGameCertificate() const
@@ -9439,8 +9656,19 @@ bool GameApplication::processPendingWinGame()
         return false;
     }
 
+    const EventRuntimeState::PendingWinGame ending = *pRuntimeState->pendingWinGame;
     pRuntimeState->pendingWinGame.reset();
     m_gameSession.gameplayScreenRuntime().closeActiveEventDialog();
+    if (ending.certificateOnly)
+    {
+        WinGameCertificate certificate = buildWinGameCertificate();
+        certificate.backgroundTexture = ending.backgroundTexture;
+        certificate.endingText = ending.endingText;
+        m_pendingWinGameCertificateAfterMovie = false;
+        m_screenManager.setActiveScreen(std::make_unique<WinGameScreen>(
+            *m_pAssetFileSystem, std::move(certificate), m_screenManager.currentMode()));
+        return true;
+    }
     m_pendingWinGameCertificateAfterMovie = true;
 
     if (resolveEventMovieStem(*m_pAssetFileSystem, WinGameCutsceneStem).empty())
@@ -9520,6 +9748,104 @@ bool GameApplication::processPendingReturnToMainMenu()
     pRuntimeState->pendingReturnToMainMenu = false;
     m_gameSession.gameplayScreenRuntime().closeActiveEventDialog();
     openMainMenuScreen();
+    return true;
+}
+
+bool GameApplication::processPendingCampaignRestart(bool initializeView)
+{
+    EventRuntimeState *pEvents = m_gameplayController.eventRuntimeState();
+    if (pEvents == nullptr || !pEvents->pendingCampaignRestartMap) return false;
+    const std::string mapName = *pEvents->pendingCampaignRestartMap;
+    pEvents->pendingCampaignRestartMap.reset();
+    std::optional<MapStartDestination> destination;
+    for (uint32_t continent = 1; continent <= 3; ++continent)
+    {
+        const auto candidate = resolveContinentStartDestination(continent);
+        if (candidate && sameMapFileName(candidate->mapFileName, mapName))
+        {
+            destination = candidate;
+            break;
+        }
+    }
+    if (!destination || m_pAssetFileSystem == nullptr) return false;
+    synchronizeSessionFromRuntime();
+    const auto backup = m_gameSession.buildSaveData();
+    if (!backup || backup->party.members.empty() || backup->party.members.size() > 5) return false;
+    const auto originalSavePath = m_gameSession.currentSavePath();
+    const bool loadingSavedGame = m_loadingSavedGameRuntime;
+    try
+    {
+        // Source ForceStartNewGame(..., true) restores active player records after a real new game,
+        // clearing their awards. World/quest state, detached custody and party-wide buffs start fresh.
+        Party::Snapshot retainedParty;
+        retainedParty.members = backup->party.members;
+        retainedParty.characterBuffs = backup->party.characterBuffs;
+        retainedParty.nextMemberId = backup->party.nextMemberId;
+        retainedParty.gold = 200;
+        retainedParty.food = 5;
+        for (Character &member : retainedParty.members) member.awards.clear();
+        m_gameAudioSystem.stopBackgroundMusicImmediate();
+        m_screenManager.setActiveScreen(nullptr);
+        beginLoadingOverlay();
+        closeTransientGameplayUiForMapMove();
+        shutdownRenderer();
+        m_gameSession.clear();
+        m_gameSession.setCurrentSceneKind(SceneKind::Outdoor);
+        m_gameSession.setCurrentMapFileName(destination->mapFileName);
+        ensureSessionPartyState().restoreSnapshot(retainedParty);
+        m_loadingSavedGameRuntime = false;
+        renderLoadingOverlayProgress(15);
+        if (!loadCurrentSessionMap(initializeView))
+            throw std::runtime_error("Cannot load the new campaign start");
+        applyCurrentSettingsToActiveRuntime();
+        applyMapStartDestination(*destination);
+        synchronizeSessionFromRuntime();
+        m_gameSession.clearCurrentSavePath();
+        m_loadingSavedGameRuntime = loadingSavedGame;
+        completeLoadingOverlay();
+        return true;
+    }
+    catch (const std::exception &failure)
+    {
+        std::cerr << "Campaign restart failed: " << failure.what() << '\n';
+        shutdownRenderer();
+        m_gameSession.restoreFromSaveData(*backup);
+        if (originalSavePath) m_gameSession.setCurrentSavePath(*originalSavePath);
+        m_loadingSavedGameRuntime = true;
+        const bool restored = loadCurrentSessionMap(initializeView) && applyCurrentSessionToRuntime();
+        if (restored)
+        {
+            m_gameSession.restoreTurnBasedCombatFromSaveData(*backup);
+            m_gameSession.restoreHeldInventoryItemFromSaveData(*backup);
+        }
+        m_loadingSavedGameRuntime = loadingSavedGame;
+        cancelLoadingOverlay();
+        reportQuickSaveStatus("无法开始新的旅程。");
+        if (!restored) std::cerr << "Campaign restart rollback could not restore the original scene\n";
+        return true;
+    }
+}
+
+bool GameApplication::processPendingDelayedMapMove(bool initializeView)
+{
+    EventRuntimeState *pEvents = m_gameplayController.eventRuntimeState();
+    if (pEvents == nullptr || !pEvents->pendingDelayedMapMove) return false;
+    auto &pending = *pEvents->pendingDelayedMapMove;
+    const uint64_t now = SDL_GetTicks();
+    if (!pending.phaseStartedMilliseconds) pending.phaseStartedMilliseconds = now;
+    const uint32_t delay = pending.dialogClosed
+        ? pending.afterCloseDelayMilliseconds : pending.messageDelayMilliseconds;
+    if (now - *pending.phaseStartedMilliseconds < delay) return false;
+    if (!pending.dialogClosed)
+    {
+        m_gameSession.gameplayScreenRuntime().closeActiveEventDialog();
+        pending.dialogClosed = true;
+        pending.phaseStartedMilliseconds = now;
+        return false;
+    }
+    const EventRuntimeState::PendingMapMove move = pending.move;
+    pEvents->pendingDelayedMapMove.reset();
+    if (!applyMapMove(move, initializeView)) reportQuickSaveStatus("无法到达目的地。");
     return true;
 }
 
@@ -9783,9 +10109,19 @@ bool GameApplication::respawnPartyAfterDefeat(bool initializeView)
 
     const std::string previousMapFileName = m_gameSession.currentMapFileName();
 
+    PendingMapLeaveOutputs onLeaveOutputs;
     if (!sameMapFileName(previousMapFileName, *m_pendingPartyDefeatRespawnMapFileName))
     {
         executeCurrentMapOnLeaveEvents();
+        if (EventRuntimeState *pState = m_gameplayController.eventRuntimeState())
+        {
+            if (pState->pendingReturnToMainMenu)
+            {
+                // A terminal map script owns the ending; do not replace its scene with a respawn.
+                return true;
+            }
+            onLeaveOutputs = consumePendingMapLeaveOutputs(*pState);
+        }
     }
 
     captureCurrentSceneState();
@@ -9802,7 +10138,16 @@ bool GameApplication::respawnPartyAfterDefeat(bool initializeView)
     {
         cancelLoadingOverlay();
         m_gameSession.setCurrentMapFileName(previousMapFileName);
+        if (EventRuntimeState *pState = m_gameplayController.eventRuntimeState())
+        {
+            appendPendingMapLeaveOutputs(*pState, std::move(onLeaveOutputs));
+        }
         return false;
+    }
+
+    if (EventRuntimeState *pState = m_gameplayController.eventRuntimeState())
+    {
+        appendPendingMapLeaveOutputs(*pState, std::move(onLeaveOutputs));
     }
 
     applyMapStartDestination(MapStartDestination{

@@ -920,6 +920,108 @@ TEST_CASE("runtime bolster caps low level monster rewards and damage at capped H
         15);
 }
 
+TEST_CASE("runtime bolster applies the Merge final HP ceiling without softening lower values")
+{
+    MergedBolsterMapTable mapTable = makeBolsterMapTable(false);
+    MergedBolsterMonsterTable settings;
+    REQUIRE(settings.loadFromRows({
+        {"#", "Note", "Type", "ExtraType", "Creed", "Gender", "Style", "PrefMagic", "NoBounty",
+         "Ranged", "Spells", "HPBySize", "Replicate", "Summons", "SummonId", "Extra", "MaxHP"},
+        {"451", "Ceiling fixture", "Undead", "", "Neutral", "", "Endurance", "", "-", "-", "-",
+         "-", "-", "-", "", "", "100"},
+    }));
+    Party party = makeParty(2000);
+    MapStatsEntry map = {};
+    map.id = 65;
+
+    struct Boundary
+    {
+        int beforeFinalCap;
+        int expected;
+    };
+    // The existing native MaxHP=100% setting isolates the final cap from the
+    // still non-equivalent pseudo-level formula. It is not a source formula oracle.
+    // AdaptiveMonstersStats.lua:767 caps the prepared template at 30000; it
+    // contains neither a 3000 soft cap nor a 5000 hard cap.
+    const Boundary boundaries[] = {
+        {1, 1}, {2999, 2999}, {3000, 3000}, {3001, 3001}, {3002, 3002}, {4999, 4999}, {5000, 5000},
+        {5001, 5001}, {29999, 29999}, {30000, 30000}, {30001, 30000}, {40000, 30000},
+    };
+    for (const Boundary &boundary : boundaries)
+    {
+        CAPTURE(boundary.beforeFinalCap);
+        MonsterTable monsters;
+        REQUIRE(monsters.loadStatsFromRows({
+            monsterStatsRow(451, "Ceiling fixture", 10, boundary.beforeFinalCap, 5, "Short", 120),
+        }));
+        const MonsterTable::MonsterStatsEntry *pStats = monsters.findStatsById(451);
+        REQUIRE(pStats != nullptr);
+        const GameplayMonsterBolsterResult result = resolveGameplayMonsterBolster(
+            GameplayBolsterRuntimeContext{
+                .pMap = &map,
+                .pMonsterTable = &monsters,
+                .pBolsterMapTable = &mapTable,
+                .pBolsterMonsterTable = &settings,
+                .pParty = &party,
+                .bolsterMonstersEnabled = true,
+            },
+            *pStats, nullptr);
+        REQUIRE(result.statsEnabled);
+        CHECK_EQ(result.maxHp, boundary.expected);
+        CHECK_EQ(pStats->hitPoints, boundary.beforeFinalCap);
+    }
+}
+
+TEST_CASE("runtime bolster final ceiling is shared by reward derivation and bypassed for original stats")
+{
+    MonsterTable monsters;
+    REQUIRE(monsters.loadStatsFromRows({
+        monsterStatsRow(451, "Ceiling fixture", 10, 3500, 5, "Short", 120),
+        monsterStatsRow(452, "Unbolstered fixture", 10, 40000, 5, "Short", 120),
+    }));
+    MergedBolsterMapTable mapTable = makeBolsterMapTable(false);
+    MergedBolsterMonsterTable settings;
+    REQUIRE(settings.loadFromRows({
+        {"#", "Note", "Type", "ExtraType", "Creed", "Gender", "Style", "PrefMagic", "NoBounty",
+         "Ranged", "Spells", "HPBySize", "Replicate", "Summons", "SummonId", "Extra", "MaxHP"},
+        {"451", "Ceiling fixture", "Undead", "", "Neutral", "", "Endurance", "", "-", "-", "-",
+         "-", "-", "-", "", "", ""},
+    }));
+    Party party = makeParty(2000);
+    MapStatsEntry map = {};
+    map.id = 65;
+    GameplayBolsterRuntimeContext context{
+        .pMap = &map,
+        .pMonsterTable = &monsters,
+        .pBolsterMapTable = &mapTable,
+        .pBolsterMonsterTable = &settings,
+        .pParty = &party,
+        .bolsterMonstersEnabled = true,
+    };
+    const MonsterTable::MonsterStatsEntry *pBoosted = monsters.findStatsById(451);
+    const MonsterTable::MonsterStatsEntry *pOriginal = monsters.findStatsById(452);
+    REQUIRE(pBoosted != nullptr);
+    REQUIRE(pOriginal != nullptr);
+    const GameplayMonsterBolsterResult result = resolveGameplayMonsterBolster(context, *pBoosted, nullptr);
+    REQUIRE(result.statsEnabled);
+    CHECK_EQ(result.maxHp, 30000);
+    CHECK_EQ(result.rewardMultiplier, doctest::Approx(30000.0f / 3500.0f));
+
+    context.bolsterMonstersEnabled = false;
+    const GameplayMonsterBolsterResult disabled = resolveGameplayMonsterBolster(context, *pOriginal, nullptr);
+    CHECK_FALSE(disabled.statsEnabled);
+    CHECK_EQ(disabled.maxHp, 40000);
+
+    REQUIRE(mapTable.loadFromRows({
+        {"#", "Note", "Continent", "Bolster kind", "Spells", "Summons", "Weather", "Extra", "Rarity"},
+        {"65", "Original stats fixture", "2", "OriginalStats", "-", "-", "-", "0", "30"},
+    }));
+    context.bolsterMonstersEnabled = true;
+    const GameplayMonsterBolsterResult original = resolveGameplayMonsterBolster(context, *pOriginal, nullptr);
+    CHECK_FALSE(original.statsEnabled);
+    CHECK_EQ(original.maxHp, 40000);
+}
+
 TEST_CASE("runtime bolster player armor class formula only applies to bolstered monsters")
 {
     CHECK_EQ(gameplayBolsterPlayerArmorClass(50, 10, 20, false), 50);

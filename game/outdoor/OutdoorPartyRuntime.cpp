@@ -33,7 +33,17 @@ void OutdoorPartyRuntime::initialize(float x, float y, float footZHint, bool res
 
 void OutdoorPartyRuntime::teleportTo(float x, float y, float footZHint)
 {
-    m_movementDriver.initialize(x, y, footZHint);
+    m_movementDriver.initialize(x, y, footZHint, OutdoorPlacementPolicy::ExplicitPosition);
+}
+
+void OutdoorPartyRuntime::setPositionForEvents(float x, float y, float footZ)
+{
+    m_movementDriver.setPositionForEvents(x, y, footZ);
+}
+
+void OutdoorPartyRuntime::setDecorationFlags(const std::vector<uint16_t> &decorationFlags)
+{
+    m_movementDriver.setDecorationFlags(decorationFlags);
 }
 
 void OutdoorPartyRuntime::update(
@@ -174,17 +184,20 @@ void OutdoorPartyRuntime::setParty(const Party &party)
     syncSpellMovementStatesFromPartyBuffs();
 }
 
-OutdoorPartyRuntime::Snapshot OutdoorPartyRuntime::snapshot() const
+OutdoorPartyRuntime::Snapshot OutdoorPartyRuntime::snapshot() const noexcept
 {
     Snapshot snapshot = {};
     snapshot.movementState = m_movementDriver.state();
     snapshot.partyMovementState = m_movementDriver.partyMovementState();
+    snapshot.movementAccumulatorSeconds = m_movementDriver.movementAccumulatorSeconds();
+    snapshot.jumpState = m_movementDriver.jumpState();
     return snapshot;
 }
 
 void OutdoorPartyRuntime::restoreSnapshot(const Snapshot &snapshot)
 {
-    m_movementDriver.restoreState(snapshot.movementState, snapshot.partyMovementState);
+    m_movementDriver.restoreState(snapshot.movementState, snapshot.partyMovementState,
+        snapshot.movementAccumulatorSeconds, snapshot.jumpState);
 }
 
 void OutdoorPartyRuntime::toggleRunning()
@@ -218,6 +231,11 @@ void OutdoorPartyRuntime::setDebugFlyingOverride(bool active)
     syncSpellMovementStatesFromPartyBuffs();
 }
 
+void OutdoorPartyRuntime::setUnderwater(bool active)
+{
+    m_movementDriver.setUnderwater(active);
+}
+
 void OutdoorPartyRuntime::setMovementSpeedMultiplier(float multiplier)
 {
     m_movementDriver.setSpeedMultiplier(multiplier);
@@ -233,7 +251,7 @@ void OutdoorPartyRuntime::setCollisionTraceEnabled(bool enabled, const std::stri
     m_movementDriver.setCollisionTraceEnabled(enabled, mapName);
 }
 
-void OutdoorPartyRuntime::syncSpellMovementStatesFromPartyBuffs()
+void OutdoorPartyRuntime::syncSpellMovementStatesFromPartyBuffs() noexcept
 {
     m_movementDriver.setFeatherFallActive(m_party.hasPartyBuff(PartyBuffId::FeatherFall));
     m_movementDriver.setWaterWalkActive(m_party.hasPartyBuff(PartyBuffId::WaterWalk));

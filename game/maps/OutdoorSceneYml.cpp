@@ -12,6 +12,8 @@
 #include <cmath>
 #include <cstring>
 #include <exception>
+#include <limits>
+#include <set>
 #include <sstream>
 
 namespace OpenYAMM::Game
@@ -1838,6 +1840,12 @@ std::optional<OutdoorSceneData> OutdoorSceneYmlLoader::loadFromText(
                 false)
             || !readScalarNode(
                 runtimeRestrictionsNode,
+                "town_portal_uses_dimension_door",
+                sceneData.runtimeRestrictions.townPortalUsesDimensionDoor,
+                errorMessage,
+                false)
+            || !readScalarNode(
+                runtimeRestrictionsNode,
                 "allow_rest",
                 sceneData.runtimeRestrictions.allowRest,
                 errorMessage,
@@ -2458,6 +2466,191 @@ std::optional<OutdoorSceneData> OutdoorSceneYmlLoader::loadFromText(
     return sceneData;
 }
 
+bool OutdoorSceneYmlLoader::applyMechanismsFromText(
+    OutdoorMapData &outdoorMapData,
+    MapDeltaData &mapDeltaData,
+    MapRuntimeRestrictions &runtimeRestrictions,
+    const std::string &yamlText,
+    const std::string &mapFileName,
+    std::string &errorMessage) const
+{
+    errorMessage.clear();
+    YAML::Node rootNode;
+    try
+    {
+        rootNode = YAML::Load(yamlText);
+    }
+    catch (const std::exception &exception)
+    {
+        errorMessage = exception.what();
+        return false;
+    }
+
+    if (!rootNode || !rootNode.IsMap())
+    {
+        errorMessage = "mechanisms yaml root must be a map";
+        return false;
+    }
+    const std::set<std::string> rootFields = {
+        "format_version", "kind", "map", "source", "mechanisms", "runtime_restrictions"};
+    std::set<std::string> presentRootFields;
+    for (const auto &field : rootNode)
+    {
+        if (!field.first.IsScalar() || !rootFields.contains(field.first.Scalar())
+            || !presentRootFields.insert(field.first.Scalar()).second)
+        {
+            errorMessage = "mechanisms companion contains an unsupported or duplicate root field";
+            return false;
+        }
+    }
+
+    int formatVersion = 0;
+    std::string kind;
+    std::string targetMap;
+    if (!readScalarNode(rootNode, "format_version", formatVersion, errorMessage)
+        || !readScalarNode(rootNode, "kind", kind, errorMessage)
+        || !readScalarNode(rootNode, "map", targetMap, errorMessage))
+    {
+        return false;
+    }
+    if (formatVersion != 1 || kind != "outdoor_mechanisms")
+    {
+        errorMessage = "unsupported outdoor mechanisms companion schema";
+        return false;
+    }
+    if (!toLowerCopy(targetMap).ends_with(".odm") || toLowerCopy(targetMap) != toLowerCopy(mapFileName))
+    {
+        errorMessage = "mechanisms companion map does not match loaded ODM";
+        return false;
+    }
+    MapRuntimeRestrictions candidateRestrictions = runtimeRestrictions;
+    const YAML::Node restrictionsNode = rootNode["runtime_restrictions"];
+    if (restrictionsNode)
+    {
+        const std::set<std::string> allowedFields = {
+            "allow_save_game", "allow_lloyds_beacon", "town_portal_uses_dimension_door", "allow_rest", "arena"};
+        std::set<std::string> presentFields;
+        if (!restrictionsNode.IsMap())
+        {
+            errorMessage = "runtime_restrictions must be a map";
+            return false;
+        }
+        for (const auto &field : restrictionsNode)
+        {
+            if (!field.first.IsScalar() || !allowedFields.contains(field.first.Scalar())
+                || !presentFields.insert(field.first.Scalar()).second)
+            {
+                errorMessage = "runtime_restrictions contains an unsupported or duplicate field";
+                return false;
+            }
+        }
+        if (!readScalarNode(restrictionsNode, "allow_save_game", candidateRestrictions.allowSaveGame,
+                errorMessage, false)
+            || !readScalarNode(restrictionsNode, "allow_lloyds_beacon", candidateRestrictions.allowLloydsBeacon,
+                errorMessage, false)
+            || !readScalarNode(restrictionsNode, "town_portal_uses_dimension_door",
+                candidateRestrictions.townPortalUsesDimensionDoor, errorMessage, false)
+            || !readScalarNode(restrictionsNode, "allow_rest", candidateRestrictions.allowRest, errorMessage, false)
+            || !readScalarNode(restrictionsNode, "arena", candidateRestrictions.isArena, errorMessage, false))
+        {
+            return false;
+        }
+    }
+    const YAML::Node mechanismsNode = rootNode["mechanisms"];
+    if (!mechanismsNode || !mechanismsNode.IsSequence() || mechanismsNode.size() == 0)
+    {
+        errorMessage = "mechanisms companion must contain a nonempty mechanisms sequence";
+        return false;
+    }
+
+    const size_t faceCount = totalOutdoorFaceCount(outdoorMapData);
+    if (mapDeltaData.faceAttributes.size() != faceCount)
+    {
+        errorMessage = "mechanisms companion requires matching ODM/DDM face counts";
+        return false;
+    }
+
+    std::set<uint32_t> mechanismIds;
+    std::set<size_t> bmodelIndices;
+    for (const OutdoorBModelMechanism &existing : outdoorMapData.mechanisms)
+    {
+        mechanismIds.insert(existing.mechanismId);
+        if (existing.hasBModelBinding) bmodelIndices.insert(existing.bmodelIndex);
+    }
+    std::vector<OutdoorBModelMechanism> mechanisms;
+    mechanisms.reserve(mechanismsNode.size());
+    for (const YAML::Node &mechanismNode : mechanismsNode)
+    {
+        OutdoorBModelMechanism mechanism = {};
+        uint32_t eventId = 0;
+        if (!parseOutdoorBModelMechanism(mechanismNode, mechanism, errorMessage)
+            || !readScalarNode(mechanismNode, "event_id", eventId, errorMessage))
+        {
+            return false;
+        }
+        if (mechanism.mechanismId == 0 || eventId == 0 || eventId > std::numeric_limits<uint16_t>::max()
+            || mechanism.interactionEventId != eventId || mechanism.sourceName.empty()
+            || mechanism.kind == OutdoorBModelMechanismKind::Unsupported
+            || !mechanism.hasRuntimeEndpointMotion() || mechanism.moveTimeMs == 0
+            || !std::isfinite(mechanism.rotationDegreesX) || !std::isfinite(mechanism.rotationDegreesY)
+            || !std::isfinite(mechanism.rotationDegreesZ))
+        {
+            errorMessage = "mechanisms companion requires an identified event and supported endpoint motion";
+            return false;
+        }
+        if (!mechanism.hasBModelBinding || mechanism.bmodelIndex >= outdoorMapData.bmodels.size()
+            || mechanism.bmodelName.empty()
+            || outdoorMapData.bmodels[mechanism.bmodelIndex].name != mechanism.bmodelName
+            || outdoorMapData.bmodels[mechanism.bmodelIndex].faces.empty())
+        {
+            errorMessage = "mechanisms companion BModel name/index binding does not match the loaded ODM";
+            return false;
+        }
+        const size_t nameMatches = static_cast<size_t>(std::count_if(
+            outdoorMapData.bmodels.begin(), outdoorMapData.bmodels.end(),
+            [&mechanism](const OutdoorBModel &model) { return model.name == mechanism.bmodelName; }));
+        if (nameMatches != 1 || !mechanismIds.insert(mechanism.mechanismId).second
+            || !bmodelIndices.insert(mechanism.bmodelIndex).second)
+        {
+            errorMessage = "mechanisms companion has a duplicate mechanism or ambiguous BModel binding";
+            return false;
+        }
+        mechanisms.push_back(std::move(mechanism));
+    }
+
+    // Validate the entire sidecar before changing either input. A SetDoor-style endpoint binds every
+    // face to its local click event; other ODM/DDM attributes and all non-mechanism content are retained.
+    std::vector<size_t> faceOffsets(outdoorMapData.bmodels.size(), 0);
+    size_t faceOffset = 0;
+    for (size_t index = 0; index < outdoorMapData.bmodels.size(); ++index)
+    {
+        faceOffsets[index] = faceOffset;
+        faceOffset += outdoorMapData.bmodels[index].faces.size();
+    }
+    const uint32_t clickableBit = faceAttributeBit(FaceAttribute::Clickable);
+    const uint32_t hintBit = faceAttributeBit(FaceAttribute::HasHint);
+    bool changedAttributes = false;
+    outdoorMapData.mechanisms.reserve(outdoorMapData.mechanisms.size() + mechanisms.size());
+    for (OutdoorBModelMechanism &mechanism : mechanisms)
+    {
+        OutdoorBModel &model = outdoorMapData.bmodels[mechanism.bmodelIndex];
+        for (size_t faceIndex = 0; faceIndex < model.faces.size(); ++faceIndex)
+        {
+            OutdoorBModelFace &face = model.faces[faceIndex];
+            face.cogTriggeredNumber = mechanism.interactionEventId;
+            face.attributes = (face.attributes | clickableBit) & ~hintBit;
+            uint32_t &attributes = mapDeltaData.faceAttributes[faceOffsets[mechanism.bmodelIndex] + faceIndex];
+            const uint32_t previousAttributes = attributes;
+            attributes = (attributes | clickableBit) & ~hintBit;
+            changedAttributes = changedAttributes || previousAttributes != attributes;
+        }
+        outdoorMapData.mechanisms.push_back(std::move(mechanism));
+    }
+    if (changedAttributes) ++mapDeltaData.surfaceRevision;
+    runtimeRestrictions = candidateRestrictions;
+    return true;
+}
+
 bool OutdoorSceneYmlLoader::applyOverlayFromText(
     OutdoorSceneData &sceneData,
     const std::string &yamlText,
@@ -2670,6 +2863,12 @@ bool OutdoorSceneYmlLoader::applyOverlayFromText(
                 runtimeRestrictionsNode,
                 "allow_lloyds_beacon",
                 sceneData.runtimeRestrictions.allowLloydsBeacon,
+                errorMessage,
+                false)
+            || !readScalarNode(
+                runtimeRestrictionsNode,
+                "town_portal_uses_dimension_door",
+                sceneData.runtimeRestrictions.townPortalUsesDimensionDoor,
                 errorMessage,
                 false)
             || !readScalarNode(

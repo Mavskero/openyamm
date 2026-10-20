@@ -146,7 +146,9 @@ std::optional<std::vector<TerrainTileDescriptor>> loadTerrainTileDescriptors(
         : inferWorldIdFromMapFileName(outdoorMapData.fileName, assetFileSystem.getActiveWorldId());
     const std::string fileName = terrainTileDataFileNameForWorld(worldId);
     const std::string engineTablePath = "engine/data_tables/" + fileName;
-    const bool remapDirectTilesByMasterTile = normalizeWorldId(worldId) == DefaultWorldId;
+    // Merge-owned outdoor resources retain MM8's binary terrain format without changing world ownership.
+    const std::string normalizedWorldId = normalizeWorldId(worldId);
+    const bool remapDirectTilesByMasterTile = normalizedWorldId == DefaultWorldId || normalizedWorldId == "mmmerge";
     const std::optional<std::string> tableContents = assetFileSystem.readTextFile(engineTablePath);
 
     if (!tableContents)

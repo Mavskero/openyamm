@@ -1,0 +1,13 @@
+#pragma once
+
+#include <string_view>
+
+namespace OpenYAMM::Import
+{
+constexpr std::string_view BreachMazeBrAlvarMapSource =
+    R"OY_BM_ALVAR(@OPENYAMM_BREACH_MAZE_BR_ALVAR_MAP_SOURCE@)OY_BM_ALVAR";
+constexpr std::string_view BreachMazeBreachMapSource =
+    R"OY_BM_BREACH(@OPENYAMM_BREACH_MAZE_BREACH_MAP_SOURCE@)OY_BM_BREACH";
+constexpr std::string_view BreachMazeBrBaseMapSource =
+    R"OY_BM_BASE(@OPENYAMM_BREACH_MAZE_BR_BASE_MAP_SOURCE@)OY_BM_BASE";
+}

@@ -3,6 +3,7 @@
 #include "game/outdoor/OutdoorPathfindingBuilder.h"
 #include "game/outdoor/OutdoorMovementController.h"
 #include "game/indoor/IndoorGeometryUtils.h"
+#include "game/indoor/IndoorMovementController.h"
 #include "game/indoor/IndoorPathfindingBuilder.h"
 #include "game/pathfinding/PathPlanner.h"
 
@@ -23,6 +24,42 @@
 namespace
 {
 using namespace OpenYAMM::Game;
+
+bool probeIndoorPartyWalk(const MapAssetInfo &map, const std::optional<EventRuntimeState> &events,
+    bx::Vec3 source, bx::Vec3 target, const std::filesystem::path &output)
+{
+    const IndoorMovementController controller(*map.indoorMapData, &map.indoorMapDeltaData, &events);
+    const IndoorBodyDimensions body;
+    IndoorMoveState state = controller.initializeStateFromEyePosition(
+        source.x, source.y, source.z + body.height, body);
+    std::ofstream stream(output);
+    stream.exceptions(std::ios::failbit | std::ios::badbit);
+    stream << "# Read-only indoor party collision probe; no live actors and no gameplay save.\n";
+    for (unsigned frame = 0; frame < 400; ++frame)
+    {
+        stream << state.x << '\t' << state.y << '\t' << state.footZ << '\n';
+        const float dx = target.x - state.x, dy = target.y - state.y;
+        const float distance = std::hypot(dx, dy);
+        if (distance < 5.0f && state.grounded) return true;
+        const float speed = distance < 5.0f ? 0.0f : std::min(720.0f, distance * 128.0f);
+        IndoorMoveDebugInfo debug;
+        const IndoorMoveState next = controller.resolveMove(state, body,
+            distance > 0 ? dx / distance * speed : 0, distance > 0 ? dy / distance * speed : 0,
+            false, 1.0f / 128.0f, nullptr, std::nullopt, false, &debug);
+        const float moved = std::hypot(next.x - state.x, next.y - state.y);
+        if (frame % 16 == 0 || moved < 0.01f)
+            std::cout << "Indoor probe: frame=" << frame << " at=" << state.x << ',' << state.y << ',' << state.footZ
+                << " next=" << next.x << ',' << next.y << ',' << next.footZ
+                << " block=" << int(debug.primaryBlockKind) << " face=" << debug.hitFaceIndex
+                << " invalid=" << int(debug.invalidPositionReason)
+                << " floor=" << debug.invalidFloorFaceIndex << ':' << debug.invalidFloorHeight
+                << " normal=" << debug.hitNormal.x << ',' << debug.hitNormal.y << ',' << debug.hitNormal.z << '\n';
+        if (moved < 0.01f && std::abs(next.footZ - state.footZ) < 0.01f
+            && distance >= 5.0f && frame > 12) return false;
+        state = next;
+    }
+    return false;
+}
 
 bool probePartyWalk(const MapAssetInfo &map, bx::Vec3 source, bx::Vec3 target,
     const std::filesystem::path &output)
@@ -200,12 +237,16 @@ int main(int argc, char **argv)
     using namespace OpenYAMM;
     try
     {
-        const bool doorsOpen = argc == 12 && std::string_view(argv[11]) == "--doors-open";
+        const bool wideClearance = argc == 12 && std::string_view(argv[11]) == "--doors-open-wide";
+        const bool indoorProbe = argc == 12 && std::string_view(argv[11]) == "--party-probe-open";
+        const bool doorsOpen = indoorProbe || wideClearance
+            || (argc == 12 && std::string_view(argv[11]) == "--doors-open");
         const bool stableStops = argc == 12 && std::string_view(argv[11]) == "--party-stable";
         const bool party = stableStops || (argc == 12 && std::string_view(argv[11]) == "--party");
-        const bool probe = argc == 12 && std::string_view(argv[11]) == "--party-probe";
+        const bool probe = indoorProbe || (argc == 12 && std::string_view(argv[11]) == "--party-probe");
         if (argc != 11 && !party && !probe && !doorsOpen)
-            throw std::runtime_error("Usage: openyamm_route_plan ROOT WORLD MAP OUTPUT X Y Z TX TY TZ [--party|--party-stable|--party-probe|--doors-open]");
+            throw std::runtime_error("Usage: openyamm_route_plan ROOT WORLD MAP OUTPUT X Y Z TX TY TZ "
+                "[--party|--party-stable|--party-probe|--party-probe-open|--doors-open|--doors-open-wide]");
         const std::filesystem::path root = std::filesystem::canonical(argv[1]);
         const std::filesystem::path output = std::filesystem::absolute(argv[4]);
         if (std::filesystem::exists(output)) throw std::runtime_error("Route output must not already exist");
@@ -223,7 +264,7 @@ int main(int argc, char **argv)
         if (!map) throw std::runtime_error("Route planning could not load the requested map");
         if (map->indoorMapData)
         {
-            if (party || probe)
+            if (party)
                 throw std::runtime_error("Party-resolver modes currently require an outdoor map");
             for (size_t faceIndex = 0; faceIndex < map->indoorMapData->faces.size(); ++faceIndex)
             {
@@ -261,6 +302,14 @@ int main(int argc, char **argv)
                     mechanism.isMoving = false;
                 }
             }
+            if (probe)
+            {
+                const bool reached = probeIndoorPartyWalk(*map, routeEventState,
+                    {std::stof(argv[5]), std::stof(argv[6]), std::stof(argv[7])},
+                    {std::stof(argv[8]), std::stof(argv[9]), std::stof(argv[10])}, output);
+                SDL_Quit();
+                return reached ? 0 : 1;
+            }
             const std::vector<Game::IndoorVertex> vertices = Game::buildIndoorMechanismAdjustedVertices(
                 *map->indoorMapData,
                 map->indoorMapDeltaData ? &*map->indoorMapDeltaData : nullptr,
@@ -272,9 +321,9 @@ int main(int argc, char **argv)
             Game::PathPlanRequest request;
             request.source = {std::stof(argv[5]), std::stof(argv[6]), std::stof(argv[7])};
             request.target = {std::stof(argv[8]), std::stof(argv[9]), std::stof(argv[10])};
-            request.object.radius = 37.0f;
+            request.object.radius = wideClearance ? 128.0f : 37.0f;
             request.object.stepHeight = 128.0f;
-            request.object.stepLength = 128.0f;
+            request.object.stepLength = wideClearance ? 96.0f : 128.0f;
             request.nodeLimit = 200000;
             request.allowPartialPath = true;
             Game::PathPlanner planner;

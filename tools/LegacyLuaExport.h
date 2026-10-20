@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace OpenYAMM::Game
 {
@@ -21,6 +22,14 @@ enum class LegacyEventVersion
     Mm6 = 6,
     Mm7 = 7,
     Mm8 = 8,
+};
+
+struct LegacyInputStringAnswerBinding
+{
+    LegacyLuaExportScope scope = LegacyLuaExportScope::Global;
+    uint16_t eventId = 0;
+    uint8_t step = 0;
+    std::vector<std::string> answers;
 };
 
 struct LegacyLuaExportLookups
@@ -50,6 +59,9 @@ struct LegacyLuaExportLookups
     std::unordered_map<uint32_t, std::string> awardTexts;
     std::unordered_map<uint32_t, uint32_t> qbitRemaps;
     std::unordered_map<uint32_t, std::string> inputStringAnswerTexts;
+    // Explicit source bindings take precedence only at the identified input instruction.
+    // Other instructions retain the ordinary STR and legacy answer lookup behavior.
+    std::vector<LegacyInputStringAnswerBinding> inputStringAnswerBindings;
     std::unordered_map<uint32_t, uint32_t> summonObjectTypesByEventStep;
 };
 

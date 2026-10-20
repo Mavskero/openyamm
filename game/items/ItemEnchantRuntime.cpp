@@ -1,6 +1,7 @@
 #include "game/items/ItemEnchantRuntime.h"
 
 #include "game/gameplay/GameMechanics.h"
+#include "game/items/ItemGenerationRandom.h"
 #include "game/party/SkillData.h"
 #include "game/tables/ItemTable.h"
 #include "game/tables/MonsterTable.h"
@@ -1565,12 +1566,15 @@ bool ItemEnchantRuntime::isSpecialRarityAllowed(char rarityLevel, int treasureLe
     }
 }
 
-std::optional<uint16_t> ItemEnchantRuntime::chooseStandardEnchantId(
+namespace
+{
+template <typename Random>
+std::optional<uint16_t> chooseStandardEnchantIdImpl(
     const ItemDefinition &itemDefinition,
     const StandardItemEnchantTable &table,
-    std::mt19937 &rng)
+    Random &rng)
 {
-    const size_t slotIndex = standardSlotIndex(categoryForItem(itemDefinition));
+    const size_t slotIndex = standardSlotIndex(ItemEnchantRuntime::categoryForItem(itemDefinition));
 
     if (slotIndex == std::numeric_limits<size_t>::max())
     {
@@ -1599,17 +1603,18 @@ std::optional<uint16_t> ItemEnchantRuntime::chooseStandardEnchantId(
         return std::nullopt;
     }
 
-    std::discrete_distribution<size_t> distribution(weights.begin(), weights.end());
-    return enchantIds[distribution(rng)];
+    const std::optional<size_t> index = itemGenerationWeightedIndex(rng, weights);
+    return index ? std::optional<uint16_t>(enchantIds[*index]) : std::nullopt;
 }
 
-std::optional<uint16_t> ItemEnchantRuntime::chooseSpecialEnchantId(
+template <typename Random>
+std::optional<uint16_t> chooseSpecialEnchantIdImpl(
     const ItemDefinition &itemDefinition,
     const SpecialItemEnchantTable &table,
     int treasureLevel,
-    std::mt19937 &rng)
+    Random &rng)
 {
-    const size_t slotIndex = specialSlotIndex(categoryForItem(itemDefinition));
+    const size_t slotIndex = specialSlotIndex(ItemEnchantRuntime::categoryForItem(itemDefinition));
 
     if (slotIndex == std::numeric_limits<size_t>::max())
     {
@@ -1626,7 +1631,7 @@ std::optional<uint16_t> ItemEnchantRuntime::chooseSpecialEnchantId(
 
         if (entry.kind == SpecialItemEnchantKind::None
             || weight <= 0
-            || !isSpecialRarityAllowed(entry.rarityLevel, treasureLevel))
+            || !ItemEnchantRuntime::isSpecialRarityAllowed(entry.rarityLevel, treasureLevel))
         {
             continue;
         }
@@ -1640,11 +1645,12 @@ std::optional<uint16_t> ItemEnchantRuntime::chooseSpecialEnchantId(
         return std::nullopt;
     }
 
-    std::discrete_distribution<size_t> distribution(weights.begin(), weights.end());
-    return enchantIds[distribution(rng)];
+    const std::optional<size_t> index = itemGenerationWeightedIndex(rng, weights);
+    return index ? std::optional<uint16_t>(enchantIds[*index]) : std::nullopt;
 }
 
-int ItemEnchantRuntime::generateStandardEnchantPower(StandardItemEnchantKind kind, int treasureLevel, std::mt19937 &rng)
+template <typename Random>
+int generateStandardEnchantPowerImpl(StandardItemEnchantKind kind, int treasureLevel, Random &rng)
 {
     const int clamped = std::clamp(treasureLevel, 1, 6);
     const int minimumValue = StandardEnchantMinimumByTreasureLevel[clamped - 1];
@@ -1655,7 +1661,7 @@ int ItemEnchantRuntime::generateStandardEnchantPower(StandardItemEnchantKind kin
         return 0;
     }
 
-    int value = std::uniform_int_distribution<int>(minimumValue, maximumValue)(rng);
+    int value = itemGenerationIntRange(rng, minimumValue, maximumValue);
 
     if (kind == StandardItemEnchantKind::Armsmaster
         || kind == StandardItemEnchantKind::Dodge
@@ -1665,6 +1671,53 @@ int ItemEnchantRuntime::generateStandardEnchantPower(StandardItemEnchantKind kin
     }
 
     return std::max(1, value);
+}
+}
+
+std::optional<uint16_t> ItemEnchantRuntime::chooseStandardEnchantId(
+    const ItemDefinition &itemDefinition,
+    const StandardItemEnchantTable &table,
+    std::mt19937 &rng)
+{
+    return chooseStandardEnchantIdImpl(itemDefinition, table, rng);
+}
+
+std::optional<uint16_t> ItemEnchantRuntime::chooseSpecialEnchantId(
+    const ItemDefinition &itemDefinition,
+    const SpecialItemEnchantTable &table,
+    int treasureLevel,
+    std::mt19937 &rng)
+{
+    return chooseSpecialEnchantIdImpl(itemDefinition, table, treasureLevel, rng);
+}
+
+int ItemEnchantRuntime::generateStandardEnchantPower(
+    StandardItemEnchantKind kind, int treasureLevel, std::mt19937 &rng)
+{
+    return generateStandardEnchantPowerImpl(kind, treasureLevel, rng);
+}
+
+std::optional<uint16_t> ItemEnchantRuntime::chooseStandardEnchantId(
+    const ItemDefinition &itemDefinition,
+    const StandardItemEnchantTable &table,
+    FixedItemGenerationRandom &rng)
+{
+    return chooseStandardEnchantIdImpl(itemDefinition, table, rng);
+}
+
+std::optional<uint16_t> ItemEnchantRuntime::chooseSpecialEnchantId(
+    const ItemDefinition &itemDefinition,
+    const SpecialItemEnchantTable &table,
+    int treasureLevel,
+    FixedItemGenerationRandom &rng)
+{
+    return chooseSpecialEnchantIdImpl(itemDefinition, table, treasureLevel, rng);
+}
+
+int ItemEnchantRuntime::generateStandardEnchantPower(
+    StandardItemEnchantKind kind, int treasureLevel, FixedItemGenerationRandom &rng)
+{
+    return generateStandardEnchantPowerImpl(kind, treasureLevel, rng);
 }
 
 std::string ItemEnchantRuntime::displayName(

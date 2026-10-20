@@ -269,7 +269,7 @@ public:
         bool innRest = false;
         float totalMinutes = 0.0f;
         float remainingMinutes = 0.0f;
-        float targetGameMinutes = 0.0f;
+        double targetGameMinutes = 0.0;
         float hourglassElapsedSeconds = 0.0f;
     };
 

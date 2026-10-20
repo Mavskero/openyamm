@@ -22,7 +22,8 @@ public:
     static void clearHeldInventoryItem(GameplayUiController::HeldInventoryItemState &heldInventoryItem);
 
     static bool tryDisplaceHeldInventoryItem(
-        GameplayScreenRuntime &runtime);
+        GameplayScreenRuntime &runtime, bool sourceTakeOrDrop = false);
+    static void applyPendingQuestItemDeliveries(GameplayScreenRuntime &runtime);
     static void applyGrantedEventItemsToHeldInventory(
         GameplayScreenRuntime &runtime,
         EventRuntimeState &eventRuntimeState,

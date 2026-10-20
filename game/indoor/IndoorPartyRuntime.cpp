@@ -97,12 +97,7 @@ void IndoorPartyRuntime::initializeEyePosition(float x, float y, float z, bool r
     const IndoorBodyDimensions body = {};
     m_movementState = m_movementController.initializeStateFromEyePosition(x, y, z, body);
     m_movementAccumulatorSeconds = 0.0f;
-    m_pendingJumpRequested = false;
-    m_pendingImpulseVelocityX = 0.0f;
-    m_pendingImpulseVelocityY = 0.0f;
-    m_pendingImpulseVelocityZ = 0.0f;
-    m_pendingJumpVelocity.reset();
-    m_pendingJumpLift = DefaultJumpLift;
+    m_jumpState = {};
     m_burningDamageTimerSeconds = 0.0f;
 }
 
@@ -117,12 +112,7 @@ void IndoorPartyRuntime::teleportEyePosition(float x, float y, float z)
     const IndoorBodyDimensions body = {};
     m_movementState = m_movementController.initializeStateFromEyePosition(x, y, z, body);
     m_movementAccumulatorSeconds = 0.0f;
-    m_pendingJumpRequested = false;
-    m_pendingImpulseVelocityX = 0.0f;
-    m_pendingImpulseVelocityY = 0.0f;
-    m_pendingImpulseVelocityZ = 0.0f;
-    m_pendingJumpVelocity.reset();
-    m_pendingJumpLift = DefaultJumpLift;
+    m_jumpState = {};
     m_burningDamageTimerSeconds = 0.0f;
 }
 
@@ -131,10 +121,16 @@ void IndoorPartyRuntime::teleportPartyPosition(float x, float y, float z)
     const IndoorBodyDimensions body = {};
     m_movementState = m_movementController.initializeStateFromEyePosition(x, y, z + body.height, body);
     m_movementAccumulatorSeconds = 0.0f;
-    m_pendingJumpRequested = false;
-    m_pendingJumpVelocity.reset();
-    m_pendingJumpLift = DefaultJumpLift;
+    m_jumpState = {};
     m_burningDamageTimerSeconds = 0.0f;
+}
+
+void IndoorPartyRuntime::setPositionForEvents(float x, float y, float footZ)
+{
+    m_movementState.x = x;
+    m_movementState.y = y;
+    m_movementState.footZ = footZ;
+    m_movementController.invalidateRuntimeGeometryCache();
 }
 
 void IndoorPartyRuntime::translatePartyPosition(float deltaX, float deltaY, float deltaZ)
@@ -172,41 +168,46 @@ void IndoorPartyRuntime::update(
     }
 
     const IndoorBodyDimensions body = {};
-    m_pendingJumpRequested = m_pendingJumpRequested || jumpRequested;
+    m_jumpState.pendingJumpRequested = m_jumpState.pendingJumpRequested || jumpRequested;
     const float maxAccumulatedMovementSeconds =
         turnBasedMovementStep ? std::max(deltaSeconds, MaxAccumulatedMovementSeconds) : MaxAccumulatedMovementSeconds;
     m_movementAccumulatorSeconds =
         std::min(m_movementAccumulatorSeconds + deltaSeconds, maxAccumulatedMovementSeconds);
-    const float impulseVelocityX = m_pendingImpulseVelocityX;
-    const float impulseVelocityY = m_pendingImpulseVelocityY;
-    const float impulseVelocityZ = m_pendingImpulseVelocityZ;
-    const bool hasPendingImpulse =
-        impulseVelocityX != 0.0f || impulseVelocityY != 0.0f || impulseVelocityZ != 0.0f;
     float landingFallDistance = 0.0f;
     std::vector<size_t> contactedActorIndices;
 
-    if (hasPendingImpulse)
-    {
-        m_movementState.verticalVelocity = std::max(m_movementState.verticalVelocity, impulseVelocityZ);
-        m_pendingImpulseVelocityX = 0.0f;
-        m_pendingImpulseVelocityY = 0.0f;
-        m_pendingImpulseVelocityZ = 0.0f;
-    }
-
     while (m_movementAccumulatorSeconds >= IndoorMovementStepSeconds)
     {
+        if (m_jumpState.pendingSpecialJump)
+        {
+            m_jumpState.specialJumpActive = true;
+            m_jumpState.velocityX = m_jumpState.pendingVelocityX;
+            m_jumpState.velocityY = m_jumpState.pendingVelocityY;
+            m_movementState.verticalVelocity = m_jumpState.pendingVelocityZ;
+            m_movementState.grounded = false;
+            m_movementState.fallStartZ = m_movementState.footZ;
+            m_jumpState.pendingSpecialJump = false;
+            m_jumpState.pendingVelocityX = 0.0f;
+            m_jumpState.pendingVelocityY = 0.0f;
+            m_jumpState.pendingVelocityZ = 0.0f;
+        }
         m_collisionTraceClockSeconds += IndoorMovementStepSeconds;
         const IndoorMoveState previousMovementState = m_movementState;
-        const float jumpVelocityThisStep = m_pendingJumpVelocity.value_or(DefaultJumpVelocity);
-        const float jumpLiftThisStep = m_pendingJumpLift;
+        const float jumpVelocityThisStep = m_jumpState.pendingJumpVelocity.value_or(DefaultJumpVelocity);
+        const float jumpLiftThisStep = m_jumpState.pendingJumpLift;
+        const float velocityXThisStep =
+            m_jumpState.specialJumpActive ? m_jumpState.velocityX : desiredVelocityX * m_movementSpeedMultiplier;
+        const float velocityYThisStep =
+            m_jumpState.specialJumpActive ? m_jumpState.velocityY : desiredVelocityY * m_movementSpeedMultiplier;
         IndoorMoveDebugInfo debugInfo = {};
         IndoorMoveDebugInfo *pDebugInfo = m_collisionTraceEnabled ? &debugInfo : nullptr;
+        bool blockingCollision = false;
         m_movementState = m_movementController.resolveMove(
             m_movementState,
             body,
-            desiredVelocityX * m_movementSpeedMultiplier + impulseVelocityX,
-            desiredVelocityY * m_movementSpeedMultiplier + impulseVelocityY,
-            m_pendingJumpRequested,
+            velocityXThisStep,
+            velocityYThisStep,
+            m_jumpState.pendingJumpRequested && !m_jumpState.specialJumpActive,
             IndoorMovementStepSeconds,
             &contactedActorIndices,
             std::nullopt,
@@ -221,7 +222,12 @@ void IndoorPartyRuntime::update(
             false,
             false,
             false,
-            PartyGravityPerSecond);
+            PartyGravityPerSecond,
+            &blockingCollision);
+        if (m_jumpState.specialJumpActive && (blockingCollision || m_movementState.grounded))
+        {
+            clearSpecialJump();
+        }
         if (m_movementState.landedThisFrame)
         {
             landingFallDistance = std::max(landingFallDistance, m_movementState.fallDistance);
@@ -240,7 +246,7 @@ void IndoorPartyRuntime::update(
                 debugInfo.fullMoveSucceeded && traceInfo.crossedBlockingFace;
             const bool suspiciousSupportLoss =
                 traceInfo.supportLost
-                && !m_pendingJumpRequested
+                && !m_jumpState.pendingJumpRequested
                 && previousMovementState.verticalVelocity <= 0.0f;
             const bool suspicious =
                 acceptedThroughBlockingFace
@@ -276,9 +282,9 @@ void IndoorPartyRuntime::update(
                     << " start_velocity_z=" << previousMovementState.verticalVelocity
                     << " end_velocity_z=" << m_movementState.verticalVelocity
                     << " requested_velocity=("
-                    << desiredVelocityX * m_movementSpeedMultiplier + impulseVelocityX
-                    << "," << desiredVelocityY * m_movementSpeedMultiplier + impulseVelocityY << ")"
-                    << " jump_requested=" << (m_pendingJumpRequested ? "true" : "false")
+                    << velocityXThisStep
+                    << "," << velocityYThisStep << ")"
+                    << " jump_requested=" << (m_jumpState.pendingJumpRequested ? "true" : "false")
                     << " debug_block=" << indoorMoveBlockKindName(debugInfo.primaryBlockKind)
                     << " full_succeeded=" << (debugInfo.fullMoveSucceeded ? "true" : "false")
                     << " response_tried=" << (debugInfo.collisionResponseTried ? "true" : "false")
@@ -325,9 +331,9 @@ void IndoorPartyRuntime::update(
                 m_nextCollisionTraceSeconds = m_collisionTraceClockSeconds + 1.0f;
             }
         }
-        m_pendingJumpRequested = false;
-        m_pendingJumpVelocity.reset();
-        m_pendingJumpLift = DefaultJumpLift;
+        m_jumpState.pendingJumpRequested = false;
+        m_jumpState.pendingJumpVelocity.reset();
+        m_jumpState.pendingJumpLift = DefaultJumpLift;
         m_movementAccumulatorSeconds -= IndoorMovementStepSeconds;
     }
 
@@ -449,10 +455,7 @@ IndoorPartyRuntime::Snapshot IndoorPartyRuntime::snapshot() const
     Snapshot snapshot = {};
     snapshot.movementState = m_movementState;
     snapshot.movementAccumulatorSeconds = m_movementAccumulatorSeconds;
-    snapshot.pendingJumpRequested = m_pendingJumpRequested;
-    snapshot.pendingImpulseVelocityX = m_pendingImpulseVelocityX;
-    snapshot.pendingImpulseVelocityY = m_pendingImpulseVelocityY;
-    snapshot.pendingImpulseVelocityZ = m_pendingImpulseVelocityZ;
+    snapshot.jumpState = m_jumpState;
     snapshot.alwaysRunEnabled = m_alwaysRunEnabled;
     return snapshot;
 }
@@ -461,12 +464,7 @@ void IndoorPartyRuntime::restoreSnapshot(const Snapshot &snapshot)
 {
     m_movementState = snapshot.movementState;
     m_movementAccumulatorSeconds = snapshot.movementAccumulatorSeconds;
-    m_pendingJumpRequested = snapshot.pendingJumpRequested;
-    m_pendingImpulseVelocityX = snapshot.pendingImpulseVelocityX;
-    m_pendingImpulseVelocityY = snapshot.pendingImpulseVelocityY;
-    m_pendingImpulseVelocityZ = snapshot.pendingImpulseVelocityZ;
-    m_pendingJumpVelocity.reset();
-    m_pendingJumpLift = DefaultJumpLift;
+    m_jumpState = snapshot.jumpState;
     m_burningDamageTimerSeconds = 0.0f;
     m_alwaysRunEnabled = snapshot.alwaysRunEnabled;
     m_movementController.invalidateRuntimeGeometryCache();
@@ -508,15 +506,31 @@ void IndoorPartyRuntime::syncSpellMovementStatesFromPartyBuffs()
 
 void IndoorPartyRuntime::requestJump(std::optional<float> verticalVelocity, float lift)
 {
-    m_pendingJumpRequested = true;
-    m_pendingJumpVelocity = verticalVelocity;
-    m_pendingJumpLift = std::max(0.0f, lift);
+    m_jumpState.pendingJumpRequested = true;
+    m_jumpState.pendingJumpVelocity = verticalVelocity;
+    m_jumpState.pendingJumpLift = std::max(0.0f, lift);
 }
 
 void IndoorPartyRuntime::requestSpecialJump(float velocityX, float velocityY, float velocityZ)
 {
-    m_pendingImpulseVelocityX = velocityX;
-    m_pendingImpulseVelocityY = velocityY;
-    m_pendingImpulseVelocityZ = velocityZ;
+    if (m_jumpState.specialJumpActive || m_jumpState.pendingSpecialJump)
+    {
+        return;
+    }
+    m_jumpState.pendingSpecialJump = true;
+    m_jumpState.pendingVelocityX = velocityX;
+    m_jumpState.pendingVelocityY = velocityY;
+    m_jumpState.pendingVelocityZ = velocityZ;
+}
+
+void IndoorPartyRuntime::clearSpecialJump()
+{
+    m_jumpState.specialJumpActive = false;
+    m_jumpState.velocityX = 0.0f;
+    m_jumpState.velocityY = 0.0f;
+    m_jumpState.pendingSpecialJump = false;
+    m_jumpState.pendingVelocityX = 0.0f;
+    m_jumpState.pendingVelocityY = 0.0f;
+    m_jumpState.pendingVelocityZ = 0.0f;
 }
 }

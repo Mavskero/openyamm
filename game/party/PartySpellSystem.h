@@ -163,6 +163,8 @@ struct PartySpellDescriptor
 class PartySpellSystem
 {
 public:
+    // Shared effect for normal spell88 and a scripted hidden caster. Caster costs stay in cast().
+    static void applyDivineIntervention(Party &party);
     static std::optional<PartySpellDescriptor> describeSpell(uint32_t spellId);
 
     static PartySpellCastResult castSpell(

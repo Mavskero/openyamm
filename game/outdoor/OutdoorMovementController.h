@@ -22,6 +22,12 @@ enum class OutdoorSupportKind
     BModelFace,
 };
 
+enum class OutdoorPlacementPolicy
+{
+    GroundHint, // Default initialization snaps to the existing floor-selection rules.
+    ExplicitPosition, // Keep an authored altitude; resolve a nearby platform using the body's step height.
+};
+
 struct OutdoorMoveState
 {
     float x = 0.0f;
@@ -141,7 +147,9 @@ public:
         float x,
         float y,
         float footZHint,
-        float bodyRadius) const;
+        float bodyRadius,
+        OutdoorPlacementPolicy placementPolicy = OutdoorPlacementPolicy::GroundHint,
+        float maxStepHeight = 128.0f) const;
     OutdoorMoveState initializeActorStateForBody(
         float x,
         float y,
@@ -168,7 +176,8 @@ public:
         float deltaSeconds,
         std::vector<size_t> *pContactedActorIndices = nullptr,
         float jumpLift = 1.0f,
-        OutdoorMoveDebugInfo *pDebugInfo = nullptr
+        OutdoorMoveDebugInfo *pDebugInfo = nullptr,
+        bool *pBlockingCollision = nullptr
     ) const;
     OutdoorMoveState resolveMoveForBody(
         const OutdoorMoveState &state,
@@ -188,7 +197,8 @@ public:
         std::vector<size_t> *pContactedActorIndices = nullptr,
         const std::optional<OutdoorIgnoredActorCollider> &ignoredActorCollider = std::nullopt,
         float jumpLift = 1.0f,
-        OutdoorMoveDebugInfo *pDebugInfo = nullptr
+        OutdoorMoveDebugInfo *pDebugInfo = nullptr,
+        bool *pBlockingCollision = nullptr
     ) const;
     OutdoorMoveState resolveOutdoorActorMove(
         const OutdoorMoveState &state,
@@ -216,6 +226,7 @@ public:
         float z,
         float maxFloorRise) const;
     void setActorColliders(const std::vector<OutdoorActorCollision> &actorColliders);
+    void setDecorationFlags(const std::vector<uint16_t> &decorationFlags);
     void setFaceAttributes(size_t bModelIndex, size_t faceIndex, uint32_t attributes);
     void updateFaceGeometries(const std::vector<OutdoorFaceGeometryData> &geometries);
 
@@ -232,6 +243,7 @@ private:
     size_t m_faceGridWidth = 0;
     size_t m_faceGridHeight = 0;
     std::vector<OutdoorDecorationCollision> m_decorationColliders;
+    std::vector<OutdoorDecorationCollision> m_sourceDecorationColliders;
     std::vector<OutdoorActorCollision> m_actorColliders;
     std::vector<OutdoorSpriteObjectCollision> m_spriteObjectColliders;
     std::vector<std::vector<size_t>> m_spriteObjectGridCells;
@@ -247,7 +259,9 @@ private:
         float footZHint,
         float bodyRadius,
         bool actorConditionalBModelSupport,
-        bool preserveFootZ) const;
+        bool preserveFootZ,
+        OutdoorPlacementPolicy placementPolicy = OutdoorPlacementPolicy::GroundHint,
+        float maxStepHeight = 128.0f) const;
     void buildFaceCache();
     void buildFaceSpatialIndex();
     void buildDecorationColliderCache(const std::optional<OutdoorDecorationCollisionSet> &outdoorDecorationCollisionSet);

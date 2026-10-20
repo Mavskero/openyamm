@@ -7,6 +7,7 @@ FetchContent_GetProperties(bgfx SOURCE_DIR OPENYAMM_BGFX_FETCH_SOURCE_DIR)
 
 add_library(openyamm_game STATIC
     ui/AppleTextTextureCache.cpp
+    ui/JournalTextLayout.cpp
     app/ScreenManager.cpp
     app/GameInputSystem.cpp
     app/GprofControl.cpp
@@ -19,6 +20,9 @@ add_library(openyamm_game STATIC
     debug/GameImGuiBgfxRenderer.cpp
     data/GameDataRepository.cpp
     app/GameSession.cpp
+    app/BreachAlvarSession.cpp
+    app/BreachChaosApplication.cpp
+    app/BreachMazeApplication.cpp
     audio/GameAudioSystem.cpp
     tables/ChestTable.cpp
     tables/AwardTable.cpp
@@ -54,6 +58,13 @@ add_library(openyamm_game STATIC
     gameplay/BountyHuntRuntime.cpp
     gameplay/AwardRuntime.cpp
     gameplay/GameplayBolsterRuntime.cpp
+    gameplay/GameplayActorCombatState.cpp
+    gameplay/BreachMazeInteractionRuntime.cpp
+    gameplay/BreachMazeCombatRuntime.cpp
+    gameplay/MergeBolsterProfile.cpp
+    gameplay/MergeMonsterSourceProfile.cpp
+    gameplay/MergeMonsterRuntimeView.cpp
+    gameplay/MergeMonsterGenerationState.cpp
     gameplay/GameplayActorAiSystem.cpp
     gameplay/GameplayActorService.cpp
     gameplay/GameplayDialogController.cpp
@@ -68,6 +79,7 @@ add_library(openyamm_game STATIC
     gameplay/InteractiveDecorationRules.cpp
     gameplay/MonsterSpellSupport.cpp
     gameplay/MercenaryRecruitmentRuntime.cpp
+    gameplay/SourceMercenaryGenerationRuntime.cpp
     gameplay/GameplayOverlayInputController.cpp
     gameplay/GameplayPartyOverlayInputController.cpp
     gameplay/GameplayProjectileService.cpp
@@ -93,6 +105,18 @@ add_library(openyamm_game STATIC
     pathfinding/PathPlanner.cpp
     audio/HouseVideoPlayer.cpp
     content/ContentManifest.cpp
+    content/BreachMazeLayout.cpp
+    content/BreachMazeSceneBuilder.cpp
+    content/BreachMazeState.cpp
+    content/BreachMazeLifecycle.cpp
+    content/BreachMazePopulation.cpp
+    content/BreachMazeRuntimeProfile.cpp
+    content/BreachMazeInstanceBuilder.cpp
+    content/BreachAlvarCompanionProfile.cpp
+    outdoor/BreachAlvarActorState.cpp
+    content/BreachAlvarSplitPlan.cpp
+    content/BreachAlvarCompanionState.cpp
+    gameplay/BreachAlvarCompanionTransaction.cpp
     content/ContentTableComposer.cpp
     items/InventoryItemUseRuntime.cpp
     items/InventoryItemMixingRuntime.cpp
@@ -118,6 +142,8 @@ add_library(openyamm_game STATIC
     items/ItemEnchantTables.cpp
     items/ItemEnchantRuntime.cpp
     items/ItemGenerator.cpp
+    items/ItemGenerationRandom.cpp
+    content/BreachMazeItemResolver.cpp
     items/ItemRuntime.cpp
     tables/ItemTable.cpp
     indoor/IndoorRenderer.cpp

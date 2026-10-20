@@ -27,11 +27,6 @@ public:
         uint8_t targetGridX,
         uint8_t targetGridY);
 
-    void updateConnectorStoneRecharge(
-        Party &party,
-        EventRuntimeState &eventRuntimeState,
-        float gameMinutes);
-
     void updateReadableScrollOverlayForHeldItem(
         size_t memberIndex,
         const GameplayCharacterPointerTarget &pointerTarget,

@@ -1,6 +1,7 @@
 #include "game/gameplay/GameplayInteractionController.h"
 
 #include "game/gameplay/GameplayHeldItemController.h"
+#include "game/gameplay/GameplayHudInputController.h"
 #include "game/gameplay/GameplayInputController.h"
 #include "game/gameplay/GameplayInputFrame.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
@@ -667,6 +668,7 @@ bool tryActivateWorldItem(
             return false;
         }
 
+        worldRuntime.notifyItemAcquired(removedItemState.item.objectDescriptionId);
         GAMEPLAY_DEBUG_TRACE(
             "item_received destination=inventory source=world_item item_id="
             + std::to_string(removedItemState.item.objectDescriptionId)
@@ -682,6 +684,7 @@ bool tryActivateWorldItem(
 
     GameplayHeldItemController::setHeldInventoryItem(heldItem, removedItemState.item);
     pParty->setHeldItemForQueries(removedItemState.item);
+    worldRuntime.notifyItemAcquired(removedItemState.item.objectDescriptionId);
     GAMEPLAY_DEBUG_TRACE(
         "item_received destination=held source=world_item item_id="
         + std::to_string(removedItemState.item.objectDescriptionId)
@@ -1400,6 +1403,36 @@ GameplayInteractionController::updateWorldInteractionFrame(
                 .screenHeight = screenHeight,
                 .pointerOverPortrait = hoveredPortraitMemberIndex.has_value(),
             });
+    const bool stealModifierHeld =
+        input.isScancodeHeld(SDL_SCANCODE_LCTRL) || input.isScancodeHeld(SDL_SCANCODE_RCTRL);
+    const bool pointerOverHudButton =
+        !pointerPolicy.useCenterGameplayPoint
+        && (worldInteractionInputState.inspectMouseActivateLatch || input.leftMouseButton.pressed)
+        && GameplayHudInputController::resolveGameplayHudButtonTarget(
+               runtime,
+               GameplayHudButtonInputConfig{
+                   .screenWidth = input.screenWidth,
+                   .screenHeight = input.screenHeight,
+                   .pointerX = input.pointerX,
+                   .pointerY = input.pointerY,
+                   .allowInput = true,
+               }).type != GameplayHudPointerTargetType::None;
+    const bool mouseClickAllowed =
+        !pointerPolicy.useCenterGameplayPoint
+        && !pointerOverHudButton
+        && !heldItemActive
+        && !pendingSpellCast.active
+        && !keyboardUsePressed
+        && !pointerPolicy.activationPressed
+        && !pointerPolicy.attackPressed
+        && !stealModifierHeld;
+
+    if (!mouseClickAllowed)
+    {
+        // A mode/owner change cancels the gesture; policy false is not a physical mouse release.
+        worldInteractionInputState.inspectMouseActivateLatch = false;
+        worldInteractionInputState.pressedWorldHit = {};
+    }
     const GameplaySpellActionController::TargetQueries targetQueries =
         buildSpellActionTargetQueries(screenState, input);
 
@@ -1836,7 +1869,7 @@ GameplayInteractionController::updateWorldInteractionFrame(
     const bool stealPressed =
         input.leftMouseButton.pressed
         && pointerPolicy.leftMousePressed
-        && (input.isScancodeHeld(SDL_SCANCODE_LCTRL) || input.isScancodeHeld(SDL_SCANCODE_RCTRL));
+        && stealModifierHeld;
 
     if (stealPressed
         && currentHit.kind == GameplayWorldHitKind::Actor
@@ -1874,6 +1907,41 @@ GameplayInteractionController::updateWorldInteractionFrame(
     }
 
     const bool hadLootViewBeforeActivation = hasActiveLootView(runtime);
+
+    if (mouseClickAllowed
+        && (worldInteractionInputState.inspectMouseActivateLatch
+            || (input.leftMouseButton.pressed && pointerPolicy.leftMousePressed)))
+    {
+        // Only a new physical press may arm a gesture. A held button after a modal, steal,
+        // held-item action or cursor-mode change must not arm an ordinary world click again.
+        const MouseClickInteractionResult mouseResult =
+            updateMouseClickInteraction(
+                worldInteractionInputState,
+                MouseClickInteractionInput{
+                    .leftMousePressed = pointerPolicy.leftMousePressed,
+                    .pointerOverPartyPortrait = pointerPolicy.pointerOverPartyPortrait,
+                    .currentHit = pickCurrentHit(),
+                    .pRuntime = &runtime,
+                    .pWorldRuntime = pWorldRuntime,
+                    .interactionMethod = GameplayInteractionMethod::Mouse,
+                });
+
+        if (mouseResult.activated)
+        {
+            result.mouseActivationActivated = true;
+            refreshWorldHover(standardHoverInput, pWorldRuntime);
+            runtime.clearContextActionState();
+
+            if (!hadLootViewBeforeActivation && hasActiveLootView(runtime))
+            {
+                // Match keyboard activation's protection against immediate Return-key looting.
+                overlayInteractionState.lootChestItemLatch = true;
+            }
+
+            return result;
+        }
+    }
+
     GameplayWorldHit keyboardActivationHit = {};
 
     if (pointerPolicy.activationPressed && worldReady && pWorldRuntime != nullptr)

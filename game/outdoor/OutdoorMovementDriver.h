@@ -2,6 +2,7 @@
 
 #include "game/outdoor/OutdoorCollisionData.h"
 #include "game/outdoor/OutdoorMovementController.h"
+#include "game/gameplay/PartyJumpState.h"
 
 #include <optional>
 #include <string>
@@ -106,8 +107,12 @@ public:
         const std::optional<OutdoorSpriteObjectCollisionSet> &outdoorSpriteObjectCollisionSet
     );
 
-    void initialize(float x, float y, float footZHint);
-    void restoreState(const OutdoorMoveState &state, const OutdoorPartyMovementState &partyMovementState);
+    void initialize(float x, float y, float footZHint,
+        OutdoorPlacementPolicy placementPolicy = OutdoorPlacementPolicy::GroundHint);
+    void restoreState(const OutdoorMoveState &state, const OutdoorPartyMovementState &partyMovementState,
+        float movementAccumulatorSeconds = 0.0f, const PartyJumpState &jumpState = {});
+    void setPositionForEvents(float x, float y, float footZ);
+    void setDecorationFlags(const std::vector<uint16_t> &decorationFlags);
     void update(
         const OutdoorMovementInput &input,
         float deltaSeconds,
@@ -117,6 +122,8 @@ public:
     void updateFaceGeometries(const std::vector<OutdoorFaceGeometryData> &geometries);
     bool translateWithSupportedBModel(size_t bModelIndex, float deltaX, float deltaY, float deltaZ);
     const OutdoorMoveState &state() const;
+    const PartyJumpState &jumpState() const noexcept;
+    float movementAccumulatorSeconds() const noexcept;
     const OutdoorMovementEvents &lastEvents() const;
     const OutdoorMovementConsequences &lastConsequences() const;
     const OutdoorPartyMovementState &partyMovementState() const;
@@ -128,10 +135,11 @@ public:
     void toggleWaterWalk();
     void toggleFeatherFall();
     void setFlying(bool active);
-    void setFlyingAvailable(bool active);
+    void setFlyingAvailable(bool active) noexcept;
+    void setUnderwater(bool active);
     void setRunning(bool active);
-    void setWaterWalkActive(bool active);
-    void setFeatherFallActive(bool active);
+    void setWaterWalkActive(bool active) noexcept;
+    void setFeatherFallActive(bool active) noexcept;
     void setSpeedMultiplier(float multiplier);
     void setBodyDimensions(float radius, float height, float maxStepHeight = 128.0f);
     void setCollisionTraceEnabled(bool enabled, std::string mapName);
@@ -140,6 +148,7 @@ public:
 
 private:
     bool canActivateFlying() const;
+    void clearSpecialJump();
 
     OutdoorMovementController m_movementController;
     OutdoorMoveState m_state;
@@ -151,13 +160,9 @@ private:
     OutdoorMovementEffects m_pendingEffects;
     bool m_jumpHeld = false;
     bool m_flyUpHeld = false;
-    bool m_pendingJumpPress = false;
-    std::optional<float> m_pendingJumpVelocity;
-    float m_pendingJumpLift = 1.0f;
-    float m_pendingImpulseVelocityX = 0.0f;
-    float m_pendingImpulseVelocityY = 0.0f;
-    float m_pendingImpulseVelocityZ = 0.0f;
+    PartyJumpState m_jumpState;
     bool m_flyingAvailable = false;
+    bool m_underwater = false;
     float m_movementAccumulatorSeconds = 0.0f;
     float m_startedFallingEventSeconds = 0.0f;
     float m_landedEventSeconds = 0.0f;

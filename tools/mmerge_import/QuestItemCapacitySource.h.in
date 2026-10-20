@@ -1,0 +1,10 @@
+#pragma once
+
+#include <string_view>
+
+namespace OpenYAMM::Import
+{
+inline constexpr std::string_view QuestItemCapacitySource = R"OYQUESTCAP(
+@OPENYAMM_QUEST_ITEM_CAPACITY_SOURCE@
+)OYQUESTCAP";
+}

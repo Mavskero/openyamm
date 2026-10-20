@@ -239,6 +239,20 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
         images.insert(dimensionDoorImageReferences.begin(), dimensionDoorImageReferences.end());
     }
 
+    // LoadingOverlayScreen selects these original images dynamically, outside the YAML layouts.
+    std::set<std::string> loadingImageReferences = {
+        "loading1.pcx", "loading2.pcx", "loading3.pcx", "loading4.pcx", "loading5.pcx", "loadprog", "bardata"};
+    for (unsigned frame = 1; frame <= 10; ++frame)
+    {
+        std::ostringstream name;
+        name << "ia02-" << std::setfill('0') << std::setw(3) << frame;
+        loadingImageReferences.insert(name.str());
+    }
+    images.insert(loadingImageReferences.begin(), loadingImageReferences.end());
+
+    // WinGameScreen references ENDGAME directly, outside the YAML layouts.
+    fonts.insert("endgame.fnt");
+
     // Separate original icon and language-image namespaces. Conditional UI packs override their own namespace.
     Owners iconOwners;
     for (const std::string &name : {"icons.lod", "mmmerge.icons.lod", "00 add.icons.lod",
@@ -275,6 +289,7 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
             << ",\"layouts\":" << layouts.size() << ",\"layout_elements\":" << elementCount
             << ",\"image_references\":" << images.size() << ",\"font_references\":" << fonts.size()
             << ",\"dimension_door_image_references\":" << dimensionDoorImageReferences.size()
+            << ",\"loading_image_references\":" << loadingImageReferences.size()
             << ",\"images\":[";
         bool first = true;
         std::set<std::string> missingImages;
@@ -288,6 +303,7 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
             const Owners::const_iterator owner = owners.find(name);
             if (owner == owners.end())
             {
+                require(!loadingImageReferences.contains(name), "Missing required loading image: " + name);
                 missingImages.insert(name);
                 continue;
             }

@@ -2,6 +2,7 @@
 
 #include "game/indoor/IndoorMapData.h"
 #include "game/outdoor/OutdoorMapData.h"
+#include "game/items/InventoryItem.h"
 
 #include <array>
 #include <cstddef>
@@ -52,7 +53,7 @@ struct MapDeltaActor
     uint16_t initialYawUnits = 0;
     bool immobile = false;
     uint32_t attributes = 0;
-    int16_t hp = 0;
+    int32_t hp = 0;
     uint8_t hostilityType = 0;
     int16_t monsterInfoId = 0;
     int16_t monsterId = 0;
@@ -103,6 +104,10 @@ struct MapDeltaSpriteObject
     int initialZ = 0;
     float lifetimeTickAccumulator = 0.0f;
     std::vector<uint8_t> rawContainingItem;
+    // Generated items retain their complete state, including charges. The two forms are exclusive:
+    // containingItem requires rawContainingItem.empty(); imported legacy objects retain only raw bytes.
+    std::optional<InventoryItem> containingItem;
+    uint32_t containingGoldAmount = 0; // Requires containingItem; legacy gold remains in raw bytes.
     std::string semanticSourceId;
     uint32_t semanticLootContainerId = 0;
     bool semanticPlacedPickup = false;
