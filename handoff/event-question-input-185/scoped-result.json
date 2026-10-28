@@ -1,0 +1,90 @@
+{
+  "checkpoint": 185,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-28T18:22:10.169586+00:00",
+  "goal_turn_classification": "PROGRESS_PRODUCT_FIX_AND_ACTUAL",
+  "source_base": "f486cc63dd3079783bea4465a5a795b01113de8d",
+  "runtime": "local-data/validation/device-feedback-183/runtime-001",
+  "runtime_changed": false,
+  "save_version_changed": false,
+  "production_changes": [
+    "game/app/GameApplication.cpp",
+    "game/app/GameApplication.h",
+    "game/ui/GameplayDialogueRenderer.cpp"
+  ],
+  "production_sha256": {
+    "game/app/GameApplication.cpp": "71b9b248963c92c679ed924be33bd55e548bda352b02550cbacdc824bc68c2a4",
+    "game/app/GameApplication.h": "1be5827a66512f24ed1f0ea7b36a411040aee9502fc4f6d44f488eef16620c2b",
+    "game/ui/GameplayDialogueRenderer.cpp": "a381c3dfc97830bb13fb9143141b2ea9b25678365a1ce9e3b8324e573b06799b"
+  },
+  "fixes": [
+    "Visible Submit/Cancel buttons for event questions use unified pointer input and existing answer/close behavior; Return/Escape retained",
+    "Answer focus uses the visible overlay status row; SDL keyboard area encloses answer and both controls, converted from drawable pixels to window points",
+    "UTF8-safe append and Backspace; maximum64 Unicode code points"
+  ],
+  "actual": {
+    "directory": "actual-003",
+    "result": {
+      "passed": true,
+      "frames": 78,
+      "phase": 20,
+      "normal_frames": 30,
+      "normal_seconds": 0.34391,
+      "captures": 3,
+      "source_world_clicks": 3,
+      "scroll_read": true,
+      "answer_observed": true,
+      "prompt_controls": true,
+      "cancel_observed": true,
+      "utf8_edit_observed": true,
+      "input_area_observed": true,
+      "final_save_verified": true,
+      "natural_campaign": false,
+      "device_acceptance": false,
+      "new_unit_tests": 0,
+      "cold_replays": 0,
+      "failure": ""
+    },
+    "source_flow": "Original VARN chest2/2158 and physical pool21 -> pointer Cancel -> unchanged Q1253/item2158/MapVar12 -> reopen same pool -> kcops错 plus one Backspace -> kcops -> pointer Submit -> source completion/consumption ->30 normal frames/save decode",
+    "managed_sdl_area": [
+      49,
+      639,
+      1048,
+      148
+    ],
+    "managed_sdl_area_scope": "Native SDL window points; covers actual rendered answer and both button rectangles, not iPad keyboard pixels",
+    "screenshots_reviewed": [
+      "visual-review-final/original-chest2.png",
+      "visual-review-final/first-mate-scroll.png",
+      "visual-review-final/password-input.png"
+    ]
+  },
+  "fixtures": [
+    "Unchanged normal132 MM6 input copy, declared Pyramid map and two poses/camera directions",
+    "Member0 DisarmTraps Normal16 meets original difficulty8*2; no granted item/quest writes/AI/HP/buff/immortality changes",
+    "Simulation delta0 for framing/input/captures; final30frames normal AI,0.343910seconds"
+  ],
+  "builds": {
+    "native": "native-build-004.command.json",
+    "unsigned_generic_ios_release": "ios-release-002.command.json"
+  },
+  "failure_history": {
+    "actual-001": "Driver queried SDL keyboard-focus window while actual App window was unfocused; stopped before Cancel. Corrected capture to enumerate its one SDL window, no gameplay workaround.",
+    "actual-002": "Cancel/edit/Submit/save passed. Visual/source review found Answer focus referenced a footer hidden beneath portraits; its conservative keyboard area avoided obstruction but focus target was wrong. Final003 corrects visible-row focus and area union.",
+    "builds": "All native and generic iOS builds passed; tool-only rebuilds preserved."
+  },
+  "limitations": [
+    "No physical device/simulator operation; actual iPad keyboard avoidance, IME and touch confirmation remain pending",
+    "NPC/house cancel variants are source/build reviewed; actual route is one MapEvent question",
+    "No independent cold run, full VARN or natural campaign acceptance",
+    "No submarine route replay; bounded source audit found no confirmed new defect",
+    "Ordinary text Append/Backspace checked; no IME composition or maximum-length matrix"
+  ],
+  "new_unit_cases": 0,
+  "actual_attempts": 3,
+  "cold_runs": 0,
+  "unaffected_campaign_replays": 0,
+  "all_owned_jobs_collected": true,
+  "full_goal_achieved": false,
+  "next": "Only new concrete progression defects or returned device feedback; receiving iPad may combine185 question controls/IME with183/184 affected UI checks."
+}

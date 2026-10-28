@@ -24,6 +24,7 @@
 #include "game/tables/ClassSkillTable.h"
 #include "game/tables/ItemTable.h"
 #include "game/tables/NpcDialogTable.h"
+#include "game/ui/Utf8Text.h"
 #include "game/ui/screens/ArcomageScreen.h"
 #include "game/ui/screens/CutsceneVideoScreen.h"
 #include "game/ui/screens/LoadGameScreen.h"
@@ -44,7 +45,6 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
-#include <cstring>
 #include <ctime>
 #include <filesystem>
 #include <functional>
@@ -58,6 +58,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #if defined(__GLIBC__)
@@ -1266,7 +1267,7 @@ constexpr const char *PartyDefeatCutsceneDirectory = "Videos/Cutscenes";
 constexpr const char *PartyDefeatCutsceneStem = "LoseGame";
 constexpr const char *EventMovieCutsceneDirectory = "Videos/Cutscenes";
 constexpr const char *WinGameCutsceneStem = "wingame";
-constexpr size_t MaxPendingInputLength = 64;
+constexpr size_t MaximumPendingInputCharacters = 64; // Unicode code points, independent of UTF-8 byte length.
 constexpr std::array<uint32_t, 3> Level1ReagentItemIds = {{200, 205, 210}};
 constexpr std::array<uint32_t, 18> DebugUnlockedTownPortalQBits = {{
     301, 302, 303, 304, 305, 306,
@@ -5300,6 +5301,47 @@ SDL_Rect GameApplication::applicationTextInputArea(int windowWidth, int windowHe
     }
 
     const GameplayScreenRuntime &view = m_gameSession.gameplayScreenRuntime();
+    if (pendingInputPromptActive())
+    {
+        // Dialogue uses the overlay HUD's visible status row; its optional footer is under the portraits.
+        // Keep the answer and both controls above UIKit's keyboard, using the rendered geometry in window points.
+        float left = std::numeric_limits<float>::max();
+        float top = std::numeric_limits<float>::max();
+        float right = std::numeric_limits<float>::lowest();
+        float bottom = std::numeric_limits<float>::lowest();
+        for (const char *pLayoutId : {"OutdoorStatusBar", "DialogueOkButton", "DialogueGoodbyeButton"})
+        {
+            const GameplayScreenRuntime::HudLayoutElement *pLayout = view.findHudLayoutElement(pLayoutId);
+            if (pLayout == nullptr || !pLayout->visible)
+            {
+                continue;
+            }
+            const std::optional<GameplayResolvedHudLayoutElement> region = view.resolveHudLayoutElement(
+                pLayoutId, m_lastFrameWidth, m_lastFrameHeight, pLayout->width, pLayout->height);
+            if (region)
+            {
+                left = std::min(left, region->x);
+                top = std::min(top, region->y);
+                right = std::max(right, region->x + region->width);
+                bottom = std::max(bottom, region->y + region->height);
+            }
+        }
+        if (right <= left || bottom <= top || m_lastFrameWidth <= 0 || m_lastFrameHeight <= 0)
+        {
+            return {};
+        }
+
+        const float scaleX = float(windowWidth) / float(m_lastFrameWidth);
+        const float scaleY = float(windowHeight) / float(m_lastFrameHeight);
+        const int x = static_cast<int>(std::floor(left * scaleX));
+        const int y = static_cast<int>(std::floor(top * scaleY));
+        return {
+            x, y,
+            static_cast<int>(std::ceil(right * scaleX)) - x,
+            static_cast<int>(std::ceil(bottom * scaleY)) - y
+        };
+    }
+
     const GameplayUiController::SaveGameScreenState &saveGame = view.saveGameScreenState();
     if (!saveGame.active || !saveGame.editActive)
     {
@@ -5330,10 +5372,9 @@ bool GameApplication::handlePendingInputPromptSdlEvent(const SDL_Event &event)
 
     if (event.type == SDL_EVENT_TEXT_INPUT)
     {
-        if (event.text.text != nullptr && m_pendingInputText.size() < MaxPendingInputLength)
+        if (event.text.text != nullptr)
         {
-            const size_t remaining = MaxPendingInputLength - m_pendingInputText.size();
-            m_pendingInputText.append(event.text.text, std::min(remaining, std::strlen(event.text.text)));
+            appendUtf8Label(m_pendingInputText, event.text.text, MaximumPendingInputCharacters);
             GAMEPLAY_DEBUG_TRACE(
                 "input_prompt_text_input text=" + traceInputPromptQuoted(event.text.text)
                 + " current=" + traceInputPromptQuoted(m_pendingInputText));
@@ -5368,10 +5409,7 @@ bool GameApplication::handlePendingInputPromptSdlEvent(const SDL_Event &event)
             return true;
 
         case SDLK_BACKSPACE:
-            if (!m_pendingInputText.empty())
-            {
-                m_pendingInputText.pop_back();
-            }
+            eraseLastUtf8Character(m_pendingInputText);
             return true;
 
         default:
@@ -5394,6 +5432,8 @@ void GameApplication::clearPendingInputPromptUi(bool clearStatusBar)
 #endif
 
     m_pendingInputTextActive = false;
+    m_pendingInputClickLatch = false;
+    m_pendingInputPressedTarget = PendingInputPointerTarget::None;
     m_pendingInputText.clear();
     m_pendingInputStatusText.clear();
 
@@ -5460,6 +5500,9 @@ void GameApplication::updatePendingInputPrompt()
 #endif
 
         m_pendingInputTextActive = true;
+        // The gesture that opened a question must not also activate one of its controls.
+        m_pendingInputClickLatch = m_gameInputSystem.frame().leftMouseButton.held;
+        m_pendingInputPressedTarget = PendingInputPointerTarget::None;
 
         IGameplayWorldRuntime *pWorldRuntime = m_gameSession.activeWorldRuntime();
         EventRuntimeState *pRuntimeState = pWorldRuntime != nullptr ? pWorldRuntime->eventRuntimeState() : nullptr;
@@ -5475,12 +5518,89 @@ void GameApplication::updatePendingInputPrompt()
         }
     }
 
+    updatePendingInputPromptPointer();
+    if (!pendingInputPromptActive())
+    {
+        return;
+    }
+
     const std::string statusText = "Answer: " + m_pendingInputText + "_";
 
     if (statusText != m_pendingInputStatusText)
     {
         m_pendingInputStatusText = statusText;
         m_gameSession.gameplayScreenRuntime().setStatusBarEvent(statusText, 3600.0f);
+    }
+}
+
+void GameApplication::updatePendingInputPromptPointer()
+{
+    GameplayScreenRuntime &view = m_gameSession.gameplayScreenRuntime();
+    const GameplayInputFrame &input = m_gameInputSystem.frame();
+    const auto targetAt = [&view, &input]() -> PendingInputPointerTarget
+    {
+        constexpr std::array<std::pair<const char *, PendingInputPointerTarget>, 3> targets = {{
+            {"DialogueOkButton", PendingInputPointerTarget::Submit},
+            {"DialogueGoodbyeButton", PendingInputPointerTarget::Cancel},
+            {"OutdoorStatusBar", PendingInputPointerTarget::Answer}
+        }};
+        for (const auto &[pLayoutId, target] : targets)
+        {
+            const GameplayScreenRuntime::HudLayoutElement *pLayout = view.findHudLayoutElement(pLayoutId);
+            if (pLayout == nullptr || !pLayout->visible)
+            {
+                continue;
+            }
+            const std::optional<GameplayResolvedHudLayoutElement> resolved = view.resolveHudLayoutElement(
+                pLayoutId, input.screenWidth, input.screenHeight, pLayout->width, pLayout->height);
+            if (resolved && view.isPointerInsideResolvedElement(*resolved, input.pointerX, input.pointerY))
+            {
+                return target;
+            }
+        }
+        return PendingInputPointerTarget::None;
+    };
+
+    if (input.leftMouseButton.held)
+    {
+        if (!m_pendingInputClickLatch)
+        {
+            m_pendingInputPressedTarget = targetAt();
+            m_pendingInputClickLatch = true;
+        }
+        return;
+    }
+
+    if (!m_pendingInputClickLatch)
+    {
+        return;
+    }
+
+    const PendingInputPointerTarget releasedTarget = targetAt();
+    const bool activate = releasedTarget == m_pendingInputPressedTarget;
+    m_pendingInputClickLatch = false;
+    m_pendingInputPressedTarget = PendingInputPointerTarget::None;
+    if (!activate)
+    {
+        return;
+    }
+
+    if (releasedTarget == PendingInputPointerTarget::Submit)
+    {
+        finishPendingInputPrompt(true);
+    }
+    else if (releasedTarget == PendingInputPointerTarget::Cancel)
+    {
+        finishPendingInputPrompt(false);
+    }
+    else if (releasedTarget == PendingInputPointerTarget::Answer)
+    {
+#if !defined(__ANDROID__)
+        if (SDL_Window *pWindow = SDL_GetKeyboardFocus())
+        {
+            SDL_StartTextInput(pWindow);
+        }
+#endif
     }
 }
 
@@ -5508,6 +5628,15 @@ void GameApplication::finishPendingInputPrompt(bool accepted)
         GAMEPLAY_DEBUG_TRACE(
             "input_prompt_canceled"
             + traceInputPromptFields(prompt, promptMapName, promptGameMinutes));
+        GameplayScreenRuntime &view = m_gameSession.gameplayScreenRuntime();
+        // Cancel the question itself, then use the normal map/NPC/house close behavior.
+        // A house movie must not consume this explicit cancel before the dialog can close.
+        view.stopHouseVideoPlayback();
+        view.activeEventDialog().videoName.clear();
+        view.activeEventDialog().videoDirectory.clear();
+        view.handleDialogueCloseRequest();
+        view.interactionState().menuToggleLatch = true;
+        view.interactionState().closeOverlayLatch = true;
         m_skipGameplayUpdateUntilPromptSubmitKeysReleased = true;
         return;
     }

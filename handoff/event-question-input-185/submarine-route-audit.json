@@ -1,0 +1,53 @@
+{
+  "mode": "bounded read-only source audit",
+  "new_confirmed_defects": 0,
+  "runtime": "device-feedback-183/runtime-001",
+  "route": [
+    {
+      "map": "out01",
+      "event": 502,
+      "binding": "model75 face25-26",
+      "gate": "Q6 or Q36 or Q38 reveals cog25 on load",
+      "arrival": "d06(-7,-714,1,yaw512)"
+    },
+    {
+      "map": "d06",
+      "event": 451,
+      "binding": "hatch face1625, center(7100,-736,-576)",
+      "gate": "item619 or Q214",
+      "source_key": "original actor0 carries619; ordinary corpse guaranteed-item path retains it",
+      "result": "retain619,setQ214,Subcut,d34(-2416,1850,-687,yaw1536)"
+    },
+    {
+      "map": "d34",
+      "event": 501,
+      "binding": "face339",
+      "result": "confirmed transition to out13(7425,-2538,829,yaw512)"
+    },
+    {
+      "map": "out13",
+      "event": 504,
+      "binding": "model50 face22",
+      "result": "d34(-28,-193,57,yaw1024)"
+    },
+    {
+      "map": "d34",
+      "event": 451,
+      "binding": "hatch face524, center(-2416,2050,-680)",
+      "gate": "unconditional,Icon1 confirmation",
+      "result": "d06(7097,-1117,-639,yaw1536)"
+    },
+    {
+      "map": "d06",
+      "event": 501,
+      "binding": "faces1844-1845",
+      "result": "out01(4217,-17375,146,yaw1536)"
+    }
+  ],
+  "geometry": "Agent compared current d06/d34 BLV/DLV with original mm8.games.lod: identical",
+  "warning": "Boat-body401 faces are hint-only; hatch451 is the actual interaction",
+  "limits": [
+    "Source/resource binding review only; no new actual clicks,builds,tests or campaign proof"
+  ],
+  "action": "Freeze audit; prioritize confirmed event-question input defects, no submarine replay this turn."
+}

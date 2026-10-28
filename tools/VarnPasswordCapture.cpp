@@ -64,7 +64,8 @@ void queueMouse(float x, float y, int width, int height, uint8_t button, bool do
 // One controlled original-chest -> readable scroll -> original password input chain.
 struct GameApplicationTestAccess
 {
-    static int run(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
+    static int run(std::filesystem::path runtime, std::filesystem::path input,
+        std::filesystem::path output, bool promptControls)
     {
         runtime = std::filesystem::canonical(runtime);
         input = std::filesystem::canonical(input);
@@ -83,7 +84,8 @@ struct GameApplicationTestAccess
         require(std::filesystem::copy_file(input, output / "source-input.oysav"), "Cannot preserve source input");
         std::filesystem::current_path(output);
         std::ofstream(output / "fixture.json")
-            << "{\"checkpoint\":184,\"controlled\":true,\"natural_campaign\":false,"
+            << "{\"checkpoint\":" << (promptControls ? 185 : 184)
+            << ",\"controlled\":true,\"natural_campaign\":false,"
                "\"input\":" << std::quoted(input.string()) << ",\"runtime\":" << std::quoted(runtime.string())
             << ",\"scope\":\"Load unchanged normal132 MM6 seed; debug-map jump to original Pyramid. "
                "Declare two position/camera fixtures: original trapped chest2 and the outside rim of password pool21. "
@@ -91,7 +93,9 @@ struct GameApplicationTestAccess
                "this is a late-quest capability precondition, not naturally earned training. Record before/after. "
                "Original box42 opens chest2 and sets Q1253. Pick actual2158 with SDL chest pointer, "
                "read it with SDL right portrait, store with SDL left portrait, then click original face47. "
-               "Submit kcops through SDL text/Return. No granted item, direct event dispatch, "
+               "Submit kcops through SDL text/Return, or in prompt-controls mode cancel by pointer, "
+               "reopen the same pool, type kcops plus a Chinese character, erase once and submit by pointer. "
+               "No granted item, direct event dispatch, "
                "quest/completion writes or actor/AI/buff/HP/immortality edits. "
                "Simulation delta is zero during framing/UI/captures; only the final30 frames run normal AI.\","
                "\"wall_limit_seconds\":90,\"frame_limit\":900,\"capture_limit\":3,"
@@ -108,7 +112,7 @@ struct GameApplicationTestAccess
         settings.windowMode = WindowMode::Windowed;
         require(saveGameSettings(output / "settings.ini", settings, error), "Cannot save settings: " + error);
         Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
-        config.appName = "OpenYAMM VARN184";
+        config.appName = promptControls ? "OpenYAMM Question185" : "OpenYAMM VARN184";
         config.assetRoot = runtime.string();
         config.activeWorldId = "mm6";
         config.startupMapFileOverride = "pyramid.blv";
@@ -122,6 +126,7 @@ struct GameApplicationTestAccess
         double normalSeconds = 0, initialMinutes = 0;
         int phase = 0;
         bool complete = false, savedVerified = false, scrollRead = false, answerObserved = false;
+        bool cancelObserved = false, utf8EditObserved = false, inputAreaObserved = false;
         std::array<float, 2> pointer{};
         std::string pendingCapture;
         Party::Snapshot baseline;
@@ -240,6 +245,9 @@ struct GameApplicationTestAccess
                 << ",\"normal_frames\":" << normalFrames << ",\"normal_seconds\":" << normalSeconds
                 << ",\"captures\":" << captures << ",\"source_world_clicks\":" << worldClicks
                 << ",\"scroll_read\":" << scrollRead << ",\"answer_observed\":" << answerObserved
+                << ",\"prompt_controls\":" << promptControls << ",\"cancel_observed\":" << cancelObserved
+                << ",\"utf8_edit_observed\":" << utf8EditObserved
+                << ",\"input_area_observed\":" << inputAreaObserved
                 << ",\"final_save_verified\":" << savedVerified << ",\"natural_campaign\":false,"
                    "\"device_acceptance\":false,\"new_unit_tests\":0,\"cold_replays\":0,\"failure\":"
                 << std::quoted(failure) << "}\n";
@@ -303,7 +311,8 @@ struct GameApplicationTestAccess
                     scene().partyRuntime().teleportPartyPosition(-10240, -2116, -923);
                     aim(-10463, -2116, -892);
                     record("declared-chest-pose");
-                    require(game.quickSaveToPath(output / "declared-fixture.oysav", "184维兰原箱前受控输入"),
+                    require(game.quickSaveToPath(output / "declared-fixture.oysav",
+                        promptControls ? "185问题输入前受控输入" : "184维兰原箱前受控输入"),
                         "Cannot save declared fixture");
                     return true;
                 },
@@ -333,6 +342,15 @@ struct GameApplicationTestAccess
                     {
                         const auto rect = screen().resolvePartyPortraitRect(width, height, 0);
                         require(rect.has_value(), "Original recipient portrait is absent");
+                        return std::array<float, 2>{rect->x + rect->width * 0.5f, rect->y + rect->height * 0.5f};
+                    };
+                    const auto promptButton = [&](const std::string &id)
+                    {
+                        const auto *pLayout = screen().findHudLayoutElement(id);
+                        require(pLayout != nullptr, "Missing question control layout: " + id);
+                        const auto rect = screen().resolveHudLayoutElement(
+                            id, width, height, pLayout->width, pLayout->height);
+                        require(rect && rect->width > 0 && rect->height > 0, "Question control has no hit area");
                         return std::array<float, 2>{rect->x + rect->width * 0.5f, rect->y + rect->height * 0.5f};
                     };
                     if (phase == 0 && frames >= 8)
@@ -479,27 +497,110 @@ struct GameApplicationTestAccess
                         require(events().pendingInputPrompt && events().pendingInputPrompt->eventId == 21
                             && events().pendingInputPrompt->correctStep == 9 && game.pendingInputPromptActive(),
                             "Actual original face21 did not open its normal text prompt");
+                        if (promptControls && !cancelObserved)
+                        {
+                            int windowCount = 0;
+                            SDL_Window **pWindows = SDL_GetWindows(&windowCount);
+                            SDL_Window *pWindow = pWindows && windowCount == 1 ? pWindows[0] : nullptr;
+                            SDL_free(pWindows);
+                            SDL_Rect area{};
+                            require(pWindow && SDL_GetTextInputArea(pWindow, &area, nullptr),
+                                "Cannot observe the managed SDL question input area");
+                            require(area.w > 0 && area.h > 0, "Question has no SDL keyboard avoidance area");
+                            int pointWidth = 0, pointHeight = 0;
+                            require(SDL_GetWindowSize(pWindow, &pointWidth, &pointHeight),
+                                "Cannot query the question window size");
+                            for (const char *pId : {"OutdoorStatusBar", "DialogueOkButton", "DialogueGoodbyeButton"})
+                            {
+                                const auto *pLayout = screen().findHudLayoutElement(pId);
+                                require(pLayout != nullptr, "Visible question element is absent");
+                                const auto rect = screen().resolveHudLayoutElement(
+                                    pId, width, height, pLayout->width, pLayout->height);
+                                require(rect && area.x <= rect->x * pointWidth / width
+                                    && area.y <= rect->y * pointHeight / height
+                                    && area.x + area.w >= (rect->x + rect->width) * pointWidth / width
+                                    && area.y + area.h >= (rect->y + rect->height) * pointHeight / height,
+                                    "SDL input area does not include the visible answer and question controls");
+                            }
+                            inputAreaObserved = true;
+                            trace << "{\"stage\":\"question-input-area\",\"rect\":["
+                                << area.x << ',' << area.y << ',' << area.w << ',' << area.h << "]}\n";
+                            pointer = promptButton("DialogueGoodbyeButton");
+                            queueMouse(pointer[0], pointer[1], width, height, SDL_BUTTON_LEFT, true);
+                            phase = 60;
+                            return;
+                        }
                         SDL_Event text{};
                         text.type = SDL_EVENT_TEXT_INPUT;
-                        text.text.text = "kcops";
+                        text.text.text = promptControls ? "kcops错" : "kcops";
                         game.handleSdlEvent(text);
                         phase = 16;
                     }
+                    else if (phase == 60)
+                    {
+                        queueMouse(pointer[0], pointer[1], width, height, SDL_BUTTON_LEFT, false);
+                        phase = 61;
+                    }
+                    else if (phase == 61)
+                    {
+                        require(!game.pendingInputPromptActive() && !events().pendingInputPrompt
+                            && !screen().activeEventDialog().isActive && game.m_pendingInputText.empty(),
+                            "Pointer Cancel did not leave the password prompt");
+                        require(events().mapVars[12] == 0 && scene().party().hasQuestBit(1253)
+                            && scene().party().inventoryItemCount(2158) == 1,
+                            "Cancel incorrectly submitted or consumed the quest scroll");
+                        cancelObserved = true;
+                        record("question-canceled-without-consumption");
+                        clickFace(47, 21, width, height);
+                        phaseFrame = frames;
+                        phase = 14;
+                    }
                     else if (phase == 16)
                     {
+                        if (promptControls)
+                        {
+                            require(game.m_pendingInputText == "kcops错", "Chinese input was not retained intact");
+                            queueKey(SDLK_BACKSPACE, SDL_SCANCODE_BACKSPACE, true);
+                            phase = 62;
+                            return;
+                        }
                         require(game.m_pendingInputText == "kcops", "SDL text did not enter the visible normal prompt");
                         record("source21-kcops-entered");
                         capture("password-input");
                         phase = 17;
                     }
+                    else if (phase == 62)
+                    {
+                        queueKey(SDLK_BACKSPACE, SDL_SCANCODE_BACKSPACE, false);
+                        require(game.m_pendingInputText == "kcops",
+                            "One Backspace did not erase the Chinese character");
+                        utf8EditObserved = true;
+                        record("question-utf8-corrected");
+                        capture("password-input");
+                        phase = 17;
+                    }
                     else if (phase == 17 && pendingCapture.empty())
                     {
-                        queueKey(SDLK_RETURN, SDL_SCANCODE_RETURN, true);
+                        if (promptControls)
+                        {
+                            pointer = promptButton("DialogueOkButton");
+                            queueMouse(pointer[0], pointer[1], width, height, SDL_BUTTON_LEFT, true);
+                            phase = 63;
+                        }
+                        else
+                        {
+                            queueKey(SDLK_RETURN, SDL_SCANCODE_RETURN, true);
+                            phase = 18;
+                        }
+                    }
+                    else if (phase == 63)
+                    {
+                        queueMouse(pointer[0], pointer[1], width, height, SDL_BUTTON_LEFT, false);
                         phase = 18;
                     }
                     else if (phase == 18)
                     {
-                        queueKey(SDLK_RETURN, SDL_SCANCODE_RETURN, false);
+                        if (!promptControls) queueKey(SDLK_RETURN, SDL_SCANCODE_RETURN, false);
                         verifyAnswer();
                         require(!screen().activeEventDialog().isActive,
                             "Answered map prompt did not return to gameplay");
@@ -512,7 +613,9 @@ struct GameApplicationTestAccess
                         verifyAnswer();
                         require(scene().party().hasActableMember(), "Normal continuation ended in party defeat");
                         const auto path = output / "varn-first-mate-complete.oysav";
-                        require(game.quickSaveToPath(path, "184维兰大副密码后续玩"), "Cannot save actual continuation");
+                        require(game.quickSaveToPath(path,
+                            promptControls ? "185问题按钮输入后续玩" : "184维兰大副密码后续玩"),
+                            "Cannot save actual continuation");
                         const auto saved = loadGameDataFromPath(path, error);
                         require(saved && saved->mapFileName == "pyramid.blv" && saved->hasIndoorSceneState
                             && saved->indoorScene.eventRuntimeState && !saved->heldInventoryItemActive
@@ -539,7 +642,9 @@ struct GameApplicationTestAccess
                         record("continued-and-save-decoded");
                         trace << "{\"stage\":\"normal-time\",\"before\":" << initialMinutes
                             << ",\"after\":" << scene().worldRuntime().gameMinutes() << "}\n";
-                        require(captures == 3 && worldClicks == 2 && scrollRead && answerObserved,
+                        require(captures == 3 && worldClicks == (promptControls ? 3u : 2u)
+                            && scrollRead && answerObserved
+                            && (!promptControls || (cancelObserved && utf8EditObserved && inputAreaObserved)),
                             "Evidence chain incomplete");
                         complete = true;
                         phase = 20;
@@ -548,7 +653,9 @@ struct GameApplicationTestAccess
                         require(SDL_PushEvent(&quit), "Cannot queue normal App exit");
                     }
                 },
-                [&]() { game.shutdownApplication(); });
+                [&]() { game.shutdownApplication(); },
+                [&]() { return game.applicationTextInputActive(); },
+                [&](int width, int height) { return game.applicationTextInputArea(width, height); });
             require(app.run() == 0 && complete && savedVerified, "Actual App stopped before the chain completed");
             report(true, "");
             return 0;
@@ -566,9 +673,10 @@ int main(int argc, char **argv)
 {
     try
     {
-        if (argc != 4)
-            throw std::runtime_error("Usage: varn_password_capture RUNTIME NORMAL132_MM6_SAVE NEW_NVME_OUTPUT");
-        return OpenYAMM::Game::GameApplicationTestAccess::run(argv[1], argv[2], argv[3]);
+        if (argc != 4 && !(argc == 5 && std::string(argv[4]) == "--prompt-controls"))
+            throw std::runtime_error(
+                "Usage: varn_password_capture RUNTIME NORMAL132_MM6_SAVE NEW_NVME_OUTPUT [--prompt-controls]");
+        return OpenYAMM::Game::GameApplicationTestAccess::run(argv[1], argv[2], argv[3], argc == 5);
     }
     catch (const std::exception &failure)
     {

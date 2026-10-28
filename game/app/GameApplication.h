@@ -49,6 +49,14 @@ public:
     int run();
 
 private:
+    enum class PendingInputPointerTarget
+    {
+        None,
+        Answer,
+        Submit,
+        Cancel
+    };
+
     struct DebugMapJumpStart
     {
         int32_t x = 0;
@@ -265,6 +273,7 @@ private:
     SDL_Rect applicationTextInputArea(int windowWidth, int windowHeight) const;
     void clearPendingInputPromptUi(bool clearStatusBar);
     void updatePendingInputPrompt();
+    void updatePendingInputPromptPointer();
     void finishPendingInputPrompt(bool accepted);
     void presentPendingInputPromptDialogResult(size_t previousMessageCount);
     std::vector<std::string> resolvePendingInputAnswers(
@@ -325,6 +334,8 @@ private:
     std::string m_pendingInputText;
     std::string m_pendingInputStatusText;
     bool m_pendingInputTextActive = false;
+    bool m_pendingInputClickLatch = false;
+    PendingInputPointerTarget m_pendingInputPressedTarget = PendingInputPointerTarget::None;
     bool m_skipGameplayUpdateUntilPromptSubmitKeysReleased = false;
     bool m_loadingSavedGameRuntime = false;
     FramePerformanceDiagnostics m_framePerformanceDiagnostics;

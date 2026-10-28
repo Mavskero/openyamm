@@ -1240,7 +1240,12 @@ void GameplayDialogueRenderer::renderDialogueOverlay(
         dialogueResponseHintText,
         renderAboveHud);
 
-    if (view.activeEventDialog().presentation == EventDialogPresentation::Transition
+    if (pendingInputPromptHint(view))
+    {
+        renderDialogueLabelById(view, "DialogueOkButton", "Submit", width, height, renderAboveHud);
+        renderDialogueLabelById(view, "DialogueGoodbyeButton", "Cancel", width, height, renderAboveHud);
+    }
+    else if (view.activeEventDialog().presentation == EventDialogPresentation::Transition
         && !view.activeEventDialog().actions.empty())
     {
         renderDialogueLabelById(
@@ -1743,7 +1748,8 @@ void GameplayDialogueRenderer::renderDialogueTextureElement(
     }
 
     if (normalizedLayoutId == "dialogueokbutton"
-        && view.activeEventDialog().presentation != EventDialogPresentation::Transition)
+        && view.activeEventDialog().presentation != EventDialogPresentation::Transition
+        && !pendingInputPromptHint(view))
     {
         return;
     }
@@ -1854,7 +1860,15 @@ void GameplayDialogueRenderer::renderDialogueLabelById(
         return;
     }
 
-    view.renderLayoutLabel(*pLayout, *resolved, label);
+    GameplayScreenRuntime::HudLayoutElement labelLayout = *pLayout;
+    if (pendingInputPromptHint(view)
+        && (toLowerCopy(layoutId) == "dialogueokbutton" || toLowerCopy(layoutId) == "dialoguegoodbyebutton"))
+    {
+        labelLayout.fontName = "Lucida";
+        labelLayout.textAlignX = UiLayoutManager::TextAlignX::Center;
+        labelLayout.textAlignY = UiLayoutManager::TextAlignY::Middle;
+    }
+    view.renderLayoutLabel(labelLayout, *resolved, label);
 }
 
 void GameplayDialogueRenderer::renderDialogueEventPanel(
