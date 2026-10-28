@@ -123,6 +123,13 @@ struct OutdoorTerrainFootstepSoundOverride
     uint32_t runSoundId = 0;
 };
 
+struct OutdoorTextureFootstepSoundOverride
+{
+    std::string textureName;
+    uint32_t walkSoundId = 0;
+    uint32_t runSoundId = 0;
+};
+
 enum class OutdoorBModelMechanismKind
 {
     LinearDoor,
@@ -277,6 +284,7 @@ struct OutdoorMapData
     std::vector<uint32_t> decorationMap;
     std::vector<OutdoorSpawn> spawns;
     std::vector<OutdoorTerrainFootstepSoundOverride> terrainFootstepSoundOverrides;
+    std::vector<OutdoorTextureFootstepSoundOverride> textureFootstepSoundOverrides;
     std::vector<OutdoorBModelMechanism> mechanisms;
     std::vector<OutdoorDestructible> destructibles;
     std::vector<OutdoorDestructibleReceiver> destructibleReceivers;

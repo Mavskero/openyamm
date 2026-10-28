@@ -60,6 +60,19 @@ elements:
           highlighted: but25H
           pressed: but25D
 
+      - id: AdventurersInnDismissButton
+        anchor: top_left
+        offset_x: 520
+        offset_y: 415
+        width: 75
+        height: 26
+        z_index: 300
+        interactive: true
+        asset:
+          default: but26U
+          highlighted: but26H
+          pressed: but26D
+
       - id: AdventurersInnExitButton
         anchor: top_left
         offset_x: 525

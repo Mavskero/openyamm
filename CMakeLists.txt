@@ -176,6 +176,23 @@ if (APPLE)
         tools/mmerge_import/CrossContinentsResources.cpp
         tools/mmerge_import/DimensionDoorResources.cpp
         tools/mmerge_import/HarmondaleCastleResources.cpp
+        tools/mmerge_import/LambentCastleResources.cpp
+        tools/mmerge_import/StoneCityResources.cpp
+        tools/mmerge_import/EmeraldIslandTravelResources.cpp
+        tools/mmerge_import/FreeHavenTempleResources.cpp
+        tools/mmerge_import/TownPortalVisitResources.cpp
+        tools/mmerge_import/SubmarineTravelResources.cpp
+        tools/mmerge_import/StoneStatueResources.cpp
+        tools/mmerge_import/Mm8ReentryResources.cpp
+        tools/mmerge_import/TempleBottleResources.cpp
+        tools/mmerge_import/ControlCubeRefillResources.cpp
+        tools/mmerge_import/GloamingCastleResources.cpp
+        tools/mmerge_import/SkeletonTransformerResources.cpp
+        tools/mmerge_import/SciFiResources.cpp
+        tools/mmerge_import/BlasterLearningResources.cpp
+        tools/mmerge_import/LichPromotionResources.cpp
+        tools/mmerge_import/Mm7EndingResources.cpp
+        tools/mmerge_import/ArchibaldResources.cpp
         tools/mmerge_import/SmugglersCoveResources.cpp
         tools/mmerge_import/Mm6HiveResources.cpp
         tools/mmerge_import/Mm7ShoalsResources.cpp
@@ -186,6 +203,8 @@ if (APPLE)
         tools/mmerge_import/BreachMazePopulationResources.cpp
         tools/mmerge_import/BreachMazeRuntimeResources.cpp
         tools/mmerge_import/BreachAlvarCompanionResources.cpp
+        tools/mmerge_import/BreachMercenaryResources.cpp
+        tools/mmerge_import/MercenaryReleaseResources.cpp
         tools/LegacyLuaExport.cpp tools/legacy_events/EvtProgram.cpp tools/legacy_events/StrTable.cpp)
     file(READ "${CMAKE_SOURCE_DIR}/assets_dev/engine/scripts/common/event_support.lua" OPENYAMM_EVENT_SUPPORT_SOURCE)
     configure_file(tools/mmerge_import/EventSupportSource.h.in generated/EventSupportSource.h @ONLY)
@@ -597,6 +616,18 @@ if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     add_executable(breach_continuation_capture tools/BreachContinuationCapture.cpp)
     target_link_libraries(breach_continuation_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(breach_mercenary_capture tools/BreachMercenaryCapture.cpp)
+    target_link_libraries(breach_mercenary_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(lambent_castle_capture tools/LambentCastleCapture.cpp)
+    target_link_libraries(lambent_castle_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(archibald_capture tools/ArchibaldCapture.cpp)
+    target_link_libraries(archibald_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(regna_cannon_capture tools/RegnaCannonCapture.cpp)
+    target_link_libraries(regna_cannon_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(temple_bottle_capture tools/TempleBottleCapture.cpp)
+    target_link_libraries(temple_bottle_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(prerequisite_capture tools/PrerequisiteCapture.cpp)
+    target_link_libraries(prerequisite_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(source_jump_state_check tests/UnitTestMain.cpp tests/GameplayRuleRegressionTests.cpp
         tests/RegressionGameData.cpp)
     target_include_directories(source_jump_state_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")

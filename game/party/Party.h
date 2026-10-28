@@ -1,5 +1,6 @@
 #pragma once
 
+#include "game/content/OwnedMercenaryState.h"
 #include "game/party/CharacterState.h"
 #include "game/items/InventoryItem.h"
 #include "game/gameplay/NpcFollowerTypes.h"
@@ -27,6 +28,7 @@ class ClassMultiplierTable;
 class JournalQuestTable;
 struct RosterEntry;
 struct EventRuntimeState;
+struct MercenaryReleaseProfile;
 class StandardItemEnchantTable;
 class SpecialItemEnchantTable;
 
@@ -68,6 +70,7 @@ struct Character
     uint16_t portraitImageIndex = 0;
     uint32_t rosterId = 0;
     uint64_t memberId = 0; // Party-owned identity; roster templates remain unassigned until admission.
+    SourceMercenaryRetention sourceMercenaryRetention;
     uint32_t characterDataId = 0;
     int32_t voiceId = -1;
     uint32_t birthYear = 0;
@@ -165,6 +168,14 @@ struct Character
     std::array<TimedPrimaryStatBonus, 6> timedPrimaryStatBonuses = {};
 };
 
+// Structural validation only; source content and unique ownership are checked before world projection.
+bool validSourceMercenaryRetention(const Character &member, std::string &error);
+// A missing alias argument preserves an existing confirmed alias. A supplied alias must already be authenticated
+// by the caller and match this Character's rosterId. Legacy receipt inference cannot overwrite a known fact.
+bool setSourceMercenaryRetention(Character &member, uint64_t expectedMemberId,
+    SourceMercenaryRetentionKind kind, SourceMercenaryProvenance provenance,
+    std::optional<uint32_t> validatedSourceRosterId, std::string &error);
+
 struct AdventurersInnMember
 {
     Character character = {};
@@ -260,6 +271,12 @@ struct CharacterBuffState
 class Party
 {
 public:
+    enum class ClassChangeMode
+    {
+        ApplyClassEffects,
+        AssignmentOnly,
+    };
+
     struct HouseStockState
     {
         uint32_t houseId = 0;
@@ -349,6 +366,8 @@ public:
         std::vector<DetachedPartyMember> detachedMembers;
         std::vector<std::string> completedDetachmentOwners;
         uint64_t nextMemberId = 1;
+        // Source free-slot membership survives generation and hiring; it is not current availability.
+        std::unordered_set<uint32_t> reusableMercenaryRosterIds;
     };
 
     struct PendingAudioRequest
@@ -479,6 +498,9 @@ public:
     bool addAdventurersInnMember(const Character &character, uint32_t portraitPictureId);
     bool hireAdventurersInnMember(size_t innIndex);
     bool dismissMemberToAdventurersInn(size_t memberIndex);
+    bool releaseAdventurersInnMember(uint64_t memberId, uint32_t sourceRosterId,
+        const MercenaryReleaseProfile &profile, std::string &error);
+    const std::unordered_set<uint32_t> &reusableMercenaryRosterIds() const;
     bool replaceMemberWithRosterEntry(size_t memberIndex, const RosterEntry &rosterEntry);
     bool hasRosterMember(uint32_t rosterId) const;
     bool detachMembers(const std::string &ownerKey, const std::vector<DetachmentAssignment> &assignments);
@@ -575,8 +597,12 @@ public:
         size_t memberIndex,
         EquipmentSlot slot,
         std::string &statusText);
-    bool setMemberClassName(size_t memberIndex, const std::string &className);
+    bool setMemberClassName(
+        size_t memberIndex,
+        const std::string &className,
+        ClassChangeMode mode = ClassChangeMode::ApplyClassEffects);
     bool applyLichTransformation(size_t memberIndex);
+    void applyMergedLichAppearance();
     const Character *member(size_t memberIndex) const;
     Character *member(size_t memberIndex);
     bool canSelectMemberInGameplay(size_t memberIndex) const;
@@ -697,6 +723,7 @@ private:
     const ClassSkillTable *m_pClassSkillTable = nullptr;
     std::vector<Character> m_members;
     std::vector<AdventurersInnMember> m_adventurersInnMembers;
+    std::unordered_set<uint32_t> m_reusableMercenaryRosterIds;
     std::vector<DetachedPartyMember> m_detachedMembers;
     std::vector<std::string> m_completedDetachmentOwners;
     uint64_t m_nextMemberId = 1;

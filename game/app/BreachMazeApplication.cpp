@@ -83,7 +83,10 @@ void GameApplication::processPendingBreachMazeTransitionRequest()
     const BreachMazeQuestView quest = mazeQuestView(m_gameSession, pEvents);
     if (request.kind == MazeRequest::Kind::Down && quest.present && !quest.questFinished)
     {
-        reportQuickSaveStatus("门锁着。");
+        if (Party *pParty = m_gameplayController.party())
+        {
+            pParty->requestSpeech(pParty->activeMemberIndex(), SpeechId::DoorLocked);
+        }
         return;
     }
     m_pendingBreachMazeTransition = request;

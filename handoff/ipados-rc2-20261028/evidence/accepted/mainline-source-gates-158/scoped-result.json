@@ -1,0 +1,52 @@
+{
+  "schema": "openyamm.checkpoint158.source-scoped-result.v1",
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "checkpoint": 158,
+  "accepted_at": "2026-10-23T08:25:02.536405+00:00",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/max",
+  "runtime": "local-data/validation/mainline-source-gates-158/runtime-001",
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "new_unit_test_cases": 0,
+  "new_app_runs": 0,
+  "accepted_source_fixes": {
+    "mm7_dark_entry": "Original d03 event5 admits Q612/!Q611/no-current-enemies despite old MapVar6 chest state; Q710 preserves house221 versus219 routing. STR20/21 source localization.",
+    "mm8_alliance": "Original d19 event15 admits Q19/Q20 or roster34, preserves invisible/guard branches;131 requires Q26,!Q27 and exact source puzzle value15, without the removed Dyson presence/ability check. Sets Q27, queues original movie and disables/hides facet30.",
+    "map_variable_layout": "Original Map.Vars19 has raw MM8 variable base0x7D; existing exported helper uses0x7B and puzzle event25 writesMapVar21. Overlay uses exact MapVar21==15, importer verifies the existing write. No Save byte migration."
+  },
+  "source_sha256": {
+    "d03.lua": "ca33bc4f3250e0ff1e85efa3ca8bbb4f362acd54d220b21ed235f023ca49f214",
+    "d19.lua": "d6cb8ff49cbdf5af931eb693ca163d4d94341179d1cb8669ff0a8a9bc78a4034"
+  },
+  "validation": [
+    "Main reviewed translated predicates, native API signatures and original localized text.",
+    "One native importer build, one two-map original-source import with fingerprint/parse/registration guards, one complete runtime assembly.",
+    "One incremental unsigned generic iOS Release build includes the changed embedded importer.",
+    "No new driver, headless unit matrix, App replay or cold run per user priority;157 actual light-route entry remains evidence for shared unchanged APIs only."
+  ],
+  "limits": [
+    "Dark house219/221 and no-Dyson transformer branches have not been newly exercised in an actual App. Source/import/build acceptance does not imply live or natural campaign acceptance.",
+    "No unrestricted Merge script support, full-game or iPad acceptance."
+  ],
+  "runtime_change": "Append exactly one authenticated source overlay to each complete MM7/MM8 archive; previous archive entries retained; unchanged engine/MM6/Merge packages referenced. No controlled fixtures shipped.",
+  "source_files_unchanged_at_acceptance": true,
+  "excluded_candidates": [
+    "MM6 Loretta nine-station votes: native HouseInteraction source equivalents and Global1393 completion already exist.",
+    "MM6 council traitor: Global1693 still completes through NPC dialogue.",
+    "MM6 VARN password prompts: existing generated AskQuestion paths."
+  ],
+  "next": "Continue source-grounded mainline prerequisites/required item and skill acquisition. Avoid optional secondary events, broad replay matrices and full-byte Character detours. Do not repeat157/158 solely for coverage.",
+  "evidence_sha256": {
+    "scope.json": "1db762f374cad6233527fb8bdc1bb95e2ceabff08a51232f23ceb4f93dd815be",
+    "source-manifest-001.json": "d4dba477931ef3e0f430514f083162cf71845d8323c235775fbdb9125b247203",
+    "native-build-001.command.json": "d53622078c9baf1ce6e89662c1940d4a7a0fe2de261bb61ccaac6e621da30bb7",
+    "events-import-001.command.json": "978bcb5da61ebe3382ab8b240cd0f6f3ea4c606bb05fed1c082516be5b22f64a",
+    "assemble-runtime-001.command.json": "b2b2e68c41769925ac06855521d4c2fd46929ce85aac8e042eacb8a200d87459",
+    "ios-release-001.command.json": "66cab5c1cd4bf2d42c19394e4f0b16aa1ad5edc71c72b1b35fed6768b30e8e11",
+    "runtime-diff-001.json": "2f081f6a1b1c5317d6de3e1849bfdd6b77661b6b469a827f524a2eb2b291d08e",
+    "events-001/worlds/mm7/events/maps/d03_mmmerge_gloaming_entry.lua": "9405cbc1cdb8d5dbd2119c77c7d57aa615ac96446f9843421b1a4d96b8f14a48",
+    "events-001/worlds/mm8/events/maps/d19_mmmerge_skeleton_transformer.lua": "a2a9718bd927c7127ab3d007882267e482846b1af7d8fae6350725a1a575f192"
+  }
+}

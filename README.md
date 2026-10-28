@@ -1,5 +1,12 @@
 # OpenYAMM
 
+**iPadOS branch handoff (2026-10-28):** this branch contains the RC2 / Save103
+implementation. Start with [IPADOS_HANDOFF.md](IPADOS_HANDOFF.md) for current status,
+fresh-Mac builds, separately transferred runtime assets and physical-iPad debugging.
+The ready-to-paste Codex task is [CODEX_IPAD_DEVICE_PROMPT.md](CODEX_IPAD_DEVICE_PROMPT.md).
+Current iPad acceptance and a complete natural campaign remain unverified; the
+general upstream description below is not evidence of either.
+
 OpenYAMM is Open Yet Another Might and Magic: a modern C++ reimplementation of
 Might and Magic VI, VII, and VIII, inspired by MMMerge and built on an engine
 that started from Might and Magic VIII.

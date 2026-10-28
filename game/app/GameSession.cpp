@@ -265,6 +265,7 @@ void GameSession::clear()
     m_currentIndoorSceneState.reset();
     m_indoorSceneStates.clear();
     m_namedGlobalVars.clear();
+    m_sessionSavedLocations.clear();
     m_breachAlvarCompanions.reset();
     m_breachMazeRunData.reset();
     m_historyEventTimesByContinent.clear();
@@ -1425,6 +1426,24 @@ const std::optional<BreachAlvarCompanionState> &GameSession::breachAlvarCompanio
     return m_breachAlvarCompanions;
 }
 
+const std::unordered_map<std::string, EventRuntimeState::SavedLocation> &GameSession::sessionSavedLocations() const
+{
+    return m_sessionSavedLocations;
+}
+
+void GameSession::setSessionSavedLocation(const std::string &name, EventRuntimeState::SavedLocation location)
+{
+    if (!name.empty() && !location.mapName.empty())
+    {
+        m_sessionSavedLocations[name] = std::move(location);
+    }
+}
+
+void GameSession::clearSessionSavedLocation(const std::string &name)
+{
+    m_sessionSavedLocations.erase(name);
+}
+
 const std::unordered_map<std::string, int32_t> &GameSession::namedGlobalVars() const
 {
     return m_namedGlobalVars;
@@ -1748,6 +1767,7 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
     saveData.mapFileName = m_currentMapFileName;
     saveData.party = m_partyState->snapshot();
     saveData.namedGlobalVars = m_namedGlobalVars;
+    saveData.sessionSavedLocations = m_sessionSavedLocations;
     saveData.breachAlvarCompanions = m_breachAlvarCompanions;
     saveData.breachMaze = m_breachMazeRunData;
     saveData.savedGameMinutes = m_gameMinutes;
@@ -1873,6 +1893,7 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
     m_currentMapFileName = saveData.mapFileName;
     setGameMinutes(saveData.savedGameMinutes);
     m_namedGlobalVars = saveData.namedGlobalVars;
+    m_sessionSavedLocations = saveData.sessionSavedLocations;
     m_breachAlvarCompanions = saveData.breachAlvarCompanions;
     m_breachMazeRunData = saveData.breachMaze;
     const bool collectLegacyNamedGlobalVars = m_namedGlobalVars.empty();

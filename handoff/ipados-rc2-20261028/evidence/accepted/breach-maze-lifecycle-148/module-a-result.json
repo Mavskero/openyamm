@@ -1,0 +1,27 @@
+{
+  "status": "ACCEPTED_MODULE_A_ONLY",
+  "accepted_at": "2026-10-02T10:32:41.299620+00:00",
+  "reviewer": "main Astra/xhigh",
+  "chapter_full_scope_complete": false,
+  "natural_campaign_complete": false,
+  "normal_dynamic_admission": false,
+  "device_or_simulator_acceptance": false,
+  "source_snapshot": "module-a-accepted-source/",
+  "source_hashes": "module-a-source-hashes.json",
+  "tests": {
+    "record": "breach-maze-lifecycle-check-002.command.json",
+    "cases": 12,
+    "assertions": 1009
+  },
+  "independent_static_review": "independent-review-001/",
+  "native_build": "../breach-maze-lifecycle-148/native-build-002.command.json",
+  "unsigned_generic_ios_release_arm64": "../mm7-shoals-144/ios-release-002.command.json",
+  "limitations": [
+    "Pure transactional floor planning/capture/retention and cold restoration only; no runtime admission, native Save codec, population or floor materialization yet",
+    "Native cold restore intentionally retains floors/position; differs from original nil MoveDirection reset behavior",
+    "Caller must rebind live Party/time/cross-map vars; ordinary brbase filename cache must not overwrite floor identity",
+    "Partial corpse prefixes and exact native clock bounds fixed in repair002; old failure retained"
+  ],
+  "next": "Module B implementation and shared runtime integration",
+  "old_implementation_negative_control": "prior-regression-check-001 failed the two new acceptance cases; prior-regression-restore-001.json verifies fixed source restored"
+}

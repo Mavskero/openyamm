@@ -21,6 +21,8 @@ add_library(openyamm_game STATIC
     data/GameDataRepository.cpp
     app/GameSession.cpp
     app/BreachAlvarSession.cpp
+    app/BreachMercenarySession.cpp
+    app/MercenaryReleaseSession.cpp
     app/BreachChaosApplication.cpp
     app/BreachMazeApplication.cpp
     audio/GameAudioSystem.cpp
@@ -80,6 +82,7 @@ add_library(openyamm_game STATIC
     gameplay/MonsterSpellSupport.cpp
     gameplay/MercenaryRecruitmentRuntime.cpp
     gameplay/SourceMercenaryGenerationRuntime.cpp
+    gameplay/OwnedMercenaryRuntime.cpp
     gameplay/GameplayOverlayInputController.cpp
     gameplay/GameplayPartyOverlayInputController.cpp
     gameplay/GameplayProjectileService.cpp
@@ -144,6 +147,8 @@ add_library(openyamm_game STATIC
     items/ItemGenerator.cpp
     items/ItemGenerationRandom.cpp
     content/BreachMazeItemResolver.cpp
+    content/BreachMercenaryProfile.cpp
+    content/MercenaryReleaseProfile.cpp
     items/ItemRuntime.cpp
     tables/ItemTable.cpp
     indoor/IndoorRenderer.cpp
@@ -177,6 +182,7 @@ add_library(openyamm_game STATIC
     outdoor/OutdoorMapData.cpp
     outdoor/OutdoorNavigationData.cpp
     outdoor/OutdoorRenderData.cpp
+    outdoor/BreachMercenaryActors.cpp
     outdoor/OutdoorMechanismRuntime.cpp
     outdoor/OutdoorPresentationController.cpp
     outdoor/OutdoorRenderer.cpp

@@ -1,0 +1,71 @@
+{
+  "status": "ACCEPTED_SCOPED_NORMAL_DOORS_AND_SOURCE_ENTRY",
+  "accepted_at": "2026-10-19T10:00:23.846538+00:00",
+  "reviewer": "main gpt-6-astra / xhigh",
+  "subagents": "gpt-6.1-sol / max",
+  "chapter149_complete": false,
+  "chapter148_complete": false,
+  "source_manifest": "accepted-source-sha256.json",
+  "scope": [
+    "Source50/51/52 normal world pointer opens House705/706/707; source-name/picture import retains original House type",
+    "Normal source house dialogs, encounter-order hints and Join return four existing owned members; no injected house-entry context in doors mode",
+    "Real BrAlvar53 pointer/normal confirmation/App safe point creates fresh generated L3 with new epoch/root/identity",
+    "Shared outdoor picking clears previous-kind payload and treats direct event0 as absent while retaining actual interactive decoration bindings"
+  ],
+  "production_imports": [
+    "service-import-001-run.command.json",
+    "house-import-001-run.command.json",
+    "scene-import-001-run.command.json"
+  ],
+  "content_diff": "house-table-diff.json",
+  "runtime": "controlled-runtime-001",
+  "runtime_changes": "Exactly engine/data_tables house_data and house_animations plus mmmerge events/maps/bralvar.lua; other member inventory/CRC/size/compression metadata equal; house_movies bytes identical",
+  "native_build": [
+    "native-build-004.command.json",
+    "native-build-005.command.json"
+  ],
+  "unsigned_generic_ios_release": "ios-release-001.command.json",
+  "actual_doors": {
+    "status": "passed",
+    "controlled": true,
+    "mode": "doors",
+    "seed_sha256_before": "7787ccc0ff122032fec4a67788fc61e104079adc42547ec954ee6b40d17e5e22",
+    "seed_sha256_after": "7787ccc0ff122032fec4a67788fc61e104079adc42547ec954ee6b40d17e5e22",
+    "frames": 877,
+    "captures": 18,
+    "natural_campaign": false,
+    "normal_merge_admission": false,
+    "visual_review_required": true,
+    "house_door_clicks": true
+  },
+  "actual_doors_command": "actual-002-run.command.json",
+  "save_readback": "Driver rereads each saved Party and checks custody/vitals/items; final complete.oysav; no new cold process required for unchanged save layout",
+  "actual_entry_record": "local-data/validation/breach-maze-lifecycle-148/live-entry-003/scoped-entry-result.json",
+  "visual_review": {
+    "images": [
+      "actual-002/house-door-773.png",
+      "actual-002/house-door-774.png",
+      "actual-002/house-door-775.png",
+      "actual-002/all-companions-returned.png"
+    ],
+    "observed": "Original room media and Chinese titles: 加冕殿 / 黑暗矮人聚集地 / 商人公会之家; correct owned NPC context after real doors; final HUD has five returned portraits"
+  },
+  "preserved_failures": {
+    "native-build-001": "Capture-tool compile mistakes: bx::Vec3 requires explicit XYZ, wrong enum name; fixed in tools, import targets already succeeded",
+    "actual-001": "Normal single-resident House opens NPC directly; driver wrongly required lobby. Corrected only expected dialog assertion, retains real hostHouseId proof",
+    "fresh-entry-actual001-002": "Legitimate foreground TrashHeap obscured door center; decoration winner retained previous face5/event53 fields. Bindings/data pointers were equal. Shared payload/direct0 fix plus bounded real-face sample selection; no geometry-index workaround"
+  },
+  "limitations": [
+    "All runs explicitly mount inspection Merge content and declare Party position/camera navigation; not normal campaign admission",
+    "Door route starts from original132 normal MM8 seed via controlled map jump; only existing five-member split is accepted",
+    "No continuous natural traversal/combat campaign, every decoration variant,1-4-member reserve generation or28 mechanisms acceptance",
+    "Source closed-house event5 and caught-Chaos return81 are still missing and block ordinary completion even with five members",
+    "No physical device/simulator/iPad acceptance; generic iOS compile only"
+  ],
+  "normal_dynamic_merge_admission": false,
+  "default_runtime": "local-data/validation/mm7-shoals-144/runtime-001",
+  "new_test_cases": 0,
+  "full_game_complete": false,
+  "overall_estimate": "55-60%, low confidence, unchanged",
+  "next": "Implement complete source-grounded closed-house Chaos search5 and transactional caught-Chaos return81 before non-five-party generation."
+}

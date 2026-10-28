@@ -1,4 +1,5 @@
 #include "StoryResources.h"
+#include "BlasterLearningResources.h"
 #include "CrossContinentsResources.h"
 #include "LodResources.h"
 #include "TextResources.h"
@@ -173,6 +174,7 @@ void convertStoryResources(const std::filesystem::path &source, const std::files
     const std::filesystem::path localized = sourceRoot / "Data/10 LocZHCN.EnglishT.lod";
     const bool chinese = std::filesystem::exists(localized);
     const std::optional<CrossContinentsIntroProfile> crossContinents = loadCrossContinentsIntroProfile(sourceRoot);
+    const std::optional<BlasterLearningProfile> blasterLearning = loadBlasterLearningProfile(sourceRoot, chinese);
     std::map<std::string, Rows> tables;
     std::ostringstream manifest;
     manifest << "{\"schema\":1,\"stage\":\"shared-story-tables\",\"runtime_ready\":false,"
@@ -242,6 +244,17 @@ void convertStoryResources(const std::filesystem::path &source, const std::files
                 row.push_back(baseTopic);
             }
         }
+        if (blasterLearning && std::string_view(spec.pSource) == "npctopic.txt")
+        {
+            const auto topic = std::find_if(rows.begin(), rows.end(), [](const std::vector<std::string> &row)
+                { return rowId(row) == 950; });
+            if (topic == rows.end() || topic->size() != 8)
+            {
+                throw std::runtime_error("Missing or malformed original Blaster learning topic 950");
+            }
+            (*topic)[1] = blasterLearning->topic;
+            (*topic)[7] = blasterLearning->baseTopic;
+        }
         if (crossContinents && std::string_view(spec.pSource) == "npctopic.txt")
         {
             const CrossContinentsBreachTravelTopic &topic = crossContinents->breachTravelTopic;
@@ -294,13 +307,30 @@ void convertStoryResources(const std::filesystem::path &source, const std::files
             manifest << (i == 0 ? "" : ",") << localizedWeekdayIds[i];
         }
         manifest << "]";
-        if (crossContinents && std::string_view(spec.pSource) == "npctopic.txt")
+        if ((crossContinents || blasterLearning) && std::string_view(spec.pSource) == "npctopic.txt")
         {
-            manifest << ",\"projected_topics\":[{\"id\":" << crossContinents->breachTravelTopic.id
-                << ",\"source\":\"Scripts/Global/Quest_CrossContinents.lua:447-463\",\"source_sha256\":"
-                << std::quoted(crossContinents->sourceSha256)
-                << ",\"label_source\":\"Game.MapStats[204].Name\",\"message_source\":\"Game.NPCTopic[186]\","
-                << "\"npc\":803,\"branch\":\"Hints\",\"slot\":3}]";
+            manifest << ",\"projected_topics\":[";
+            if (crossContinents)
+            {
+                manifest << "{\"id\":" << crossContinents->breachTravelTopic.id
+                    << ",\"source\":\"Scripts/Global/Quest_CrossContinents.lua:447-463\",\"source_sha256\":"
+                    << std::quoted(crossContinents->sourceSha256)
+                    << ",\"label_source\":\"Game.MapStats[204].Name\",\"message_source\":\"Game.NPCTopic[186]\","
+                    << "\"npc\":803,\"branch\":\"Hints\",\"slot\":3}";
+            }
+            if (blasterLearning)
+            {
+                manifest << (crossContinents ? "," : "") << "{\"id\":950,"
+                    "\"source\":\"Scripts/Global/PromotionTopics.lua:4-14\",\"source_sha256\":"
+                    << std::quoted(blasterLearning->sourceSha256)
+                    << ",\"label_source\":" << std::quoted(chinese
+                        ? "Data/10 LocZHCN.EnglishT.lod::global.txt:278" : "Data/mmmerge.T.lod::global.txt:278")
+                    << ",\"global_text_sha256\":" << std::quoted(blasterLearning->globalTextSha256)
+                    << ",\"base_label_source\":\"Data/mmmerge.T.lod::global.txt:278\",\"base_global_text_sha256\":"
+                    << std::quoted(blasterLearning->baseGlobalTextSha256)
+                    << ",\"display_columns\":[1,7],\"npcs\":[422,426]}";
+            }
+            manifest << "]";
         }
         manifest << "}";
         if (std::string_view(spec.pSource) == "npctopic.txt")

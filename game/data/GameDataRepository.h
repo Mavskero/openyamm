@@ -2,6 +2,8 @@
 
 #include "game/arcomage/ArcomageTypes.h"
 #include "game/content/BreachAlvarCompanionProfile.h"
+#include "game/content/BreachMercenaryProfile.h"
+#include "game/content/MercenaryReleaseProfile.h"
 #include "game/items/ItemEnchantTables.h"
 #include "game/mm9/Mm9MapTransition.h"
 #include "game/mm9/Mm9TeacherSchedule.h"
@@ -62,6 +64,8 @@ public:
     const SpellTable &spellTable() const;
     const CombatTextTable &combatTextTable() const;
     const std::optional<BreachAlvarCompanionProfile> &breachAlvarCompanionProfile() const;
+    const std::optional<BreachMercenaryProfile> &breachMercenaryProfile() const;
+    const std::optional<MercenaryReleaseProfile> &mercenaryReleaseProfile() const;
     const HouseServiceTextTable &houseServiceTextTable() const;
     const ItemTable &itemTable() const;
     const StandardItemEnchantTable &standardItemEnchantTable() const;
@@ -124,6 +128,8 @@ private:
     const SpellTable *m_pSpellTable = nullptr;
     const CombatTextTable *m_pCombatTextTable = nullptr;
     const std::optional<BreachAlvarCompanionProfile> *m_pBreachAlvarCompanionProfile = nullptr;
+    const std::optional<BreachMercenaryProfile> *m_pBreachMercenaryProfile = nullptr;
+    const std::optional<MercenaryReleaseProfile> *m_pMercenaryReleaseProfile = nullptr;
     const HouseServiceTextTable *m_pHouseServiceTextTable = nullptr;
     const ItemTable *m_pItemTable = nullptr;
     const StandardItemEnchantTable *m_pStandardItemEnchantTable = nullptr;

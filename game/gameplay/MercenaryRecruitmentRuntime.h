@@ -39,6 +39,13 @@ struct MercenaryRecruitmentTables
 bool isGeneratedMercenaryNpcId(uint32_t npcId);
 uint32_t generatedMercenaryRosterIdForNpcId(uint32_t npcId);
 uint32_t generatedMercenaryNpcIdForRosterId(uint32_t rosterId);
+// Explicit source releases permanently transfer these slots from their original templates to the random pool.
+bool isReusableMercenaryRosterId(const Party &party, uint32_t rosterId);
+bool isReusableMercenaryNpcId(const Party &party, uint32_t npcId);
+bool isAvailableGeneratedMercenaryRecruit(
+    const Party &party,
+    const EventRuntimeState &runtimeState,
+    uint32_t npcId);
 std::optional<uint32_t> findMercenaryRecruitmentHouseId(
     const MapStatsEntry &map,
     const HouseTable &houseTable);

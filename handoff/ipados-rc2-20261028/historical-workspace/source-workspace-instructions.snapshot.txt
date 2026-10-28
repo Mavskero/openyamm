@@ -1,0 +1,443 @@
+# OpenYAMM iPadOS — current instructions
+
+## Current task boundary (2026-10-02)
+
+- GOAL STATUS 2026-10-28: **blocked**, confirmed by goal tool after three consecutive unchanged blockers.
+  Device-independent continuation delivered RC2; full normal-play/completion objective is not achieved.
+  No physical-device or simulator inspection/operation is authorized; the declined question remains closed.
+  Do not repeat the permission request. Main owns integration/build/App; new Astra/xhigh agents use bounded
+  source audits before exclusive implementation ownership. User now requests all available device-independent
+  work without interruption.179–181 source-confirmed refill/AI/relationship/feedback gaps are closed,
+  and182 delivered RC2 at `releases/first-playable-20261028-rc2`; current complete runtime is181/runtime-001.
+  Follow-up import/lifecycle source review found no new definite defect; record:
+  `local-data/validation/rc2-followup-20261028/audit-003.json` (prior source review in audit-001).
+  No builds/App replays/device operations in the follow-up.
+  Target iPad acceptance is still unavailable under the user restriction; no repeated automatic audits.
+  A user-requested resume starts a fresh blocked audit; preserve the full objective.
+  No broad regression or replay of passed routes. RC1/175 and sealed RC2 evidence preserved.
+  Previous blocked state is preserved at `local-data/validation/device-independent-playability-176/STATE-before-176.json`.
+
+- USER OVERRIDE 2026-10-27: main remains **gpt-6.1-sol / max**; new subagents now use **gpt-6-astra / xhigh**.
+  User requests fastest progress toward normal play and completion; minimize repeat testing.
+  Main retains architecture, integration and sole build/app ownership. This supersedes the earlier
+  all-6.1Sol choice and historical main Astra/xhigh model choice. Completed Sol agents remain frozen;
+  new Astra agents start with bounded read-only audits. User priority: fewer replays/tests, run the application first.
+
+- CURRENT OVERRIDE: user2026-10-02 explicitly requested `/goal` to continue until normal play and
+  completion, using multiple subagents with **gpt-6-astra / xhigh**. Current owner is task
+  `01a0fb51-a792-7082-a973-ac6064548959`. This supersedes historical no142, finite-stop,
+  no-subagent and no-goal restrictions below. The current goal status is recorded above; no automation requested.
+- Main owns architecture, integration, shared build trees and acceptance. Subagents follow the model override,
+  start with bounded audits, then receive exclusive file/module ownership before implementation.
+  No overlapping writers or concurrent builds in shared trees; no reuse of the stopped Sol agents.
+  No device or simulator operations. Preserve all originals, sealed evidence and uncommitted changes.
+- 178 ACCEPTED_SCOPED: `local-data/validation/bralvar-ordinary-interactions-178/scoped-result.json`.
+  Source7 Tavern231,301–315 locked reaction,60 Prince actual-house alarm/hostile/once added. Native/original
+  import/unsignedgeneric iOS passed. actual001 five production event dispatches,2SDL Escape closures,
+  one declaredNPC773house0 fixture,30normalframes/save passed.3images reviewed: locked portrait/alarm visible;
+  Tavern screenshot captured prior frame, so only its live dialog state is accepted. No extra screenshot replay.
+ 0newcases/0oldroutes/0cold; no face-click/pressure-walk/natural/device claim. Default complete runtime178/runtime-001.
+  Next179 mdt15 original refill, then24local hostility pairs/monster294Wimp/8texture footstep source omissions.
+- 177 ACCEPTED_SCOPED: `local-data/validation/mercenary-release-177/scoped-result.json`. Ordinary Inn original
+  two-second release/protected rosters, transactional removal/cache cleanup, reusable monthly slots and Save103.
+  actual002 two SDL clicks/30normalframes/save and independent cold001/30frames passed;10 cached event states,
+  4images reviewed. Isolated copies prove next-month slot2 replacement gets new member6, not actual Join.
+  Native/original profile import/unsignedgeneric iOS passed. Input156 inherited fixtures declared; no new live
+  Party/pose/time fixtures;0newcases/0oldroutes. Initial pre-App optional-alias predicate failure preserved.
+  Historical released Breach binding fix is source/build based. Default complete runtime177/runtime-001;
+  RC1 and originals preserved; no natural campaign/device acceptance. Next178 BrAlvar ordinary interactions.
+- 176 ACCEPTED_SCOPED: `local-data/validation/device-independent-playability-176/scoped-result.json`.
+  BrAlvar30 trash315/Repair disease/localized hint and82 position-sum once reward implemented; shared treasure17
+  now Book-only (also fixes existingBreach82). Native/original BrAlvar import/unsignedgeneric iOS passed.
+  actual002 three real SDL clicks:315+yellow disease,Book1240,repeat no reward/RNG;30normalframes and explicit
+  Save102 decode passed;3images reviewed. Controlled154 input/memberhealth/Repair0/poses/RNG1 declared;
+  interaction/capture delta0,normalAI advances only final0.5s. actual001 stopped before any click due driver
+  decoration-vs-surface event-field mismatch, preserved.0newcases/0oldroute/cold replays;alljobs collected.
+  Default complete runtime is176/runtime-001 (only BrAlvar script changed); RC1/173 and originals preserved.
+  No natural campaign/device acceptance. Next:176/next-mercenary-release.json, confirmed non-quest Inn release gap.
+- 175 ACCEPTED_SCOPED: `local-data/validation/mm7-dark-ending-175/scoped-result.json`. One first actual
+  Dark922 final UI click using unchanged RC1 assets:1407 consumed,643/748/topic423slot1 cleared,783 set,
+  source NPC news, original Endgame2Evil opening,Escape,30normalframes/save passed.3images reviewed;8 initial
+  black/fade samples discarded inside the same movie. Inherited157 Light-faction/map/Invisible/pose and final
+  NPC/item/quest preconditions are declared fixtures;not naturalDarkcampaign or house221 entry. Capture-only
+  change/build;0productionchanges/0newunitcases/0oldroute replays/0cold/iOSrebuild. All jobs collected;agent frozen.
+  RC1 originals retained;added SUPPLEMENT-175.md. Current target iPad actual acceptance still missing;explicit
+  permission was requested and declined2026-10-28. No device operations; do not ask again.
+- 174 ACCEPTED_FIRST_PLAYABLE_CANDIDATE_SCOPED: `local-data/validation/first-playable-candidate-174/scoped-result.json`.
+  Local RC1 `releases/first-playable-20261028-rc1` contains arm64 Mac app/launcher, complete normal assets,
+  final173 unsigned iPadOS app and recoverable current sparse source. Actual004 normal132 MM6 load/movement/
+  inventory/F9 save and independent005 restart/reload/continue passed; default windowed1280x800, empty shipped saves.
+  Packaging name collision and SDL bundle shader path fixed; shallow bundle failure preserved,1902-file source tar
+  restored exactly. Fullscreen CUA input unresolved, no product-defect claim.0newcases/0oldroute replays;alljobscollected.
+  Developer default remains173. Plan: `FIRST_PLAYABLE_RELEASE_PLAN.md`. No new automatic broad audit; concrete
+  mainline defects only. Natural fullcampaign and current iPad acceptance unproved;fullgoal remains active.
+- 173 ACCEPTED_SCOPED: `local-data/validation/ordinary-reentry-173/scoped-result.json`. Five MM8 reentry
+  gates source/import/build integrated; bottle1452 Chinese action identity fixed, root session return owner and
+  Save102 added. Actual002 entered and autosaved; its later screenshot-driver timeout is retained. Independent
+  cold001 loads that actual save, dispatches original501 through native EventRuntime, returns exactMM6origin,
+  consumes record,30normalframes/save/3reviewedimages. Not physicalexitclick or naturalcampaign. Native003,
+  unsignedgeneric iOS001 andlauncher passed. Default now173/runtime-001;alljobscollected. Next174 firstplayable
+  candidate packaging (relativeMacshaders,standaloneassets,source snapshot,oneboundedpackagecheck); no broadaudit.
+- 172 ACCEPTED_SCOPED: `local-data/validation/source-travel-rescue-172/scoped-result.json`. Six MM6 town-visit
+  TownPortal hooks, MM8 submarine entry/return and learned-spell statue rescue imported into complete172/runtime-001,
+  now default. Native/iOS passed; one unmodified normal MM6 save rendered181frames and saved onlynewQ313,2images reviewed.
+  No new cases/old-route/cold replay; submarine/statues remain source/import/build-only, no natural campaign claim.
+  Next173: five entrance reentry module integration and confirmed bottle return session/save ownership defect.
+- Checkpoint142 ACCEPTED: `local-data/validation/campaign-readiness-142/result.json`; durable event items/Save89,
+  bounded source Hive ending and Chaos dialogue, video-stop deadlock repair;70 cases/20578 assertions,
+  4233 independent state checks, actual Mac success/failure/cold runs and unsigned generic iOS Release passed.
+  Default Mac runtime is its `runtime-001` (203 normal maps +3 isolated inspection scenes); normal132 saves stay normal.
+- Checkpoint143 ACCEPTED: `local-data/validation/breach-maze-foundation-143/result.json`; pure template/topology,
+  7 cases/173308 assertions,768 layouts and native/iOS builds. Dynamic scenes are still not playable/admitted.
+- Accepted142–147 and150: scoped source/combat/save/UI evidence lives in each chapter result.json.
+  144 accepted original Shoals boundary/swimming and cold-pose fix; script MoveToMap no longer invents five days.
+  Fresh actual004, underwater cold004 and land cold002,2156 save checks+1863 prefix checks, native/iOS passed.
+  Default Mac runtime is now complete `local-data/validation/mm7-shoals-144/runtime-001` (203 normal maps,
+  204 event programs,3 closed inspection scenes); normal continuation saves retain132 provenance.
+  145 is pure maze geometry/movement/LOS;146 bounded crystal/Escaton/four-lord ending and cold state;
+  147 stable identity/custody/Save90. Source Chinese Earth/Air labels remain swapped.
+  150 accepted rendered-height journal pagination:5 cases10694 assertions,2 Mac sizes,12 reviewed images,
+  193 save checks and iOS passed. Pixel endpoints are observations, not authoritative page counts.
+  148A pure maze lifecycle and149A pure split planning are accepted at module-a-result.json only.
+  149B scoped existing-five-member split/four-return/cold core ACCEPTED at module-b-result.json:
+  actual008+cold002,3600 independent save checks, shared pointer15 cases150 assertions, native/iOS passed.
+  Three house-entry contexts are fixtures; placeholders/normal doors,1–4-member generation,28 mechanisms,
+  cross-map/full149 and natural campaign remain incomplete.148B2 pure bolster profile ACCEPTED12cases2290assertions
+  at module-b2-result.json (standalone target only; not wired into app combat/Save);
+  no live maze claim. Default runtime remains144;149/runtime-001 is fresh validated content input only.
+  Live coordination: `handoffs/astra-campaign-20261002/STATE.json`. All failures/original inputs preserved.
+  2026-10-19 scoped live integration PASSED: Save95 native trap/bookcase/hidden MiscBag, three Up transitions
+  and proper BrAlvar platform landing; independent cold persistence; paid Town Portal escape with retained floors;
+  native and unsigned generic iOS Release. Record: `breach-maze-lifecycle-148/live-integration-002/scoped-integration-result.json`.
+  Fresh source53 entry and normal house50–52 pointer/Hint/Join routes now pass in controlled Mac flows; shared outdoor
+  hit payload repaired; native/iOS passed. Records: `breach-maze-lifecycle-148/live-entry-003/scoped-entry-result.json`
+  and `breach-alvar-149/normal-doors-001/scoped-result.json`. Scoped5/81 now passes: six actual house doors,
+  five SDL riddle answers, real capture, transactional return/per-member100000XP, original once-only endcard and
+  dismissal to continued play; independent cold and native/iOS passed. ENDGAME import and1792 visibility fixed.
+  Record: `breach-alvar-149/chaos-return-001/scoped-result.json`; controlled runtime004 is inspection input only.
+  Source1–4 reserve generation/custody and Save96 now pass scoped actual4 and controlled1 boundaries:
+  source template gate, generated gear/skills/stats/spells/biography, stable IDs, original inn members and
+  portrait history retained; four actual Hint/Join returns, independent cold and native/iOS passed, zero new cases.
+  Record: `breach-alvar-149/reserve-generation-001/scoped-result.json`; controlled runtime001 is inspection input only.
+  No actual2/3 matrix or natural entry claim. Full148/149 remain incomplete. Scoped normal ascent is ACCEPTED at
+  `breach-alvar-149/normal-ascent-001/scoped-result.json`:25 source104–128 doors/buttons registered,7 live-activated;
+  actual002 stair flights → actual005 real doors128/TopFloor landing → actual007 original floor81 return,
+  exact5x100000XP,once card/Enter/continued play. This is a composed actual-save chain with controlled AI/input,
+  not one natural campaign run. Top cold18groups and completion cold181frames/30groups passed; native005/008 and
+  unsigned generic iOS Release001 passed. Shared finite-face support repair uses real edge heights; raw map stays.
+  SourceJump152 scoped ACCEPTED at `local-data/validation/source-jump-152/scoped-result.json`: actual original bridge16
+  sustained XY/landing; pending99 and airborne86 future updates exactly match independent cold processes; Save98
+  persists motion plus event RNG (real Save omission found in preserved bridge001). One existing Indoor case873
+  assertions and native/iOS passed,0new cases. Indoor is a synthetic API fixture; native carrier half-height offset
+  and Out13 Merge FireSequence remain unproved. 153 daylight is scoped ACCEPTED at `local-data/validation/br-alvar-daylight-153/scoped-result.json`: source101–103 real clicks/geometry/light-only time/Save99, native004/iOS002, visible night overlay near-clip repair;
+  current cold002 exact restoration passed before normal AI combat defeat interrupted0.5s continuation; no tactical retry.
+  Earlier cold001 passed the same codec before overlay-only fix.0new cases; no natural campaign claim. Next154 is
+  normal source journey package/restrictions/timer/actual portal split; see153/next-normal-admission-audit.json.
+  All jobs collected. Later154 supersedes the closed first-journey admission boundary.
+  Normal dynamic Merge admission is limited to the154 authenticated three-source first journey; arbitrary Merge scripts remain unsupported.
+  No physical device/simulator, natural campaign or full-game acceptance.
+  154 scoped normal source admission is ACCEPTED at `local-data/validation/normal-merge-admission-154/scoped-result.json`:
+  actual004 ordinary out02 TownPortal65491 -> normal BrAlvar load/OnLoad split (5 original members ->1+4 detached),
+  exact custody/gear/XP/NPC772 actor283, Q1715/source timer/travel restrictions/indexed-hide381/676/792 and independent
+  cold001 flags/receipt/in-flightTime/timer/normal continuation; upstream quest/caster/pose fixtures declared.
+  Save100 persists outdoor decoration flags and reconstructs<=99 source baseline; normal entry portraitFX-before-split
+  publication order fixed without source replay/AI clearing. Native005/iOS001 and4 reviewed images passed;0newcases.
+  At154, `development-runtime.json` used complete `normal-merge-admission-154/runtime-001`; normal threeworld
+  packages and engine members retained;144 originals and normal132 provenance unchanged. Only3 authenticated Merge
+  maps are admitted by the normal importer. BrAlvar secondary events, Breach own28/telelocator/mercenaries/return
+  topic and maze populationL4+ remain unfinished. Next:154/next-source-work.json. All jobs collected.
+  155 scoped continuation is ACCEPTED at `local-data/validation/breach-continuation-155/scoped-result.json`:
+  ordinary paid escape/Verdant Hints65517/source1024+100ms return, Breach own28 registration/daylight3, actual54
+  and three Down confirmations reach L4; independent cold002 preserves floor identity/population/motion.
+  Real402 consumes666/reveals40faces, native81 landing/SDL y selectsMM7 once; App restart retains5 full Characters,
+  clears old campaign/custody, ordinary Escape closes original intro,30normal frames and explicit save pass.
+  Awards/personal buffs input empty; no positive nonempty retention claim, no other-start matrix or restart App cold.
+  Native007 and unchanged25-file unsigned generic iOS001 passed;0newcases. All failures retained. Default complete
+  runtime is now `breach-continuation-155/runtime-002`;154 and normal132 saves preserved. Full148/149 remain incomplete.
+  156 scoped owned-mercenary flow is ACCEPTED at `local-data/validation/breach-mercenaries-156/scoped-result.json`:
+  actual005 ordinary dismissal, visible Verdant65517 return, real NPC263 mouse/Join/Yes returns the existing
+  Character and removes its source actor; independent cold001/30normal frames, native002/iOS001 pass,0newcases.
+  Save101 stores typed retention/projection; default complete runtime is156/runtime-001. Upstream completion,
+  contact and pose fixtures declared; no full-byte Character claim, wider roster matrix or natural campaign claim.
+  User2026-10-23 again prioritizes running the app over repeated tests: defer optional BrAlvar secondary events,
+  stop nonblocking byte-hash investigations, choose concrete mainline blockers; do not replay passed routes.
+  157 scoped MM7 Lambent mainline-entry fix is ACCEPTED at `local-data/validation/mm7-lambent-entry-157/scoped-result.json`:
+  authenticated original416 uses faction/current enemies, replacing the stale MapVar6 chest lock. One actual
+  real-door click enters house220 withNPC419; declared faction/quest/NPC/pose/Invisible-actor fixtures,2reviewed
+  captures/save/native+iOS pass,0newcases/no cold. Default complete runtime now157/runtime-001; no natural campaign claim.
+  158 ACCEPTED_SOURCE_SCOPED at `local-data/validation/mainline-source-gates-158/scoped-result.json`: original
+  MM7d03 dark-entry5 and MM8d19 entrance15/transformer131 conditions restored; source Map.Vars19 maps to current
+  exportedMapVar21. Native/original two-map import/iOS passed;0newcases/0App replays, so no new live-branch claim.
+  At158 default complete runtime used158/runtime-001.157 originals preserved; no gameplay fixtures shipped.
+  159 ACCEPTED_SOURCE_SCOPED at `local-data/validation/mainline-learning-timer-159/scoped-result.json`: MM6
+  sci-fi61 appends basic Blaster learning for unlearned members; MM7 7out02/211 restores the strict six-month
+  judge succession fallback using existing persistent game ticks. Existing terminal behavior/skills and301 retained.
+  Native/original two-map import/unsigned generic iOS passed;0newcases/0App replays, no new live-branch claim.
+  At159 default complete runtime used159/runtime-001; all other archive members retained, no gameplay fixtures shipped.
+  160 ACCEPTED_SOURCE_SCOPED at `local-data/validation/mm7-mainline-acquisition-160/scoped-result.json`: MM7
+  source topic950 teaches basic Blaster to unlearned, class-eligible members; source GlobalTxt278 topic label
+  restored. Existing906/916 unlocks/rewards retained. Native/story/event import/unsigned generic iOS passed;
+  0newcases/0App replays at source acceptance; default complete runtime at160 was160/runtime-001.
+  160 live teaching is now ACCEPTED_SCOPED at `mm7-mainline-acquisition-160/live-learning-001/scoped-result.json`: actual002
+  one real topic950 mouse click grants3eligible Blaster1 and preserves1existing5Expert, Gold/questbits and finalsave;
+  22frames/2reviewed captures, native002 and unchanged production iOS001. Upstream/topic/skill fixtures declared.
+  actual001 driver keyboard-focus failure preserved;0newcases/no old-route replay/no cold/natural campaign claim.
+  161 ACCEPTED_SOURCE_SCOPED at `local-data/validation/mm7-lich-promotion-161/scoped-result.json`: original MM7
+  846 acceptance/847 per-holder ritual plus MM8 repeat738 restore source qualification/rewards/consumption and
+  final Lich state. AssignmentOnly class path preserves original helper order; source7/8 isMind/Body, notLight/Dark.
+  Native002/original import001/unsigned generic iOS001 passed;0newcases/0App/cold/old-route replays. Default complete
+  runtime now161/runtime-001; all prior archive entries retained. No new live-promotion or natural campaign claim.
+  Original Global89/MiscTweaks follow-up is completed by162 below. All161 jobs collected.
+  162 ACCEPTED_SOURCE_SCOPED at `local-data/validation/mm8-first-lich-162/scoped-result.json`: authenticated
+  MiscTweaks session policy prevents automatic EVT ClassIs Lich side effects; original MM8 first book quest89
+  retains its transaction and now appends the original final helper. Default non-Merge and explicit class APIs retained.
+  Native/import and unsigned generic iOS001 passed; one actual Mac181-frame normal132 MM8 load/render/save passed,
+  2images reviewed;0newcases/0old-route replays. This is not an actual89 promotion or natural campaign claim.
+  Default complete runtime now162/runtime-001; only existing Lich overlay replaced, all other archive members retained.
+  MM7 light-ending920 journal follow-up is completed by163 below. All162 jobs collected.
+  163 ACCEPTED_SCOPED at `local-data/validation/mm7-ending-163/scoped-result.json`: authenticated StdQuestsFunctions
+  appends original920 Q642=notQ783 tail, preserving original final transaction. Actual001 one real NPC419/topic920
+  SDL click consumes1407, sets783/clears642+747+748/topic, shows original Endgame1Good, Escape returns to30normal
+  frames/0.498s and verifiedsave;134frames/3reviewed images. Inherited157 pose/AI/faction and new item/topic/quest
+  fixtures declared; no natural campaign/audio/full-length movie or dark-branch claim. Native/import/iOS passed,
+  0newcases/0old-route replays. Default complete runtime now163/runtime-001; all jobs collected.
+  Bounded Merge reconciliation found no new confirmed first-completion blocker; optional BrAlvar interactions are
+  not required by source81. Next is source-first required-mainline evidence consolidation, not optional micro-fixes;
+  see163/next-source-work.json. Distinct original922 missing-item behavior remains deferred.
+  Late672-day mdt15 control-cube refill difference is deferred; exact actor-existence guard remains an implementation
+  prerequisite. First-pass quest-item grants exist; do not add a refill matrix before mainline work.
+  164 ACCEPTED_SCOPED at `local-data/validation/mainline-closure-164/scoped-result.json`: original MM6 outd3/42
+  bell2081/Archibald1244 entrance restored; source-authenticated overlay retains original1343 reward and door hint.
+  actual001 first try: real door42 click, archie movie/Escape, visible1343 click,2164 and exact50000XP each,
+  source quest/NPC removal,30normalframes/save;3reviewed images,native/iOS passed,0newcases/0cold/0old-route replay.
+  Upstreambell/quest/map/pose fixtures declared; no natural journey. Empty-room animation487 deferred.
+  Default complete runtime now164/runtime-002;163 originals preserved;all jobs collected. Next164/next-source-work.json.
+  165 ACCEPTED_SOURCE_SCOPED at `local-data/validation/mainline-acquisition-165/scoped-result.json`: original
+  MM7StoneCity7d24/416 now checksQ647 instead of current-partyAward3, restoring DwarfKing entry after roster changes.
+  OriginalsourceSTR20/19; native/import/iOSpassed,0newcases/0App/0cold. StaticMM7shards/jars/cube acquisition and
+  MM8witness/roster4 source/native audits found no new first-pass blocker; no full live-chain claim.
+  Default complete runtime165/runtime-001;164 originals retained. ExitNPC398 journalcleanup deferred;next165/next-source-work.json.
+  166 readonly source/resource audit complete at `local-data/validation/oracle-varn-166/result.json`:
+  MM6fourmemorycrystals/VARNkeys-cube/passwords/Oracle andMM7rebuild→faction transitions had no new confirmed
+  completionblocker.0productionedits/0builds/0cases/0App;default remains165. No new natural/live-chainclaim;
+  remaining167 candidates in166/next-source-work.json;optionaloldhornmessenger/countdifference deferred.
+  Full game remains incomplete;55–60% low-confidence engineering estimate; no natural campaign/iPad acceptance.
+  Complete source-grounded prerequisites, transitions, rewards, endings and persistence, with bounded
+  actual Mac integration. Controlled fixtures never count as natural campaign or iPad acceptance.
+
+  167 source acquisition audit is closed at `local-data/validation/mm8-alliance-acquisition-167/result.json`: MM8 hearts/alliance619/662 static acquisition records found, source map bytes retained; normal MM6 Council roster replacement blocker not confirmed. Original automatic Council entry/movie remains deferred. Zero production edits/builds/test cases/App runs; runtime165 unchanged. Next168 one bounded actual Regna cannon first-completion integration, see167/next-source-work.json.
+
+  168 scoped actual first Regna cannon is ACCEPTED at `local-data/validation/mm8-regna-cannon-168/scoped-result.json`: one original85/32/451 SDL click, normal three timer stages, source2000 Jump/landing, Q37/NPC64+20+21/History13 and applied ship facets persisted;407frames/6.77s/30continuedframes/3reviewedimages/save. Controlled map/pose/662/Q224 and initial FF/Invisible declared. First actual attempt passed,0newcases/cold/old-route replays; native capture build passed. No gameplay/runtime changes;default165 remains. Fullfirework/audio/natural/iPad not claimed. Next169 concrete remaining production-blocker consolidation; do not replay168.
+
+- 169 ACCEPTED_SCOPED at `local-data/validation/playable-readiness-169/scoped-result.json`: current native full original import loads203 normal maps and retains3 authenticated Merge projections; default complete runtime now169/runtime-001. One normal132 MM8 Mac startup181frames/save/two reviewed images and launchercheck pass. Existing152 decoder fix now reaches six staleMM8 Jump speeds220→1500; no direct source binding found, so no required-navigation blocker claim. Three normal package members differ (two comments plus six speeds); all other normal members retained.0newcases/0old-route replays/0newiOSbuild/0gameplay source edits. Requirements and next170 named MM6/MM8 prerequisite audits are in169; full game remains incomplete,55–60% lowconfidence.
+- After shared EVT decoder changes, regenerate all affected map programs before promoting a complete runtime; map-local overlays alone do not require a full import or broad replay.
+- 170 SOURCE_RECONCILED at `local-data/validation/mainline-prerequisites-170/result.json`: MM6 recommendations/traitor, MM7 rebuild and MM8 alliance/rescue prerequisites reconciled with original source/bindings; no new build/App/test cases.
+- 171 ACCEPTED_SCOPED at `local-data/validation/map-source-completion-171/scoped-result.json`: original MM7 conditional EmeraldIsle ship and MM6 temple actual-follower repair restored; source inn140 added. Harbor002 ordinary fare/6days/arrival/original intro/Escape/save and temple004 real door/Q1130/artisan removal/message/continuedplay/save passed;6 reviewed images. Declared map/pose/upstream fixtures; ship route selection uses normal dialogue API. Inn/chalice paths source-only, no independent cold. Actual exposed missing standalone Message display; fixed with SimpleMessage. All failed driver/build attempts preserved. Native002/import002/unsigned generic iOS003/launcher001 passed;0 newcases/old-route replays. Default complete runtime now171/runtime-002,169 originals retained. All jobs collected; agents frozen. Next sixMM6 TownPortal town-visit unlocks and MM8 submarine return, see171/next-source-work.json; no temple/ship replay. Full goal active,55–60% lowconfidence; no naturalcampaign/iPad acceptance.
+- 172 IN_PROGRESS: two Astra/xhigh agents delivered `TownPortalVisitResources.h/.cpp` and `SubmarineTravelResources.h/.cpp` to main; not yet integrated/built/shipped. Main also owns the out07 learned-spell statue supplement. Default remains171/runtime-002; no jobs running. User-requested plan through first playable release is `FIRST_PLAYABLE_RELEASE_PLAN.md`; current scope is `local-data/validation/source-travel-rescue-172/scope.json`. Follow that finite release path, with minimum affected actual checks and no repeated accepted routes; full goal remains active.
+
+- 179 ACCEPTED_SOURCE_SCOPED at `local-data/validation/mm7-control-cube-refill-179/scoped-result.json`: original mdt15
+  672-day MapRefill supplements actor0/1 items1477+866 behind actual-count guards; first-pass EVT1 unchanged.
+  Native/original event import/unsigned generic iOS passed;0newcases/0App replays, no actual late-refill claim.
+  Default complete runtime is179/runtime-001. Next180: BrAlvar local hostility/Wimp AI/texture footsteps.
+
+- 180 ACCEPTED_SCOPED at `local-data/validation/bralvar-actor-rules-180/scoped-result.json`: source24/198 local
+  relations,294 Wimp AI and8texture footsteps; existing178alarm save migration/198relations/9Wimp/44hostileguards,
+  short normal continuation/save/1reviewedimage, native/original import/iOS passed.0newcases/0oldroute replays;
+  no subjective audio or moderncold replay. Default complete runtime180/runtime-001,Save103,RC1unchanged.
+  Next181: companion target-kind third variant,BrBase DoorLocked reaction,Breach texture footsteps.
+
+- 181 ACCEPTED_SOURCE_SCOPED at `local-data/validation/merge-source-polish-181/scoped-result.json`: companion
+  target third-variant kind correction,BrBase DoorLocked reaction andBreach8texture footsteps. Native/original
+  import/iOS passed;0newcases/0App replays. Default complete runtime181/runtime-001;Save103,RC1unchanged.
+  Next182 packages independentRC2 with current source/resources; no newnatural/device acceptance.
+
+- 182 ACCEPTED_SECOND_PLAYABLE_CANDIDATE_SCOPED at `local-data/validation/second-playable-candidate-182/scoped-result.json`.
+  Independent `releases/first-playable-20261028-rc2` contains181code/runtime,Save103,3.25GiBassets,unsignediOS and
+  1909file source snapshot restored byte/mode/link-equal. New launcher→visible menu→Cmd+Q exit0 passed; no gameplay
+  route replay. RC1 preserved. Default development runtime stays181. Current confirmed device-independent fixes
+  176–181 closed; no natural campaign/subjective audio/device acceptance. Full goal active; user declined device
+  operations, do not re-ask. Do not invent further tests or cosmetic audits merely to create work.
+
+## Historical task boundary (2026-09-28; superseded only as stated above)
+
+- CURRENT DISPATCH: user2026-09-28 requested a larger assignment. New finite batch134–141 is authorized,
+  after closing the reviewed133 record. Handoff: `handoffs/sol-xhigh-134-141-20260928/HANDOFF.md`.
+  Sole execution task: `01a0e3f2-bae1-7e63-881d-85f29eac436f` (执行线程指派任务), with one Sol/xhigh agent;
+  its main Astra reviews milestones and material exceptions. This coordinating task creates no concurrent writer.
+  The original133Sol here was stopped; do not restart it. No nested delegation, device or simulator.
+  New authorization supersedes the old stop133/no-subagent boundaries only for this finite batch; stop after141.
+  Do not create/resume a persistent goal or automation. Latest goal tool returned no active goal object.
+  Checkpoint133 is ACCEPTED: result at local-data/validation/event-map-compat-133/result.json.
+  Default runtime is event-map-compat-133/runtime-001 (203maps); normal continuation saves retain132 provenance.
+  Original three no-op commands are MM8-only; controlled Mac checks are not natural campaign/device acceptance.
+  Preserve all old evidence and failure histories.
+  Checkpoints134/135 are ACCEPTED: original audit and isolated three-scene resource inspection only;
+  203normal maps preserved, dynamic Merge scripts/normal entry remain unsupported. Results are in
+  merge-compat-profile-134/result.json and merge-scene-import-135/result.json.
+  Checkpoints136–140 are ACCEPTED at their chapter result.json: lifecycle/Save88, Verdant encounters/topics,
+  connector and continent reward/final guide subset.140 closes ordinary map/view held-item loss and greeting
+  count bugs; six completion orders/controlled actual/cold loads do not prove natural campaigns or QuestFinished.
+  Checkpoint141 and finite134–141 batch are ACCEPTED after independent main review. Fresh complete
+  runtime is merge-batch-integration-141/runtime-002:203 normal maps plus3 isolated inspection scenes;
+  native and unsigned generic iOS Release arm64 passed. Default Mac entry development-runtime.json now uses
+  that runtime; normal continuation saves retain132 provenance. Results: merge-batch-integration-141/result.json
+  and handoff batch-result.json. Sol has stopped with no owned jobs. No142, persistent goal or device operations.
+  Full game remains incomplete,55–60% low-confidence engineering estimate; no natural campaign/iPad acceptance.
+
+- VALIDATION DIRECTION (user correction2026-09-24): prioritize completing engine/content compatibility over
+  extended simulated-human playthroughs. Do not require every main quest to be played end-to-end by the agent.
+  Use source-grounded, deterministic checks for quest prerequisites, transitions, rewards and persistence;
+  use bounded actual-Mac checks for rendering, input and cross-system integration. Declare controlled fixtures.
+  Separate product defects from test-driver defects, tactical/navigation mistakes and external interruptions.
+  A failed play attempt alone is not evidence of an engine defect. When the driver stalls, inspect the cause
+  before retrying; do not repeatedly run long combat routes or alter production gameplay to compensate for
+  poor tactics. Preserve prior results and limitations; passing fixtures is not natural campaign completion.
+
+- CURRENT OVERRIDE: the user explicitly resumed development with `/goal` on2026-09-24 until the game can run fully,
+  doing available work without a connected device. The current single main Astra (`gpt-6-astra`) task owns the
+  workspace and the new active goal. Start with checkpoint129 escalation, preserve the prior Sol failures,
+  then continue device-independent work, including beyond the old finite132 stop. No subagents or simulator; no physical-device acceptance is implied.
+  The older pause, Sol-only dispatch and no-goal instructions below describe the previous handoff state.
+  Takeover evidence: `local-data/validation/mm8-blackmail-129/astra-takeover-20260924/`.
+
+- Checkpoint129 is ACCEPTED: original096 continuous main010 and separate reload001 both passed (514+239
+  independent checks,6 key images reviewed). Final normal MM8 continuation is inside d07 with next Alvar clueQ11;
+  all five alive, no full-party deaths, exact one-time letter/reward and original History3. Sealed result:
+  `local-data/validation/mm8-blackmail-129/result.json`. Runtime is `astra-runtime-003` in that directory.
+  Original Sol streak3 and all Astra failures are retained.
+- Checkpoint130 is ACCEPTED: controlled experience-only actual004 invitation generation/pointer pickup/natural
+  fountain/four-step introduction, separate reload002 and213 independent save checks passed. Nine key captures
+  reviewed, including fixed long Chinese dialogue overflow. Runtime: `local-data/validation/merge-invitation-130/runtime-001`.
+  Result: `local-data/validation/merge-invitation-130/result.json`. This is not naturally earned campaign XP.
+  Normal127/128/129 continuation pointers remain normal;130 is a separate controlled save.
+- Checkpoint131 is ACCEPTED: actual00130minutes/25.61minutesmovement/10castletrips/29UIcycles/70saves,
+  reload001 and680statechecks passed. Journalnative-art fix passed3actualpages+pilot006257checks.
+  Result: `local-data/validation/mac-endurance-131/result.json`. No iPad orsubjectiveaudioacceptance.
+  The loadingart gap was fixed by132 freshimport.
+  Current pointers: handoff BATCH_STATE and chapter WORKING_STATE.md.
+
+- Checkpoint132 and finite123–132 batch are ACCEPTED: freshoriginalfourZIPimport/201maploads,
+  3normalquestsmokes/controlledinvitation+reload/normal131reload;530independentchecks,55Pythoncases,
+  43nativecases1187assertions,17reviewedviews, nativeandunsignedgeneric iOSReleasearm64passed.
+  Result: `local-data/validation/batch-integration-132/result.json`; batch-result.json recordsall10chapters.
+  DefaultMacentry: `run-mac-development.command`, configuredby `development-runtime.json`, isolatedsettings/saves.
+  ALLownedprocessescollected. Active usergoalcontinues; next133legacy missingmap/event compatibility audit.
+  Fullgame remainsincomplete,55–60%lowconfidence. Do notaltersealed132oroldfailures.
+
+- Checkpoint122 and the finite 118–122 batch are ACCEPTED. The full port is incomplete; the old Astra session's
+  development remains paused.
+- The batch was completed by the single main **Sol / xhigh** agent with no subagents. Final evidence:
+  `local-data/validation/three-continent-scroll-122/result.json` and `batch-result.json`.
+- On 2026-09-16 the user requested a larger next assignment. The issued finite batch is123–132:
+  `handoffs/sol-xhigh-123-132/HANDOFF.md`, with its START_PROMPT.txt for the receiving Sol / xhigh task.
+  This old Astra task prepares/reviews the handoff only; its production development remains paused.
+  The receiving single-agent Sol task executes123–132 in order and stops after132; do not start133.
+- No subagent creation/reuse, task delegation, persistent goals or automation for this batch. Do not inherit the
+  old persistent goal. Automatic goal reminders do not revoke an explicit user pause.
+- On a user stop, stop new work and safely end only this task's own jobs. Do not mark the full port complete or
+  use a blocked/complete goal status as a substitute for pause.
+- Before each new subtask, announce the assigned main agent, model and reasoning effort. Respond in Chinese.
+- The earlier default was Astra xhigh for architecture/acceptance and Sol medium/high for bounded delegated work.
+  The user's new single-agent Sol xhigh instruction overrides that delegation policy for the new batch.
+- For the SAME bug, THREE consecutive unsuccessful Sol repair attempts require escalation to Astra.
+  One attempt is a proposed fix plus verification against the bug's acceptance conditions, not one tool call.
+  Count across sessions/agents/efforts; do not reset by reassignment. Log hypothesis, change and result.
+  Escalate sooner for a complex engine/design uncertainty; do not invent retries for an external blocker.
+  In the new single-agent batch, escalation means write reproduction, expected/actual behavior, logs,
+  all attempted fixes and current code/build state, then stop for the user to transfer it. Do not spawn Astra.
+- Keep one owner for the full bounded module. Do not have two sessions edit/build the same workspace concurrently.
+  Review milestones/material exceptions; do not routinely repeat passed unrelated checks.
+
+## Storage and build rules
+
+- Physical workspace: `/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados`; source repo is its `openyamm/` child.
+- Before writes/builds, confirm NVMeSSD is mounted and the workspace resolves there. If absent, stop dependent
+  work; never recreate the old local directory. Keep builds/imports/captures/temp/cache/validation on NVMe.
+- Preserve compatibility symlinks at `/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados`, old Downloads input,
+  project Xcode cache aliases, `/Applications`, and `~/Library/Developer`. Do not replace them with local data.
+- Source `external-storage/env.sh` from the root, or `../external-storage/env.sh` from `openyamm/`.
+  It loads `/Volumes/NVMeSSD/Developer/env.sh`. Add `.tools-venv/bin` to PATH separately for CMake/Python.
+- Every xcodebuild must have an explicit scheme and `-derivedDataPath` under this project's
+  `external-storage/xcode-deriveddata/`. Use `$OPENYAMM_DERIVED_DATA_PATH` after sourcing the environment.
+- Current batch: headless checks, scoped Mac Metal gameplay/captures/endurance, complete import and final
+  unsigned generic iOS Release. No iPad or simulator operations. Only the receiving Sol task executes these;
+  preparation here is docs only. Keep BATCH_STATE concise and read the current chapter on demand.
+- Preserve the migrated CMake cache's exact source/dependency aliases. After adding CMake sources/targets,
+  regenerate the Xcode project BEFORE xcodebuild forms its plan. From `openyamm/`, use quoted paths:
+  `cmake -S /Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm -B /Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm/build-ios-xcode`.
+  The same source alias is required for `build-apple`. Verify both aliases resolve to NVMe first.
+  Do not mix physical prefixes with cached alias dependency paths; do not clean/recreate the trees as a fix.
+- Native build tree is `build-apple`, ordinarily `-j3`. The generic upstream `build/-j25` recommendation in the
+  child AGENTS is superseded by this project's migrated Apple build instructions and the handoff commands.
+- Shared Xcode/simulator tool migration is already authorized/completed. System-managed Cryptex/Metal/MobileAsset
+  runtimes remain internal; do not relocate protected system content.
+- Original inputs in `external-storage/original-game/MM678_Merged_05.11.2023_gdrv` and the extracted
+  `local-data/validation/mm8-runtime-076/source-001` are READ ONLY. Never edit originals to pass a check.
+- Storage map: `NVMeSSD-迁移说明.md`. Audited earlier cleanup: `存储清理记录.md`,
+  `local-data/storage-cleanup-20260911-102438/` and sibling `.openyamm-migration-20260911-100606`.
+  No new deletion is authorized by handoff. Historical runtime ZIPs were pruned; old directories may not run.
+- The repo has extensive uncommitted implementation. Preserve it; no reset/clean or recreation from HEAD.
+  Do not copy reference engine code. Follow `openyamm/AGENTS.md` coding/content rules; generated legacy Lua
+  must be fixed in the exporter or an explicit original-source overlay, not edited in place.
+
+## Accepted state and entry points
+
+- Prior bounded evidence: `local-data/validation/mm7-history-compat-128/result.json`; normal MM7 castle clear,
+  early/last-positive-HP rejection, reward and independent reload remain accepted at the sealed chapter result,
+  and future imports now use original Merge History3/QBit519 entrance semantics. The old accepted128 save keeps
+  its legacy History5 residue unchanged; never manually rewrite it. This is not full Merge Lua compatibility.
+- 122: controlled day24 actual Mac Metal MM6→MM7→MM8→MM6 scroll use in one process, three independent
+  arrival reload processes, 21 reviewed BMP captures, and 439 structural checks passed. Final scoped native checks
+  passed; the unsigned generic iOS Release arm64 build succeeded. This is not iPad or campaign acceptance.
+- 117: controlled day24 actual Mac Metal MM6→MM8→MM6 travel, normal Temple303 healing, mana/recovery,
+  save and independent reload accepted. 39 headless cases/1475 assertions plus 27 import cases passed;
+  final unsigned generic iOS Release003 passed. These are not new iPad or full-campaign acceptance.
+- Original118 handoff checked69 sealed117 evidence files and13 production hashes. On2026-09-16, the next
+  handoff checked40 source/build/test-tool hashes, four runtime ZIPs and embedded Temple text against122.
+  These are file/evidence checks, not a rerun of122. Old subagents must not be reused for the new batch.
+- Complete current runtime: `local-data/validation/batch-integration-132/runtime-001` (freshoriginalfour ZIPs,
+  acceptedselectiveoverlaysandloadingart;201mapsloaded;knownsixmapgapsretained). Read it as input; new outputs belong to a new checkpoint.
+  Do not mount an event-only development root as
+  a complete application runtime: switching worlds remounts and can lose the baseline ZIPs.
+- Previous complete base: `local-data/validation/item-transparency-085/runtime-003`; keep it unchanged.
+  Packages before063 lack required combat_text.txt, and older ZIPs may have been removed; do not use blindly.
+- NORMAL MM6 continuation save:
+  `local-data/validation/batch-integration-132/mm6-smoke-002/mm6-goblinwatch-reload-complete.oysav`.
+- NORMAL MM7 continuation: `local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav`
+  (valid continuation with preserved old History5 residue; never manually rewrite it). Original pre-castle107 remains available at
+  `local-data/validation/mm7-continuous-107/replay-006/mm7-full-starter-complete.oysav`.
+- NORMAL MM8 continuation: `local-data/validation/batch-integration-132/mm8-smoke-001/mm8-blackmail-complete.oysav`
+  (inside d07 after peaceful Arion revisit; Alvar clueQ11 opened). Original096 remains unchanged.
+- CONTROLLED return save: `local-data/validation/cross-world-travel-117/enroth-002/enroth-arrived.oysav`.
+  Initial117 fixture set active2,Water10GM,TownPortal31,SP20,MetVerdant1; natural spell/contact not proved.
+- Preserve sealed116/117,118–122 and their failed runs. New outputs use separate123–132 directories named
+  in the new handoff; do not overwrite old packages or original saves.
+- Overall estimate **55–60%, low confidence**: subjective engineering progress, not quest coverage, hours,
+  success probability or device pass rate. Report at completion; do not add an automatic 1% per task.
+- The former item190 timing gap was FIXED in118: scroll1minute; natural locations8minutes. Preserve both.
+- Completed chapters:118 item190 timer/use;119 Temple service localization;120 house dialogue layout;
+  121 original daily destination cycle;122 controlled actual Mac MM6→MM7→MM8→MM6 travel and persistence;
+  123 reproducible content/evidence inventory;124 isolated full-load validation for all201 imported maps plus
+  resource/script/entry audits;125 controlled actual-Mac coverage of17 unique Dimension Door destinations;
+  126 typed bilingual common-service localization with scoped actual-Mac behavior and layout evidence;
+  127 normal MM6 Goblinwatch completion, password mechanism, exact reward and independent reload;
+  128 bounded normal MM7 castle clear/reward/reload plus accepted original Merge event301 history supplement;
+  129 normal MM8 blackmail completion and independent peaceful revisit, original source History3 and d07 anger.
+  These finite checks do not treat import/load/landing/service use as gameplay completion.
+  Detailed acceptance lives in the chapter result files; older stop/continue instructions are historical.
+- Assigned next finite batch: 123 coverage inventory; 124 content checks/local fixes; 125 actual17 destinations;
+  126 common service localization; 127 normal MM6 Goblinwatch; 128 normal MM7 Harmondale castle;
+  129 normal MM8 blackmail; 130 invitation-scroll770–772 chain; 131 Mac endurance; 132 fresh import/final build.
+  Invitation generation may require declared experience fixtures; never call that natural campaign progress.
+  Detailed bounds and acceptance are in the new per-chapter handoff files. No automatic expansion beyond132.
+- Still excluded: complete natural Merge campaign, unrelated broad quests, every-map live traversal,
+  full endgame/class/branch progression, and current iPad import/control/lifecycle/media/performance tests.
+- Keep this file concise. Update current pointers here; put detailed validation in task-specific documents.
+  Historical instructions and checkpoint logs were preserved byte-for-byte in
+  `handoffs/sol-xhigh-118/AGENTS-before-20260914.md`. Read only if a specific historical question needs it;
+  its old continue/NEXT statements are not current authorization.
+
+## Image generation
+
+- For all image generation/editing, use built-in imagegen and the installed imagegen skill, including
+  presentation assets and style previews.

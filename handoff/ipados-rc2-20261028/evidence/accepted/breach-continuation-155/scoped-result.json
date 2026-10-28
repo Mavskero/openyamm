@@ -1,0 +1,89 @@
+{
+  "schema": "openyamm.checkpoint155.scoped-result.v1",
+  "status": "ACCEPTED_SCOPED",
+  "checkpoint": 155,
+  "accepted_at": "2026-10-23T07:01:43.849586+00:00",
+  "owner": "01a0fb51-a792-7082-a973-ac6064548959",
+  "main": "gpt-6.1-sol/max",
+  "current_subagents": "gpt-6-astra/max",
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "runtime": "local-data/validation/breach-continuation-155/runtime-002",
+  "save_version": 100,
+  "new_test_cases": 0,
+  "accepted_scope": {
+    "normal_return": "Controlled completed Breach save -> ordinary paid TownPortal/DimensionDoor escape -> ordinary NPC803 Hints/65517 -> source1024ms message +100ms close -> normal Breach arrival. MapStats204/NPCTopic186 preserved.",
+    "breach_source": "Authenticated own28 mechanism registration, daylight3, source boundaries/timer/telelocator/library/chest/inn events implemented. Actual return verifies28 registrations; this is not 28 separate live activations.",
+    "deep_maze": "Actual real54 and three generated Down pointer/confirmation pairs reach L4 with27 actors; original population depth rules implemented without L3 cap; retained floor count3 is cache scope. Actual123frames,1.88333 render simulation seconds; no whole-floor combat/navigation claim.",
+    "independent_l4_cold": "cold002 exact run identity/layout/population/interactions/rage/actor IDs/motion. Revision exactly+3 from normal load synchronizations; renderer portrait animation resets recorded.36frames/0.433333 render simulation seconds,normalAI.",
+    "restart": "Actual402 pedestal consumes single declared item666/reveals40faces; native gravity landing81 +SDL y/Return; one original RNG draw4219001548 selects7out01/MM7. Native App restart preserves five full serialized Character+personal-buff records after documented Awards/portraitFX normalization and clears old campaign/maze/custody. Fresh MM7 OnLoad queues original intro; normal SDL Escape and App frame restore gameplay/music. Thirty subsequent normal frames,0.5 render simulation seconds, game time540->540.250000013; explicit new-path save and independent decoder pass."
+  },
+  "builds": {
+    "native_product": "native-build-004.command.json",
+    "latest_desktop_capture": "native-build-007.command.json",
+    "unsigned_generic_ios_release": "ios-release-001.command.json",
+    "ios_frozen_files": 25,
+    "ios_unchanged_at_acceptance": true,
+    "reason_no_repeat_ios": "Only Mac-only capture driver changed after iOS001; all25 production/import/CMake hashes remain exact."
+  },
+  "fixtures": [
+    "Upstream controlled completed149 save; not a naturally earned campaign ending.",
+    "Return branch GotMainQuest1, member2 TownPortal31/Water10GM when absent, ordinary NPC contact and original door poses/cameras declared in actual003. HP/SP/AI preserved.",
+    "Restart input is actual003 Breach-returned save; exactly one Telelocator666 and two source-surface poses/camera declared. No direct event execution, TelelocatorSet/quest/RNG/AI writes."
+  ],
+  "retention_limits": [
+    "Restart input Awards and personal buffs were empty, so positive nonempty award clearing/personal-buff retention timing is not claimed.",
+    "Renderer portrait animation fields normalize at map publication; gameplay Character fields compare in full.",
+    "Restart actual targetMM7 only; other two original starts not replayed.",
+    "Explicit save only; no autosave claim or independent actual new-campaign cold load.",
+    "No full148/full149, arbitrary Merge Lua, natural campaign, iPad or simulator acceptance."
+  ],
+  "preserved_failures": {
+    "actual001_002": "Packaged stale engine overlay, fixed at assembly002; actual-001-002-classification.json.",
+    "cold001": "Driver revision/pose authority assumption; cold-driver-repair-001.json.",
+    "restart001": "Driver expected one cache key; normal App uses filename+canonical aliases; restart001-classification.json.",
+    "restart002": "Driver did not handle authentic MM7 intro; restart002-classification.json.",
+    "original_runtime001": "Preserved faulty assembly input; runtime002 is complete accepted output."
+  },
+  "source_records": [
+    "population-source-audit.json",
+    "breach-source-audit.json",
+    "return-topic-source-audit.json",
+    "main-implementation.json",
+    "restart-party-guard-repair-001.json"
+  ],
+  "next": "156 owned hired-mercenary provenance/projection/normal Join; see next-source-work.json and mercenary-implementation-plan-001.json.",
+  "engineering_estimate": {
+    "range_percent": [
+      55,
+      60
+    ],
+    "confidence": "low",
+    "meaning": "subjective engineering estimate; not quest/device coverage and not raised per chapter"
+  },
+  "evidence_sha256": {
+    "actual-003/result.json": "c734326a51261ee75344d64d42d0afe4ebc9b5f00c11699fc95d5b1993a9edc3",
+    "actual-003/fixture.json": "5b990e1de34744252b8531c0eff731cff5525664044241c63fc5caf7d930d34c",
+    "actual-003/continued.oysav": "6f8d3b146439cc30faa18bcef1f5312a0325ad80bf10801e1fc81e8b5a4f4034",
+    "cold-002/result.json": "880bb7df214f10d792d864a002601e24193d010ceb049aa2ad6a6c55a365619b",
+    "cold-002/fixture.json": "4a06427b0d1cbeaac1e3e76457039e6f08137c3f3b7bef7a9be4556962bf190b",
+    "cold-acceptance-notes-001.json": "e22bf05ca199b65ca6186ddafd88797bf50502b691089e0dd327b1dcfc8687cc",
+    "independent-cold-observation-001.json": "f220d206d20c9a263923ae02d84b980cf854930e1113e6da3485ab88620c366b",
+    "restart-003/result.json": "20ba0f541e081ab761759af7c11da2d5eebc241152591c7ef599e08b0f722ae8",
+    "restart-003/fixture.json": "20c330413e02fcc13a4ae15b513d9cfa4ab07b79e73c9404aae0e1505c4ba798",
+    "restart-003/trace.jsonl": "1e68062fbed3a5a87b931ae91c761d6344340c778fff71ff3d066108bf924e5c",
+    "restart-003/continued.oysav": "63f1c479b38dd7572bb1cb885ea01be6e7d718f6f18bcdb417c3f6b8ea11c8a5",
+    "restart003-save-observation.json": "5463cf660da794f042e7d867a6a2fd28964359371370f618726259c0f4c6537d",
+    "visual-review-001/result.json": "17c25ec6592791ceaec5fee047b04d4f47ce9f640ca5d866036efb5664549d91",
+    "visual-review-001/cold-result.json": "6fea2df633d9f943fdd75f439ac88f1fc017ff80ebf02ae26d0539948bb3fec4",
+    "visual-review-001/restart-result.json": "ac509cda1e1ebb60d9fd7b5cddc4ea8aea0a25b761b9b8a76796ed448f55b54b",
+    "native-build-004.command.json": "83778e33a11df3ac0a1a3af6f8231595d450342e0f7c3c93fa4b1215e3c2fcdc",
+    "native-build-007.command.json": "7285ce25fc6a09315e1bb1c4a505104a0df7e1b94d6d45a4986e05963d1d84ca",
+    "ios-release-001.command.json": "9af41589d04ebac003428c1ad2674aa34b3f694e856e3d096f33b9bff09f6b45",
+    "ios-source-manifest-001.json": "fa228d6c4390394a2b4a55cc2437617abfe984aeca4abb897d9f28f655bd40ab",
+    "source-manifest-005.json": "3fe26d3b79c346f95515c098ee42469a712720a82ab46b3f0c688662d3fd4b8a",
+    "runtime-diff-002.json": "885b49da5c1bf6eb9de3854c67181b6b4db2a97971977e3a7bfed7d622e6fb99",
+    "story-topic-diff.json": "1bbaa883732bee498e270a3d1df7e5cb2491ad3b59de0e0af953a9a13868776f"
+  }
+}

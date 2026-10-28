@@ -1,0 +1,50 @@
+{
+  "schema": "openyamm.checkpoint162.source-scoped-result.v1",
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "accepted_at": "2026-10-27T14:33:24.778993+00:00",
+  "checkpoint": 162,
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh",
+  "runtime": "local-data/validation/mm8-first-lich-162/runtime-001",
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "new_unit_test_cases": 0,
+  "new_app_runs": 1,
+  "old_route_replays": 0,
+  "actual_promotion_transactions": 0,
+  "new_promotion_cold_runs": 0,
+  "accepted_source_fix": {
+    "policy": "Original MiscTweaks-authenticated global metadata freezes assignment-only ClassIs mode for its Lua session, including map events/timers/hooks. Absent metadata and direct static/default explicit APIs retain prior behavior.",
+    "89": "Existing original book/jar quest body retained; source DarkArchmage/final Lich helper appended on ordinary handler return, with nonnil continuation guard.",
+    "import": "PromotionTopics and MiscTweaks authenticated together. Native program validation requires source policy and preserves handler/topic registries."
+  },
+  "validation": [
+    "Final native App/importer build and original import passed.",
+    "Runtime replaces one Lich overlay; every other engine archive member and all four world packages retained.",
+    "One actual Mac normal132 MM8 startup rendered181 frames and saved d07.blv; two images reviewed.",
+    "Final unsigned generic iOS Release arm64 passed; all nine recorded source hashes unchanged.",
+    "Default runtime promoted to162; launcher --check passed."
+  ],
+  "limits": [
+    "Promotion behavior is source/import/build accepted; the actual Mac check covers startup/render/save, not NPC89 hand-in.",
+    "Original raw89 step22 versus existing normalized five-member loop difference is preserved and declared.",
+    "No retroactive old-save skill repair, natural campaign completion or iPad acceptance."
+  ],
+  "evidence_sha256": {
+    "scope.json": "7793b005472eaa99bb18326455ba51ff330085eed92328b5743a65016ab10f9d",
+    "source-audit-001.json": "4e27ee509cdd26f995516f14e9281f6a2d95dc704b11473e61918b7a5e214641",
+    "source-manifest-001.json": "bb6dc3829eafc2bf8e87efa9c9b584c8278e0fa74cd3c15260d8a463f43f0a00",
+    "runtime-diff-001.json": "f4cde5fba02ca0a179bcbe677d19257b9bbda0815a6a5bb7fdbe5b7475f36529",
+    "mac-start-summary-001.json": "dc9a15512990769f3a39bf833caf2da9a7ba18d9abb3d25495aa94d1de7c0c17",
+    "next-source-work.json": "2c6f65bed2adabac0b89ec49458c7a74231e8549e830857f9f72d38862bf7aca",
+    "events-001/engine/events/Global_mmmerge_lich_promotion.lua": "9a8179135a2ce7170cc8c045eda8a9d9d6a033af30678b94cfc945561bff236c",
+    "native-build-001.command.json": "f712c70c5c83c313b169829965a760016cd048c34020c2992c6ec6805b4510b1",
+    "events-import-001.command.json": "959aec5b8a1dd8436c5482841a1878ade5d9877b3d9b60da8ddcd89d32a0e69b",
+    "assemble-runtime-001.command.json": "998d03fa3c871ad1094e1fe139835a1c3df9b975808aecdafd539dfcedb2e49d",
+    "capture-build-001.command.json": "1c0ff0e61542182f1451f18bf3c9a52b07595167a931bf73343ef7fd8fe09310",
+    "mac-start-001.command.json": "dc8920ba143c88611cbd38d6f928b2d67a6103a1510c0cebdd7db837bd0b9134",
+    "ios-release-001.command.json": "0a215b96fb67575074ca9cbb60e7e06ec443b0c4fe0e131139e55ae5b40b0e50",
+    "launcher-check-001.command.json": "aaba3f66a8f898cca36b44ab7f4b26dcfa46bc55c0b285e78b1be9af9b221419"
+  }
+}

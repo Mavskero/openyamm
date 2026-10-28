@@ -1,0 +1,28 @@
+{
+  "checkpoint": 170,
+  "status": "SOURCE_RECONCILED",
+  "baseline_runtime": "playable-readiness-169/runtime-001",
+  "findings": [
+    "MM6 six recommendations and traitor-letter/key acquisition are implemented for initial normal chain",
+    "MM8 alliance/rescue mechanisms and physical triggers match required source progression",
+    "MM7 all seven dwarf statue events have original bindings and rebuild handin"
+  ],
+  "evidence": [
+    "mm6-recommendations-audit.json",
+    "mm8-alliance-rescue-audit.json",
+    "mm7-rebuild-acquisition.json"
+  ],
+  "new_confirmed_required_blockers": 0,
+  "production_edits": 0,
+  "builds": 0,
+  "App_runs": 0,
+  "new_test_cases": 0,
+  "limitations": [
+    "No natural whole-campaign claim",
+    "Source late-revisit/follower presentation differences retained explicitly",
+    "No device/simulator"
+  ],
+  "next": "Finite inventory of all70 ordinary-world source Map Lua supplements, focusing only missing necessary progression/ordinary gameplay behavior; no repeated route tests",
+  "full_game_complete": false,
+  "goal_status": "active"
+}

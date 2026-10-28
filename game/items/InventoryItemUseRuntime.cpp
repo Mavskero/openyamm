@@ -22,6 +22,7 @@ constexpr uint32_t DimensionDoorScrollItemId = 190;
 constexpr uint32_t ChargedConnectorStoneItemId = 624;
 constexpr uint32_t DischargedConnectorStoneItemId = 625;
 constexpr uint32_t DeckOfFateItemId = 2067;
+constexpr uint32_t TempleInBottleItemId = 1452;
 constexpr uint32_t ExtraPotionPlayerBitBase = 200000;
 
 std::string lowerAscii(std::string value)
@@ -834,7 +835,8 @@ InventoryItemUseAction InventoryItemUseRuntime::classifyItemUse(
         return InventoryItemUseAction::PlayInstrument;
     }
 
-    if (itemNameEquals(*pItemDefinition, "temple in a bottle"))
+    if (item.objectDescriptionId == TempleInBottleItemId
+        || itemNameEquals(*pItemDefinition, "temple in a bottle"))
     {
         return InventoryItemUseAction::UseTempleInABottle;
     }

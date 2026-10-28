@@ -14,6 +14,8 @@ class CharacterDollTable;
 class GameSession;
 class RosterTable;
 struct SourceMercenaryGenerationTables;
+struct BreachMercenaryProfile;
+struct OwnedMercenaryJoinPreparation;
 
 struct BreachAlvarSplitGenerationContext
 {
@@ -101,6 +103,10 @@ private:
     friend BreachAlvarCompanionPreparation prepareBreachAlvarCompanionReturn(
         const Party &, const std::optional<BreachAlvarCompanionState> &, const CharacterDollTable &,
         const BreachAlvarCompanionTopicFacts &, uint32_t);
+    friend OwnedMercenaryJoinPreparation prepareOwnedMercenaryJoin(
+        const Party &, const OwnedMercenaryIdentity &, const BreachMercenaryProfile &,
+        const std::optional<BreachAlvarCompanionState> &, const CharacterDollTable &,
+        const BreachAlvarCompanionTopicFacts &);
 
     PreparedBreachAlvarCompanionMutation(
         BreachAlvarCompanionMutationKind kind, uint32_t returningNpcId, Party &&party,

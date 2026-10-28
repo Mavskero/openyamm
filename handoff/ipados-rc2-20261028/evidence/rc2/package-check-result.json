@@ -1,0 +1,35 @@
+{
+  "checkpoint": 182,
+  "status": "PASSED_MENU_START_EXIT",
+  "date": "2026-10-28T12:29:44.708806+00:00",
+  "entry": "Start-Mac.command -> macOS/OpenYAMM.app/Contents/MacOS/Launcher -> openyamm",
+  "platform": "Apple Silicon Mac;1280x800 windowed;Metal",
+  "actual": [
+    "New RC2 launcher starts shipped binary and assets",
+    "Chinese main menu visibly rendered",
+    "One reviewed menu screenshot",
+    "Cmd+Q exits, recorded process exit_code0"
+  ],
+  "app_record": "packaged-app-001.command.json",
+  "reviewed_image": "menu-001.png",
+  "scope": "Menu startup only; no new game/save-load/combat/endgame replay",
+  "launcher_equal_to_accepted_RC1": true,
+  "standalone_resource_packages": 5,
+  "runtime_bytes": 3494489946,
+  "production_binaries_match_final181_build": true,
+  "resource_payload_hashes_match": true,
+  "source_restored_files": 1909,
+  "source_manifest_verified": true,
+  "delivery_saves_empty": true,
+  "test_userdata_preserved": "packaged-userdata-001",
+  "new_unit_cases": 0,
+  "old_accepted_route_replays": 0,
+  "device_or_simulator": false,
+  "natural_full_campaign": false,
+  "subjective_audio": false,
+  "not_claimed": [
+    "New RC2 gameplay branch replay",
+    "Run after relocating package",
+    "Target iPad acceptance"
+  ]
+}

@@ -31,6 +31,8 @@ namespace
 constexpr uint32_t FirstMercenaryNpcId = 303;
 constexpr uint32_t LastMercenaryNpcId = 310;
 constexpr uint32_t FirstMercenaryRosterId = 42;
+constexpr uint32_t MercenaryNpcRosterOffset = FirstMercenaryNpcId - FirstMercenaryRosterId;
+constexpr uint32_t LastSourceMercenaryRosterId = LastMercenaryNpcId - MercenaryNpcRosterOffset;
 constexpr uint32_t PlaceholderNpcProfessionId = 0;
 constexpr uint32_t MercenaryStartingGoldEquivalent = 0;
 
@@ -1071,6 +1073,7 @@ EventRuntimeState::GeneratedMercenaryRecruit generateMercenary(
     const MapStatsEntry &map,
     Party &party,
     uint32_t npcId,
+    uint32_t rosterId,
     uint32_t houseId,
     const MercenaryRecruitmentTables &tables,
     int32_t refillMonth)
@@ -1091,7 +1094,9 @@ EventRuntimeState::GeneratedMercenaryRecruit generateMercenary(
         rng);
 
     Character character = {};
-    character.rosterId = generatedMercenaryRosterIdForNpcId(npcId);
+    character.rosterId = rosterId;
+    character.sourceMercenaryRetention = {
+        SourceMercenaryRetentionKind::Unknown, SourceMercenaryProvenance::None, rosterId};
     character.characterDataId = pDoll != nullptr ? pDoll->id : 0;
     character.className = className;
     character.role = character.className;
@@ -1130,25 +1135,10 @@ EventRuntimeState::GeneratedMercenaryRecruit generateMercenary(
     return recruit;
 }
 
-bool hasRosterOrInnMember(const Party &party, uint32_t rosterId)
+bool hasMercenaryFollower(const EventRuntimeState &runtimeState, uint32_t npcId)
 {
-    for (const Character &member : party.members())
-    {
-        if (member.rosterId == rosterId)
-        {
-            return true;
-        }
-    }
-
-    for (const AdventurersInnMember &member : party.adventurersInnMembers())
-    {
-        if (member.character.rosterId == rosterId)
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return std::any_of(runtimeState.hiredNpcFollowers.begin(), runtimeState.hiredNpcFollowers.end(),
+        [npcId](const HiredNpcFollower &follower) { return follower.npcId == npcId; });
 }
 }
 
@@ -1171,6 +1161,67 @@ uint32_t generatedMercenaryNpcIdForRosterId(uint32_t rosterId)
     }
 
     return FirstMercenaryNpcId + rosterId - FirstMercenaryRosterId;
+}
+
+bool isReusableMercenaryRosterId(const Party &party, uint32_t rosterId)
+{
+    return rosterId != 0 && rosterId <= LastSourceMercenaryRosterId
+        && party.reusableMercenaryRosterIds().contains(rosterId);
+}
+
+bool isReusableMercenaryNpcId(const Party &party, uint32_t npcId)
+{
+    return npcId > MercenaryNpcRosterOffset
+        && npcId <= LastMercenaryNpcId
+        && isReusableMercenaryRosterId(party, npcId - MercenaryNpcRosterOffset);
+}
+
+bool isAvailableGeneratedMercenaryRecruit(
+    const Party &party,
+    const EventRuntimeState &runtimeState,
+    uint32_t npcId)
+{
+    const auto found = runtimeState.generatedMercenaryRecruitsByNpcId.find(npcId);
+    if (found == runtimeState.generatedMercenaryRecruitsByNpcId.end())
+    {
+        return false;
+    }
+    const EventRuntimeState::GeneratedMercenaryRecruit &recruit = found->second;
+    const bool reusable = isReusableMercenaryRosterId(party, recruit.rosterId);
+    if ((!isGeneratedMercenaryNpcId(npcId) && !isReusableMercenaryNpcId(party, npcId))
+        || recruit.npcId != npcId || recruit.rosterId == 0
+        || recruit.rosterId > LastSourceMercenaryRosterId
+        || npcId != recruit.rosterId + MercenaryNpcRosterOffset
+        || recruit.character.rosterId != recruit.rosterId || recruit.character.memberId != 0
+        || recruit.character.sourceMercenaryRetention.kind != SourceMercenaryRetentionKind::Unknown
+        || recruit.character.sourceMercenaryRetention.provenance != SourceMercenaryProvenance::None
+        || (reusable && !recruit.character.sourceMercenaryRetention.sourceRosterId)
+        || (recruit.character.sourceMercenaryRetention.sourceRosterId
+            && *recruit.character.sourceMercenaryRetention.sourceRosterId != recruit.rosterId)
+        || party.hasRosterMember(recruit.rosterId) || recruit.houseId == 0
+        || runtimeState.unavailableNpcIds.contains(npcId) || hasMercenaryFollower(runtimeState, npcId))
+    {
+        return false;
+    }
+
+    EventRuntimeState globalNpcState;
+    party.applyGlobalNpcStateTo(globalNpcState);
+    if (globalNpcState.unavailableNpcIds.contains(npcId) || hasMercenaryFollower(globalNpcState, npcId))
+    {
+        return false;
+    }
+    const auto globalHouse = globalNpcState.npcHouseOverrides.find(npcId);
+    if (globalHouse != globalNpcState.npcHouseOverrides.end())
+    {
+        return globalHouse->second == recruit.houseId;
+    }
+    // Released slots always have a Party-owned location, including house zero while awaiting a refill.
+    if (reusable)
+    {
+        return false;
+    }
+    const auto localHouse = runtimeState.npcHouseOverrides.find(npcId);
+    return localHouse != runtimeState.npcHouseOverrides.end() && localHouse->second == recruit.houseId;
 }
 
 std::optional<uint32_t> findMercenaryRecruitmentHouseId(
@@ -1261,13 +1312,29 @@ bool refreshMercenaryRecruitmentForCurrentMap(
     // The original map records the attempt even when no free roster slot remains.
     runtimeState.namedMapVars[MercenaryRefillMonthVar] = month;
 
-    for (uint32_t npcId = FirstMercenaryNpcId; npcId <= LastMercenaryNpcId; ++npcId)
+    party.applyGlobalNpcStateTo(runtimeState);
+    std::vector<uint32_t> rosterIds;
+    for (uint32_t rosterId = FirstMercenaryRosterId; rosterId <= LastSourceMercenaryRosterId; ++rosterId)
     {
-        const uint32_t rosterId = generatedMercenaryRosterIdForNpcId(npcId);
+        rosterIds.push_back(rosterId);
+    }
+    for (uint32_t rosterId : party.reusableMercenaryRosterIds())
+    {
+        if (isReusableMercenaryRosterId(party, rosterId))
+        {
+            rosterIds.push_back(rosterId);
+        }
+    }
+    std::sort(rosterIds.begin(), rosterIds.end());
+    rosterIds.erase(std::unique(rosterIds.begin(), rosterIds.end()), rosterIds.end());
 
-        if (rosterId == 0
-            || hasRosterOrInnMember(party, rosterId)
-            || runtimeState.unavailableNpcIds.contains(npcId))
+    for (uint32_t rosterId : rosterIds)
+    {
+        const uint32_t npcId = rosterId + MercenaryNpcRosterOffset;
+
+        if (party.hasRosterMember(rosterId)
+            || runtimeState.unavailableNpcIds.contains(npcId)
+            || hasMercenaryFollower(runtimeState, npcId))
         {
             continue;
         }
@@ -1275,14 +1342,15 @@ bool refreshMercenaryRecruitmentForCurrentMap(
         EventRuntimeState::GeneratedMercenaryRecruit *pRecruit = nullptr;
         const auto recruitIt = runtimeState.generatedMercenaryRecruitsByNpcId.find(npcId);
 
-        if (recruitIt != runtimeState.generatedMercenaryRecruitsByNpcId.end() && !replaceExisting)
+        if (recruitIt != runtimeState.generatedMercenaryRecruitsByNpcId.end() && !replaceExisting
+            && isAvailableGeneratedMercenaryRecruit(party, runtimeState, npcId))
         {
             pRecruit = &recruitIt->second;
         }
         else
         {
             EventRuntimeState::GeneratedMercenaryRecruit recruit =
-                generateMercenary(map, party, npcId, *houseId, tables, month);
+                generateMercenary(map, party, npcId, rosterId, *houseId, tables, month);
             pRecruit = &runtimeState.generatedMercenaryRecruitsByNpcId
                 .insert_or_assign(npcId, std::move(recruit)).first->second;
         }
@@ -1292,6 +1360,10 @@ bool refreshMercenaryRecruitmentForCurrentMap(
         runtimeState.npcNameOverrides[npcId] = pRecruit->character.name;
         runtimeState.npcPictureOverrides[npcId] = pRecruit->npcPictureId;
         runtimeState.npcProfessionOverrides[npcId] = PlaceholderNpcProfessionId;
+        if (isReusableMercenaryRosterId(party, rosterId))
+        {
+            party.setQuestBit(400 + rosterId, false);
+        }
         party.setNpcHouseOverride(npcId, *houseId);
         return true;
     }

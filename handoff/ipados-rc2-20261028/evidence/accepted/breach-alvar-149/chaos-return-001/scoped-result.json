@@ -1,0 +1,103 @@
+{
+  "status": "ACCEPTED_SCOPED_CHAOS_SEARCH_CAPTURE_RETURN_ENDCARD",
+  "accepted_at": "2026-10-19T10:39:40.462270+00:00",
+  "reviewer": "main gpt-6-astra / xhigh",
+  "subagents": "gpt-6.1-sol / max",
+  "chapter149_complete": false,
+  "chapter148_complete": false,
+  "scope": [
+    "original BrAlvar5 source draw/gate/door-key behavior, House712 Name-only and hour/entry reset",
+    "Six real source5 world doors, five source riddle answers through SDL text+Return, normal1794/1792 capture and actual Party/event follower1092",
+    "Original OrMatt1 entity1028 event81 real pointer; full source-save transaction with normal map load, follower removal and each current member +100000XP before travel autosave",
+    "Breach source OnLoad QuestFinished/GotEndCard, Q1713–1715 clear, original winbg2 + Global676 + ENDGAME font, card close returns to gameplay",
+    "Source Breach low-Z minute reset and numeric fifth MoveToMap pitch support are wired; source-reviewed only, not a separate actual case"
+  ],
+  "functional_run": "actual-004/result.json",
+  "final_visual_and_functional_run": "actual-005/result.json",
+  "final_runtime": "controlled-runtime-004",
+  "input_save": "local-data/validation/breach-alvar-149/normal-doors-001/actual-002/complete.oysav",
+  "input_readonly_sha256": "faf8fdc46dce1de29823ae84a22c7a2d9c2450b9222eaf77c1b5f705dba81484",
+  "final_actual": {
+    "status": "passed",
+    "controlled": true,
+    "mode": "chaos",
+    "seed_sha256_before": "faf8fdc46dce1de29823ae84a22c7a2d9c2450b9222eaf77c1b5f705dba81484",
+    "seed_sha256_after": "faf8fdc46dce1de29823ae84a22c7a2d9c2450b9222eaf77c1b5f705dba81484",
+    "frames": 157,
+    "captures": 4,
+    "app_result": 0,
+    "complete": true,
+    "chaos_route": true,
+    "riddles_answered": 5,
+    "door_keys": 6,
+    "end_cards": 1,
+    "natural_campaign": false,
+    "normal_merge_admission": false,
+    "visual_review_required": true,
+    "house_door_clicks": true
+  },
+  "original_return": "(-841,-475,4501), source yaw176/2048 turns, pitch0; pointer entity1028, distance159.149",
+  "original_profession_boundary": "Plain Lua ProfNames IDs0..77, #=77, math.random(1,#-1)=1..76; native derives contiguous table size-2",
+  "content_records": [
+    "runtime-diff.json",
+    "source-import-diff.json",
+    "runtime-003-diff.json",
+    "capture-visibility-fix-003.diff",
+    "runtime-004-diff.json"
+  ],
+  "content_scope": "Global house712 name + native Type in animation, Chinese ordered/weighted NPC name pools, two controlled map programs, original winbg2, exact endgame.fnt, one Chaos CanShow filter; other original package members preserved",
+  "native_builds": [
+    "native-build-001.command.json",
+    "native-build-002.command.json",
+    "native-build-003.command.json",
+    "native-build-004.command.json"
+  ],
+  "ios_unsigned_generic_release": "ios-release-001.command.json",
+  "independent_cold": {
+    "command": "cold-001-run.command.json",
+    "input": "actual-004/completed.oysav",
+    "after": "cold-001/after-render.oysav",
+    "frames": 181,
+    "flags_and_xp_no_repeat": "save-and-cold-summary.json",
+    "bounded_field_comparisons": 76,
+    "final_asset_delta": "After cold001, only exact original endgame.fnt was added; same application/Save code, no repeat cold required"
+  },
+  "visual_review": {
+    "reviewed": [
+      "actual-004/first-riddle-input.png",
+      "actual-004/chaos-caught.png",
+      "actual-005/breach-endcard.png",
+      "actual-005/continued-gameplay.png"
+    ],
+    "observed": "Chinese full riddle prompt with editable input; caught follower/world HUD; complete original Chinese endcard wrapped without overlap; dismissal returns to the real Breach scene with all five members"
+  },
+  "fixed_product_defects": [
+    "Fresh readonly Lua CanShowTopic used a private captureOffered false; source original visibility gate plus authoritative NPC slot keeps1792 visible while execution confirmation guard remains",
+    "Runtime import omitted native ENDGAME font referenced outside YAML; actual004 functional card was textless; original font now imported through normal UI resource pipeline"
+  ],
+  "preserved_failures": {
+    "actual001": "Tool reused prior removed-actor renderer wait at frame1; removed unrelated duplicate check, no product change",
+    "actual002": "Production1792 confirmation topic hidden by wrong readonly private closure visibility",
+    "runtime002/actual003": "Packaging mistake replaced unchanged Global.lua instead of its separate overlay; invalid repair integration, original failure retained; runtime003 diff/byte checks prove actual overlay fix",
+    "actual004": "Functional flow/cold passed; independent screenshot review rejected textless endcard, source ENDGAME import fixed actual005",
+    "source_import_audit": "Initial assertion expected house_animations name-only; original native Type CCQPlaceholder is deliberately restored too; source-import-diff.json records exact fields"
+  },
+  "new_test_cases": 0,
+  "agents_built_or_ran": false,
+  "all_owned_jobs_collected": true,
+  "limitations": [
+    "Controlled map/camera/position navigation, including TopFloor teleport; not normal ascent or continuous natural campaign",
+    "Only an existing five-member split/return input; normal1–4-member reserve generation remains unsupported",
+    "All28 BrAlvar native mechanisms remain missing and no full149/148 acceptance",
+    "No physical device/simulator/iPad acceptance; generic iOS compile only",
+    "Source low-Z/hour/random-before-hint3/failure-rollback branches were reviewed, not expanded into additional live matrices"
+  ],
+  "next": "Implement source1–4-member reserve generation and atomic custody; then normal tower ascent/mechanisms before opening normal dynamic Merge admission",
+  "next_source_audit": "next-source-gaps.json",
+  "source_manifest": "accepted-source-sha256.json",
+  "normal_dynamic_merge_admission": false,
+  "default_runtime": "local-data/validation/mm7-shoals-144/runtime-001",
+  "full_game_complete": false,
+  "overall_estimate": "55–60%, low confidence, unchanged",
+  "goal_turn_classification": "progress"
+}

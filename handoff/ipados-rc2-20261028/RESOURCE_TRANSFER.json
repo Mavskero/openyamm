@@ -1,0 +1,39 @@
+{
+  "source_workspace_directory": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/releases/first-playable-20261028-rc2/assets",
+  "destination": "User-chosen private runtime directory, then iPad Files folder import",
+  "files": [
+    {
+      "path": "conversion.json",
+      "bytes": 7392,
+      "sha256": "238c74a7c998409642fb3698e15a185a67fd8cab30e2f7cb3b5808a5ea16ae42"
+    },
+    {
+      "path": "engine.zip",
+      "bytes": 703982335,
+      "sha256": "c920e6e896dbffe4b01488b9543f77053f9b5f533b5e925964c93f2e900e9a17"
+    },
+    {
+      "path": "worlds/mm6.zip",
+      "bytes": 641035786,
+      "sha256": "75fe15bf35bb0805a8f07456f0283d476a6d41fb963a4e945814791249473b5f"
+    },
+    {
+      "path": "worlds/mm7.zip",
+      "bytes": 1019770494,
+      "sha256": "f836ce251c4514e9c0503459603ab694dd2ced8952704914328609b35c5ef96a"
+    },
+    {
+      "path": "worlds/mm8.zip",
+      "bytes": 978259456,
+      "sha256": "2455c3f580e2df671a313cfb085de98924132910831ce9911fc1af4deca632f9"
+    },
+    {
+      "path": "worlds/mmmerge.zip",
+      "bytes": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e"
+    }
+  ],
+  "total_bytes": 3494497338,
+  "public_github_payload_included": false,
+  "hash_basis": "Five ZIP hashes retained from sealed RC2 VERSION.json; conversion.json hashed at handoff. No new gameplay or device validation."
+}

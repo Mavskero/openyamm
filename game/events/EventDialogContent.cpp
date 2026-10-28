@@ -1,8 +1,11 @@
 #include "game/events/EventDialogContent.h"
 
 #include "game/events/ISceneEventContext.h"
+#include "game/app/GameSession.h"
+#include "game/gameplay/OwnedMercenaryRuntime.h"
 #include "game/gameplay/HouseInteraction.h"
 #include "game/gameplay/MasteryTeacherDialog.h"
+#include "game/gameplay/MercenaryRecruitmentRuntime.h"
 #include "game/gameplay/ReputationRuntime.h"
 #include "game/StringUtils.h"
 #include "game/tables/MergedBaseTables.h"
@@ -1005,6 +1008,58 @@ EventDialogContent buildEventDialogContent(
         }
     }
 
+    if (context.kind == DialogueContextKind::NpcTalk && pWorldRuntime != nullptr && context.sourceActorIndex)
+    {
+        const auto target = pWorldRuntime->ownedMercenaryActorBinding(context.sourceId, *context.sourceActorIndex);
+        if (target)
+        {
+            // Recognition is separate from current hire eligibility. A stale/active/released binding
+            // must never fall through to generic roster recruitment and generate a substitute Character.
+            dialog.lines = eventMessageLines;
+            const GameSession *pSession = pWorldRuntime->boundGameSession();
+            if (pParty == nullptr || pSession == nullptr || !pSession->hasDataRepository()
+                || !pSession->data().breachMercenaryProfile())
+                return dialog;
+            const auto &profile = *pSession->data().breachMercenaryProfile();
+            const auto resolved = resolveOwnedMercenary(*pParty, target->binding.memberId, profile);
+            if (resolved.pCharacter)
+            {
+                dialog.title = resolved.pCharacter->name;
+                const auto *pDoll = pSession->data().characterDollTable().getCharacter(
+                    resolved.pCharacter->characterDataId);
+                if (pDoll) dialog.participantPictureId = pDoll->npcPictureId;
+            }
+            if (resolved.code != OwnedMercenaryResolutionCode::Eligible || !target->actorInteractable
+                || resolved.sourceRosterId != target->binding.sourceRosterId || resolved.npcId != context.sourceId
+                || target->profileVersion != profile.version || target->canonicalMapKey != profile.canonicalMapKey
+                || target->sourceSha256 != profile.sourceSha256)
+                return dialog;
+            const EventRuntimeState::OwnedMercenaryJoinOffer expected{
+                target->binding, resolved.owner, target->canonicalMapKey, target->profileVersion,
+                target->sourceSha256, target->sceneGeneration, target->sourceActorIndex};
+            const auto addAction = [&](EventDialogActionKind kind, const std::string &label)
+            {
+                EventDialogAction action;
+                action.kind = kind;
+                action.id = context.sourceId;
+                action.label = label;
+                dialog.actions.push_back(std::move(action));
+            };
+            if (eventRuntimeState.dialogueState.ownedMercenaryOffer == expected)
+            {
+                addAction(EventDialogActionKind::OwnedMercenaryJoinAccept, profile.yesText);
+                addAction(EventDialogActionKind::OwnedMercenaryJoinDecline, profile.noText);
+            }
+            else
+            {
+                eventRuntimeState.dialogueState.ownedMercenaryOffer.reset();
+                const auto topic = pSession->data().npcDialogTable().getTopicById(profile.joinTopicId);
+                if (topic) addAction(EventDialogActionKind::OwnedMercenaryJoinOffer, topic->topic);
+            }
+            return dialog;
+        }
+    }
+
     if (context.kind == DialogueContextKind::MapEvent)
     {
         dialog.participantPictureId = context.participantPictureId;
@@ -1292,10 +1347,20 @@ EventDialogContent buildEventDialogContent(
         const std::optional<NpcEntry> npcEntry =
             runtimeNpcEntryIfExists(pNpcDialogTable, npcRuntimeState, dialog.sourceId);
         const NpcEntry *pNpc = npcEntry ? &*npcEntry : nullptr;
+        const bool reusableMercenaryNpc = pParty != nullptr && isReusableMercenaryNpcId(*pParty, dialog.sourceId);
+        const bool hasGeneratedMercenaryCandidate =
+            npcRuntimeState.generatedMercenaryRecruitsByNpcId.contains(dialog.sourceId);
+        const bool availableGeneratedMercenary = pParty != nullptr
+            && isAvailableGeneratedMercenaryRecruit(*pParty, npcRuntimeState, dialog.sourceId);
         const bool hasPendingRosterJoinInvite =
             pCurrentOffer != nullptr
             && pCurrentOffer->kind == DialogueOfferKind::RosterJoin
-            && pCurrentOffer->npcId == dialog.sourceId;
+            && pCurrentOffer->npcId == dialog.sourceId
+            && ((!reusableMercenaryNpc && !hasGeneratedMercenaryCandidate
+                    && !isGeneratedMercenaryNpcId(dialog.sourceId)
+                    && (pParty == nullptr || !isReusableMercenaryRosterId(*pParty, pCurrentOffer->rosterId)))
+                || (availableGeneratedMercenary && pCurrentOffer->rosterId
+                    == npcRuntimeState.generatedMercenaryRecruitsByNpcId.at(dialog.sourceId).rosterId));
         const bool hasPendingMasteryTeacherOffer =
             pCurrentOffer != nullptr
             && pCurrentOffer->kind == DialogueOfferKind::MasteryTeacher
@@ -1452,11 +1517,7 @@ EventDialogContent buildEventDialogContent(
             }
             else
             {
-                const bool isGeneratedMercenary =
-                    npcRuntimeState.generatedMercenaryRecruitsByNpcId.contains(dialog.sourceId)
-                    && !npcRuntimeState.unavailableNpcIds.contains(dialog.sourceId);
-
-                if (isGeneratedMercenary)
+                if (availableGeneratedMercenary)
                 {
                     EventDialogAction joinAction = {};
                     joinAction.kind = EventDialogActionKind::GeneratedMercenaryJoinOffer;
@@ -1484,6 +1545,17 @@ EventDialogContent buildEventDialogContent(
                     if (topic.topic.empty())
                     {
                         continue;
+                    }
+
+                    if (topic.specialKind == NpcTopicEntry::SpecialKind::RosterJoinOffer)
+                    {
+                        const auto offer = pNpcDialogTable->getRosterJoinOfferForTopic(topic.id);
+                        if (reusableMercenaryNpc || hasGeneratedMercenaryCandidate
+                            || (pParty != nullptr && offer
+                                && isReusableMercenaryRosterId(*pParty, offer->rosterId)))
+                        {
+                            continue;
+                        }
                     }
 
                     if (suppressProfessionTopicForHireableNpc

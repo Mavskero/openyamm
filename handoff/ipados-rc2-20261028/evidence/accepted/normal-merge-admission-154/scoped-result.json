@@ -1,0 +1,133 @@
+{
+  "schema": "openyamm.normal-merge-admission154.v1",
+  "status": "ACCEPTED_SCOPED_ORDINARY_SOURCE_PORTAL_SPLIT_COLD_AND_DEFAULT_ENTRY",
+  "accepted_at_utc": "2026-10-19T14:40:53.603744+00:00",
+  "team_model": "gpt-6.1-sol",
+  "team_reasoning": "max",
+  "main_owns_builds_and_integration": true,
+  "source_manifest": "source-manifest-005.json",
+  "frozen_repo_files": 31,
+  "normal_source_maps": [
+    "breach.odm",
+    "bralvar.odm",
+    "brbase.blv"
+  ],
+  "source_projection": "Exactly the authenticated original scripts/profiles; arbitrary Merge Lua/maps remain unsupported.",
+  "source_packaging": "source-packaging-implementation.json",
+  "runtime": {
+    "path": "runtime-001",
+    "diff": "runtime-diff.json",
+    "engine_member_changes": 0,
+    "ordinary_three_world_packages": "same original files; unchanged",
+    "mmmerge_changed_members": [
+      "events/maps/bralvar.lua",
+      "events/maps/brbase.lua (comment only)",
+      "maps/bralvar.mechanisms.yml"
+    ],
+    "default_entry": "development-entry-change.json",
+    "launcher_check": "development-entry-check-001.command.json",
+    "previous144_preserved": true,
+    "original_inputs_and_normal132_provenance": "unchanged"
+  },
+  "product_changes": [
+    "Original BrAlvar60-game-second ControlTimer flying spell/summon and EnteredBreach radial displacement; boundary source nudge+Jump; Q1715 and exact3-decoration hide. No uncalledNoFly timer or duplicate friend maintenance.",
+    "Generic source Party coordinate setter preserves pending jump/flight/motion; raw Flying query distinct from airborne.",
+    "Generic mechanisms companion runtime_restrictions routes native Lloyd rejection and permanent DimensionDoor TownPortal behavior without hardcoded map branches.",
+    "Indexed DDM visibility synchronizes render/pick/Party+actor collisions/minimap and source legacy SetSprite writes in source order, retaining texture overrides.",
+    "Save100 appends outdoor decorationFlags; <=99 source baseline/legacy sprite visibility explicitly reconstruct, including reused same-map assets. No new event RNG/motion layout change.",
+    "Actual first entry exposed an early publication bug: Q1715 portraitFX was pending before first UI render. Generic mapAfterLoad now consumes normal FX/audio before the existing atomic transaction; source effects, AI and all admission/idle checks retained."
+  ],
+  "actual": {
+    "record": "actual-004/result.json",
+    "normal_ai": true,
+    "frames": 42,
+    "simulation_seconds": 0.5500000286847353,
+    "captures": 2,
+    "real_source_hook65491": true,
+    "ordinary_app_map_load_and_onload": true,
+    "source_no_mana_or_recovery_cost": true,
+    "active_before_after": [
+      5,
+      1
+    ],
+    "original_detached": 4,
+    "original_member_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "leader_id": 1,
+    "friend_actor_id": 283,
+    "source_receipt_random_draw_count": 1,
+    "companion_npc_assignments": {
+      "772": 4,
+      "773": 2,
+      "774": 3,
+      "775": 5
+    },
+    "qbits1713_1714_1715": true,
+    "source_journey_version": 1,
+    "hidden_indices": [
+      381,
+      676,
+      792
+    ],
+    "unchanged_shared_key10_indices": [
+      10,
+      146,
+      382,
+      829
+    ],
+    "timer_event": 65457,
+    "timer_interval_game_minutes": 1,
+    "no_natural_vital_changes": true,
+    "input_sha256": "0dff828a879409906587bfdffb93b3996760186342b3a7faefd286dfe9ce8cf3"
+  },
+  "cold": {
+    "record": "cold-001/result.json",
+    "frames": 40,
+    "normal_seconds": 0.5000000260770321,
+    "captures": 2,
+    "independent_process": true,
+    "pose_event_rng_receipt_actor_identity_custody": "exactly restored",
+    "all1029_decoration_flags": "exact",
+    "three_time_models_in_flight_states": "exact",
+    "control_timer_persistent_progress": "exact; transient native poll time excluded",
+    "no_onload_split_replay": true,
+    "no_fixture_writes": true,
+    "no_natural_vital_changes": true
+  },
+  "independent_inspection": "independent-save-boundary-001.json",
+  "visual_review": "visual-review-001.json",
+  "builds": {
+    "native": "native-build-005.command.json (core), native-build-004 (tool)",
+    "unsigned_generic_ios_release_arm64": "ios-release-001.command.json"
+  },
+  "fixtures": {
+    "natural_campaign": false,
+    "upstream_quest": "GotFinalQuest1 and Q1713, not naturally earned",
+    "caster": "Original member2 learns31, Water10Grandmaster; native canCast/known/mastery still used. HP/SP/items/XP/RNG/AI unchanged.",
+    "position": "One supported source out02 XY15103,-9759 with actual rendered terrain support. Arrival uses source0 transform/default map placement.",
+    "direct_event_replay_or_manual_split": false
+  },
+  "retained_failures": {
+    "actual001": "Driver pose sampler mismatch before any cast; classification retained",
+    "actual002_003": "Real early publication product defect and trace-only diagnostic repeat; fixed in one repair attempt, no source workaround"
+  },
+  "new_unit_cases": 0,
+  "broad_suite_or203_map_replay": false,
+  "no_physical_device_or_simulator": true,
+  "limitations": [
+    "This is an actual normal engine entry with declared upstream/caster/pose fixtures, not a naturally earned full campaign.",
+    "ControlTimer flight/center branches and boundary bounce are source-grounded and compiled; this short entry did not fire them or replay every branch.",
+    "Same-process<=99 baseline reset and legacy-group/index last-write coexistence were code-reviewed/compiled, not expanded into a new matrix.",
+    "No fresh all203/206-map load sweep; ordinaryworld bytes retained, exactly3 native maps reimported.",
+    "Post-completion Breach content, deeper population and several BrAlvar secondary events remain unfinished."
+  ],
+  "next": "next-source-work.json",
+  "full_game_complete": false,
+  "engineering_estimate": "55–60%, low confidence; unchanged",
+  "owned_jobs": []
+}

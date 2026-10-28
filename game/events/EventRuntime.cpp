@@ -2833,7 +2833,8 @@ void EventRuntime::setVariableValue(
     Party *pParty,
     const std::vector<size_t> &targetMemberIndices,
     const ISceneEventContext *pSceneEventContext,
-    PortraitFxAction action
+    PortraitFxAction action,
+    Party::ClassChangeMode classChangeMode
 )
 {
     const EvtVariable variableId = static_cast<EvtVariable>(variable.tag);
@@ -2993,7 +2994,7 @@ void EventRuntime::setVariableValue(
                 continue;
             }
 
-            if (pParty->setMemberClassName(memberIndex, *className))
+            if (pParty->setMemberClassName(memberIndex, *className, classChangeMode))
             {
                 changedMemberIndices.push_back(memberIndex);
             }
@@ -3611,7 +3612,8 @@ void EventRuntime::addVariableValue(
     int32_t value,
     Party *pParty,
     const std::vector<size_t> &targetMemberIndices,
-    const ISceneEventContext *pSceneEventContext
+    const ISceneEventContext *pSceneEventContext,
+    Party::ClassChangeMode classChangeMode
 )
 {
     const EvtVariable variableId = static_cast<EvtVariable>(variable.tag);
@@ -3766,7 +3768,7 @@ void EventRuntime::addVariableValue(
     if (variable.kind == VariableKind::ClassId)
     {
         setVariableValue(runtimeState, variable, value, pParty, targetMemberIndices, pSceneEventContext,
-            PortraitFxAction::Add);
+            PortraitFxAction::Add, classChangeMode);
         return;
     }
 
@@ -4745,11 +4747,16 @@ void captureLuaDialogueContext(LuaExecutionContext &context, const EventRuntimeS
 
 struct LuaSessionCache
 {
+    explicit LuaSessionCache(Party::ClassChangeMode mode) : classChangeMode(mode)
+    {
+    }
+
     Engine::LuaStateOwner lua;
     std::optional<std::string> lastError;
     LuaScopeProgram localScope;
     LuaScopeProgram globalScope;
     LuaExecutionContext *pExecutionContext = nullptr;
+    const Party::ClassChangeMode classChangeMode;
 };
 
 namespace
@@ -5220,6 +5227,35 @@ int luaSetPartyPosition(lua_State *pLuaState)
     return 1;
 }
 
+int luaGetMapActorCount(lua_State *pLuaState)
+{
+    const ISceneEventContext *pScene = readonlySceneEventContext(executionContextFromLua(pLuaState));
+    const IGameplayWorldRuntime *pWorld = dynamic_cast<const IGameplayWorldRuntime *>(pScene);
+    lua_pushinteger(pLuaState, pWorld != nullptr ? lua_Integer(pWorld->mapActorCount()) : 0);
+    return 1;
+}
+
+int luaSetMapMonsterAiType(lua_State *pLuaState)
+{
+    const lua_Integer monsterId = luaL_checkinteger(pLuaState, 1);
+    const lua_Integer aiType = luaL_checkinteger(pLuaState, 2);
+    if (monsterId <= 0 || monsterId > std::numeric_limits<uint32_t>::max())
+    {
+        return luaL_argerror(pLuaState, 1, "monster ID must be a positive uint32");
+    }
+    if (aiType < 0 || aiType > 3)
+    {
+        return luaL_argerror(pLuaState, 2, "monster AI type must be in [0, 3]");
+    }
+
+    const LuaExecutionContext *pContext = executionContextFromLua(pLuaState);
+    ISceneEventContext *pScene = pContext != nullptr && !pContext->readonly
+        ? pContext->pSceneEventContext : nullptr;
+    lua_pushboolean(pLuaState, pScene != nullptr
+        && pScene->setMapMonsterAiType(uint32_t(monsterId), uint32_t(aiType)));
+    return 1;
+}
+
 int luaGetEnemyDetectorState(lua_State *pLuaState)
 {
     const LuaExecutionContext *pExecutionContext = executionContextFromLua(pLuaState);
@@ -5438,6 +5474,16 @@ int luaRequestBreachAlvarSplit(lua_State *pLuaState)
         queued = queueBreachAlvarRequest(*pState, request);
     }
     lua_pushboolean(pLuaState, queued);
+    return 1;
+}
+
+int luaIsBreachAlvarPrinceOutsideHouse705(lua_State *pLuaState)
+{
+    const GameSession *pSession = breachAlvarLuaSession(pLuaState);
+    const std::optional<bool> outside = pSession != nullptr
+        ? pSession->breachAlvarPrinceOutsideHouse705() : std::nullopt;
+    if (!outside) return luaL_error(pLuaState, "BrAlvar Prince query requires its authenticated live source state");
+    lua_pushboolean(pLuaState, *outside);
     return 1;
 }
 
@@ -6019,6 +6065,44 @@ int luaHasSavedLocation(lua_State *pLuaState)
     return 1;
 }
 
+int luaMoveToSessionLocation(lua_State *pLuaState)
+{
+    const std::string name = luaL_checkstring(pLuaState, 1);
+    const bool clearAfterUse = lua_gettop(pLuaState) >= 2 && luaEventBoolean(pLuaState, 2);
+    const int32_t direction = static_cast<int32_t>(luaL_optinteger(pLuaState, 3, 0));
+    const int32_t lookAngle = static_cast<int32_t>(luaL_optinteger(pLuaState, 4, 0));
+    LuaExecutionContext *pContext = executionContextFromLua(pLuaState);
+    EventRuntimeState *pState = writableRuntimeState(pLuaState);
+    IGameplayWorldRuntime *pWorld = pContext != nullptr
+        ? dynamic_cast<IGameplayWorldRuntime *>(pContext->pSceneEventContext) : nullptr;
+    GameSession *pSession = pWorld != nullptr ? pWorld->boundGameSession() : nullptr;
+    if (pState == nullptr || pSession == nullptr || pSession->activeWorldRuntime() != pWorld
+        || pWorld->eventRuntimeState() != pState)
+    {
+        lua_pushboolean(pLuaState, false);
+        return 1;
+    }
+
+    const auto location = pSession->sessionSavedLocations().find(name);
+    if (location == pSession->sessionSavedLocations().end() || location->second.mapName.empty())
+    {
+        lua_pushboolean(pLuaState, false);
+        return 1;
+    }
+
+    EventRuntimeState::PendingMapMove move = {};
+    move.mapName = location->second.mapName;
+    move.x = location->second.x;
+    move.y = location->second.y;
+    move.z = location->second.z;
+    move.directionDegrees = direction;
+    move.lookAngleDegrees = lookAngle;
+    if (clearAfterUse) move.clearSessionLocation = name;
+    pState->pendingMapMove = std::move(move);
+    lua_pushboolean(pLuaState, true);
+    return 1;
+}
+
 int luaMoveToSavedLocation(lua_State *pLuaState)
 {
     EventRuntimeState *pRuntimeState = writableRuntimeState(pLuaState);
@@ -6572,6 +6656,18 @@ int luaApplyLichTransformation(lua_State *pLuaState)
     return 1;
 }
 
+int luaApplyMergedLichAppearance(lua_State *pLuaState)
+{
+    Party *pParty = writableParty(pLuaState);
+
+    if (pParty != nullptr)
+    {
+        pParty->applyMergedLichAppearance();
+    }
+
+    return 0;
+}
+
 std::optional<EquipmentSlot> equipmentSlotFromLua(lua_State *pLuaState, int index)
 {
     if (lua_isnoneornil(pLuaState, index))
@@ -7048,7 +7144,7 @@ int luaRestartCampaignPreservingParty(lua_State *pLuaState)
     GameSession *pSession = pWorld != nullptr ? pWorld->boundGameSession() : nullptr;
     const std::string mapName = toLowerCopy(luaL_checkstring(pLuaState, 1));
     bool queued = pState != nullptr && pParty != nullptr && pSession != nullptr
-        && pSession->partyState() && &*pSession->partyState() == pParty && !pParty->members().empty()
+        && pWorld->party() == pParty && !pParty->members().empty()
         && pSession->activeWorldRuntime() == pWorld && pSession->hasDataRepository()
         && !pState->pendingMapMove && !pState->pendingMovie && !pState->pendingWinGame
         && !pState->pendingReturnToMainMenu && !pState->pendingDelayedMapMove
@@ -8203,6 +8299,23 @@ int luaSetPlayerClass(lua_State *pLuaState)
     return 1;
 }
 
+int luaAssignPlayerClass(lua_State *pLuaState)
+{
+    Party *pParty = writableParty(pLuaState);
+    const std::optional<size_t> memberIndex = luaMemberIndexArgument(pLuaState, 1);
+    const std::optional<std::string> className = luaClassNameArgument(pLuaState, 2);
+
+    if (pParty == nullptr || !memberIndex || !className)
+    {
+        lua_pushboolean(pLuaState, 0);
+        return 1;
+    }
+
+    lua_pushboolean(pLuaState,
+        pParty->setMemberClassName(*memberIndex, *className, Party::ClassChangeMode::AssignmentOnly) ? 1 : 0);
+    return 1;
+}
+
 int luaGetClassSkillCap(lua_State *pLuaState)
 {
     const Party *pParty = readableParty(pLuaState);
@@ -8666,6 +8779,7 @@ int luaAdd(lua_State *pLuaState)
 {
     EventRuntimeState *pRuntimeState = writableRuntimeState(pLuaState);
     const LuaExecutionContext *pExecutionContext = executionContextFromLua(pLuaState);
+    const LuaSessionCache *pSession = luaSessionFromLua(pLuaState);
     bool failed = false;
     try
     {
@@ -8675,7 +8789,8 @@ int luaAdd(lua_State *pLuaState)
             static_cast<int32_t>(luaL_checkinteger(pLuaState, 2)),
             writableParty(pLuaState),
             selectedTargetMemberIndices(pLuaState),
-            readonlySceneEventContext(pExecutionContext));
+            readonlySceneEventContext(pExecutionContext),
+            pSession != nullptr ? pSession->classChangeMode : Party::ClassChangeMode::ApplyClassEffects);
     }
     catch (const std::runtime_error &error)
     {
@@ -8701,6 +8816,7 @@ int luaSet(lua_State *pLuaState)
 {
     EventRuntimeState *pRuntimeState = writableRuntimeState(pLuaState);
     const LuaExecutionContext *pExecutionContext = executionContextFromLua(pLuaState);
+    const LuaSessionCache *pSession = luaSessionFromLua(pLuaState);
     bool failed = false;
     try
     {
@@ -8710,7 +8826,9 @@ int luaSet(lua_State *pLuaState)
             static_cast<int32_t>(luaL_checkinteger(pLuaState, 2)),
             writableParty(pLuaState),
             selectedTargetMemberIndices(pLuaState),
-            readonlySceneEventContext(pExecutionContext));
+            readonlySceneEventContext(pExecutionContext),
+            PortraitFxAction::Set,
+            pSession != nullptr ? pSession->classChangeMode : Party::ClassChangeMode::ApplyClassEffects);
     }
     catch (const std::runtime_error &error)
     {
@@ -9472,6 +9590,9 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "RequestBreachAlvarSplit", luaRequestBreachAlvarSplit);
     registerLuaFunction(pLuaState, "RequestBreachAlvarCompanionReturn", luaRequestBreachAlvarCompanionReturn);
     registerLuaFunction(pLuaState, "IsBreachAlvarCompanionAvailable", luaIsBreachAlvarCompanionAvailable);
+    registerLuaFunction(pLuaState, "IsBreachAlvarPrinceOutsideHouse705", luaIsBreachAlvarPrinceOutsideHouse705);
+    registerLuaFunction(pLuaState, "GetMapActorCount", luaGetMapActorCount);
+    registerLuaFunction(pLuaState, "SetMapMonsterAiType", luaSetMapMonsterAiType);
     registerLuaFunction(pLuaState, "RequestBreachMazeTransition", luaRequestBreachMazeTransition);
     registerLuaFunction(pLuaState, "RequestBreachAlvarChaosAction", luaRequestBreachAlvarChaosAction);
     registerLuaFunction(pLuaState, "ClearBreachAlvarChaosDoorKeys", luaClearBreachAlvarChaosDoorKeys);
@@ -9487,6 +9608,7 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "SaveCurrentLocation", luaSaveCurrentLocation);
     registerLuaFunction(pLuaState, "HasSavedLocation", luaHasSavedLocation);
     registerLuaFunction(pLuaState, "MoveToSavedLocation", luaMoveToSavedLocation);
+    registerLuaFunction(pLuaState, "MoveToSessionLocation", luaMoveToSessionLocation);
     registerLuaFunction(pLuaState, "ClearSavedLocation", luaClearSavedLocation);
     registerLuaFunction(pLuaState, "SetTransportRouteOverride", luaSetTransportRouteOverride);
     registerLuaFunction(pLuaState, "ClearTransportRouteOverride", luaClearTransportRouteOverride);
@@ -9511,6 +9633,7 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "PartyMemberKnowsSpell", luaPartyMemberKnowsSpell);
     registerLuaFunction(pLuaState, "RemovePartyMemberItem", luaRemovePartyMemberItem);
     registerLuaFunction(pLuaState, "ApplyLichTransformation", luaApplyLichTransformation);
+    registerLuaFunction(pLuaState, "ApplyMergedLichAppearance", luaApplyMergedLichAppearance);
     registerLuaFunction(pLuaState, "PartyMemberHasEquippedItem", luaPartyMemberHasEquippedItem);
     registerLuaFunction(pLuaState, "GetHookContext", luaGetHookContext);
     registerLuaFunction(pLuaState, "SetHookBlocked", luaSetHookBlocked);
@@ -9625,6 +9748,7 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "GetPlayerClassName", luaGetPlayerClassName);
     registerLuaFunction(pLuaState, "GetPlayerName", luaGetPlayerName);
     registerLuaFunction(pLuaState, "SetPlayerClass", luaSetPlayerClass);
+    registerLuaFunction(pLuaState, "AssignPlayerClass", luaAssignPlayerClass);
     registerLuaFunction(pLuaState, "GetClassSkillCap", luaGetClassSkillCap);
     registerLuaFunction(pLuaState, "CanClassLearnSkill", luaCanClassLearnSkill);
     registerLuaFunction(pLuaState, "CanPlayerLearnSkill", luaCanPlayerLearnSkill);
@@ -9871,7 +9995,9 @@ bool ensureLuaSession(
     eventRuntime.m_cachedLocalProgramCacheId = 0;
     eventRuntime.m_cachedGlobalProgramCacheId = 0;
 
-    auto session = std::make_unique<LuaSessionCache>();
+    const Party::ClassChangeMode classChangeMode = globalProgram && globalProgram->sourceManagedLichEffects()
+        ? Party::ClassChangeMode::AssignmentOnly : Party::ClassChangeMode::ApplyClassEffects;
+    auto session = std::make_unique<LuaSessionCache>(classChangeMode);
 
     if (!session->lua.isValid())
     {

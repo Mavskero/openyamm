@@ -160,6 +160,13 @@ public:
         return false;
     }
 
+    virtual bool setMapMonsterAiType(uint32_t monsterId, uint32_t aiType)
+    {
+        (void)monsterId;
+        (void)aiType;
+        return false;
+    }
+
     virtual bool isMapActorHostile(size_t actorIndex) const
     {
         (void)actorIndex;

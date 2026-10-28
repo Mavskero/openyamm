@@ -51,6 +51,7 @@ class StandardItemEnchantTable;
 class SpecialItemEnchantTable;
 struct HouseEntry;
 struct ItemDefinition;
+struct MercenaryReleaseProfile;
 
 class GameplayScreenRuntime
 {
@@ -191,6 +192,10 @@ public:
     bool isAdventurersInnCharacterSourceActive() const;
     bool isAdventurersInnScreenActive() const;
     bool isReadOnlyAdventurersInnCharacterViewActive() const;
+    const MercenaryReleaseProfile *mercenaryReleaseProfile() const;
+    std::optional<OwnedMercenaryIdentity> selectedAdventurersInnReleaseIdentity() const;
+    bool releaseAdventurersInnMember(const OwnedMercenaryIdentity &identity);
+    void clearAdventurersInnReleaseConfirmation();
     bool activeMemberKnowsSpell(uint32_t spellId) const;
     bool activeMemberHasSpellbookSchool(GameplayUiController::SpellbookSchool school) const;
     void setStatusBarEvent(

@@ -145,7 +145,8 @@ public:
     bool hasPainReflection(const GameplayActorSpellEffectState &state) const;
     GameplayActorTargetPolicyResult resolveActorTargetPolicy(
         const GameplayActorTargetPolicyState &actor,
-        const GameplayActorTargetPolicyState &target) const;
+        const GameplayActorTargetPolicyState &target,
+        std::optional<int32_t> factionRelationOverride = std::nullopt) const;
 
     bool clearSpellEffects(
         GameplayActorSpellEffectState &state,

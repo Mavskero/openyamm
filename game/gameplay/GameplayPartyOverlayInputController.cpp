@@ -2,6 +2,7 @@
 #include "game/gameplay/GameplayPartyOverlayInputController.h"
 
 #include "game/debug/GameplayDebugTrace.h"
+#include "game/content/MercenaryReleaseProfile.h"
 #include "game/tables/CharacterDollTable.h"
 #include "game/gameplay/GameMechanics.h"
 #include "game/gameplay/GameplayInputFrame.h"
@@ -1405,6 +1406,14 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
         clearPendingCharacterDismiss();
     }
 
+    if (context.interactionState().pendingAdventurersInnRelease
+        && (nowTicks >= context.interactionState().pendingAdventurersInnReleaseExpiresTicks
+            || context.selectedAdventurersInnReleaseIdentity()
+                != context.interactionState().pendingAdventurersInnRelease))
+    {
+        context.clearAdventurersInnReleaseConfirmation();
+    }
+
     const CharacterDollTable *pCharacterDollTable = context.characterDollTable();
     const CharacterDollEntry *pActiveCharacterDollEntry =
         resolveCharacterDollEntry(pCharacterDollTable, pActiveCharacter);
@@ -1443,6 +1452,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             context.characterScreen().dollJewelryOverlayOpen = false;
             context.characterScreen().adventurersInnRosterOverlayOpen = false;
             clearPendingCharacterDismiss();
+            context.clearAdventurersInnReleaseConfirmation();
             latchGameplayMenuEscape(context);
             context.interactionState().closeOverlayLatch = true;
         }
@@ -1456,6 +1466,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
     if (charCycleNewlyPressed)
     {
+        context.clearAdventurersInnReleaseConfirmation();
         if (pParty != nullptr && !pParty->members().empty())
         {
             const size_t nextMemberIndex = (selectedPartyMemberIndex + 1) % pParty->members().size();
@@ -1563,6 +1574,18 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                     target = resolveButtonTarget(
                         "AdventurersInnHireButton",
                         GameplayCharacterPointerTargetType::AdventurersInnHireButton);
+
+                    if (target.type != GameplayCharacterPointerTargetType::None)
+                    {
+                        return target;
+                    }
+                }
+
+                if (context.selectedAdventurersInnReleaseIdentity())
+                {
+                    target = resolveButtonTarget(
+                        "AdventurersInnDismissButton",
+                        GameplayCharacterPointerTargetType::AdventurersInnDismissButton);
 
                     if (target.type != GameplayCharacterPointerTargetType::None)
                     {
@@ -2189,6 +2212,12 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
     const GameplayCharacterPointerTarget noneCharacterTarget = {};
     const GameplayCharacterPointerTarget hoveredCharacterTarget = findCharacterPointerTarget(mouseX, mouseY);
 
+    if (input.leftMouseButton.pressed
+        && hoveredCharacterTarget.type != GameplayCharacterPointerTargetType::AdventurersInnDismissButton)
+    {
+        context.clearAdventurersInnReleaseConfirmation();
+    }
+
     if (pParty != nullptr)
     {
         context.itemService().updateReadableScrollOverlayForHeldItem(
@@ -2302,6 +2331,11 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             if (target.type != GameplayCharacterPointerTargetType::DismissButton)
             {
                 clearPendingCharacterDismiss();
+            }
+
+            if (target.type != GameplayCharacterPointerTargetType::AdventurersInnDismissButton)
+            {
+                context.clearAdventurersInnReleaseConfirmation();
             }
 
             if (isInventorySpellTargetMode)
@@ -2510,6 +2544,69 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                         pParty->lastStatus().empty() ? "Can't hire adventurer." : pParty->lastStatus());
                 }
 
+                return;
+            }
+
+            if (target.type == GameplayCharacterPointerTargetType::AdventurersInnDismissButton)
+            {
+                const MercenaryReleaseProfile *pProfile = context.mercenaryReleaseProfile();
+                const std::optional<OwnedMercenaryIdentity> identity =
+                    context.selectedAdventurersInnReleaseIdentity();
+                if (pProfile == nullptr || !identity || pParty == nullptr)
+                {
+                    context.clearAdventurersInnReleaseConfirmation();
+                    return;
+                }
+
+                const SoundId rejectionSound = static_cast<SoundId>(pProfile->rejectionSoundId);
+                if (sourceMercenaryReleaseProtected(*pProfile, identity->sourceRosterId, pParty->snapshot().questBits))
+                {
+                    context.clearAdventurersInnReleaseConfirmation();
+                    context.playCommonUiSound(rejectionSound);
+                    return;
+                }
+
+                const uint64_t clickTicks = SDL_GetTicks();
+                const bool confirmed = context.interactionState().pendingAdventurersInnRelease == identity
+                    && clickTicks < context.interactionState().pendingAdventurersInnReleaseExpiresTicks;
+                if (!confirmed)
+                {
+                    context.interactionState().pendingAdventurersInnRelease = identity;
+                    context.interactionState().pendingAdventurersInnReleaseExpiresTicks =
+                        clickTicks + pProfile->confirmationWindowMilliseconds;
+                    context.setStatusBarEvent(
+                        pProfile->confirmationText, float(pProfile->confirmationWindowMilliseconds) / 1000.0f);
+                    context.playCommonUiSound(static_cast<SoundId>(pProfile->confirmationSoundId));
+                    return;
+                }
+
+                const size_t previousInnIndex = context.characterScreenReadOnly().sourceIndex;
+                context.clearAdventurersInnReleaseConfirmation();
+                if (!context.releaseAdventurersInnMember(*identity))
+                {
+                    context.playCommonUiSound(rejectionSound);
+                    return;
+                }
+
+                const Party *pUpdatedParty = context.partyReadOnly();
+                const size_t innCount = pUpdatedParty != nullptr ? pUpdatedParty->adventurersInnMembers().size() : 0;
+                context.characterScreen().dollJewelryOverlayOpen = false;
+                if (innCount == 0)
+                {
+                    context.characterScreen().open = false;
+                    context.characterScreen().adventurersInnRosterOverlayOpen = false;
+                    context.characterScreen().sourceIndex = 0;
+                    context.characterScreen().adventurersInnScrollOffset = 0;
+                }
+                else
+                {
+                    context.characterScreen().sourceIndex = std::min(previousInnIndex, innCount - 1);
+                    const size_t maximumScrollOffset =
+                        innCount > AdventurersInnVisibleCount ? innCount - AdventurersInnVisibleCount : 0;
+                    context.characterScreen().adventurersInnScrollOffset = std::min(
+                        context.characterScreenReadOnly().adventurersInnScrollOffset, maximumScrollOffset);
+                    context.characterScreen().adventurersInnRosterOverlayOpen = true;
+                }
                 return;
             }
 
@@ -2988,6 +3085,10 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
     {
         const GameplayCharacterPointerTarget dragStartTarget =
             findCharacterPointerTarget(input.mobileTouchDragStartX, input.mobileTouchDragStartY);
+        if (dragStartTarget.type != GameplayCharacterPointerTargetType::AdventurersInnDismissButton)
+        {
+            context.clearAdventurersInnReleaseConfirmation();
+        }
         const bool startsWithHeldItem = context.heldInventoryItem().active;
         const bool startsOnMovableItem =
             dragStartTarget.type == GameplayCharacterPointerTargetType::InventoryItem

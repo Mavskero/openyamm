@@ -63,6 +63,13 @@ struct GameplayUiFramePerformanceDiagnostics
     GameplayUiOverlayFramePerformanceDiagnostics overlays = {};
 };
 
+struct OwnedMercenarySessionResult
+{
+    enum class Code { Committed, Full, Rejected, Unsafe };
+    Code code = Code::Rejected;
+    std::string error;
+};
+
 struct BreachAlvarSessionResult
 {
     enum class Code
@@ -177,6 +184,10 @@ public:
     std::unordered_map<std::string, IndoorSceneRuntime::Snapshot> &indoorSceneStates();
     void storeIndoorSceneState(const std::string &mapFileName, const IndoorSceneRuntime::Snapshot &snapshot);
 
+    const std::unordered_map<std::string, EventRuntimeState::SavedLocation> &sessionSavedLocations() const;
+    void setSessionSavedLocation(const std::string &name, EventRuntimeState::SavedLocation location);
+    void clearSessionSavedLocation(const std::string &name);
+
     const std::unordered_map<std::string, int32_t> &namedGlobalVars() const;
     int32_t namedGlobalVar(const std::string &name, int32_t defaultValue = 0) const;
     void setNamedGlobalVar(const std::string &name, int32_t value);
@@ -186,11 +197,16 @@ public:
     void setBreachMazeRunData(std::optional<BreachMazeRunData> data);
     // Read-only projection query; deliberately valid outside a current NPC dialogue.
     bool isBreachAlvarCompanionAvailable(uint32_t npcId) const;
+    std::optional<bool> breachAlvarPrinceOutsideHouse705() const;
     // Call after initialize/restore and before the world clock advances. Does not open map admission.
     bool bindBreachAlvarCompanionRuntime(std::string &error);
     // Called only after the Lua/world/UI event stack has returned to a synchronous safe point.
     BreachAlvarSessionResult processBreachAlvarCompanionRequest(
         const EventRuntimeState::PendingBreachAlvarCompanionRequest &request);
+    bool bindBreachMercenaryRuntime(bool coldLoad, std::string &error);
+    bool releaseAdventurersInnMember(uint64_t memberId, uint32_t sourceRosterId, std::string &error);
+    OwnedMercenarySessionResult processOwnedMercenaryJoinRequest(
+        const EventRuntimeState::OwnedMercenaryJoinOffer &request);
     void mergeNamedGlobalVarsFromRuntime(const EventRuntimeState &runtimeState);
     void applyNamedGlobalVarsToRuntime(EventRuntimeState &runtimeState) const;
     void applyHistoryToRuntime(EventRuntimeState &runtimeState) const;
@@ -338,6 +354,7 @@ private:
     std::optional<IndoorSceneRuntime::Snapshot> m_currentIndoorSceneState;
     std::unordered_map<std::string, IndoorSceneRuntime::Snapshot> m_indoorSceneStates;
     std::unordered_map<std::string, int32_t> m_namedGlobalVars;
+    std::unordered_map<std::string, EventRuntimeState::SavedLocation> m_sessionSavedLocations;
     std::optional<BreachAlvarCompanionState> m_breachAlvarCompanions;
     std::optional<BreachMazeRunData> m_breachMazeRunData;
     std::unordered_map<uint32_t, std::unordered_map<uint32_t, int32_t>> m_historyEventTimesByContinent;

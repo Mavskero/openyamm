@@ -1,0 +1,78 @@
+{
+  "checkpoint": 168,
+  "status": "ACCEPTED_SCOPED_ACTUAL_FIRST_CANNON_COMPLETION",
+  "completed_at": "2026-10-27T16:05:38.637026+00:00",
+  "goal": {
+    "active": true,
+    "full_game_complete": false,
+    "engineering_estimate": "55-60%, low confidence; not quest coverage"
+  },
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh; both frozen, no jobs",
+  "runtime": "mainline-acquisition-165/runtime-001",
+  "runtime_unchanged": true,
+  "changes": [
+    "Mac-only regna_cannon_capture target and tools/RegnaCannonCapture.cpp; no production gameplay changes"
+  ],
+  "source_evidence": "source-audit-001.json",
+  "actual": "actual-001/result.json",
+  "actual_observations": {
+    "passed": true,
+    "controlled": true,
+    "natural_campaign": false,
+    "frames": 407,
+    "captures": 3,
+    "event451_ui_clicks": 1,
+    "model": 85,
+    "face": 32,
+    "ball_fixture_member_id": 1,
+    "phase1_observed": true,
+    "phase2_observed": true,
+    "phase3_observed": true,
+    "jump_observed": true,
+    "airborne_observed": true,
+    "maximum_xy_distance": 6414.56,
+    "simulation_seconds": 6.77454,
+    "continued_frames": 30,
+    "continued_seconds": 0.500055,
+    "final_save_verified": true,
+    "visual_review_required": true,
+    "failure": ""
+  },
+  "verified": [
+    "One real SDL click hits original85/32/451",
+    "Original MapVar41 stages1/2/3/0 with ordinary positive App delta",
+    "Original2000-speed special jump observed active, airborne and landed; XY displacement6414.56",
+    "Q37 true,224 false, one662 consumed",
+    "NPC64->899,20/21->900; History13 timestamp persisted",
+    "Applied original cog30 faces hidden/untouchable, cog31 shown/touchable in live and saved flattened attributes",
+    "30 ordinary continuedframes and explicit finalsave decode; 3 images reviewed"
+  ],
+  "fixture": "actual-001/fixture.json; normal132 MM8 source copy, controlled map/pose/ball/224 and initial FeatherFall+Invisible3600game seconds, no actors or completion fields changed",
+  "validation": {
+    "native_configure": "native-configure-001 passed",
+    "capture_build": "capture-build-001 passed",
+    "actual_run": "actual-run-001 passed first attempt",
+    "new_unit_cases": 0,
+    "cold_runs": 0,
+    "old_route_replays": 0,
+    "ios": "No new iOS build; target is APPLE/non-iOS only and production gameplay unchanged, prior165 evidence retained",
+    "baseline_source_checks": {
+      "openyamm/game/events/EventRuntime.cpp": true,
+      "openyamm/game/outdoor/OutdoorWorldRuntime.cpp": true,
+      "openyamm/game/outdoor/OutdoorGameView.cpp": true,
+      "openyamm/game/party/Party.cpp": true,
+      "openyamm/game/app/GameApplication.cpp": true,
+      "development-runtime.json": true
+    },
+    "input_copy_byte_equal": true,
+    "jobs_collected": true
+  },
+  "limits": [
+    "Controlled prerequisites do not prove natural campaign acquisition or combat",
+    "No physical device/simulator",
+    "Only early cannon motion captured; full firework visual/audio sequence not reviewed",
+    "Repeat/revisit Merge FireSequence differences remain deferred; first completion only"
+  ],
+  "next": "next-source-work.json"
+}

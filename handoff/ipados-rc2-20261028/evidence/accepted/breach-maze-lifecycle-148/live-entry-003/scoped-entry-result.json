@@ -1,0 +1,60 @@
+{
+  "status": "ACCEPTED_SCOPED_SOURCE53_FRESH_ENTRY",
+  "accepted_at": "2026-10-19T10:00:23.846538+00:00",
+  "checkpoint148_complete": false,
+  "runtime": "local-data/validation/breach-alvar-149/normal-doors-001/controlled-runtime-001",
+  "command": "actual-003-run.command.json",
+  "actual": {
+    "status": "passed",
+    "stage": "entry-complete",
+    "frames": 13,
+    "captures": 2,
+    "complete": true,
+    "mode": "entry",
+    "entry_confirmations": 1,
+    "app_exit_code": 0,
+    "quit_events": 1,
+    "window_close_events": 0,
+    "early_exit_event_observed": false,
+    "completion_quit_requested": true,
+    "pending_capture": "",
+    "map": "BrBase.blv",
+    "level": 3,
+    "inside": true,
+    "root_seed": 12681247458,
+    "epoch": 2,
+    "controlled": true,
+    "natural_campaign": false,
+    "normal_merge_admission": false,
+    "cold_restore": true,
+    "entry_route": true,
+    "entry_event": 53,
+    "entry_model": 469,
+    "entry_face": 5,
+    "entry_pointer_verified": true,
+    "fresh_identity_verified": true,
+    "fresh_generation_serial": 1,
+    "input_root_seed": 148,
+    "input_epoch": 1
+  },
+  "source_manifest": "local-data/validation/breach-alvar-149/normal-doors-001/accepted-source-sha256.json",
+  "native_and_ios_build_record": "local-data/validation/breach-alvar-149/normal-doors-001/scoped-result.json",
+  "input": "../live-integration-002/interact-route-002/bralvar-exit.oysav",
+  "saved_output": "actual-003/entry-fresh.oysav",
+  "reviewed_images": [
+    "actual-003/entry-confirmation.png",
+    "actual-003/entry-fresh.png"
+  ],
+  "observed": "Normal 大裂缝地下室 confirmation rendered, then real prepared L3 world/wall/HUD/minimap rendered. First-view wall is source arrival facing, not evidence of movement traversal. No new movement route was run.",
+  "picking_trace": "First sample remains genuine Decoration targetKind3 with face0/event0; second is real Surface469/5/event53; fields no longer mix namespaces.",
+  "failure_history": [
+    "actual-001",
+    "actual-002"
+  ],
+  "limits": [
+    "Controlled nearby position/camera and explicitly mounted runtime",
+    "No natural campaign/normal dynamic admission/device claim",
+    "Does not close all148 combat/decor/lifecycle coverage"
+  ],
+  "full_game_complete": false
+}

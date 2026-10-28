@@ -1,0 +1,81 @@
+{
+  "schema": "openyamm.checkpoint156.scoped-result.v1",
+  "status": "ACCEPTED_SCOPED",
+  "checkpoint": 156,
+  "accepted_at": "2026-10-23T07:52:40.778415+00:00",
+  "owner": "01a0fb51-a792-7082-a973-ac6064548959",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/max",
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "runtime": "local-data/validation/breach-mercenaries-156/runtime-001",
+  "save_version": 101,
+  "new_unit_test_cases": 0,
+  "accepted_scope": [
+    "Ordinary Party dismissal retains the existing Character identity/custody with explicit source provenance. Authenticated original-source profile controls Breach NPC projections.",
+    "Actual005: ordinary dismissal of member2/Talimar -> visible Verdant732/65517 with real1024+100ms -> normal Breach entry -> ordinary endcard Return -> actual rendered NPC263 mouse click -> visible Join/Yes -> normal App transaction returns same Character and removes source actor.",
+    "Actual identity, custody, equipment, inventory, progression, HP/SP and base attributes preserved; 4 active+1 Inn becomes5 active+0 Inn, no duplicated Character or additional XP/heal.",
+    "Independent cold001 restores Save101 and continues30 normal1/60s frames, retains the owned Character and actor removal;3 actual/cold images reviewed.",
+    "Native product and unsigned generic iOS Release builds pass on unchanged production sources."
+  ],
+  "fixtures": {
+    "checkpoint": 156,
+    "controlled": true,
+    "natural_campaign": false,
+    "mode": "actual",
+    "input": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/normal-merge-admission-154/actual-004/declared-fixture.oysav",
+    "input_sha256": "adfc5150b555b59ccd3e6c194cf175fa36b1d7138fce96b61a17cc37f2acbd80",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/breach-mercenaries-156/runtime-001",
+    "changes": "Read-only 154 declared-fixture Save100, inheriting its published upstream/caster/pose fixtures. One normal Party.dismissMemberToAdventurersInn(1) action entry, not dismissal-button coverage. Declare GotMainQuest=1, QuestFinished=1 and StartedAt=3 for this MM8 source input; ordinary openNpcDialogue803 contact fixture. Visible root732/65517 actions, real1024ms+100ms delays and normal App Breach OnLoad. Dismiss a source endcard with SDL Return if presented. One nearby actor pose/camera fixture; actual rendered sprite picking and cursor mouse gesture opens NPC263, then visible Join/Yes. No roster/Hired/gear/XP/HP/SP/AI/RNG or direct Join/session transaction writes.",
+    "timing": "Operation/render/capture frames use zero dt; source delays use the real SDL clock. Only cold continuation uses 30 normal 1/60s frames.",
+    "comparison_limit": "Full encoded Character hashes are observations, not acceptance checks; initial Save100 hashes differed despite all decoded persistent Character fields matching. Actual checks identity, custody, equipment, inventory, progression, HP/SP and base attributes.",
+    "new_unit_tests": 0,
+    "bounds": "600 frames,120 wall seconds; at most128 read-only pointer probes",
+    "visual_review_required": true
+  },
+  "limits": [
+    "One existing Inn mercenary actual path only; no eleven-spot/50-roster matrix, detached cross-map actual coverage, broader refill or permanent-release acceptance.",
+    "Dismissal invokes the ordinary Party action API, not the dismissal UI button. Actual operation frames use zero dt; only source wall delay and cold continuation advance.",
+    "Full encoded Character hashes are observations, not pass criteria: initial Save100 hash differed despite all decoded persistent Character fields matching; no unsupported full-byte preservation claim.",
+    "No complete natural campaign or iPad acceptance."
+  ],
+  "preserved_failures": {
+    "native001": "Three nested enum qualification compile errors; corrected before native002.",
+    "actual001_002": "Overstrict full-encoded Character comparison rejected unchanged decoded fields before action; triage retained and nonblocking investigation stopped per user direction.",
+    "actual003": "Controlled upstream fixture lacked StartedAt=3; source AfterLoad could not infer introduction continent from Breach. Driver-only fixture correction.",
+    "actual004": "Source endcard arrived one App frame later than driver guard allowed; driver accepts the normal delayed card and sends ordinary SDL Return."
+  },
+  "builds": {
+    "native": "native-build-002.command.json",
+    "capture": "capture-build-005.command.json",
+    "ios": "ios-release-001.command.json"
+  },
+  "next": "Prioritize a concrete normal mainline blocker from bounded MM6/MM7 and MM8/Merge source audits; defer optional BrAlvar secondary interactions and further replay matrices.",
+  "engineering_estimate": {
+    "range_percent": [
+      55,
+      60
+    ],
+    "confidence": "low",
+    "meaning": "Carried historical subjective estimate, not measured coverage; do not infer no local progress or automatic percentage per chapter."
+  },
+  "evidence_sha256": {
+    "actual-005/result.json": "df96b3fa5f6428304b8b38fb8aaeba69501040f8b4ad5d516ad7678da42a6ca9",
+    "actual-005/fixture.json": "f04c80ea25ae51cdda00e0e36299da9ffedd7d1a3da328717fff454515d66354",
+    "actual-005/trace.jsonl": "ae5d30455c7bf4f39f4cd307f601ef3fa864bcb7c94c93e56c7e88c94f3ecfed",
+    "actual-005/joined.oysav": "82f182f43923abe4cd9aec194ed32331cfc6b6240c93737cbc9c32e2118b89a8",
+    "cold-001/result.json": "45a647f73e410418d02429749deb31280d7b3b6dd5ffa00acfdefe2eefcfe6c4",
+    "cold-001/fixture.json": "e23d2f6af3911171fcfaef663d6628249e8a11637d00fcbf47096e46da64cdf4",
+    "cold-001/trace.jsonl": "69c65f7499ad2a5706b7c569eb2d3dec0acec4fba484016537015c3681e4c796",
+    "cold-001/continued.oysav": "70fbbe585fd5814047a162562070df98e3defebed353c0125396810aea4bf877",
+    "visual-review-001/result.json": "f49160f067572b26d6c28c8db853a7097db71b0a11324d6ba32de181e6ff133b",
+    "native-build-002.command.json": "64d55ea6c5ff46379484b3936f8fe44cacd5020083f0af750463d6bbdf76062f",
+    "capture-build-005.command.json": "ad638c0d757be8f169bb9aebc4ec97b2ed3251f7119820345dba76c6baa8fe2f",
+    "ios-release-001.command.json": "5e4d2d1d1ebeca0d2bafeb0b7f211a8f0443008f10faf100c2a32cc43734fc81",
+    "final-source-manifest-001.json": "e69ff3da4fc9ca4dcb93e4069cfb98cbef5e8d4fe4819b1f4bff237efbf1712c",
+    "ios-frozen-verification-001.json": "ddffabfbbab0c2e601231dd301254471e3646bd34628e68f2b1d427faf201f9d",
+    "runtime-diff-001.json": "060b575455f28e979075d2d8823017fb1c2541a242c5b6a3652b4a48a0727131",
+    "initial-load-triage-001.json": "9cce0025e0fcc0ae7eb1928e4beb3acdbcfbd56edff2843c436854483889e0bd"
+  }
+}

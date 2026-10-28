@@ -1567,6 +1567,40 @@ bool GameDataLoader::loadInternal(
         }
     }
 
+    m_breachMercenaryProfile.reset();
+    const std::string mercenaryPath = "breach_mercenaries.txt";
+    if (assetFileSystem.exists(mercenaryPath))
+    {
+        const std::optional<std::string> text = assetFileSystem.readTextFile(mercenaryPath);
+        std::string error;
+        if (text)
+        {
+            m_breachMercenaryProfile = loadBreachMercenaryProfileText(*text, error);
+        }
+        if (!m_breachMercenaryProfile)
+        {
+            std::cerr << "Invalid Breach mercenary profile: " << error << '\n';
+            return false;
+        }
+    }
+
+    m_mercenaryReleaseProfile.reset();
+    const std::string releasePath(MercenaryReleaseContentPath);
+    if (assetFileSystem.exists(releasePath))
+    {
+        const std::optional<std::string> text = assetFileSystem.readTextFile(releasePath);
+        std::string error;
+        if (text)
+        {
+            m_mercenaryReleaseProfile = loadMercenaryReleaseProfileText(*text, error);
+        }
+        if (!m_mercenaryReleaseProfile)
+        {
+            std::cerr << "Invalid mercenary release profile: " << error << '\n';
+            return false;
+        }
+    }
+
     std::vector<std::vector<std::string>> combatTextRows;
     m_combatTextTable = {};
     if (!loadTextTableRows(assetFileSystem, "engine/data_tables/combat_text.txt", combatTextRows)
@@ -1995,6 +2029,16 @@ const SpellTable &GameDataLoader::getSpellTable() const
 const std::optional<BreachAlvarCompanionProfile> &GameDataLoader::getBreachAlvarCompanionProfile() const
 {
     return m_breachAlvarCompanionProfile;
+}
+
+const std::optional<BreachMercenaryProfile> &GameDataLoader::getBreachMercenaryProfile() const
+{
+    return m_breachMercenaryProfile;
+}
+
+const std::optional<MercenaryReleaseProfile> &GameDataLoader::getMercenaryReleaseProfile() const
+{
+    return m_mercenaryReleaseProfile;
 }
 
 const CombatTextTable &GameDataLoader::getCombatTextTable() const

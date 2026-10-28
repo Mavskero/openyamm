@@ -1,0 +1,166 @@
+{
+  "objective": "Normal play and campaign completion in current OpenYAMM iPadOS port",
+  "basis": "User goal pluscurrentAGENTS source-grounded prerequisites/transitions/rewards/endings/persistence andboundedactualMac; noeveryquestnaturalreplay requirement added",
+  "requirements": [
+    {
+      "id": "runtime",
+      "requirement": "Original source can produce one complete current runtime and ordinary launcher starts it",
+      "evidence": [
+        "batch-integration-132/result.json",
+        "mainline-acquisition-165/scoped-result.json",
+        "playable-readiness-169/full-import-001.command.json",
+        "playable-readiness-169/runtime-001/conversion.json",
+        "playable-readiness-169/mac-start-001.command.json",
+        "map-source-completion-171/scoped-result.json",
+        "source-travel-rescue-172/scoped-result.json",
+        "ordinary-reentry-173/scoped-result.json",
+        "device-independent-playability-176/scoped-result.json",
+        "mercenary-release-177/scoped-result.json",
+        "bralvar-ordinary-interactions-178/scoped-result.json",
+        "bralvar-actor-rules-180/scoped-result.json",
+        "merge-source-polish-181/scoped-result.json"
+      ],
+      "status": "Current complete runtime181/Save103; prior representative acceptance retained, with177 release/cold,178 ordinary events,180 old-save actor migration/continuedplay/save and181 source-scoped corrections. No all-mechanics guarantee."
+    },
+    {
+      "id": "coreplay",
+      "requirement": "Normal creation, movement, combat, inventory, spells, services and saves support progression",
+      "evidence": [
+        "mm6-full-starter-113/result.json",
+        "mm7-continuous-107/result.json",
+        "mm8-full-starter-096/result.json",
+        "common-services-126/result.json",
+        "mac-endurance-131/result.json",
+        "mercenary-release-177/scoped-result.json",
+        "bralvar-ordinary-interactions-178/scoped-result.json",
+        "bralvar-actor-rules-180/scoped-result.json",
+        "merge-source-polish-181/scoped-result.json"
+      ],
+      "status": "Current complete runtime181/Save103; prior representative acceptance retained, with177 release/cold,178 ordinary events,180 old-save actor migration/continuedplay/save and181 source-scoped corrections. No all-mechanics guarantee."
+    },
+    {
+      "id": "mm6",
+      "requirement": "Recommendations/traitor/Oracle/VARN/ControlCenter/bell/scroll/Hive chain obtainable,finishable,persistent",
+      "evidence": [
+        "mm6-goblinwatch-127/result.json",
+        "campaign-readiness-142/result.json",
+        "mainline-learning-timer-159/scoped-result.json",
+        "mainline-closure-164/scoped-result.json",
+        "oracle-varn-166/result.json",
+        "mm8-alliance-acquisition-167/mm6-council-audit.json",
+        "mainline-prerequisites-170/mm6-recommendations-audit.json",
+        "map-source-completion-171/scoped-result.json",
+        "source-travel-rescue-172/scoped-result.json"
+      ],
+      "status": "Six source TownPortal visit hooks now implemented;ordinary oute3 adds313 and saves. Mainline source/actual scopes retained;not full campaign proof."
+    },
+    {
+      "id": "mm7",
+      "requirement": "Castle/rebuild/judge/alignment/requiredtrials/artifacts/Lincoln/ending andMergecredit",
+      "evidence": [
+        "mm7-history-compat-128/result.json",
+        "mm7-shoals-144/result.json",
+        "mm7-lambent-entry-157/scoped-result.json",
+        "mainline-source-gates-158/scoped-result.json",
+        "mainline-learning-timer-159/scoped-result.json",
+        "mm7-ending-163/scoped-result.json",
+        "mainline-acquisition-165/scoped-result.json",
+        "oracle-varn-166/mm7-prefaction-audit.json",
+        "playable-readiness-169/mm7-required-path-audit.json",
+        "mainline-prerequisites-170/mm7-rebuild-acquisition.json",
+        "map-source-completion-171/scoped-result.json",
+        "ordinary-reentry-173/scoped-result.json",
+        "mm7-dark-ending-175/scoped-result.json",
+        "mm7-control-cube-refill-179/scoped-result.json"
+      ],
+      "status": "175 first actual controlled Dark922 UI hand-in, item/flags/news, original movie, Escape/30 normal frames and saved completion passed; prior Light actual retained. Still not natural campaign proof."
+    },
+    {
+      "id": "mm8",
+      "requirement": "Starter/witness/alliances/Regna/elements/crystal/Escaton/fourlords/ending",
+      "evidence": [
+        "mm8-blackmail-129/result.json",
+        "mm8-endgame-146/result.json",
+        "mainline-source-gates-158/scoped-result.json",
+        "mainline-acquisition-165/mm8-witness-audit-001.json",
+        "mm8-alliance-acquisition-167/result.json",
+        "mm8-regna-cannon-168/scoped-result.json",
+        "mainline-prerequisites-170/mm8-alliance-rescue-audit.json",
+        "source-travel-rescue-172/scoped-result.json",
+        "ordinary-reentry-173/scoped-result.json"
+      ],
+      "status": "173 crystal/fourprison reentrysource/import/build integrated;prior172 andearliermainlineevidence retained. No newdooractual."
+    },
+    {
+      "id": "merge",
+      "requirement": "Ordinary threeworldtravel,rewards,normalBreachentry,split/reunite,Chaosreturn/endcard andcontinuedplay",
+      "evidence": [
+        "three-continent-scroll-122/result.json",
+        "merge-quest-lifecycle-136/result.json",
+        "continent-rewards-140/result.json",
+        "breach-alvar-149/reserve-generation-001/scoped-result.json",
+        "breach-alvar-149/normal-ascent-001/scoped-result.json",
+        "normal-merge-admission-154/scoped-result.json",
+        "breach-continuation-155/scoped-result.json",
+        "breach-mercenaries-156/scoped-result.json",
+        "device-independent-playability-176/scoped-result.json",
+        "mercenary-release-177/scoped-result.json",
+        "bralvar-ordinary-interactions-178/scoped-result.json",
+        "bralvar-actor-rules-180/scoped-result.json",
+        "merge-source-polish-181/scoped-result.json"
+      ],
+      "status": "Current complete runtime181/Save103; prior representative acceptance retained, with177 release/cold,178 ordinary events,180 old-save actor migration/continuedplay/save and181 source-scoped corrections. No all-mechanics guarantee."
+    },
+    {
+      "id": "persistence",
+      "requirement": "Questitems,partyownership,questgates,worldstate andendingresults survive ordinarysave/load",
+      "evidence": [
+        "campaign-readiness-142/result.json",
+        "breach-alvar-149/module-b-result.json",
+        "source-jump-152/scoped-result.json",
+        "normal-merge-admission-154/scoped-result.json",
+        "breach-mercenaries-156/scoped-result.json",
+        "playable-readiness-169/shared-item-lifecycle-audit.json",
+        "source-travel-rescue-172/scoped-result.json",
+        "ordinary-reentry-173/scoped-result.json",
+        "device-independent-playability-176/scoped-result.json",
+        "mercenary-release-177/scoped-result.json",
+        "bralvar-ordinary-interactions-178/scoped-result.json",
+        "bralvar-actor-rules-180/scoped-result.json",
+        "merge-source-polish-181/scoped-result.json"
+      ],
+      "status": "Current complete runtime181/Save103; prior representative acceptance retained, with177 release/cold,178 ordinary events,180 old-save actor migration/continuedplay/save and181 source-scoped corrections. No all-mechanics guarantee."
+    },
+    {
+      "id": "ipad",
+      "requirement": "TargetiPadOS build and actual import,input,lifecycle,media/performance acceptance",
+      "evidence": [
+        "mainline-acquisition-165/ios-release-001.command.json",
+        "map-source-completion-171/ios-release-003.command.json",
+        "source-travel-rescue-172/scoped-result.json",
+        "ordinary-reentry-173/scoped-result.json",
+        "device-independent-playability-176/scoped-result.json",
+        "merge-source-polish-181/ios-release-001.command.json"
+      ],
+      "status": "181 unsigned generic iOS Release passed; physical/simulator operations explicitly declined, not performed."
+    },
+    {
+      "id": "candidate_delivery",
+      "requirement": "Independent local candidate with resources, user data isolation, restartable saves and recoverable source",
+      "evidence": [
+        "first-playable-candidate-174/scoped-result.json",
+        "first-playable-candidate-174/package-check-result.json",
+        "first-playable-candidate-174/source-restore-result-003.json",
+        "second-playable-candidate-182/scoped-result.json",
+        "second-playable-candidate-182/package-check-result.json",
+        "second-playable-candidate-182/source-restore-result-001.json"
+      ],
+      "status": "RC2 accepted scoped; full standalone payload and source restore, actual menu start/normal exit only; prior174play/save/restart evidence retained as historical, not repeated."
+    }
+  ],
+  "full_goal_achieved": false,
+  "progress_estimate": "55-60% lowconfidence; no mechanicalincrease",
+  "next_priority": "Current confirmed device-independent backlog closed through181 and packaged182. Full goal active; target iPad acceptance still externally unavailable under explicit declined permission. Do not repeat passed routes or ask device permission again.",
+  "integration_finding": "RC2 locally delivered with full181runtime/source and new menu-start/normal-exit proof. All current source-confirmed176–181 gaps closed; no full-game/device completion claim.",
+  "supersedes": "merge-source-polish-181/requirements.json; originals preserved"
+}

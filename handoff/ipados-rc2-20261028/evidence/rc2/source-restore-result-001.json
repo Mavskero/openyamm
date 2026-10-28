@@ -1,0 +1,10 @@
+{
+  "status": "PASSED",
+  "archive": "current-source.tar.gz",
+  "archive_sha256": "12e514aac0511de0051934252819ebdcf518fd129bd30d7adece8f6ab2fa31d7",
+  "restored_files": 1909,
+  "bytes": 51081970,
+  "comparison": "File bytes, permissions and symlink targets; no rebuild or gameplay replay",
+  "scope": "All present tracked and nonignored untracked files in the current sparse checkout",
+  "restored_directory": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/second-playable-candidate-182/source-restored-001"
+}

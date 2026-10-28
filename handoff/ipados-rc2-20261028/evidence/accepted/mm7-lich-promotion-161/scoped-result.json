@@ -1,0 +1,57 @@
+{
+  "schema": "openyamm.checkpoint161.source-scoped-result.v1",
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "accepted_at": "2026-10-27T14:11:39.197482+00:00",
+  "checkpoint": 161,
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh",
+  "runtime": "local-data/validation/mm7-lich-promotion-161/runtime-001",
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "new_unit_test_cases": 0,
+  "new_app_runs": 0,
+  "old_route_replays": 0,
+  "cold_runs": 0,
+  "source_events": [
+    738,
+    846,
+    847
+  ],
+  "accepted_source_fix": {
+    "846": "Original current-member Necromancer/Lich qualification restored alongside prior Wizard QBits, then original faction-gated task/topic assignment.",
+    "847": "Per-holder1417 processing replaces all-member jar requirement; original per-member class/XP and honorary Gold, counted consumption, QBits/messages, Dark47 fallback and final source helper. NPC topic/greeting and reputation retained.",
+    "738": "Only individual43/44 with own628 consume one and convert; no obsolete completion/all-member jar gate. Dark47 fallback and final source helper precede original success/no-jar message.",
+    "native": "Explicit AssignmentOnly class mode leaves generic existing behavior unchanged. Source Lich helper processes all finalLiches in party order, source portrait/voice mapping, first-member elemental resistance, Mind/Body65000/immunity, Repair refund plus Chain clear while retaining Repair."
+  },
+  "validation": [
+    "Main reviewed complete source transaction and actual native inventory/class mapping; corrected original resistance index7/8 to Mind/Body.",
+    "Final native002 App/importer build passed; native001 before738 expansion retained.",
+    "Original source import authenticated PromotionTopics and all required message IDs; native Lua loader confirmed replacement event and can-show registries unchanged.",
+    "Complete runtime adds only one global overlay; all pre-existing engine archive members and four world packages retained.",
+    "One unsigned generic iOS Release arm64 build passed on the final seven unchanged production sources.",
+    "Default development runtime promoted and launcher --check passed."
+  ],
+  "limits": [
+    "Source/import/build acceptance only for161; no actual promotion UI transaction or new cold App proof.",
+    "MM8 first task89 source append/native policy gap remains for next implementation; no broad promotion-system completeness claim.",
+    "Source helper retains original unusual Party[0]/Repair behavior rather than inventing changed rewards.",
+    "Existing generic Lich conversion is unchanged; no retroactive alteration of old saves.",
+    "Full campaign and iPad acceptance remain incomplete."
+  ],
+  "evidence_sha256": {
+    "scope.json": "d4d76f831624622655ac97a821fe77bfac7a0de9bea0c4768f0f6aee0448af44",
+    "source-audit-001.json": "d350899916f8a3e099db28e2d663c31d706d18230ad307a98962c1c848bcc2f7",
+    "source-manifest-002.json": "20b9d47c9205b65650ba0799cf8557a539b7fa4917f95b6ea14a27d3ccde7b9c",
+    "native-configure-001.command.json": "6d83dc13fbefdcb442218f0a2e878a1ddeb53f8b91b45285d54975940836e13e",
+    "native-build-002.command.json": "0ea63d840287e00e81199fac6e604e12b205b65f66c2e4ddecd1d40cb8e9a1a0",
+    "events-import-001.command.json": "d10107e7f7ccdadc506de14fc96c18fe11d4e75c1a769bb047c5775e40294a4c",
+    "assemble-runtime-001.command.json": "eff9a7fb73b6c11da4de2e24f0967d3075cade24acb2e51cfec6e3c14e8a2f69",
+    "runtime-diff-001.json": "219c496713189ebb7112ce757d394075c4cabefa8d947aa24ae47458e9110748",
+    "ios-configure-001.command.json": "9f35f9bf7f27333acb953039bce9edda5ac2072710612a9de4abdd289f1739c2",
+    "ios-release-001.command.json": "d49f8d5f73fd227e64b2e587563b72aa99b1bf63da0204c237ba167f95c3ed55",
+    "launcher-check-001.command.json": "4bc54d8772779dbc5591f0faa41d40adea19364ad652ba056b50419404df1dc6",
+    "next-source-work.json": "287c9e5f6a455fa1ce54b47c0b3e400c61dcd0b7e233168aa4280d92531013cc",
+    "events-001/engine/events/Global_mmmerge_lich_promotion.lua": "73288d050a9fa4783670f7f353da3d68ea65cea547b210c158b294542e41ee27"
+  }
+}

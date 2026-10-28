@@ -1,0 +1,37 @@
+{
+  "checkpoint": 165,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "accepted_at": "2026-10-27T15:32:00.789394+00:00",
+  "goal_turn_classification": "PROGRESS",
+  "models": {
+    "main": "gpt-6.1-sol/max",
+    "subagents": "gpt-6-astra/xhigh"
+  },
+  "production_fix": "MM7StoneCity7d24/416 uses original persistent Q647 castleclear gate instead of currentmembers Award3; enables original DwarfKinghouse216 after rosterreplacement and beforebutlerreward. Source STR20 entrancehint/STR19 lockedtext retained.",
+  "source": "Scripts/Maps/7d24.lua:1-13",
+  "source_sha256": "d2e0d1d8f694b0bc04bf37efc8e948d785918bb4605e9e3f18da3c6d92892fda",
+  "runtime": "local-data/validation/mainline-acquisition-165/runtime-001",
+  "runtime_change": "One new authenticated7d24overlay; all oldMM7ZIP entries retained; engine/MM6/MM8/Mergepackages unchanged references;no fixtures shipped",
+  "validation": {
+    "native": "native-build-002 pass",
+    "import": "events-import-002 pass; source fingerprint/native parse/event and lifecycle sets/sourceSTR20hint",
+    "ios": "ios-release-001 unsignedgenericRelease pass",
+    "new_test_cases": 0,
+    "App_runs": 0,
+    "cold_runs": 0
+  },
+  "preserved_failure": "events-import-001 rejected incorrectbaseline-hint equality; repaired guard to originalsource STR20; no runtime/App exposure",
+  "audits": [
+    "mm7-item-acquisition-audit-001.json",
+    "mm8-witness-audit-001.json",
+    "stone-city-source-evidence-001.json"
+  ],
+  "limits": [
+    "No new actual StoneCity branch proof or naturalcampaign acceptance",
+    "Deferred ExitNPC398 Q658 journal cleanup",
+    "MM7static acquisition audit does not prove fullnavigation/combat/pickup",
+    "No physicaldevice/simulator"
+  ],
+  "full_game_complete": false,
+  "jobs": "all processes terminal and collected;agentsfrozen"
+}

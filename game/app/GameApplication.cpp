@@ -7927,7 +7927,9 @@ bool GameApplication::quickSaveToPath(
     std::string error;
 
     const auto &companionProfile = m_gameDataLoader.getBreachAlvarCompanionProfile();
-    if (!saveGameDataToPath(path, *saveData, error, companionProfile ? &companionProfile->friendActor : nullptr))
+    const auto &mercenaryProfile = m_gameDataLoader.getBreachMercenaryProfile();
+    if (!saveGameDataToPath(path, *saveData, error, companionProfile ? &companionProfile->friendActor : nullptr,
+            mercenaryProfile ? &*mercenaryProfile : nullptr))
     {
         GAMEPLAY_DEBUG_TRACE(
             "save_game_failed path=\"" + path.string() + "\""
@@ -7999,6 +8001,9 @@ bool GameApplication::quickLoadFromPath(const std::filesystem::path &path, bool 
     }
     if (!validateSavedBreachAlvarCompanions(
             *saveData, error, companionProfile ? &companionProfile->friendActor : nullptr)
+        || !validateSavedBreachMercenaries(*saveData, error,
+            m_gameDataLoader.getBreachMercenaryProfile() ? &*m_gameDataLoader.getBreachMercenaryProfile() : nullptr,
+            true)
         || !validateRequiredContentPackages(
             *saveData,
             m_gameDataLoader.getItemTable(),
@@ -8527,6 +8532,14 @@ bool GameApplication::startNewSessionFromCharacterCreation(
                 m_gameDataLoader.getStandardItemEnchantTable(),
                 m_gameDataLoader.getSpecialItemEnchantTable(),
                 preserveDebugLoadout));
+        Character &created = seed.members.back();
+        created.sourceMercenaryRetention = {};
+        if (const auto &profile = m_gameDataLoader.getBreachMercenaryProfile())
+        {
+            const uint32_t sourceRosterId = profile->freshRosterIds.at(seed.members.size() - 1);
+            created.rosterId = sourceRosterId;
+            created.sourceMercenaryRetention.sourceRosterId = sourceRosterId;
+        }
     }
 
     Party &sessionParty = ensureSessionPartyState();
@@ -8953,6 +8966,7 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
     if (!debugConsoleFreezesGameplay)
     {
         processPendingBreachAlvarCompanionRequest();
+        processPendingOwnedMercenaryJoinRequest();
         processPendingBreachAlvarChaosRequest();
         processPendingBreachMazeTransitionRequest();
     }
@@ -9099,6 +9113,7 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
         if (!debugConsoleFreezesGameplay)
         {
             processPendingBreachAlvarCompanionRequest();
+            processPendingOwnedMercenaryJoinRequest();
             processPendingBreachAlvarChaosRequest();
             processPendingBreachMazeTransitionRequest();
         }
@@ -9232,6 +9247,7 @@ bool GameApplication::applyMapMove(const EventRuntimeState::PendingMapMove &move
 
         m_gameAudioSystem.playCommonSound(SoundId::Teleport, GameAudioSystem::PlaybackGroup::Ui);
         if (commitArrival) commitArrival();
+        m_gameSession.clearSessionSavedLocation(move.clearSessionLocation);
         synchronizeSessionFromRuntime();
         GAMEPLAY_DEBUG_TRACE_BLOCK(
             logMapArrived(
@@ -9377,6 +9393,7 @@ bool GameApplication::applyMapMove(const EventRuntimeState::PendingMapMove &move
     }
 
     if (commitArrival) commitArrival();
+    m_gameSession.clearSessionSavedLocation(move.clearSessionLocation);
     synchronizeSessionFromRuntime();
     renderLoadingOverlayProgress(95);
     completeLoadingOverlay();
@@ -9443,6 +9460,45 @@ void GameApplication::processPendingBreachAlvarCompanionRequest()
     {
         GAMEPLAY_DEBUG_TRACE("breach_alvar_request_rejected reason=\"" + result.error + "\"");
         reportQuickSaveStatus("Companion interaction could not complete. Finish the current action and try again.");
+    }
+}
+
+void GameApplication::processPendingOwnedMercenaryJoinRequest()
+{
+    EventRuntimeState *pState = m_gameplayController.eventRuntimeState();
+    if (pState == nullptr || !pState->dialogueState.pendingOwnedMercenaryJoin) return;
+    const auto offer = *pState->dialogueState.pendingOwnedMercenaryJoin;
+    const size_t previousMessageCount = pState->messages.size();
+    const auto result = m_gameSession.processOwnedMercenaryJoinRequest(offer);
+    pState->dialogueState.pendingOwnedMercenaryJoin.reset();
+    pState->dialogueState.ownedMercenaryOffer.reset();
+    if (result.code == OwnedMercenarySessionResult::Code::Committed)
+    {
+        m_gameSession.gameplayScreenRuntime().presentPendingEventDialog(previousMessageCount, true);
+    }
+    else
+    {
+        if (result.code == OwnedMercenarySessionResult::Code::Full)
+        {
+            const auto &profile = m_gameDataLoader.getBreachMercenaryProfile();
+            if (profile)
+            {
+                if (const auto text = m_gameDataLoader.getNpcDialogTable().getText(profile->partyFullNpcTextId))
+                    pState->messages.push_back(*text);
+            }
+        }
+        else
+        {
+            GAMEPLAY_DEBUG_TRACE("owned_mercenary_join_rejected reason=\"" + result.error + "\"");
+            reportQuickSaveStatus("Companion interaction could not complete. Finish the current action and try again.");
+        }
+        // A consumed confirmation returns to the current NPC root, including an unsafe or stale attempt.
+        EventRuntimeState::PendingDialogueContext dialog;
+        dialog.kind = DialogueContextKind::NpcTalk;
+        dialog.sourceId = offer.binding.npcId;
+        dialog.sourceActorIndex = offer.sourceActorIndex;
+        pState->pendingDialogueContext = dialog;
+        m_gameSession.gameplayScreenRuntime().presentPendingEventDialog(previousMessageCount, true);
     }
 }
 
@@ -9567,6 +9623,13 @@ bool GameApplication::executeCurrentMapAfterLoadEvents()
     // otherwise that synchronization replaces the save with the default spawn.
     if (m_loadingSavedGameRuntime && !applyCurrentSessionToRuntime())
     {
+        return false;
+    }
+    // The view and saved pose are now ready. Publish the source population before AfterLoad or gameplay input.
+    std::string mercenaryError;
+    if (!m_gameSession.bindBreachMercenaryRuntime(m_loadingSavedGameRuntime, mercenaryError))
+    {
+        std::cerr << "GameApplication: mercenary runtime binding failed: " << mercenaryError << '\n';
         return false;
     }
     EventRuntimeState &state = *m_pMapSceneRuntime->eventRuntimeState();

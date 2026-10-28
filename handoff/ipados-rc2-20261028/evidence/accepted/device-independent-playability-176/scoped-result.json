@@ -1,0 +1,83 @@
+{
+  "schema": "openyamm.device-independent176.scoped-result.v1",
+  "status": "ACCEPTED_SCOPED",
+  "checkpoint": 176,
+  "accepted_at": "2026-10-28T04:44:06.781396+00:00",
+  "owner": "01a0fb51-a792-7082-a973-ac6064548959",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh",
+  "user_direction": "Continue device-independent work; minimize tests/replays; do not inspect or operate devices/simulators.",
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "runtime": "local-data/validation/device-independent-playability-176/runtime-001",
+  "default_developer_entry_updated": true,
+  "RC1_untouched": true,
+  "save_version": 102,
+  "production_changes": [
+    "BrAlvar30: original repeatable315 reward, RepairSkill check, yellow disease, localized topic284/NPCText726.",
+    "BrAlvar82: original position sum once-key, level3..6 scroll/book reward.",
+    "Shared legacy treasure17 now filters Book only, also correcting existing Breach82."
+  ],
+  "actual": {
+    "authoritative": "actual-002/result.json",
+    "frames": 58,
+    "SDL_clicks": 3,
+    "captures_reviewed": 3,
+    "trash_item": 315,
+    "library_item": 1240,
+    "library_item_kind": "Book",
+    "once_key": "MMerge.BrAlvar.LibKeys.16",
+    "repeat_no_reward_no_RNG": true,
+    "normal_continuation_frames": 30,
+    "normal_continuation_seconds": 0.5000000260770321,
+    "explicit_save_decoded": true,
+    "input_save_unchanged": true
+  },
+  "fixtures": [
+    "Prior154 actual ordinary entry is itself a controlled upstream quest/caster/pose chain, not a natural campaign.",
+    "Member0 selected; Repair removed, conditions cleared, HP restored and recovery0 once. Four detached members retained by ordinary session load.",
+    "Two source geometry poses/cameras; one eventRNG=1 before library to exercise type17. No reward or once-key injected.",
+    "Inspection/input/capture render deltas are0; normal AI enabled but advances only in final30frames. No actor/AI changes."
+  ],
+  "verification": {
+    "native": "native-build-001.command.json",
+    "original_source_import": "native-scenes-001-run.command.json",
+    "unsigned_generic_ios_release": "ios-release-001.command.json",
+    "launcher": "launcher-check-001.command.json",
+    "new_unit_cases": 0,
+    "broad_regression_runs": 0,
+    "old_passed_route_replays": 0,
+    "cold_app_replays": 0,
+    "actual_attempts": 2,
+    "first_attempt": "Driver wrongly checked decoration with surface event field; stopped before any SDL click; source/code diagnosis then repaired capture only."
+  },
+  "limitations": [
+    "No actual Repair-skilled or repeatable-trash matrix; those branches source/import based.",
+    "No actual type16 library reward or separate Breach82 replay; shared filter fix source/build and actual type17 only.",
+    "Once-key/reward/disease decoded from explicit save; no independent cold or map-reentry App replay in176.",
+    "Source7/60/301..315 and permanent Inn release remain unfinished; neither is retroactively called an RC1 campaign blocker.",
+    "No natural full-campaign, device/simulator or subjective audio acceptance."
+  ],
+  "all_owned_jobs_collected": true,
+  "next": "next-mercenary-release.json",
+  "evidence_sha256": {
+    "source-audit.json": "3b6e6aa88616003c0f30104522eed585bae9dc4b8e6123ad6bca920bd9895f4f",
+    "runtime-diff-001.json": "667ca9bc44d1da2fc01a99dbf9e920521edfa2d2c4a6e0ef5cbe131c27ede790",
+    "production-manifest-001.json": "2d70d345d357cb1d95fa32e4bc0669d18c59883b44e957d373f7ae2bc1dacf89",
+    "native-build-001.command.json": "3ef1d3e256aa204d232a92b5c90333c8a12fa1283c3d969c31185819efb136ca",
+    "native-scenes-001-run.command.json": "eb6a2f866ba19bdb35d31936a21576e7d883127f0d80a0aa6b38287280b9b5cc",
+    "ios-release-001.command.json": "f4a974286632831907f5e3f89de0b959b47cec2d526008331300e0ceb052b3f6",
+    "capture-build-003.command.json": "fa76ebffdf297a03edfd200cdd02f7c7769acceab28b693f80b749d919a49f8b",
+    "actual-run-002.command.json": "076253e1b6002430b5102fa590c06ba1b55aae77e354092bc270fccba5a11c3e",
+    "actual-002/result.json": "78f9854c242a11080d520f022eacab0fb87ec2e4c9f71b7036dce9e4e3730ab0",
+    "actual-002/fixture.json": "815464c109aa83c526b264b80be73b97a1f2778cae5d8c2d8b6a68b21c6b7847",
+    "actual-002/trace.jsonl": "bb297b12792936f7e71c9ffb7d175a206ef5634e6e7937ffea3f53faada636ec",
+    "actual-002/loot-complete.oysav": "50359b72799fec55d49007b09e419a087c9f1123e3e278a59bfc6dd4aaa6a667",
+    "visual-review-001.json": "cdfc4ec3d46a23d5f29648c0d50fc824c2d708904ca4796672ff2dc6d9d26dab",
+    "driver-failure-001.json": "8fb23d6f6d2aae3c5c4af10e2519e8325ca2d7d5c10f00b2515b0de75bc0279f",
+    "launcher-check-001.command.json": "6a556b0aa917a9c59b7866fb072222cc5c81eded35542712647648bfd2124300",
+    "next-mercenary-release.json": "bd8a96c64cbed55a2bfe77d28bcd1de1661ad6d7f1a03afda8806a15ae01d55d",
+    "owned-jobs-final.json": "dd2f7a92933d08bc29ee798eff76d4b8c1f72c13923361c30cb0868b69004ca4"
+  }
+}

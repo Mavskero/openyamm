@@ -1,0 +1,31 @@
+{
+  "status": "ACCEPTED_PURE_MODULE_B2_ONLY",
+  "accepted_at": "2026-10-02T14:25:18.428276+00:00",
+  "reviewer": "main gpt-6-astra / xhigh",
+  "scope": "Finite original Merge formula profile plus immutable family and actor combat plans; standalone desktop test target only",
+  "chapter_full_scope_complete": false,
+  "live_integration": false,
+  "normal_dynamic_admission": false,
+  "source_freeze": "merge-bolster-profile-001/freeze.json",
+  "independent_source_review": "merge-bolster-profile-independent-review-001/REPORT.md",
+  "contract": "merge-bolster-profile-001/CONTRACT.md",
+  "tests": {
+    "target": "merge_bolster_profile_check",
+    "cases": 12,
+    "assertions": 2290,
+    "record": "merge-bolster-profile-001/native-test-001.command.json"
+  },
+  "build": "merge-bolster-profile-001/native-build-001.command.json",
+  "cmake_registration_sha256": "7dd7d070eeaa6372a180130490fd73fda8aa857cba9858972247db24645352d6",
+  "app_or_ios_validation_claimed": false,
+  "limitations": [
+    "Complete finite original11 formula entries only; unknown formulas/hooks rejected",
+    "Versioned deterministic random streams are not originalLua global random parity",
+    "ActorHP/velocity still limited to representablei16; no60000HP maze multiplier support",
+    "Original numeric combat adapter/firstStdSummon initialization/cache still required",
+    "Not compiled into app library yet; no World/Save/combat consumers and no legacy balance changes",
+    "No item generation/AlwaysEnchant or persisted resolved loot yet",
+    "No actual maze entry/combat/cold/normal campaign or device acceptance"
+  ],
+  "next": "SourceMonsterTemplateCatalog and exact adapter, widened live/Save actor payload plus item-generation support before maze Scene/World integration"
+}

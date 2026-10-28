@@ -8,6 +8,53 @@ ReplaceMapEvent(54, nil, function()
     evt.RequestBreachMazeTransition()
 end)
 
+-- BrAlvar.lua 342-345: reuse the original house231 and its normal Tavern services.
+ReplaceMapEvent(7, nil, function()
+    evt.EnterHouse(231)
+end)
+
+-- BrAlvar.lua 278–284: the alarm depends on the Prince's actual residence, even after quest completion.
+ReplaceMapEvent(60, nil, function()
+    local key = "MMerge.BrAlvar.SwordsAggro"
+    if evt.GetMapVar(key, 0) ~= 0 then return end
+    if evt.IsBreachAlvarPrinceOutsideHouse705() then
+        evt.SimpleMessage(evt.strings[2])
+        evt.SetMonGroupBit(15, eventSupport.actorAttribute.Hostile, true)
+        evt.SetMapVar(key, 1)
+    end
+end)
+
+-- BrAlvar.lua 348-355: every search gives a Jump scroll before the Repair check;
+-- source variable 114 applies medium disease even though its Set argument is 0.
+ReplaceMapEvent(30, nil, function()
+    evt.ForPlayer(eventSupport.partySelector.Current)
+    evt.Add(InventoryItem(315), 315)
+    if not evt.Cmp(eventSupport.varTag.RepairSkill, 1) then
+        evt.Set(eventSupport.varTag.DiseasedYellow, 0)
+        evt.StatusText(evt.NPCText(726))
+    end
+end, evt.importedNpcTopics[284])
+
+-- BrAlvar.lua 369-381: the original sum key is intentional, including collisions.
+-- Record the search before drawing both random values; retain it across map reentry.
+ReplaceMapEvent(82, nil, function()
+    local x, y, z = evt.GetPartyPosition()
+    local key = "MMerge.BrAlvar.LibKeys." .. (math.ceil(x / 200) + math.ceil(y / 200) + math.ceil(z / 100))
+    if evt.GetMapVar(key, 0) ~= 0 then return end
+    evt.SetMapVar(key, 1)
+    evt.ForPlayer(eventSupport.partySelector.Member0)
+    evt.GiveItem(evt.RandomBetween(3, 6), evt.RandomBetween(16, 17), 0)
+end)
+
+-- BrAlvar.lua 384-391: these source chests only produce the active member's locked-door reaction.
+-- FaceAnimation(DoorLocked) already selects the current member in the shared event runtime.
+local function lockedChest()
+    evt.FaceAnimation(eventSupport.faceAnimation.DoorLocked)
+end
+for eventId = 301, 315 do
+    ReplaceMapEvent(eventId, nil, lockedChest)
+end
+
 -- BrAlvar.lua 358–366. The original map binds 16 to its existing bridge facets;
 -- 15 remains a source handler without adding a decoration or changing its event binding.
 local function randomJump()
@@ -21,6 +68,33 @@ ReplaceMapEvent(15, nil, randomJump)
 ReplaceMapEvent(16, nil, randomJump)
 
 local crossContinents = "MMerge.CrossContinents."
+local actorRulesVersionKey = "MMerge.BrAlvar.ActorRulesVersion"
+
+-- BrAlvar.lua 685,693-742: map-local directed relations and existing monster294's Wimp AI type.
+-- The importer authenticates and expands the 24 source group rules to 198 concrete monster-ID pairs.
+local function initializeActorRules()
+    local relations = evt.importedBrAlvarMonsterRelations
+    if type(relations) ~= "table" or #relations ~= 198 then
+        error("BrAlvar source monster relations are unavailable")
+    end
+    for _, relation in ipairs(relations) do
+        evt.SetLocalMonsterRelation(relation[1], relation[2], relation[3])
+    end
+    if not evt.SetMapMonsterAiType(294, 1) then
+        error("BrAlvar source monster AI override is unavailable")
+    end
+    evt.SetMapVar(actorRulesVersionKey, 1)
+end
+
+RegisterMapOnLoadEvent(65453, nil, initializeActorRules)
+RegisterMapAfterLoadEvent(65452, nil, function()
+    -- Entry already initialized the rules. Only old cold saves need this isolated migration;
+    -- modern cold restores keep their saved relations/AI and never replay split, doors or daylight.
+    if evt.GetMapVar(actorRulesVersionKey, 0) == 0 then
+        initializeActorRules()
+    end
+end)
+
 local function triggerModel(eventId)
     -- EvtMechanismAction::Trigger is 2. Definitions and sounds come from the map companion,
     -- so saved motion can bind before OnLoad, which is intentionally skipped on a cold load.

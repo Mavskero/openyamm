@@ -1,0 +1,74 @@
+{
+  "status": "ACCEPTED_SCOPED_MODULE_B_EXISTING_FIVE_MEMBER_CORE",
+  "accepted_at": "2026-10-02T14:21:10.116293+00:00",
+  "reviewer": "main gpt-6-astra / xhigh",
+  "chapter_full_scope_complete": false,
+  "full_design_module_b_complete": false,
+  "normal_dynamic_admission": false,
+  "natural_campaign_complete": false,
+  "device_or_simulator_acceptance": false,
+  "scope": [
+    "Real original MapOnLoad through Lua request and App safe point atomically splits five existing owned members into one active and four detached",
+    "One actual NPC772 GPU actor is normally picked and opened using Modern cursor pointer input; original Hint then Join returns its real owned member",
+    "NPC773/774/775 house-entry contexts are declared fixtures; actual resident/topic/Hint/Join/UI/App return restores each original owned member",
+    "Save91 receipt/custody/actor binding and minute deadline persist across separate split and fully-returned cold processes",
+    "Shared ordinary mouse activation is connected; HUD/modal/held/spell/steal/mode transitions retain ownership and cannot rearm stale gestures"
+  ],
+  "source_snapshot": "module-b-accepted-source/",
+  "source_hashes": "module-b-source-hashes.json",
+  "native_build": "native-build-022.command.json",
+  "targeted_headless_aggregate": "native-suite-004.json",
+  "new_shared_pointer_tests": {
+    "record": "native-tests-014/gameplay_world_mouse_activation_check/run.command.json",
+    "cases": 15,
+    "assertions": 150
+  },
+  "actual": [
+    "actual-008.command.json",
+    "reload-split-002.command.json",
+    "reload-returned-002.command.json"
+  ],
+  "actual_binary_sha256": "130a45273c89fae457ae602e1026256496a5ba010cca3c90b4050108a43f4ae2",
+  "independent_save_audit": "independent-save-review-001/actual008-complete-series002/result.json",
+  "independent_save_checks": 3600,
+  "visual_review": "main-visual-review-008.json",
+  "independent_pointer_review": "shared-world-pointer-independent-review-001/hud-final-review003/REPORT.md",
+  "unsigned_generic_ios_release_arm64": "ios-release-002.command.json",
+  "ios_source_fingerprints": [
+    "ios-release-002-sources-before.json",
+    "ios-release-002-sources-after.json"
+  ],
+  "fresh_normal_runtime": "runtime-001",
+  "runtime_member_audit": "runtime-member-audit-001/result.json",
+  "controlled_actual_runtime": "controlled-runtime-001",
+  "default_entry_unchanged": "../mm7-shoals-144/runtime-001",
+  "normal_seed_sha256_unchanged": "7787ccc0ff122032fec4a67788fc61e104079adc42547ec954ee6b40d17e5e22",
+  "actual_actor_count": 284,
+  "actual_friend_actor_id": 283,
+  "map_cache_aliases": [
+    "BrAlvar.odm",
+    "world.mmmerge.map.bralvar"
+  ],
+  "receipt_map_binding": "mmmerge:bralvar.odm",
+  "limitations": [
+    "Scoped subset of original149B/D only; chapter149 and full DESIGN B-F remain incomplete",
+    "No one-through-four member reserved-roster generation/custody acceptance",
+    "No house50/51/52 door path, original house Name/Picture coverage,28 mechanisms or full local hostility matrix/AI integration; PLACEHOLDER/House487/House488 remain visible",
+    "No live maze entry53/54, cross-map return series, Chaos return/endcard or QuestFinished proof",
+    "Actual shared minute at full HP proves deadline progression, not positive healing/resurrection; meaningful wounded/dead behavior is separate native evidence",
+    "Actual seed has empty held/pending and inactive timed buffs; stress and24join orders rely on scoped kernel tests, not this actual series",
+    "Recorded targeted106cases862413assertions are aggregated source-specific evidence; unchanged targets were not all rerun after unrelated input edits",
+    "Deterministic native RNG does not claim parity with original Lua global sequence",
+    "Normal runtime entry remains144; new complete149 runtime is validated as import/content input, controlled mmmerge mounting is separate",
+    "No natural campaign, physical iPad, simulator or subjective audio acceptance"
+  ],
+  "preserved_history": [
+    "actual001–006 failures and their fixes",
+    "actual007 plus cold001 successful series and3600 independent checks",
+    "native009 removed-preview red;native010 green",
+    "native011 uncalled ordinary mouse red;native012 green",
+    "native013 HUD release red",
+    "native-build021 test macro compilation failure;native-build022 andnative014 green"
+  ],
+  "next": "148B2 pure original bolster profile validation, source numeric adapter and live actor/item payload integration; continue goal"
+}

@@ -1,0 +1,46 @@
+{
+  "checkpoint": 173,
+  "date": "2026-10-28",
+  "status": "ACCEPTED_SCOPED",
+  "default_runtime": "local-data/validation/ordinary-reentry-173/runtime-001",
+  "production_changes": [
+    "Original out02 crystal and pbp four prison independent reentry flags;source HouseIDs/hints/Current locked face animation. Source/import/build only.",
+    "Item1452 recognized by original identity in Chinese runtime;preserves origin while reusing inside bottle;originalzero-position entry.",
+    "GameSession owns cross-map return locations,Save102 persists root map and pending move consumption/angles;successful arrival clears. Old map-local generic APIs unchanged.",
+    "Authenticated7nwc501 uses session origin;originalout02 fallback. Explicit <=101 ambiguous-safe migration removes oldmapcopies in memory."
+  ],
+  "actual": {
+    "entry": "actual-002 ordinaryheld1452 service enters7nwc;source origin root/Gold/heldbottle saved inactual travel autosave. Driver later timedout after590normalframes because its screenshot was overwritten by ordinary autosave;result remainsfailed.",
+    "entry_input": "Unmodified normal132 MM6 save plus declaredheld1452 acquisition fixture;no pose/quest/AI/immunity edit.",
+    "entry_evidence": "actual-002/saves/autosave.oysav;actual-002/inside-autosave-inspection.json;actual-002/trace.jsonl",
+    "cold_return": "cold-001/result.json;independentactualApp restores realentryautosave,original501nativeEventRuntime dispatch returns exactoute3XYZ,consumesorigin,30normalframes/finalsave;44frames/3reviewedimages.",
+    "source_exit_input": "Native event dispatch with actual boundworld/session;not SDL/mouseexitclick.",
+    "comparison": "saved-return-observation.json;eightpassedrelevantgroups",
+    "old_accepted_route_replays": 0,
+    "new_unit_test_cases": 0
+  },
+  "validation": {
+    "native": "native-build-003.command.json;capture-onlybuild004",
+    "import": "events-import-001.command.json",
+    "package": "runtime-diff-001.json",
+    "ios": "ios-release-001.command.json,unsignedgenericRelease",
+    "launcher": "launcher-check-001.command.json"
+  },
+  "failures_preserved": [
+    "native-build-001:two capture-onlycompile errors;fixed002",
+    "actual-001:realChineseitemactionname defect;fixed original1452identity",
+    "actual-002:screenshot/autosave slotcollision in driver;actualenter/autosave retained and reused,notreplayed"
+  ],
+  "limitations": [
+    "Five source reentry doors notnewactualflows.",
+    "No physicalbottleexit click,fullinteriornavigationalroute,reuseinside/fallback/legacyambiguous migration matrix.",
+    "No naturalcampaign,currentiPad/simulator/audioacceptance.",
+    "Legacyambiguousorigins useoriginalmissingrecordfallback;no invented origin."
+  ],
+  "source_audit": "source-audit.json",
+  "requirements": "requirements.json",
+  "next": "next-source-work.json",
+  "preservation": "172 originalpackagesmembers retained,three addedoverlays,no gameplayfixtures shipped;originals/normal132 andfailedruns retained",
+  "full_game_complete": false,
+  "goal_status": "active"
+}

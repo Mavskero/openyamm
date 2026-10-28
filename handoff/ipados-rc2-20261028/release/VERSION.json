@@ -1,0 +1,50 @@
+{
+  "version": "0.1.0-rc2-20261028",
+  "checkpoint": 182,
+  "stage": "candidate",
+  "save_version": 103,
+  "baseline_runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/merge-source-polish-181/runtime-001",
+  "source_head": "e1a5915491ce929329102582ffed1cb9f7fb0d72",
+  "untracked_snapshot_files": 55,
+  "source_snapshot": "current-source.tar.gz (current sparse checkout) + source-manifest.json; patch/untracked archive for provenance",
+  "mac_binary_sha256": "4dbb890d8350f7747cbfadb1208a94b4bcae601dace23cab6550b4ac54645629",
+  "mac_shader_path": "Contents/Resources/runtime/shaders (SDL bundle base path)",
+  "ios_binary_sha256": "0454964746071115737502f4d66b0a865f6c2b9720de8f40729f3ac7d440449e",
+  "ios_signed": false,
+  "physical_device_verified": false,
+  "natural_full_campaign_verified": false,
+  "runtime_payloads": [
+    {
+      "path": "assets/engine.zip",
+      "bytes": 703982335,
+      "sha256": "c920e6e896dbffe4b01488b9543f77053f9b5f533b5e925964c93f2e900e9a17"
+    },
+    {
+      "path": "assets/worlds/mm6.zip",
+      "bytes": 641035786,
+      "sha256": "75fe15bf35bb0805a8f07456f0283d476a6d41fb963a4e945814791249473b5f"
+    },
+    {
+      "path": "assets/worlds/mm7.zip",
+      "bytes": 1019770494,
+      "sha256": "f836ce251c4514e9c0503459603ab694dd2ced8952704914328609b35c5ef96a"
+    },
+    {
+      "path": "assets/worlds/mm8.zip",
+      "bytes": 978259456,
+      "sha256": "2455c3f580e2df671a313cfb085de98924132910831ce9911fc1af4deca632f9"
+    },
+    {
+      "path": "assets/worlds/mmmerge.zip",
+      "bytes": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e"
+    }
+  ],
+  "package_launch_check": "PASSED_MENU_START_EXIT; no repeated gameplay routes",
+  "prior_RC1_preserved": true,
+  "current_scope_evidence": "evidence/*scoped-result.json",
+  "source_restore_check": "PASSED1909files; bytes/modes/symlink targets",
+  "finalized_at": "2026-10-28T12:29:44.708806+00:00",
+  "confirmed_device_independent_fixes_through": 181,
+  "known_device_independent_source_backlog": "Current confirmed scoped findings closed; not arbitrary Merge Lua completeness"
+}

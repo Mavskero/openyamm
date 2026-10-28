@@ -342,6 +342,8 @@ bool ItemGenerator::matchesLegacyTreasureType(const ItemDefinition &itemDefiniti
         case 33: return canonicalSkillName(itemDefinition.skillGroup) == "PlateArmor";
         case 16:
             return kind == "Sscroll";
+        case 17:
+            return kind == "Book";
         case 20:
             return kind == "Weapon" || kind == "Weapon1or2" || kind == "Weapon2" || kind == "Missile";
         case 21:

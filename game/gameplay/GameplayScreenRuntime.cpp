@@ -2,6 +2,7 @@
 
 #include "game/app/GameSession.h"
 #include "game/audio/SoundIds.h"
+#include "game/content/MercenaryReleaseProfile.h"
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/GameplayItemService.h"
 #include "game/gameplay/NpcFollowerRuntime.h"
@@ -1201,6 +1202,74 @@ bool GameplayScreenRuntime::isReadOnlyAdventurersInnCharacterViewActive() const
     return isAdventurersInnCharacterSourceActive() && !characterScreenReadOnly().adventurersInnRosterOverlayOpen;
 }
 
+const MercenaryReleaseProfile *GameplayScreenRuntime::mercenaryReleaseProfile() const
+{
+    if (!m_session.hasDataRepository())
+    {
+        return nullptr;
+    }
+
+    const std::optional<MercenaryReleaseProfile> &profile = m_session.data().mercenaryReleaseProfile();
+    return profile ? &*profile : nullptr;
+}
+
+std::optional<OwnedMercenaryIdentity> GameplayScreenRuntime::selectedAdventurersInnReleaseIdentity() const
+{
+    const Party *pParty = partyReadOnly();
+    const MercenaryReleaseProfile *pProfile = mercenaryReleaseProfile();
+    std::string error;
+    if (!isAdventurersInnScreenActive() || pParty == nullptr || pProfile == nullptr
+        || !validMercenaryReleaseProfile(*pProfile, error))
+    {
+        return std::nullopt;
+    }
+
+    const Character *pMember = pParty->adventurersInnCharacter(characterScreenReadOnly().sourceIndex);
+    if (pMember == nullptr || pMember->memberId == 0
+        || pMember->sourceMercenaryRetention.kind == SourceMercenaryRetentionKind::Released)
+    {
+        return std::nullopt;
+    }
+
+    const std::optional<uint32_t> sourceRosterId = pMember->sourceMercenaryRetention.sourceRosterId
+        ? pMember->sourceMercenaryRetention.sourceRosterId
+        : (pMember->rosterId != 0 ? std::optional<uint32_t>(pMember->rosterId) : std::nullopt);
+    if (!sourceRosterId || *sourceRosterId != pMember->rosterId
+        || *sourceRosterId < pProfile->minimumSourceRosterId || *sourceRosterId > pProfile->maximumSourceRosterId)
+    {
+        return std::nullopt;
+    }
+
+    return OwnedMercenaryIdentity{
+        pMember->memberId, *sourceRosterId, {OwnedMercenaryCustody::AdventurersInn, {}, 0}};
+}
+
+bool GameplayScreenRuntime::releaseAdventurersInnMember(const OwnedMercenaryIdentity &identity)
+{
+    const std::optional<OwnedMercenaryIdentity> current = selectedAdventurersInnReleaseIdentity();
+    if (!current || *current != identity)
+    {
+        return false;
+    }
+
+    std::string error;
+    return m_session.releaseAdventurersInnMember(identity.memberId, identity.sourceRosterId, error);
+}
+
+void GameplayScreenRuntime::clearAdventurersInnReleaseConfirmation()
+{
+    if (interactionState().pendingAdventurersInnRelease)
+    {
+        const MercenaryReleaseProfile *pProfile = mercenaryReleaseProfile();
+        if (pProfile != nullptr && statusBarEventText() == pProfile->confirmationText)
+        {
+            statusBarEventRemainingSeconds() = 0.0f;
+        }
+    }
+    interactionState().pendingAdventurersInnRelease.reset();
+    interactionState().pendingAdventurersInnReleaseExpiresTicks = 0;
+}
+
 bool GameplayScreenRuntime::activeMemberKnowsSpell(uint32_t spellId) const
 {
     const Character *pMember = partyReadOnly() != nullptr ? partyReadOnly()->activeMember() : nullptr;
@@ -2315,6 +2384,7 @@ void GameplayScreenRuntime::resetCharacterOverlayInteractionState()
     interactionState().characterClickLatch = false;
     interactionState().characterMemberCycleLatch = false;
     interactionState().characterPressedTarget = {};
+    clearAdventurersInnReleaseConfirmation();
 }
 
 void GameplayScreenRuntime::syncPartyConditionPortraits()

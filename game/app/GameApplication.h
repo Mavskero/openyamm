@@ -229,6 +229,7 @@ private:
     void openLoadGameScreen(bool returnToGameplayMenu = false, const std::string &source = "main_menu");
     void openNewGameScreen(const std::string &source = "main_menu");
     void processPendingBreachAlvarCompanionRequest();
+    void processPendingOwnedMercenaryJoinRequest();
     bool breachAlvarChaosRequestMatches(const EventRuntimeState::PendingBreachAlvarChaosRequest &request) const;
     void processPendingBreachAlvarChaosRequest();
     bool commitBreachAlvarChaosReturn(const EventRuntimeState::PendingMapMove &move, bool initializeView);

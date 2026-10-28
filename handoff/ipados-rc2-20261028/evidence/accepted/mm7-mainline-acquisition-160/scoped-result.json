@@ -1,0 +1,56 @@
+{
+  "schema": "openyamm.checkpoint160.source-scoped-result.v1",
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "checkpoint": 160,
+  "accepted_at": "2026-10-23T08:59:42.871226+00:00",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/max",
+  "runtime": "local-data/validation/mm7-mainline-acquisition-160/runtime-001",
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "new_unit_test_cases": 0,
+  "new_app_runs": 0,
+  "accepted_source_fix": {
+    "entry": "Global906/916 already unlock topic950 for NPC422/426 after control cube1477 hand-in. Their original prerequisites, rewards and NPC topic overrides are unchanged.",
+    "learning": "Authenticated PromotionTopics.lua4-14 adds handler950. For each current member, packed Blaster==0 and original class cap>=Novice grants Blaster1; existing skill/mastery retained. No race gate, charge or quest-flag mutation.",
+    "presentation": "Original GlobalTxt278 replaces only topic950 display/base labels. Current Chinese label is 榴弹枪; base is Blaster. No other NPC rows or columns change.",
+    "scope": "Only this normal MM7 acquisition rule is projected; the rest of PromotionTopics.lua is not newly supported."
+  },
+  "source_sha256": {
+    "PromotionTopics.lua": "6266dd3fc45736d60901f0e3c4f98e7b4dcb0c2f4bfca6dd816dabc371d94014",
+    "base_global.txt": "6616594c1061155f58d6d8210ff8744b6ec34e5eb0f9f92e793fd96b0a17eb96",
+    "localized_global.txt": "b2ea93cf0d823b60aa9d0b2aa5ded4df93d39fc724048d3618609dacfae1e376"
+  },
+  "validation": [
+    "Main reviewed native class-only capability lookup, skill write semantics and normal Global overlay discovery.",
+    "One native build of importer targets and original source story/event imports passed source authentication, production table loading and Lua registration checks.",
+    "Complete runtime assembled by adding one Global overlay and replacing only two display columns of NPC topic950; all other package entries retained.",
+    "One incremental unsigned generic iOS Release includes changed embedded story/event importers and passes.",
+    "No new unit cases, App driver, route replay, or cold run."
+  ],
+  "limits": [
+    "Learning through the actual NPC UI has not been newly exercised. Source/import/build acceptance is not natural campaign completion.",
+    "The MM6 terminal159 is an alternative learning path, so the prior missing MM7 topic did not establish an unavoidable all-worlds deadlock.",
+    "672-day mdt15 control-cube refill source difference is deferred; exact actor-presence semantics need separate implementation.",
+    "No full-game or iPad acceptance."
+  ],
+  "baseline_runtime": "local-data/validation/mainline-learning-timer-159/runtime-001",
+  "source_files_unchanged_at_acceptance": true,
+  "controlled_gameplay_fixtures_shipped": false,
+  "evidence_sha256": {
+    "scope.json": "6e44cc253fc83e7561ce53d00e156d1e69d5395fa6012d7ef7ac890d266c6e14",
+    "source-manifest-001.json": "08428e7315fa92d32cd548ace2993e3433d4a23d8b93dac8fb69738cbfc6ab7c",
+    "runtime-diff-001.json": "486037cb31a1d80ccc9180eaca999e013da4a29c1f641691345f0159a6efa365",
+    "deferred-source-gap.json": "dfd68d20bca339001da30a87380a1a85061cdbf3958aa3cc9b55f13e17549578",
+    "native-configure-001.command.json": "c01505382403ecacc0bb21ff4660656e10ae41b281652c5c94aee64b335a89ed",
+    "native-build-001.command.json": "2b47e9c13d52975237e6ca2040b941881c3c997ab03141542d1adbf41448ccec",
+    "story-import-001.command.json": "e146fa95ab0c678f6079e8399dbf2dfdc774ec94b2b9afa7ffed550ff415d167",
+    "events-import-001.command.json": "b036cce80eab625077045bd2b8dc813b791ff64f966a063c2a85d3ec3c3552d8",
+    "assemble-runtime-001.command.json": "98d0a08401364e9e0d2d2f97344be6bf7f8a08a114c01016baae230e1424ed07",
+    "ios-configure-001.command.json": "f628279d74a4e2f8e667c91e9e5ac66b8b299848c55f9ec936a354eb4d19ca8e",
+    "ios-release-001.command.json": "cc46c8d25631cbbcca3ec995e677efcdacc2a6f5947f8fc969ea6b477e0fde95",
+    "events-001/engine/events/Global_mmmerge_blaster_learning.lua": "053f95fdc2615b707002da1e7d065dce06abed8d8dcdf227ef244fef60e68e48",
+    "story-001/engine/data_tables/npc_topic.txt": "9bb480b65fb127bdc3e202e941777890b6e2056d043d365a32f751ce950f8fd9"
+  }
+}

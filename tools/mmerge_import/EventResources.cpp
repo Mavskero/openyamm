@@ -1,8 +1,27 @@
 #include "EventResources.h"
+#include "BlasterLearningResources.h"
 #include "BreachAlvarCompanionResources.h"
+#include "BreachMercenaryResources.h"
+#include "MercenaryReleaseResources.h"
+#include "ControlCubeRefillResources.h"
 #include "CrossContinentsResources.h"
 #include "DimensionDoorResources.h"
+#include "GloamingCastleResources.h"
 #include "HarmondaleCastleResources.h"
+#include "LambentCastleResources.h"
+#include "StoneCityResources.h"
+#include "EmeraldIslandTravelResources.h"
+#include "FreeHavenTempleResources.h"
+#include "TownPortalVisitResources.h"
+#include "SubmarineTravelResources.h"
+#include "StoneStatueResources.h"
+#include "Mm8ReentryResources.h"
+#include "TempleBottleResources.h"
+#include "LichPromotionResources.h"
+#include "Mm7EndingResources.h"
+#include "ArchibaldResources.h"
+#include "SkeletonTransformerResources.h"
+#include "SciFiResources.h"
 #include "SmugglersCoveResources.h"
 #include "Mm6HiveResources.h"
 #include "Mm7ShoalsResources.h"
@@ -256,7 +275,40 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
     lookups.npcTopicNames = textLookup(tables / "npc_topic.txt", 1);
     lookups.questNotes = textLookup(tables / "english/quests.txt", 1);
 
+    const std::optional<BlasterLearningProfile> blasterLearning = loadBlasterLearningProfile(
+        root, std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod"));
+    if (blasterLearning)
+    {
+        require(lookups.npcTopicNames.contains(950), "Missing original Blaster learning topic 950");
+        lookups.npcTopicNames[950] = blasterLearning->topic;
+    }
+
+    const std::optional<LichPromotionProfile> lichPromotion = loadLichPromotionProfile(root);
+    if (lichPromotion)
+    {
+        for (uint32_t textId : {114u, 115u, 116u, 925u, 1146u, 1147u, 1148u, 1149u, 1150u, 1151u, 2698u})
+        {
+            require(lookups.npcTexts.contains(textId) && !lookups.npcTexts.at(textId).empty(),
+                "Missing original Lich promotion NPC text " + std::to_string(textId));
+        }
+    }
+
+    const std::optional<Mm7EndingProfile> mm7Ending = loadMm7EndingProfile(root);
+    const std::optional<ArchibaldProfile> archibald = loadArchibaldProfile(root);
     const auto breachAlvar = loadBreachAlvarCompanionResources(root);
+    const std::optional<BreachMercenaryResources> breachMercenaries = loadBreachMercenaryResources(
+        root, std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod"));
+    const std::optional<MercenaryReleaseResources> mercenaryRelease = loadMercenaryReleaseResources(
+        root, std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod"));
+    if (breachMercenaries)
+    {
+        require(lookups.npcTopicNames.contains(breachMercenaries->profile.joinTopicId)
+            && !lookups.npcTopicNames.at(breachMercenaries->profile.joinTopicId).empty(),
+            "Missing Breach mercenary source Join topic");
+        require(lookups.npcTexts.contains(breachMercenaries->profile.partyFullNpcTextId)
+            && !lookups.npcTexts.at(breachMercenaries->profile.partyFullNpcTextId).empty(),
+            "Missing Breach mercenary source full-party text");
+    }
     const std::optional<CrossContinentsIntroProfile> crossContinents = loadCrossContinentsIntroProfile(root);
     const std::optional<RunawayChaosProfile> runawayChaos = loadRunawayChaosProfile(
         root, lookups.npcNames, lookups.npcTopicNames, lookups.npcTexts);
@@ -282,6 +334,19 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
     }
     const std::optional<DimensionDoorProfile> dimensionDoor = loadDimensionDoorProfile(root);
     const std::optional<HarmondaleCastleProfile> harmondaleCastle = loadHarmondaleCastleProfile(root);
+    const std::optional<LambentCastleProfile> lambentCastle = loadLambentCastleProfile(root);
+    const std::optional<StoneCityProfile> stoneCity = loadStoneCityProfile(root);
+    const std::optional<EmeraldIslandTravelProfile> emeraldTravel = loadEmeraldIslandTravelProfile(root);
+    const std::optional<FreeHavenTempleProfile> freeHavenTemple = loadFreeHavenTempleProfile(root);
+    const std::vector<TownPortalVisitProfile> townPortalVisits = loadTownPortalVisitProfiles(root);
+    const std::vector<SubmarineTravelProfile> submarineTravel = loadSubmarineTravelProfiles(root);
+    const std::optional<StoneStatueProfile> stoneStatue = loadStoneStatueProfile(root);
+    const std::vector<Mm8ReentryProfile> reentries = loadMm8ReentryProfiles(root);
+    const std::optional<TempleBottleProfile> templeBottle = loadTempleBottleProfile(root);
+    const std::optional<GloamingCastleProfile> gloamingCastle = loadGloamingCastleProfile(root);
+    const std::optional<SkeletonTransformerProfile> skeletonTransformer = loadSkeletonTransformerProfile(root);
+    const std::optional<SciFiProfile> sciFi = loadSciFiProfile(root);
+    const std::optional<ControlCubeRefillProfile> controlCubeRefill = loadControlCubeRefillProfile(root);
     const std::optional<SmugglersCoveProfile> smugglersCove = loadSmugglersCoveProfile(root);
     const std::optional<Mm6HiveProfile> mm6Hive = loadMm6HiveProfile(root);
     const std::optional<Mm7ShoalsProfile> mm7Shoals = loadMm7ShoalsProfile(root);
@@ -313,6 +378,11 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
         if (requested.empty() || requested.contains(stem))
         {
             require(members.contains(stem + ".evt"), "Missing map EVT: " + file);
+            if (controlCubeRefill && world == "mm7" && stem == controlCubeRefill->mapStem)
+            {
+                require(row[6] == std::to_string(controlCubeRefill->refillIntervalDays),
+                    "Control cube refill requires the original 672-day map interval");
+            }
             maps.push_back({world, file, row[1]});
             remaining.erase(stem);
         }
@@ -357,10 +427,88 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
             && std::filesystem::path(map.file).stem().string() == harmondaleCastle->mapStem;
     });
 
+    const auto selectedStoneCity = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
+    {
+        return stoneCity && map.world == "mm7" && std::filesystem::path(map.file).stem() == stoneCity->mapStem;
+    });
+
+    const auto selectedEmeraldTravel = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
+    {
+        return emeraldTravel && map.world == "mm7"
+            && std::filesystem::path(map.file).stem() == emeraldTravel->mapStem;
+    });
+    const auto selectedFreeHavenTemple = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
+    {
+        return freeHavenTemple && map.world == "mm6"
+            && std::filesystem::path(map.file).stem() == freeHavenTemple->mapStem;
+    });
+
+    std::map<std::string, const TownPortalVisitProfile *> selectedTownPortalVisits;
+    for (const TownPortalVisitProfile &profile : townPortalVisits)
+    {
+        if (std::any_of(maps.begin(), maps.end(), [&](const MapSource &map)
+            { return map.world == "mm6" && std::filesystem::path(map.file).stem() == profile.mapStem; }))
+        {
+            selectedTownPortalVisits.emplace(profile.mapStem, &profile);
+        }
+    }
+    std::map<std::string, const SubmarineTravelProfile *> selectedSubmarineTravel;
+    for (const SubmarineTravelProfile &profile : submarineTravel)
+    {
+        if (std::any_of(maps.begin(), maps.end(), [&](const MapSource &map)
+            { return map.world == "mm8" && std::filesystem::path(map.file).stem() == profile.mapStem; }))
+        {
+            selectedSubmarineTravel.emplace(profile.mapStem, &profile);
+        }
+    }
+    const auto selectedStoneStatue = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
+    {
+        return stoneStatue && map.world == "mm8" && std::filesystem::path(map.file).stem() == stoneStatue->mapStem;
+    });
+
+    std::map<std::string, const Mm8ReentryProfile *> selectedReentries;
+    for (const Mm8ReentryProfile &profile : reentries)
+    {
+        if (std::any_of(maps.begin(), maps.end(), [&](const MapSource &map)
+            { return map.world == "mm8" && std::filesystem::path(map.file).stem() == profile.mapStem; }))
+        {
+            selectedReentries.emplace(profile.mapStem, &profile);
+        }
+    }
+    const bool selectedTempleBottle = templeBottle && std::any_of(maps.begin(), maps.end(), [&](const MapSource &map)
+        { return map.world == "mm7" && std::filesystem::path(map.file).stem() == templeBottle->mapStem; });
+
+    const auto selectedLambentCastle = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
+    {
+        return lambentCastle && map.world == "mm7"
+            && std::filesystem::path(map.file).stem().string() == lambentCastle->mapStem;
+    });
+
+    const auto selectedGloamingCastle = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
+    {
+        return gloamingCastle && map.world == "mm7" && std::filesystem::path(map.file).stem() == "d03";
+    });
+
+    const auto selectedSkeletonTransformer = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
+    {
+        return skeletonTransformer && map.world == "mm8" && std::filesystem::path(map.file).stem() == "d19";
+    });
+
     const auto selectedSmugglersCove = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
     {
         return smugglersCove && map.world == "mm8"
             && std::filesystem::path(map.file).stem().string() == smugglersCove->mapStem;
+    });
+
+    const auto selectedSciFi = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
+    {
+        return sciFi && map.world == "mm6" && std::filesystem::path(map.file).stem() == sciFi->mapStem;
+    });
+
+    const auto selectedControlCubeRefill = std::find_if(maps.begin(), maps.end(), [&](const MapSource &map)
+    {
+        return controlCubeRefill && map.world == "mm7"
+            && std::filesystem::path(map.file).stem() == controlCubeRefill->mapStem;
     });
 
     std::filesystem::create_directories(output);
@@ -373,6 +521,16 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
             require(runawayChaos.has_value(), "Breach Alvar companions require the source Runaway Chaos overlay");
             const std::string profile = Game::serializeBreachAlvarCompanionProfile(breachAlvar->profile);
             writeConvertedResource(output / "engine/breach_alvar_companions.txt", {profile.begin(), profile.end()});
+        }
+        if (breachMercenaries)
+        {
+            const std::string profile = Game::serializeBreachMercenaryProfile(breachMercenaries->profile);
+            writeConvertedResource(output / "engine/breach_mercenaries.txt", {profile.begin(), profile.end()});
+        }
+        if (mercenaryRelease)
+        {
+            const std::string profile = Game::serializeMercenaryReleaseProfile(mercenaryRelease->profile);
+            writeConvertedResource(output / "engine/mercenary_release.txt", {profile.begin(), profile.end()});
         }
         std::ostringstream manifest;
         manifest << "{\"schema\":1,\"stage\":\"merged-events\",\"legacy_event_version\":8,"
@@ -428,6 +586,48 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                 "normal Merge admission remains closed\",\"complete_quest\":false}";
             firstSelectiveOverlay = false;
         }
+        if (breachMercenaries)
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            const Game::BreachMercenaryProfile &profile = breachMercenaries->profile;
+            manifest << "{\"profile\":\"mmmerge-breach-mercenaries-v1\","
+                "\"content_profile\":\"engine/breach_mercenaries.txt\",\"sources\":[";
+            for (size_t index = 0; index < BreachMercenarySourcePaths.size(); ++index)
+            {
+                manifest << (index ? "," : "") << "{\"path\":"
+                    << std::quoted(std::string(BreachMercenarySourcePaths[index])) << ",\"sha256\":"
+                    << std::quoted(profile.sourceSha256[index]) << '}';
+            }
+            manifest << "],\"global_text_archive\":" << std::quoted(profile.chineseText
+                ? "Data/10 LocZHCN.EnglishT.lod" : "Data/mmmerge.T.lod")
+                << ",\"global_text_member\":\"global.txt\",\"global_text_payload_sha256\":"
+                << std::quoted(profile.globalTextSha256)
+                << ",\"scope\":\"Source spots, face mapping, roster aliases, fresh roster and Join text; "
+                "no Character ownership or scene admission\",\"complete_quest\":false}";
+            firstSelectiveOverlay = false;
+        }
+        if (mercenaryRelease)
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            const Game::MercenaryReleaseProfile &profile = mercenaryRelease->profile;
+            manifest << "{\"profile\":\"mmmerge-mercenary-release-v1\","
+                "\"content_profile\":\"engine/mercenary_release.txt\",\"source\":"
+                << std::quoted(std::string(MercenaryReleaseSourcePath)) << ",\"source_sha256\":"
+                << std::quoted(profile.sourceSha256)
+                << ",\"global_text_archive\":" << std::quoted(profile.chineseText
+                    ? "Data/10 LocZHCN.EnglishT.lod" : "Data/mmmerge.T.lod")
+                << ",\"global_text_member\":\"global.txt\",\"global_text_payload_sha256\":"
+                << std::quoted(profile.globalTextSha256)
+                << ",\"scope\":\"Ordinary Inn source roster protection, release aliases and confirmation text; "
+                "no Character ownership or refill execution\",\"complete_quest\":false}";
+            firstSelectiveOverlay = false;
+        }
         if (dimensionDoor && !selectedDimensionDoorOverlays.empty())
         {
             if (!firstSelectiveOverlay)
@@ -462,11 +662,192 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
             }
             const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm7/events/maps")
                 / (harmondaleCastle->mapStem + "_mmmerge_castle_history.lua");
-            manifest << "{\"profile\":\"mmmerge-harmondale-castle-entrance-v1\","
+            manifest << "{\"profile\":\"mmmerge-harmondale-castle-and-arbiter-v2\","
                 "\"source\":\"Scripts/Maps/7out02.lua\",\"source_sha256\":"
                 << std::quoted(harmondaleCastle->sourceSha256)
                 << ",\"path\":" << std::quoted(overlayPath.generic_string())
-                << ",\"scope\":\"event301 entrance gate, initial history and castle transition only\"}";
+                << ",\"scope\":\"event301 entrance/history and event211 source arbiter succession after "
+                   "artifact delivery or strictly more than six months since the first rebuilt-castle load\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (!selectedTownPortalVisits.empty())
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-town-portal-visits-v1\",\"maps\":[";
+            size_t index = 0;
+            for (const auto &[stem, pProfile] : selectedTownPortalVisits)
+            {
+                manifest << (index++ ? "," : "") << "{\"map_stem\":" << std::quoted(stem)
+                    << ",\"source\":" << std::quoted("Scripts/Maps/" + stem + ".lua")
+                    << ",\"source_sha256\":" << std::quoted(pProfile->sourceSha256)
+                    << ",\"event_id\":" << pProfile->eventId
+                    << ",\"legacy_qbit\":" << pProfile->legacyQBit
+                    << ",\"persistent_qbit\":" << pProfile->unlockQBit
+                    << ",\"hook\":" << std::quoted(pProfile->afterLoad ? "AfterLoadMap" : "LoadMap")
+                    << ",\"path\":" << std::quoted("worlds/mm6/events/maps/" + stem + "_mmmerge_town_visit.lua")
+                    << '}';
+            }
+            manifest << "]}";
+            firstSelectiveOverlay = false;
+        }
+        if (!selectedSubmarineTravel.empty())
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-submarine-travel-v1\",\"maps\":[";
+            size_t index = 0;
+            for (const auto &[stem, pProfile] : selectedSubmarineTravel)
+            {
+                manifest << (index++ ? "," : "") << "{\"map_stem\":" << std::quoted(stem)
+                    << ",\"source\":" << std::quoted("Scripts/Maps/" + stem + ".lua")
+                    << ",\"source_sha256\":" << std::quoted(pProfile->sourceSha256)
+                    << ",\"path\":" << std::quoted("worlds/mm8/events/maps/" + stem + "_mmmerge_submarine.lua")
+                    << '}';
+            }
+            manifest << "]}";
+            firstSelectiveOverlay = false;
+        }
+        if (stoneStatue && selectedStoneStatue != maps.end())
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-stone-statue-rescue-v1\","
+                "\"source\":\"Scripts/Maps/out07.lua\",\"source_sha256\":"
+                << std::quoted(stoneStatue->sourceSha256)
+                << ",\"path\":\"worlds/mm8/events/maps/out07_mmmerge_stone_statues.lua\","
+                "\"scope\":\"events132-136 current member learned spell40 or party scroll339; source NPC/flags\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (!selectedReentries.empty())
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-mm8-reentry-v1\",\"maps\":[";
+            size_t index = 0;
+            for (const auto &[stem, pProfile] : selectedReentries)
+            {
+                manifest << (index++ ? "," : "") << "{\"map_stem\":" << std::quoted(stem)
+                    << ",\"source_sha256\":" << std::quoted(pProfile->sourceSha256)
+                    << ",\"path\":" << std::quoted("worlds/mm8/events/maps/" + stem + "_mmmerge_reentry.lua")
+                    << '}';
+            }
+            manifest << "]}";
+            firstSelectiveOverlay = false;
+        }
+        if (selectedTempleBottle)
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-temple-bottle-return-v1\",\"source_sha256\":"
+                << std::quoted(templeBottle->sourceSha256)
+                << ",\"item_source_sha256\":" << std::quoted(templeBottle->itemSourceSha256)
+                << ",\"path\":\"worlds/mm7/events/maps/7nwc_mmmerge_bottle_return.lua\","
+                   "\"scope\":\"source501 session-owned return and original out02 fallback\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (emeraldTravel && selectedEmeraldTravel != maps.end())
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-emerald-island-travel-v1\","
+                "\"source\":\"Scripts/Maps/7out03.lua\",\"source_sha256\":"
+                << std::quoted(emeraldTravel->sourceSha256)
+                << ",\"path\":\"worlds/mm7/events/maps/7out03_mmmerge_emerald_travel.lua\","
+                "\"scope\":\"House486 route4 follows source Q519 selection of location101 or44\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (freeHavenTemple && selectedFreeHavenTemple != maps.end())
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-free-haven-temple-v1\","
+                "\"source\":\"Scripts/Maps/outc2.lua\",\"source_sha256\":"
+                << std::quoted(freeHavenTemple->sourceSha256)
+                << ",\"path\":\"worlds/mm6/events/maps/outc2_mmmerge_temple.lua\","
+                "\"scope\":\"event19 source follower professions and chalice transaction; event140 inn1607\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (stoneCity && selectedStoneCity != maps.end())
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-stone-city-entrance-v1\","
+                "\"source\":\"Scripts/Maps/7d24.lua\",\"source_sha256\":"
+                << std::quoted(stoneCity->sourceSha256)
+                << ",\"path\":\"worlds/mm7/events/maps/7d24_mmmerge_stone_city.lua\","
+                "\"scope\":\"event416 source Q647 gate instead of per-character award3; "
+                "ExitNPC398 journal cleanup not projected\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (lambentCastle && selectedLambentCastle != maps.end())
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm7/events/maps")
+                / (lambentCastle->mapStem + "_mmmerge_lambent_entry.lua");
+            manifest << "{\"profile\":\"mmmerge-lambent-castle-entrance-v1\","
+                "\"source\":\"Scripts/Maps/7d30.lua\",\"source_sha256\":"
+                << std::quoted(lambentCastle->sourceSha256)
+                << ",\"path\":" << std::quoted(overlayPath.generic_string())
+                << ",\"scope\":\"event416 light-route and current-enemy throne-room gate only\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (gloamingCastle && selectedGloamingCastle != maps.end())
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm7/events/maps")
+                / (gloamingCastle->mapStem + "_mmmerge_gloaming_entry.lua");
+            manifest << "{\"profile\":\"mmmerge-gloaming-castle-entrance-v1\","
+                "\"source\":\"Scripts/Maps/d03.lua\",\"source_sha256\":"
+                << std::quoted(gloamingCastle->sourceSha256)
+                << ",\"path\":" << std::quoted(overlayPath.generic_string())
+                << ",\"scope\":\"event5 dark-route and current-enemy throne-room gate with Q710 house choice only\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (skeletonTransformer && selectedSkeletonTransformer != maps.end())
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm8/events/maps")
+                / (skeletonTransformer->mapStem + "_mmmerge_skeleton_transformer.lua");
+            manifest << "{\"profile\":\"mmmerge-skeleton-transformer-gates-v1\","
+                "\"source\":\"Scripts/Maps/d19.lua\",\"source_sha256\":"
+                << std::quoted(skeletonTransformer->sourceSha256)
+                << ",\"path\":" << std::quoted(overlayPath.generic_string())
+                << ",\"source_map_var_index\":19,\"generated_map_var_index\":21"
+                << ",\"scope\":\"event15 source chamber access and event131 exact puzzle completion without Dyson\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (sciFi && selectedSciFi != maps.end())
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm6/events/maps")
+                / (sciFi->mapStem + "_mmmerge_blaster_learning.lua");
+            manifest << "{\"profile\":\"mmmerge-sci-fi-blaster-learning-v1\","
+                "\"source\":\"Scripts/Maps/sci-fi.lua\",\"source_sha256\":"
+                << std::quoted(sciFi->sourceSha256)
+                << ",\"path\":" << std::quoted(overlayPath.generic_string())
+                << ",\"scope\":\"append event61 zero-skill Blaster learning for every current party member; "
+                   "preserve the source terminal message and continuation\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (controlCubeRefill && selectedControlCubeRefill != maps.end())
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            manifest << "{\"profile\":\"mmmerge-control-cube-refill-v1\","
+                "\"source\":\"Scripts/Maps/mdt15.lua\",\"source_sha256\":"
+                << std::quoted(controlCubeRefill->sourceSha256)
+                << ",\"path\":\"worlds/mm7/events/maps/mdt15_mmmerge_control_cube_refill.lua\","
+                "\"hook\":\"MapRefill\",\"hook_event_id\":" << controlCubeRefill->hookEventId
+                << ",\"refill_interval_days\":" << controlCubeRefill->refillIntervalDays
+                << ",\"scope\":\"Source count guards for actors 0/1; clear items then assign 1477 and 866 "
+                   "on refill; preserve original Q759 event 1\"}";
             firstSelectiveOverlay = false;
         }
         if (smugglersCove && selectedSmugglersCove != maps.end())
@@ -482,6 +863,18 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                 << std::quoted(smugglersCove->sourceSha256)
                 << ",\"path\":" << std::quoted(overlayPath.generic_string())
                 << ",\"scope\":\"map entry monster groups and kill anger with last-visit expiry\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (archibald && std::any_of(maps.begin(), maps.end(), [](const MapSource &map)
+            { return map.world == "mm6" && std::filesystem::path(map.file).stem() == "outd3"; }))
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-archibald-entrance-v1\","
+                "\"source\":\"Scripts/Maps/outd3.lua\",\"source_sha256\":"
+                << std::quoted(archibald->sourceSha256)
+                << ",\"path\":\"worlds/mm6/events/maps/outd3_mmmerge_archibald.lua\","
+                "\"scope\":\"event42 bell/completion entrance and release movie; original global1343 reward retained; "
+                "post-departure house animation487 not projected\"}";
             firstSelectiveOverlay = false;
         }
         if (mm6Hive && std::any_of(maps.begin(), maps.end(), [&](const MapSource &map)
@@ -517,6 +910,52 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                     << '}';
             }
             manifest << "]}";
+            firstSelectiveOverlay = false;
+        }
+        if (blasterLearning)
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            manifest << "{\"profile\":\"mmmerge-blaster-learning-topic-v1\",\"scope\":\"global\","
+                "\"event_ids\":[950],\"source\":\"Scripts/Global/PromotionTopics.lua\",\"source_sha256\":"
+                << std::quoted(blasterLearning->sourceSha256)
+                << ",\"global_text_payload_sha256\":" << std::quoted(blasterLearning->globalTextSha256)
+                << ",\"label_source\":\"Game.GlobalTxt[278]\","
+                "\"path\":\"engine/events/Global_mmmerge_blaster_learning.lua\","
+                "\"behavior\":\"teach zero-skill party members whose current class admits Blaster; "
+                "preserve existing skills and source NPC topic unlocks\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (lichPromotion)
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            manifest << "{\"profile\":\"mmmerge-lich-promotion-v2\",\"scope\":\"global\","
+                "\"event_ids\":[89,738,846,847],\"source\":\"Scripts/Global/PromotionTopics.lua\",\"source_sha256\":"
+                << std::quoted(lichPromotion->sourceSha256)
+                << ",\"policy_source\":\"Scripts/General/MiscTweaks.lua\",\"policy_source_sha256\":"
+                << std::quoted(lichPromotion->miscTweaksSha256)
+                << ",\"path\":\"engine/events/Global_mmmerge_lich_promotion.lua\","
+                "\"behavior\":\"source-managed ClassIs effects; MM8 original first quest with appended final helper, "
+                "MM7 acceptance/per-holder ritual and MM8 per-member repeat promotion; "
+                "Dark Archmage fallback and final source Lich appearance/state\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (mm7Ending)
+        {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
+            manifest << "{\"profile\":\"mmmerge-mm7-ending-v1\",\"scope\":\"global\","
+                "\"event_ids\":[920],\"source\":\"Scripts/Global/StdQuestsFunctions.lua\",\"source_sha256\":"
+                << std::quoted(mm7Ending->sourceSha256)
+                << ",\"path\":\"engine/events/Global_mmmerge_endgame_tail.lua\","
+                "\"behavior\":\"append source light-ending journal update after the original final transaction\"}";
             firstSelectiveOverlay = false;
         }
         if (questItemCapacity)
@@ -585,6 +1024,54 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                 std::string(EventSupportSource) + "\n" + lua, "@" + evtName,
                 global ? Game::ScriptedEventScope::Global : Game::ScriptedEventScope::Map, error);
             require(program.has_value(), "Generated Lua rejected for " + evtName + ": " + error);
+            if (global && blasterLearning)
+            {
+                const auto overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + blasterLearning->luaSource,
+                    "@Global.lua+blaster-learning", Game::ScriptedEventScope::Global, error);
+                require(overlaid.has_value(), "Blaster learning topic Lua rejected: " + error);
+                std::vector<uint16_t> expectedEvents = program->eventIds();
+                if (!program->hasEvent(950))
+                {
+                    expectedEvents.push_back(950);
+                    std::sort(expectedEvents.begin(), expectedEvents.end());
+                }
+                require(overlaid->hasEvent(950) && overlaid->eventIds() == expectedEvents
+                    && overlaid->canShowTopicEventIds() == program->canShowTopicEventIds(),
+                    "Blaster learning overlay changed unrelated source event or topic registration");
+                writeConvertedResource(output / "engine/events/Global_mmmerge_blaster_learning.lua",
+                    {blasterLearning->luaSource.begin(), blasterLearning->luaSource.end()});
+            }
+            if (global && lichPromotion)
+            {
+                require(program->hasEvent(89) && program->hasEvent(738)
+                    && program->hasEvent(846) && program->hasEvent(847),
+                    "Missing original Lich promotion events");
+                const auto overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + lichPromotion->luaSource,
+                    "@Global.lua+lich-promotion", Game::ScriptedEventScope::Global, error);
+                require(overlaid.has_value(), "Lich promotion Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->canShowTopicEventIds() == program->canShowTopicEventIds(),
+                    "Lich promotion overlay changed unrelated source event or topic registration");
+                require(overlaid->sourceManagedLichEffects(),
+                    "Lich promotion overlay did not declare source-managed class effects");
+                writeConvertedResource(output / "engine/events/Global_mmmerge_lich_promotion.lua",
+                    {lichPromotion->luaSource.begin(), lichPromotion->luaSource.end()});
+            }
+            if (global && mm7Ending)
+            {
+                require(program->hasEvent(920), "Missing original MM7 light ending event");
+                const auto overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + mm7Ending->luaSource,
+                    "@Global.lua+mm7-ending", Game::ScriptedEventScope::Global, error);
+                require(overlaid.has_value(), "MM7 ending Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->canShowTopicEventIds() == program->canShowTopicEventIds(),
+                    "MM7 ending overlay changed unrelated source event or topic registration");
+                writeConvertedResource(output / "engine/events/Global_mmmerge_endgame_tail.lua",
+                    {mm7Ending->luaSource.begin(), mm7Ending->luaSource.end()});
+            }
             if (global && questItemCapacity)
             {
                 const auto overlaid = Game::ScriptedEventProgram::loadFromLuaText(
@@ -716,15 +1203,311 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
             }
             if (!global && harmondaleCastle && map.world == "mm7" && stem == harmondaleCastle->mapStem)
             {
+                require(program->hasEvent(211) && program->hasEvent(301),
+                    "Castle Harmondale source events 211/301 are absent");
                 const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
                     std::string(EventSupportSource) + "\n" + lua + "\n" + harmondaleCastle->luaSource,
                     "@" + evtName + "+harmondale-castle", Game::ScriptedEventScope::Map, error);
-                require(overlaid.has_value(), "Castle Harmondale entrance Lua rejected: " + error);
-                require(overlaid->hasEvent(301), "Castle Harmondale entrance replacement was not registered");
+                require(overlaid.has_value(), "Castle Harmondale entrance/arbiter Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds(),
+                    "Castle Harmondale entrance/arbiter overlay changed source event registration");
+                std::vector<uint16_t> originalOnLoad = program->onLoadEventIds();
+                std::vector<uint16_t> overlaidOnLoad = overlaid->onLoadEventIds();
+                std::sort(originalOnLoad.begin(), originalOnLoad.end());
+                std::sort(overlaidOnLoad.begin(), overlaidOnLoad.end());
+                require(originalOnLoad == overlaidOnLoad
+                    && std::count(overlaidOnLoad.begin(), overlaidOnLoad.end(), 211) == 1,
+                    "Castle Harmondale arbiter source load hook was not retained exactly once");
                 const std::filesystem::path overlayPath = std::filesystem::path("worlds") / map.world
                     / "events/maps" / (stem + "_mmmerge_castle_history.lua");
                 writeConvertedResource(output / overlayPath,
                     {harmondaleCastle->luaSource.begin(), harmondaleCastle->luaSource.end()});
+            }
+            if (!global && sciFi && map.world == "mm6" && stem == sciFi->mapStem)
+            {
+                require(program->hasEvent(61), "Sci-fi terminal source event 61 is absent");
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + sciFi->luaSource,
+                    "@" + evtName + "+blaster-learning", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Sci-fi Blaster learning Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "Sci-fi Blaster learning overlay changed source event/lifecycle registration");
+                const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm6/events/maps")
+                    / (stem + "_mmmerge_blaster_learning.lua");
+                writeConvertedResource(output / overlayPath, {sciFi->luaSource.begin(), sciFi->luaSource.end()});
+            }
+            if (!global && controlCubeRefill && map.world == "mm7" && stem == controlCubeRefill->mapStem)
+            {
+                require(program->hasEvent(1), "Control cube original entry event 1 is absent");
+                require(!program->hasEvent(controlCubeRefill->hookEventId),
+                    "Control cube refill hook conflicts with a source event");
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + controlCubeRefill->luaSource,
+                    "@" + evtName + "+control-cube-refill", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Control cube refill Lua rejected: " + error);
+                std::vector<uint16_t> expectedIds = program->eventIds();
+                expectedIds.push_back(controlCubeRefill->hookEventId);
+                std::sort(expectedIds.begin(), expectedIds.end());
+                require(overlaid->eventIds() == expectedIds
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds()
+                    && overlaid->timerTriggers().size() == program->timerTriggers().size(),
+                    "Control cube refill overlay changed unrelated source event/lifecycle registration");
+                const std::filesystem::path overlayPath =
+                    "worlds/mm7/events/maps/mdt15_mmmerge_control_cube_refill.lua";
+                writeConvertedResource(output / overlayPath,
+                    {controlCubeRefill->luaSource.begin(), controlCubeRefill->luaSource.end()});
+            }
+            if (!global && map.world == "mm6" && selectedTownPortalVisits.contains(stem))
+            {
+                const TownPortalVisitProfile &profile = *selectedTownPortalVisits.at(stem);
+                require(!program->hasEvent(profile.eventId), "Town Portal visit hook conflicts with a source event");
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + profile.luaSource,
+                    "@" + evtName + "+town-portal-visit", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Town Portal visit Lua rejected: " + error);
+                std::vector<uint16_t> expectedIds = program->eventIds();
+                expectedIds.push_back(profile.eventId);
+                std::sort(expectedIds.begin(), expectedIds.end());
+                std::vector<uint16_t> expectedOnLoad = program->onLoadEventIds();
+                std::vector<uint16_t> expectedAfterLoad = program->afterLoadEventIds();
+                (profile.afterLoad ? expectedAfterLoad : expectedOnLoad).push_back(profile.eventId);
+                require(overlaid->eventIds() == expectedIds && overlaid->onLoadEventIds() == expectedOnLoad
+                    && overlaid->afterLoadEventIds() == expectedAfterLoad
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "Town Portal visit overlay changed unrelated source registration");
+                const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm6/events/maps")
+                    / (stem + "_mmmerge_town_visit.lua");
+                writeConvertedResource(output / overlayPath, {profile.luaSource.begin(), profile.luaSource.end()});
+            }
+            if (!global && map.world == "mm8" && selectedSubmarineTravel.contains(stem))
+            {
+                const SubmarineTravelProfile &profile = *selectedSubmarineTravel.at(stem);
+                require(program->hasEvent(451), "Submarine source event451 is absent");
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + profile.luaSource,
+                    "@" + evtName + "+submarine", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Submarine travel Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds()
+                    && overlaid->getHint(451) == program->getHint(451),
+                    "Submarine travel overlay changed source registration or hint");
+                const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm8/events/maps")
+                    / (stem + "_mmmerge_submarine.lua");
+                writeConvertedResource(output / overlayPath, {profile.luaSource.begin(), profile.luaSource.end()});
+            }
+            if (!global && stoneStatue && map.world == "mm8" && stem == stoneStatue->mapStem)
+            {
+                const std::optional<std::string> statueHint = strings.get(13);
+                require(statueHint && !statueHint->empty(), "Stone statue source hint is absent");
+                for (uint16_t eventId = 132; eventId <= 136; ++eventId)
+                {
+                    require(program->hasEvent(eventId), "Stone statue source event is absent");
+                }
+                const std::string overlay = makeStoneStatueOverlay(*statueHint);
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+stone-statues", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Stone statue rescue Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "Stone statue overlay changed source registration");
+                for (uint16_t eventId = 132; eventId <= 136; ++eventId)
+                {
+                    require(overlaid->getHint(eventId) == statueHint, "Stone statue source hint changed");
+                }
+                const std::filesystem::path overlayPath = "worlds/mm8/events/maps/out07_mmmerge_stone_statues.lua";
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
+            }
+            if (!global && map.world == "mm8" && selectedReentries.contains(stem))
+            {
+                const Mm8ReentryProfile &profile = *selectedReentries.at(stem);
+                std::array<std::string, 4> hints;
+                if (stem == "pbp")
+                {
+                    for (size_t index = 0; index < hints.size(); ++index)
+                    {
+                        const std::optional<std::string> hint = strings.get(51 + index);
+                        require(hint && !hint->empty(), "Prison source hint is absent");
+                        hints[index] = *hint;
+                    }
+                }
+                const std::string overlay = makeMm8ReentryOverlay(profile, hints);
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+reentry", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "MM8 reentry Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "MM8 reentry overlay changed source registration");
+                if (stem == "pbp")
+                {
+                    for (size_t index = 0; index < hints.size(); ++index)
+                        require(overlaid->getHint(502 + index) == hints[index], "Prison source hint differs");
+                }
+                else require(overlaid->getHint(504) == program->getHint(504), "Crystal entrance hint differs");
+                const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm8/events/maps")
+                    / (stem + "_mmmerge_reentry.lua");
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
+            }
+            if (!global && selectedTempleBottle && map.world == "mm7" && stem == templeBottle->mapStem)
+            {
+                require(program->hasEvent(501), "Temple bottle source exit is absent");
+                const std::string overlay = makeTempleBottleOverlay();
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+bottle-return", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Temple bottle return Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds()
+                    && overlaid->getHint(501) == program->getHint(501),
+                    "Temple bottle overlay changed source registration or hint");
+                const std::filesystem::path overlayPath = "worlds/mm7/events/maps/7nwc_mmmerge_bottle_return.lua";
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
+            }
+            if (!global && emeraldTravel && map.world == "mm7" && stem == emeraldTravel->mapStem)
+            {
+                require(!program->hasEvent(65489) && lookups.mapNamesByFile.contains("7out01.odm"),
+                    "Emerald travel hook conflicts with a source event or destination is absent");
+                bool sourceHousePresent = false;
+                for (const std::vector<std::string> &row : tableRows(tables / "house_data.txt"))
+                {
+                    if (rowId(row) == 486)
+                    {
+                        sourceHousePresent = row.size() > 2 && row[1] == "8" && row[2] == "Boats";
+                    }
+                }
+                require(sourceHousePresent, "Emerald travel source House486 is not Boats8");
+                const std::string overlay = makeEmeraldIslandTravelOverlay(lookups.mapNamesByFile.at("7out01.odm"));
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+emerald-travel", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Emerald travel Lua rejected: " + error);
+                std::vector<uint16_t> expectedIds = program->eventIds();
+                expectedIds.push_back(65489);
+                std::sort(expectedIds.begin(), expectedIds.end());
+                std::vector<uint16_t> expectedOnLoad = program->onLoadEventIds();
+                expectedOnLoad.push_back(65489);
+                require(overlaid->eventIds() == expectedIds && overlaid->onLoadEventIds() == expectedOnLoad
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "Emerald travel overlay changed unrelated source registration");
+                const std::filesystem::path overlayPath = "worlds/mm7/events/maps/7out03_mmmerge_emerald_travel.lua";
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
+            }
+            if (!global && freeHavenTemple && map.world == "mm6" && stem == freeHavenTemple->mapStem)
+            {
+                const std::optional<std::string> repairedText = strings.get(29);
+                const std::optional<std::string> chaliceText = strings.get(30);
+                require(program->hasEvent(19) && !program->hasEvent(140) && repairedText && chaliceText
+                    && lookups.houseNames.contains(326) && lookups.houseNames.contains(1607),
+                    "Missing Free Haven temple source event, messages or inn house");
+                const std::string overlay = makeFreeHavenTempleOverlay(
+                    lookups.houseNames.at(326), *repairedText, *chaliceText, lookups.houseNames.at(1607));
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+free-haven-temple", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Free Haven temple Lua rejected: " + error);
+                std::vector<uint16_t> expectedIds = program->eventIds();
+                expectedIds.push_back(140);
+                std::sort(expectedIds.begin(), expectedIds.end());
+                require(overlaid->eventIds() == expectedIds
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "Free Haven temple overlay changed unrelated source registration");
+                const std::filesystem::path overlayPath = "worlds/mm6/events/maps/outc2_mmmerge_temple.lua";
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
+            }
+            if (!global && stoneCity && map.world == "mm7" && stem == stoneCity->mapStem)
+            {
+                const std::optional<std::string> entranceHint = strings.get(20);
+                const std::optional<std::string> lockedText = strings.get(19);
+                require(entranceHint && lockedText && program->hasEvent(416),
+                    "Missing Stone City entrance event or localized source STR slots");
+                const std::string overlay = makeStoneCityOverlay(*entranceHint, *lockedText);
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+stone-city", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Stone City entrance Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds()
+                    && overlaid->getHint(416) == entranceHint,
+                    "Stone City entrance overlay changed source registration or localized hint");
+                const std::filesystem::path overlayPath = "worlds/mm7/events/maps/7d24_mmmerge_stone_city.lua";
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
+            }
+            if (!global && lambentCastle && map.world == "mm7" && stem == lambentCastle->mapStem)
+            {
+                const std::optional<std::string> entranceHint = strings.get(20);
+                const std::optional<std::string> lockedText = strings.get(21);
+                require(entranceHint && lockedText, "Missing Castle Lambent entrance source STR slots");
+                require(program->hasEvent(416), "Castle Lambent source entrance event 416 is absent");
+                const std::string overlay = makeLambentCastleOverlay(*entranceHint, *lockedText);
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+lambent-castle", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Castle Lambent entrance Lua rejected: " + error);
+                require(overlaid->hasEvent(416) && overlaid->eventIds() == program->eventIds(),
+                    "Castle Lambent entrance overlay changed source event registration");
+                const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm7/events/maps")
+                    / (stem + "_mmmerge_lambent_entry.lua");
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
+            }
+            if (!global && gloamingCastle && map.world == "mm7" && stem == "d03")
+            {
+                const std::optional<std::string> entranceHint = strings.get(20);
+                const std::optional<std::string> lockedText = strings.get(21);
+                require(entranceHint && lockedText, "Missing Castle Gloaming entrance source STR slots");
+                require(program->hasEvent(5), "Castle Gloaming source entrance event 5 is absent");
+                const std::string overlay = makeGloamingCastleOverlay(*entranceHint, *lockedText);
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+gloaming-castle", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Castle Gloaming entrance Lua rejected: " + error);
+                require(overlaid->hasEvent(5) && overlaid->eventIds() == program->eventIds(),
+                    "Castle Gloaming entrance overlay changed source event registration");
+                const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm7/events/maps")
+                    / (stem + "_mmmerge_gloaming_entry.lua");
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
+            }
+            if (!global && skeletonTransformer && map.world == "mm8" && stem == "d19")
+            {
+                const std::optional<std::string> entranceHint = strings.get(2);
+                require(entranceHint.has_value(), "Missing skeleton transformer entrance source STR slot 2");
+                require(program->hasEvent(15) && program->hasEvent(131),
+                    "Skeleton transformer source events 15/131 are absent");
+                require(lua.find("SetValue(MapVar(21), 15)") != std::string::npos,
+                    "Skeleton transformer generated puzzle counter layout changed; review source Map.Vars[19]");
+                const std::string overlay = makeSkeletonTransformerOverlay(*entranceHint);
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+skeleton-transformer", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Skeleton transformer Lua rejected: " + error);
+                require(overlaid->hasEvent(15) && overlaid->hasEvent(131)
+                    && overlaid->eventIds() == program->eventIds(),
+                    "Skeleton transformer overlay changed source event registration");
+                require(overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "Skeleton transformer overlay changed source lifecycle hooks");
+                const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm8/events/maps")
+                    / (stem + "_mmmerge_skeleton_transformer.lua");
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
             }
             if (!global && smugglersCove && map.world == "mm8" && stem == smugglersCove->mapStem)
             {
@@ -738,6 +1521,24 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                     / "events/maps" / (stem + "_mmmerge_hostility.lua");
                 writeConvertedResource(output / overlayPath,
                     {smugglersCove->luaSource.begin(), smugglersCove->luaSource.end()});
+            }
+            if (!global && archibald && map.world == "mm6" && stem == "outd3")
+            {
+                require(program->hasEvent(42), "Archibald source entrance event 42 is absent");
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + archibald->luaSource,
+                    "@" + evtName + "+archibald", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Archibald entrance Lua rejected: " + error);
+                require(program->getHint(42).has_value() && overlaid->getHint(42) == program->getHint(42),
+                    "Archibald entrance overlay lost the localized door hint");
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "Archibald entrance overlay changed source event/lifecycle registration");
+                const std::filesystem::path overlayPath = "worlds/mm6/events/maps/outd3_mmmerge_archibald.lua";
+                writeConvertedResource(output / overlayPath,
+                    {archibald->luaSource.begin(), archibald->luaSource.end()});
             }
             if (!global && mm6Hive && map.world == "mm6" && stem == mm6Hive->mapStem)
             {

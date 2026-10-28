@@ -1,3 +1,8 @@
+Current iPadOS handoff (2026-10-28): see [IPADOS_HANDOFF.md](IPADOS_HANDOFF.md) for RC2,
+Save103, complete separately transferred runtime assets and fresh-Mac/device instructions.
+The dated checkpoint notes below are historical. Their old resource gaps, pause statements,
+machine paths and early device evidence do not establish current RC2 device acceptance.
+
 Storage maintenance (2026-09-11, user-authorized; gameplay development remains paused): obsolete
 generated runtime ZIPs and byte-identical import-test source copies were deleted after audit.
 Complete runtimes 059/runtime-002 and 058/runtime-001 remain; source, saves, screenshots, logs,

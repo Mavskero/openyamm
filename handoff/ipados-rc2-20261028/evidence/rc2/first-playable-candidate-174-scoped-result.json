@@ -1,0 +1,50 @@
+{
+  "checkpoint": 174,
+  "date": "2026-10-27T18:39:10.920466+00:00",
+  "status": "ACCEPTED_FIRST_PLAYABLE_CANDIDATE_SCOPED",
+  "version": "0.1.0-rc1-20261028",
+  "release": "releases/first-playable-20261028-rc1",
+  "baseline_runtime": "local-data/validation/ordinary-reentry-173/runtime-001",
+  "default_development_runtime_changed": false,
+  "delivered": [
+    "Apple Silicon Mac app and double-click launcher",
+    "complete engine/MM6/MM7/MM8/normal Merge resources as real files",
+    "173 final unsigned generic iPadOS Release app",
+    "current sparse working-source snapshot including uncommitted changes",
+    "version manifest, usage, source recovery and known limits"
+  ],
+  "changes": [
+    "Native relative runtime shader build configuration",
+    "Distinct Launcher name avoids case-insensitive executable collision",
+    "Metal shaders installed under SDL bundle base Contents/Resources/runtime/shaders",
+    "Release-local userdata and known-working windowed1280x800 defaults",
+    "Recoverable source tar replaces non-cloneable shallow Git bundle"
+  ],
+  "gameplay_production_changes_this_checkpoint": 0,
+  "validation": {
+    "native": "native-build-001.command.json; succeeded",
+    "ios": "Reused unchanged final173 ios-release-001 unsigned generic arm64 build",
+    "packaged_app": "package-check-result.json; actual004 plus independent005",
+    "source_recovery": "source-restore-result-003.json; 1902 files, bytes and permissions identical; no rebuild"
+  },
+  "failures_preserved": [
+    "packaging-failure-001: launcher OpenYAMM collided with openyamm on case-insensitive APFS, fixed distinct Launcher",
+    "packaging-failure-002: SDL bundle Resources base initially mismatched shaders, fixed bundle resource location",
+    "packaged-app-003/ui-003: full-screen renders menu but CUA input did not advance; unresolved driver/product attribution, default windowed passed",
+    "source-restore-001 and source-clone-002: bundle verification was insufficient for shallow repository; failed bundle retained in packaging-failure-003; tar restore passed",
+    "quick-save-inspection.json empty from incorrect inspector path; corrected output is quick-save-inspection-002.json"
+  ],
+  "acceptance_limits": [
+    "Retains prior source and scoped actual mainline evidence; no new full natural campaign proof",
+    "MM7 Dark success not newly played",
+    "Unsigned iPadOS artifact, no device/simulator acceptance",
+    "Sparse current-source recovery, no full Git history or independent rebuild",
+    "No Intel or relocated-path runtime validation"
+  ],
+  "all_owned_jobs_collected": true,
+  "new_unit_test_cases": 0,
+  "old_accepted_route_replays": 0,
+  "full_game_complete": false,
+  "goal_status": "active",
+  "next": "Deliver RC1 and detailed plan; fix only concrete ordinary-play blockers; target iPad acceptance remains outside current no-device authorization."
+}

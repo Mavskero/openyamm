@@ -25,6 +25,8 @@ void GameDataRepository::clear()
     m_pSpellTable = nullptr;
     m_pCombatTextTable = nullptr;
     m_pBreachAlvarCompanionProfile = nullptr;
+    m_pBreachMercenaryProfile = nullptr;
+    m_pMercenaryReleaseProfile = nullptr;
     m_pHouseServiceTextTable = nullptr;
     m_pItemTable = nullptr;
     m_pStandardItemEnchantTable = nullptr;
@@ -88,6 +90,8 @@ void GameDataRepository::bind(const GameDataLoader &loader)
     m_pSpellTable = &loader.getSpellTable();
     m_pCombatTextTable = &loader.getCombatTextTable();
     m_pBreachAlvarCompanionProfile = &loader.getBreachAlvarCompanionProfile();
+    m_pBreachMercenaryProfile = &loader.getBreachMercenaryProfile();
+    m_pMercenaryReleaseProfile = &loader.getMercenaryReleaseProfile();
     m_pHouseServiceTextTable = &loader.getHouseServiceTextTable();
     m_pItemTable = &loader.getItemTable();
     m_pStandardItemEnchantTable = &loader.getStandardItemEnchantTable();
@@ -151,6 +155,16 @@ bool GameDataRepository::isBound() const
 const std::optional<BreachAlvarCompanionProfile> &GameDataRepository::breachAlvarCompanionProfile() const
 {
     return requireBound(m_pBreachAlvarCompanionProfile);
+}
+
+const std::optional<BreachMercenaryProfile> &GameDataRepository::breachMercenaryProfile() const
+{
+    return requireBound(m_pBreachMercenaryProfile);
+}
+
+const std::optional<MercenaryReleaseProfile> &GameDataRepository::mercenaryReleaseProfile() const
+{
+    return requireBound(m_pMercenaryReleaseProfile);
 }
 
 const CombatTextTable &GameDataRepository::combatTextTable() const

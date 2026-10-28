@@ -4,6 +4,7 @@
 
 #include "game/content/BreachAlvarCompanionProfile.h"
 #include "game/content/BreachAlvarCompanionState.h"
+#include "game/content/BreachMercenaryProfile.h"
 #include "game/events/ISceneEventContext.h"
 #include "game/events/EventRuntime.h"
 #include "game/events/ScriptedEventProgram.h"
@@ -53,7 +54,19 @@ class SpecialItemEnchantTable;
 class WorldFxSystem;
 class OutdoorPartyRuntime;
 class GameSession;
+class CharacterDollTable;
 struct BreachAlvarWorldActorTestAccess;
+
+struct BreachMercenaryProjectionState
+{
+    uint32_t version = 1;
+    uint32_t profileVersion = 0;
+    std::string canonicalMapKey; // Authenticated source key: mmmerge:breach.odm.
+    std::array<std::string, 3> sourceSha256;
+    std::vector<OwnedMercenaryActorBinding> bindings;
+
+    bool operator==(const BreachMercenaryProjectionState &) const = default;
+};
 
 class OutdoorWorldRuntime : public ISceneEventContext, public IGameplayWorldRuntime
 {
@@ -311,6 +324,11 @@ public:
         bool breachAlvarCompanion = false;
         bool breachAlvarCompanionRemoved = false;
         double breachAlvarNextMaintenanceGameMinute = 0.0;
+        // Save101: source removal is terminal for this actor identity, independent of death/visibility masks.
+        bool sourceRemoved = false;
+        std::optional<uint32_t> levelOverride;
+
+        bool isSourceRemoved() const noexcept { return sourceRemoved || breachAlvarCompanionRemoved; }
     };
 
     using CombatEvent = GameplayCombatController::CombatEvent;
@@ -562,7 +580,54 @@ public:
         std::vector<uint16_t> decorationFlags;
         std::vector<std::string> searchedLootPropSourceIds;
         bool hasOutdoorRuntimeSaveParityFields = false;
+        // Absent means legacy/uninitialized; an initialized empty projection is a present value.
+        std::optional<BreachMercenaryProjectionState> breachMercenaries;
     };
+
+    class PreparedBreachMercenaryActorMutation
+    {
+    public:
+        PreparedBreachMercenaryActorMutation(PreparedBreachMercenaryActorMutation &&) noexcept = default;
+        PreparedBreachMercenaryActorMutation &operator=(PreparedBreachMercenaryActorMutation &&) noexcept = default;
+        PreparedBreachMercenaryActorMutation(const PreparedBreachMercenaryActorMutation &) = delete;
+        PreparedBreachMercenaryActorMutation &operator=(const PreparedBreachMercenaryActorMutation &) = delete;
+
+    private:
+        friend class OutdoorWorldRuntime;
+        PreparedBreachMercenaryActorMutation() = default;
+        const OutdoorWorldRuntime *m_pWorld = nullptr;
+        const Party *m_pParty = nullptr;
+        uint64_t m_sceneGeneration = 0;
+        std::vector<uint8_t> m_beforeWorld;
+        std::vector<uint8_t> m_beforeParty;
+        std::unordered_map<uint32_t, bool> m_beforeActorHostilityRequests;
+        std::unordered_map<uint32_t, bool> m_beforeActorGroupHostilityRequests;
+        std::string m_beforePartyStatus;
+        uint32_t m_beforeHeldItemQuery = 0;
+        std::vector<Party::PendingAudioRequest> m_beforePartyAudio;
+        Snapshot m_afterWorld;
+        std::optional<BreachMercenaryProfile> m_profile;
+        const SpriteFrameTable *m_pFrames = nullptr;
+        bool m_replacesPopulation = false;
+    };
+
+    std::optional<PreparedBreachMercenaryActorMutation> prepareBreachMercenaryProjection(
+        const Party &party, const BreachMercenaryProfile &profile, const CharacterDollTable &dolls,
+        std::string &error);
+    std::optional<PreparedBreachMercenaryActorMutation> prepareBreachMercenaryRemoval(
+        const GameplayOwnedMercenaryActorTarget &target, std::string &error);
+    bool isPreparedBreachMercenaryActorCurrent(const PreparedBreachMercenaryActorMutation &prepared) const noexcept;
+    std::optional<Snapshot> snapshotWithPreparedBreachMercenaryActors(
+        const PreparedBreachMercenaryActorMutation &prepared, std::string &error) const;
+    std::optional<GameplayOwnedMercenaryActorTarget> ownedMercenaryActorBinding(
+        uint32_t npcId, uint32_t sourceActorIndex) const override;
+    bool bindBreachMercenaryProjection(
+        const BreachMercenaryProfile &profile, const Party &party, std::string &error);
+    static bool validateBreachMercenaryProjection(
+        const Snapshot &snapshot, const Party &party, const BreachMercenaryProfile *pProfile, std::string &error);
+    static std::optional<Snapshot> snapshotWithRemovedBreachAlvarFriend(
+        const Snapshot &snapshot, const BreachAlvarFriendActorBinding &binding,
+        const BreachAlvarFriendActorRules &rules, std::string &error);
 
     class PreparedBreachAlvarFriendActorMutation
     {
@@ -696,6 +761,7 @@ public:
     size_t mapActorCount() const override;
     bool actorRuntimeState(size_t actorIndex, GameplayRuntimeActorState &state) const override;
     bool setMapActorPosition(size_t actorIndex, float x, float y, float z) override;
+    bool setMapMonsterAiType(uint32_t monsterId, uint32_t aiType) override;
     bool isMapActorHostile(size_t actorIndex) const override;
     bool isMapActorWithinPartyDistance(size_t actorIndex, float distance) const override;
     bool searchLootProp(const std::string &sourceId) override;
@@ -1158,6 +1224,15 @@ public:
 private:
     friend class GameSession;
     friend struct BreachAlvarWorldActorTestAccess;
+    bool publishPreparedBreachMercenaryActors(PreparedBreachMercenaryActorMutation &&prepared) noexcept;
+    std::vector<uint8_t> breachMercenaryWorldComparison() const;
+    static void enforceSourceRemovedActorLifecycle(MapActorState &actor) noexcept;
+    std::optional<MapActorState> prepareBreachMercenaryActor(
+        const Character &character, uint32_t monsterId, uint32_t npcId, uint32_t actorId,
+        const BreachMercenarySpot &spot, const BreachMercenaryActorRules &rules,
+        const SpriteFrameTable &frames, std::string &error) const;
+    std::optional<BreachMercenaryProjectionState> m_breachMercenaries;
+    std::optional<BreachMercenaryProfile> m_breachMercenaryProfile;
     // Coordinator checks all Party/world/receipt inputs before its first publication. This rechecks the
     // actor token and swaps prepared storage only; false means no write, true performs no allocation.
     bool publishPreparedBreachAlvarFriendActor(PreparedBreachAlvarFriendActorMutation &&prepared) noexcept;

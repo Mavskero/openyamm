@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "cmake",
+    "--build",
+    "openyamm/build-apple",
+    "--target",
+    "openyamm",
+    "scene_import",
+    "-j3"
+  ],
+  "cwd": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados",
+  "pid": 55347,
+  "started_at": "2026-10-28T12:12:44.711428+00:00",
+  "finished_at": "2026-10-28T12:12:54.499981+00:00",
+  "exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 600.0,
+  "log": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/local-data/validation/merge-source-polish-181/native-build-001.log",
+  "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/.tools-venv/bin/cmake",
+  "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+  "environment": {
+    "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/external-storage/tmp/",
+    "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/external-storage/xcode-deriveddata/current"
+  }
+}

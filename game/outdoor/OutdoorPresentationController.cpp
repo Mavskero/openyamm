@@ -215,7 +215,35 @@ void OutdoorPresentationController::updateFootstepAudio(OutdoorGameView &view, f
                 return running ? SoundId::RunStone : SoundId::WalkStone;
             }
 
-            const std::string textureName = toLowerCopy(bmodel.faces[moveState.supportFaceIndex].textureName);
+            const OutdoorBModelFace &face = bmodel.faces[moveState.supportFaceIndex];
+            const std::string *pTextureName = &face.textureName;
+            const EventRuntimeState *pEvents = view.m_pOutdoorWorldRuntime != nullptr
+                ? view.m_pOutdoorWorldRuntime->eventRuntimeState() : nullptr;
+            if (pEvents != nullptr && !view.m_pOutdoorMapData->textureFootstepSoundOverrides.empty())
+            {
+                // Authored texture rules follow the renderer; maps without rules keep their legacy material lookup.
+                // A model/face override takes precedence over its shared cog texture.
+                const uint32_t key = EventRuntime::outdoorModelFacetTextureOverrideKey(
+                    moveState.supportBModelIndex, moveState.supportFaceIndex);
+                const auto modelOverride = pEvents->outdoorModelFacetTextureOverrides.find(key);
+                const auto cogOverride = pEvents->textureOverrides.find(face.cogNumber);
+                if (modelOverride != pEvents->outdoorModelFacetTextureOverrides.end())
+                {
+                    pTextureName = &modelOverride->second;
+                }
+                else if (cogOverride != pEvents->textureOverrides.end())
+                {
+                    pTextureName = &cogOverride->second;
+                }
+            }
+            const std::string textureName = toLowerCopy(*pTextureName);
+            for (const OutdoorTextureFootstepSoundOverride &entry : view.m_pOutdoorMapData->textureFootstepSoundOverrides)
+            {
+                if (entry.textureName == textureName)
+                {
+                    return static_cast<SoundId>(running ? entry.runSoundId : entry.walkSoundId);
+                }
+            }
 
             if (textureName.find("wood") != std::string::npos || textureName.find("plank") != std::string::npos)
             {

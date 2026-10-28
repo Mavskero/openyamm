@@ -186,7 +186,7 @@ bool openDimensionDoorOverlay(GameplayScreenRuntime &runtime)
     return true;
 }
 
-void saveTempleInBottleReturnLocation(GameplayScreenRuntime &runtime)
+void saveTempleInBottleReturnLocation(GameplayScreenRuntime &runtime, GameSession &session)
 {
     IGameplayWorldRuntime *pWorldRuntime = runtime.worldRuntime();
     EventRuntimeState *pEventRuntimeState =
@@ -203,7 +203,7 @@ void saveTempleInBottleReturnLocation(GameplayScreenRuntime &runtime)
     location.z = static_cast<int32_t>(std::lround(runtime.partyFootZ()));
     location.continentId = pEventRuntimeState->activeHistoryContinentId;
     location.mapName = runtime.currentMapFileName();
-    pEventRuntimeState->savedLocations[TempleInBottleReturnLocationName] = std::move(location);
+    session.setSessionSavedLocation(TempleInBottleReturnLocationName, std::move(location));
 }
 
 InventoryItemUseContext buildInventoryItemUseContext(const GameplayScreenRuntime &runtime)
@@ -510,14 +510,17 @@ bool GameplayItemService::tryUseHeldItemOnPartyMember(
             runtime.audioSystem()->playCommonSound(*useResult.soundId, GameAudioSystem::PlaybackGroup::Ui);
         }
 
-        if (useResult.action == InventoryItemUseAction::UseTempleInABottle
-            && !isNwcDungeonMapName(m_session.currentMapFileName()))
+        if (useResult.action == InventoryItemUseAction::UseTempleInABottle)
         {
-            saveTempleInBottleReturnLocation(runtime);
+            if (!isNwcDungeonMapName(m_session.currentMapFileName()))
+            {
+                saveTempleInBottleReturnLocation(runtime, m_session);
+            }
 
             EventRuntimeState::PendingMapMove pendingMapMove = {};
             pendingMapMove.mapName = NwcDungeonMapName;
-            pendingMapMove.useMapStartPosition = true;
+            pendingMapMove.directionDegrees = 0;
+            pendingMapMove.lookAngleDegrees = 0;
             m_session.setPendingMapMove(std::move(pendingMapMove));
         }
     }

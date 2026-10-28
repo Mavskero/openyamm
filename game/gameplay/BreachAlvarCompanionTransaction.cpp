@@ -327,10 +327,11 @@ BreachAlvarCompanionPreparation prepareBreachAlvarSplit(
             if (!generated)
                 return fail(BreachAlvarCompanionPreparationCode::MutationRejected, std::move(error));
             if (generated->character.memberId != source.memberId
-                || generated->character.rosterId != source.rosterId || generated->character.level != generation.level)
+                || generated->character.rosterId != source.rosterId || generated->character.level != generation.level
+                || generated->character.sourceMercenaryRetention != pBaseline->sourceMercenaryRetention)
             {
                 return fail(BreachAlvarCompanionPreparationCode::MutationRejected,
-                    "Source mercenary generation changed its requested identity or level");
+                    "Source mercenary generation changed its requested identity, level or retention");
             }
             receipt.companions[index].generation = BreachAlvarCompanionGenerationReceipt{
                 generation, generated->finalRandomState, generated->randomDrawCount};
@@ -344,6 +345,17 @@ BreachAlvarCompanionPreparation prepareBreachAlvarSplit(
         reserves.push_back(std::move(reserve));
     }
     Party candidate = party;
+    for (const Party::DetachmentAssignment &assignment : assignments)
+    {
+        Character *pMember = candidate.member(assignment.memberIndex);
+        if (pMember == nullptr || !setSourceMercenaryRetention(*pMember,
+                before.members[assignment.memberIndex].memberId, SourceMercenaryRetentionKind::Retained,
+                SourceMercenaryProvenance::BrAlvarActiveDismissal, std::nullopt, error))
+        {
+            return fail(BreachAlvarCompanionPreparationCode::MutationRejected,
+                "Cannot record original active companion dismissal: " + error);
+        }
+    }
     if (!candidate.detachMembersWithReserves(std::string(BreachAlvarSplitOwner), assignments, reserves))
     {
         return fail(BreachAlvarCompanionPreparationCode::MutationRejected, "Party rejected companion detachment");

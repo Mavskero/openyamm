@@ -6,6 +6,7 @@
 #include "SurfaceResources.h"
 #include "TextResources.h"
 #include "engine/TextTable.h"
+#include "game/FaceEnums.h"
 #include "game/audio/SoundCatalog.h"
 #include "game/events/ScriptedEventProgram.h"
 #include "game/maps/MapDeltaData.h"
@@ -21,6 +22,7 @@
 #include "tools/legacy_events/StrTable.h"
 
 #include <CommonCrypto/CommonDigest.h>
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <iomanip>
@@ -161,6 +163,78 @@ std::string minimapArrowPrefix(const std::string &worldId)
     return "mapdir";
 }
 
+struct BreachTextureFootstepRule
+{
+    const char *pTexture;
+    uint32_t walkSoundId;
+    uint32_t runSoundId;
+};
+
+// BrAlvar.lua 19-27 and Breach.lua 132-140 share these rules: Run is 0 for walking and 1 for running.
+constexpr std::array<BreachTextureFootstepRule, 8> BreachTextureFootsteps = {{
+    {"7hdwtr000", 101, 62},
+    {"7wtrtyl", 101, 62},
+    {"6grastyl", 93, 54},
+    {"t1books", 103, 64},
+    {"bemhwal", 103, 64},
+    {"bemtila", 103, 64},
+    {"t66d01p1", 89, 50},
+    {"t66d01p2", 89, 50},
+}};
+
+std::string brAlvarActorRuleData(const Game::MonsterTable &monsters)
+{
+    // BrAlvar.lua 693-736, in source order. Values are directed, including the two asymmetric mage rules.
+    constexpr std::array<std::array<uint16_t, 3>, 24> sourceRelations = {{
+        {25, 150, 4}, {150, 25, 4},
+        {150, 159, 4}, {159, 150, 4},
+        {217, 159, 4}, {159, 217, 4},
+        {217, 87, 4}, {87, 217, 4},
+        {25, 87, 4}, {87, 25, 4},
+        {25, 159, 4}, {159, 25, 4},
+        {217, 98, 4}, {98, 217, 1},
+        {217, 93, 4}, {93, 217, 4},
+        {25, 98, 4}, {98, 25, 1},
+        {25, 93, 4}, {93, 25, 4},
+        {159, 0, 0}, {25, 0, 4}, {0, 25, 4}, {25, 25, 0},
+    }};
+    std::set<std::pair<uint16_t, uint16_t>> sourcePairs;
+    std::map<std::pair<uint32_t, uint32_t>, uint16_t> relations;
+    for (const auto &[fromGroup, toGroup, relation] : sourceRelations)
+    {
+        require(sourcePairs.emplace(fromGroup, toGroup).second, "Duplicate BrAlvar source relation group pair");
+        // HostileTxt index 0 means the Party; other indices cover their three concrete monster variants.
+        const uint32_t firstFrom = fromGroup == 0 ? 0 : fromGroup * 3 - 2;
+        const uint32_t firstTo = toGroup == 0 ? 0 : toGroup * 3 - 2;
+        for (uint32_t from = firstFrom; from <= fromGroup * 3u; ++from)
+        {
+            for (uint32_t to = firstTo; to <= toGroup * 3u; ++to)
+            {
+                for (uint32_t monsterId : {from, to})
+                {
+                    require(monsterId == 0 || (monsters.findStatsById(static_cast<int16_t>(monsterId))
+                        && monsters.findById(static_cast<int16_t>(monsterId))),
+                        "Missing BrAlvar relation monster dependency " + std::to_string(monsterId));
+                }
+                require(relations.emplace(std::pair{from, to}, relation).second,
+                    "Duplicate concrete BrAlvar monster relation pair");
+            }
+        }
+    }
+    require(relations.size() == 198, "BrAlvar source relations must expand to exactly 198 directed pairs");
+    require(monsters.findStatsById(294) && monsters.findById(294), "Missing BrAlvar AI monster dependency 294");
+
+    std::ostringstream lua;
+    lua << "-- Authenticated BrAlvar HostileTxt groups expanded to concrete monster IDs; 0 remains the Party.\n"
+        << "evt.importedBrAlvarMonsterRelations = {\n";
+    for (const auto &[pair, relation] : relations)
+    {
+        lua << "    {" << pair.first << ", " << pair.second << ", " << relation << "},\n";
+    }
+    lua << "}\n";
+    return lua.str();
+}
+
 struct MergeSceneProfile
 {
     std::string sourceScript;
@@ -197,6 +271,13 @@ MergeSceneProfile mergeSceneProfile(const Path &root, const std::string &file)
         digest << std::hex << std::setfill('0') << std::setw(2) << unsigned(value);
     }
     require(digest.str() == profile.sha256, "Unsupported Merge scene source fingerprint: " + file);
+    if (file == "bralvar.odm" || file == "breach.odm")
+    {
+        for (const BreachTextureFootstepRule &rule : BreachTextureFootsteps)
+        {
+            require(profile.textures.insert(rule.pTexture).second, "Duplicate footstep texture in " + file);
+        }
+    }
     return profile;
 }
 
@@ -316,6 +397,20 @@ std::string breachTowerMechanisms(const Game::OutdoorMapData &map, const Path &b
             yaml << "      open_stop: " << std::quoted(stopSound)
                 << "\n      close_stop: " << std::quoted(stopSound) << '\n';
         }
+    }
+    // This source-authenticated companion is only produced for BrAlvar and Breach.
+    yaml << "texture_footstep_sound_overrides:\n";
+    for (const BreachTextureFootstepRule &rule : BreachTextureFootsteps)
+    {
+        for (uint32_t soundId : {rule.walkSoundId, rule.runSoundId})
+        {
+            const Game::SoundCatalogEntry *pSound = sounds.findById(soundId);
+            require(pSound && !pSound->name.empty(),
+                "Missing " + file + " footstep sound dependency " + std::to_string(soundId));
+        }
+        yaml << "  - texture: " << std::quoted(rule.pTexture)
+            << "\n    walk_sound_id: " << rule.walkSoundId
+            << "\n    run_sound_id: " << rule.runSoundId << '\n';
     }
     return yaml.str();
 }
@@ -837,7 +932,42 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                     }
                     const auto companions = loadBreachAlvarCompanionResources(root);
                     require(companions.has_value(), "Missing Breach Alvar companion source profile");
-                    mapLuaSource = breachNativeTexts(root, chinese, stem, 5) + companions->mapLuaSource
+                    Game::HouseTable houses;
+                    require(houses.loadFromRows(readRows(base / "engine/data_tables/house_data.txt")),
+                        "Cannot read BrAlvar source Tavern dependency");
+                    const Game::HouseEntry *pTavern = houses.get(231);
+                    require(pTavern && lower(pTavern->type) == "tavern",
+                        "BrAlvar source house231 is not a Tavern");
+                    std::set<uint16_t> requiredClickEvents{7};
+                    for (uint16_t eventId = 301; eventId <= 315; ++eventId)
+                    {
+                        requiredClickEvents.insert(eventId);
+                    }
+                    for (const Game::OutdoorBModel &model : outdoorMap->bmodels)
+                    {
+                        for (const Game::OutdoorBModelFace &face : model.faces)
+                        {
+                            if (Game::hasFaceAttribute(face.attributes, Game::FaceAttribute::Clickable))
+                            {
+                                requiredClickEvents.erase(face.cogTriggeredNumber);
+                            }
+                        }
+                    }
+                    require(requiredClickEvents.empty(), "Missing BrAlvar source Tavern or locked-chest click binding");
+                    std::optional<std::string> trashHeapHint;
+                    for (const auto &row : readRows(base / "engine/data_tables/npc_topic.txt"))
+                    {
+                        if (row.size() >= 2 && row[0] == "284")
+                        {
+                            require(!trashHeapHint && !row[1].empty(), "Invalid BrAlvar trash heap topic284");
+                            trashHeapHint = row[1];
+                        }
+                    }
+                    require(trashHeapHint.has_value(), "Missing BrAlvar trash heap topic284");
+                    mapLuaSource = breachNativeTexts(root, chinese, stem, 5)
+                        + "evt.importedNpcTopics = {[284] = " + luaText(*trashHeapHint) + "}\n"
+                        + brAlvarActorRuleData(monsters)
+                        + companions->mapLuaSource
                         + "\n" + std::string(BreachMazeBrAlvarMapSource);
                     mechanismsYaml = breachTowerMechanisms(*outdoorMap, base, file, *profile);
                 }
@@ -891,6 +1021,8 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                     eventSource, "@" + stem + "-native-breach", ScriptedEventScope::Map, error);
                 require(program && (file == "brbase.blv" ? program->hasEvent(1) && program->hasEvent(2)
                     : file == "bralvar.odm" ? program->hasEvent(5) && program->hasEvent(50)
+                        && program->hasEvent(7) && program->hasEvent(30) && program->hasEvent(60)
+                        && program->hasEvent(82)
                         && program->hasEvent(51) && program->hasEvent(52) && program->hasEvent(53)
                         && program->hasEvent(54) && program->hasEvent(81) && program->hasEvent(65458)
                         && program->hasEvent(65459) && program->hasEvent(65460)
@@ -899,6 +1031,19 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                     "Native Breach map request Lua rejected: " + error);
                 if (file == "bralvar.odm")
                 {
+                    const std::vector<uint16_t> &onLoad = program->onLoadEventIds();
+                    const std::vector<uint16_t> &afterLoad = program->afterLoadEventIds();
+                    require(program->hasEvent(65453) && program->hasEvent(65452)
+                        && std::count(onLoad.begin(), onLoad.end(), 65453) == 1
+                        && std::count(afterLoad.begin(), afterLoad.end(), 65452) == 1
+                        && std::count(onLoad.begin(), onLoad.end(), 65452) == 0
+                        && std::count(afterLoad.begin(), afterLoad.end(), 65453) == 0,
+                        "BrAlvar actor rules require distinct once-registered entry and migration hooks");
+                    for (uint16_t eventId = 301; eventId <= 315; ++eventId)
+                    {
+                        require(program->hasEvent(eventId),
+                            "Missing native BrAlvar locked-chest handler " + std::to_string(eventId));
+                    }
                     require(program->hasEvent(15) && program->hasEvent(16), "Missing native BrAlvar jump handlers");
                     for (uint16_t eventId = 65454; eventId <= 65457; ++eventId)
                     {
@@ -1061,7 +1206,13 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                 {
                     report << ",\"mechanisms_companion\":"
                         << std::quoted(Path(file).stem().string() + ".mechanisms.yml")
-                        << ",\"tower_mechanisms\":28";
+                        << ",\"tower_mechanisms\":28,\"texture_footstep_sound_overrides\":"
+                        << BreachTextureFootsteps.size();
+                }
+                if (file == "bralvar.odm")
+                {
+                    report << ",\"source_monster_relation_groups\":24,\"local_monster_relation_pairs\":198"
+                        << ",\"monster_ai_overrides\":[{\"monster_id\":294,\"ai_type\":1}]";
                 }
             }
             report << ",\"missing_textures\":";

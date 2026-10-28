@@ -1,0 +1,175 @@
+{
+  "status": "ACCEPTED_SCOPED_COMPOSED_ACTUAL_CHECKPOINT_CHAIN",
+  "date": "2026-10-19",
+  "owner": "01a0fb51-a792-7082-a973-ac6064548959",
+  "main": {
+    "model": "gpt-6-astra",
+    "reasoning": "xhigh",
+    "sole_build_and_app_owner": true
+  },
+  "subagents": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "max",
+    "names": [
+      "sol_maze_driver",
+      "sol_maze_events",
+      "sol_maze_interactions"
+    ],
+    "all_frozen": true
+  },
+  "scope": "BrAlvar source tower doors, bounded physical ascent, normal original floor81 return/reward/card/continued play; composed through actual immutable checkpoint saves.",
+  "source": {
+    "script": "local-data/validation/mm8-runtime-076/source-001/Scripts/Maps/BrAlvar.lua",
+    "sha256": "947567325601e0e120c03125b5f3087c15d311391c80c1949312e7a6feadc7a3",
+    "mechanism_events": [
+      104,
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115,
+      116,
+      117,
+      118,
+      119,
+      120,
+      121,
+      122,
+      123,
+      124,
+      125,
+      126,
+      127,
+      128
+    ],
+    "definitions": 25,
+    "actually_activated_events": [
+      106,
+      107,
+      108,
+      114,
+      115,
+      116,
+      128
+    ],
+    "unopened_original_locks": [
+      112,
+      113,
+      117
+    ],
+    "original_geometry_changed": false,
+    "new_generated_lua_hand_edits": false
+  },
+  "implementation": [
+    "Mechanisms-only SHA-gated sidecar preserves ClassicOdm, raw ODM/DDM and original populations; complete25 source doors/buttons with exact binding, sounds, movement and lock gates.",
+    "Map-derived definitions/default states and saved offsets/click bindings restore collision/render geometry without double-carry or re-running OnLoad.",
+    "Lua sourceJump direction/ZAngle/speed projects source3D velocity under native1280 gravity. Exact FeatherFall minimum expiry extends without overwriting metadata.",
+    "Original Out13 EVT452/15 Speed2000 decode repaired from truncated208 in exporter; original resource reimport preserves2000. No original/generated event file manually altered.",
+    "Shared finite-face support samples nearest real3D edge outside XY polygon rather than infinite steep plane; controller prior nearvertical exclusion preserved. Live291/49 blockage fixed."
+  ],
+  "actual_chain": [
+    {
+      "run": "actual-002",
+      "overall_status": "FAILED_DRIVER",
+      "accepted_milestone": "Two real SubTower stair flights, source108/107 real pointer/interpolation and once12 summon; actual third-floor-arrived save",
+      "continuation": "actual-002/third-floor-arrived.oysav"
+    },
+    {
+      "run": "actual-005",
+      "overall_status": "FAILED_DRIVER_AFTER_LANDING",
+      "input": "actual-002/third-floor-arrived.oysav",
+      "accepted_milestone": "Strict cold restoration; legal114/115/116/106 doors, bounded settling, real128 source click/once5 summon/FeatherFall, physicalTopFloor landing; normal path tocentralfloor",
+      "continuation": "actual-005/top-arrived.oysav",
+      "launch_z": 3128,
+      "source_jump_args": [
+        0,
+        512,
+        "sqrt(2*800*(4410-3128))"
+      ],
+      "physical_jump_frames": 77,
+      "airborne_observed": true,
+      "observed_maximum_z": 4410,
+      "landing_support": [
+        311,
+        21
+      ],
+      "landing_z": 4410
+    },
+    {
+      "run": "actual-007",
+      "overall_status": "PASSED",
+      "input": "actual-005/top-arrived.oysav",
+      "frames": 360,
+      "captures": 3,
+      "accepted_milestone": "Strict actualTopFloor cold restore and normal movement onto original event81 floor; App returntoBreach, per5member100000XP, Q1713–15 clear, QuestFinished/GotEndCard1, one real certificate, Enter dismissal andcontinuedplay",
+      "explicit_orb_click": false,
+      "original_floor81_return": true,
+      "reused_previously_accepted_riddles": 5
+    }
+  ],
+  "cold": {
+    "top_restore": "actual-006-scoped-diagnosis.json",
+    "top_comparison_groups": 18,
+    "top_actors": 318,
+    "top_mechanisms": 25,
+    "completion": "complete-cold-001-summary.json",
+    "completion_frames": 181,
+    "completion_comparison_groups": 30,
+    "repeat_reward": false,
+    "normal_elapsed_game_minutes": 1.5204043720732443,
+    "normal_buff_expiry_and_fractional_regen_declared": true,
+    "initial_exact_clock_comparator_assumption_preserved": "complete-cold-initial-exact-comparison.json"
+  },
+  "visual_review": {
+    "status": "REVIEWED_BY_MAIN",
+    "images": [
+      "actual-005/source106-opened.png",
+      "actual-005/source128-physical-landing.png",
+      "actual-007/ascent-breach-endcard.png",
+      "actual-007/ascent-continued-gameplay.png",
+      "complete-cold-001/scene-later.png"
+    ],
+    "observations": "Opened original tower/launch scenery andTopFloor stairs render; certificate Chinese fits; five party portraits and gameplay scene after dismissal; later cold scene shows gameplay with no recurring certificate.",
+    "duplicate_certificate_capture": "actual007 source81-floor-returned andascent-breach-endcard capture same once-shown card; not separate shows or orb-pointer evidence"
+  },
+  "builds": {
+    "native_runtime": "native-build-005.command.json",
+    "final_capture": "native-build-008.command.json",
+    "ios_generic_unsigned_release_arm64": "ios-release-001.command.json",
+    "ios_result": "BUILD SUCCEEDED",
+    "physical_device_or_simulator": false
+  },
+  "runtime": {
+    "controlled": "controlled-runtime-002",
+    "member_diff": "runtime-diff-002.json",
+    "default": "local-data/validation/mm7-shoals-144/runtime-001",
+    "default_changed": false,
+    "normal_merge_dynamic_admission": "closed"
+  },
+  "verification_policy": {
+    "new_test_cases": 0,
+    "broad_regression_suite_run": false,
+    "no_lower_route_replay_after_actual005": true,
+    "actual_runs_001_through006_preserved": true,
+    "all_owned_processes_terminal_and_collected": true
+  },
+  "limitations": [
+    "Composed actual checkpoint chain with one initial bottom navigation fixture and fixed-frame input; transient actorAI queue frozen. Not one continuous natural combat/campaign playthrough.",
+    "Previously accepted Chaos-caught input reused; no new riddle or three-campaign completion claimed.",
+    "Only7 of25 mechanisms were actually activated. Other source registrations are source-reviewed/imported/compiled; no all-door/button or1–4 reserve matrix.",
+    "Source101–103 daylight controls, broader source timers, full148/149, normal dynamic admission and natural campaign remain incomplete.",
+    "SpecialJump horizontal velocity retention, Indoor grounded request handling and pending/XY cold persistence remain incomplete; propose separate Save97 module. Actual128 purevertical pass is not full original ballistics or Out13/bridge arc acceptance.",
+    "No iPad/simulator, subjective audio or full-game acceptance."
+  ],
+  "next": "Source-grounded SpecialJump XY/Indoor lifecycle and explicit persistence; remaining BrAlvar daylight/timer compatibility and normal admission prerequisites, prioritising runnable source paths over broad replay matrices.",
+  "full_game_complete": false,
+  "overall_engineering_estimate": "55–60%, low confidence, unchanged; not quest coverage or device acceptance",
+  "source_manifest": "source-manifest-008.json",
+  "recorded_at": "2026-10-19T12:36:40.939908+00:00"
+}

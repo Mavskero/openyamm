@@ -38,6 +38,7 @@ public:
     const std::optional<std::string> &luaSourceName() const;
     uint64_t cacheId() const;
     ScriptedEventScope scope() const;
+    bool sourceManagedLichEffects() const;
     const std::vector<uint16_t> &eventIds() const;
     const std::vector<uint16_t> &canShowTopicEventIds() const;
     const std::vector<uint16_t> &onLoadEventIds() const;
@@ -73,6 +74,7 @@ private:
     std::optional<std::string> m_luaSourceName;
     uint64_t m_cacheId = 0;
     ScriptedEventScope m_scope = ScriptedEventScope::Map;
+    bool m_sourceManagedLichEffects = false;
     std::vector<uint16_t> m_eventIds;
     std::vector<uint16_t> m_canShowTopicEventIds;
     std::vector<uint16_t> m_onLoadEventIds;

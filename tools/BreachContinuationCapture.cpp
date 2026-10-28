@@ -9,6 +9,7 @@
 #include "game/maps/SaveGame.h"
 #include "game/scene/IndoorSceneRuntime.h"
 #include "game/scene/OutdoorSceneRuntime.h"
+#include "game/ui/screens/CutsceneVideoScreen.h"
 
 #include <CommonCrypto/CommonDigest.h>
 #include <SDL3/SDL.h>
@@ -82,6 +83,39 @@ std::string itemsHash(const Character &member)
     return hashBytes(encodePartySnapshotForComparison(party));
 }
 
+std::vector<uint8_t> retainedMemberBytes(const Party::Snapshot &party, size_t index, bool clearAwards)
+{
+    Party::Snapshot comparison;
+    comparison.members.push_back(party.members.at(index));
+    comparison.characterBuffs[0] = party.characterBuffs.at(index);
+    comparison.nextMemberId = party.nextMemberId;
+    Character &member = comparison.members.front();
+    if (clearAwards) member.awards.clear();
+    // Renderer initialization owns these five animation fields; portrait identity remains compared.
+    member.portraitState = PortraitId::Normal;
+    member.portraitElapsedTicks = 0;
+    member.portraitDurationTicks = 0;
+    member.portraitSequenceCounter = 0;
+    member.portraitImageIndex = 0;
+    return encodePartySnapshotForComparison(comparison);
+}
+
+uint32_t inventoryCount(const Party::Snapshot &party, uint32_t itemId)
+{
+    uint32_t count = 0;
+    for (const Character &member : party.members)
+        for (const InventoryItem &item : member.inventory)
+            if (item.objectDescriptionId == itemId) count += item.quantity;
+    return count;
+}
+
+size_t pendingDeliveryCount(const Party::Snapshot &party)
+{
+    size_t count = party.pendingItemDeliveries.size();
+    for (const auto &member : party.detachedMembers) count += member.pendingItemDeliveries.size();
+    return count;
+}
+
 void checkCustody(const Party::Snapshot &before, const Party::Snapshot &after)
 {
     require(before.members.size() == 5 && after.members.size() == 5
@@ -105,14 +139,38 @@ void checkCustody(const Party::Snapshot &before, const Party::Snapshot &after)
     // HP, SP, conditions, recovery, buff duration and AI advance normally and are recorded in the trace.
 }
 
-void compareFloors(const BreachMazeRunData &saved, const BreachMazeRunData &live)
+void writeMazeRunIdentity(std::ostream &output, const BreachMazeRunData &run)
+{
+    output << "{\"version\":" << run.version << ",\"seed_version\":" << run.seedVersion
+        << ",\"template_fingerprint\":" << run.templateFingerprint << ",\"revision\":" << run.revision
+        << ",\"root_seed\":" << run.rootSeed << ",\"epoch\":" << run.epoch
+        << ",\"next_generation_serial\":" << run.nextGenerationSerial
+        << ",\"current_level\":" << run.currentLevel << ",\"inside\":" << run.inside
+        << ",\"direction\":" << int(run.direction) << ",\"floor_levels\":[";
+    bool comma = false;
+    for (const auto &entry : run.floors)
+    {
+        if (comma) output << ',';
+        comma = true;
+        output << entry.first;
+    }
+    output << "]}";
+}
+
+void compareFloors(const BreachMazeRunData &saved, const BreachMazeRunData &live,
+    uint64_t expectedRevisionIncrease = 0)
 {
     require(saved.inside && live.inside && saved.currentLevel == 4 && live.currentLevel == 4
-        && std::tie(saved.version, saved.seedVersion, saved.templateFingerprint, saved.revision,
+        && std::tie(saved.version, saved.seedVersion, saved.templateFingerprint,
             saved.rootSeed, saved.epoch, saved.nextGenerationSerial, saved.direction)
-            == std::tie(live.version, live.seedVersion, live.templateFingerprint, live.revision,
+            == std::tie(live.version, live.seedVersion, live.templateFingerprint,
                 live.rootSeed, live.epoch, live.nextGenerationSerial, live.direction)
         && saved.floors.size() == live.floors.size(), "Cold/save changed the committed L4 run identity");
+    // Codec comparisons require +0. App cold load captures the restored runtime at explicit synchronization points.
+    require(live.revision >= saved.revision && live.revision - saved.revision == expectedRevisionIncrease,
+        "Cold/save snapshot revision mismatch: before=" + std::to_string(saved.revision)
+            + " after=" + std::to_string(live.revision)
+            + " expected_increase=" + std::to_string(expectedRevisionIncrease));
     for (const auto &[level, a] : saved.floors)
     {
         const auto found = live.floors.find(level);
@@ -145,7 +203,8 @@ struct GameApplicationTestAccess
         std::filesystem::path output, const std::string &mode)
     {
         const bool cold = mode == "cold";
-        require(cold || mode == "actual", "Expected actual or cold mode");
+        const bool restart = mode == "restart";
+        require(cold || restart || mode == "actual", "Expected actual, cold or restart mode");
         root = std::filesystem::canonical(root);
         input = std::filesystem::canonical(input);
         require(std::filesystem::is_regular_file(root / "engine.zip")
@@ -170,6 +229,16 @@ struct GameApplicationTestAccess
             << ",\"runtime\":" << std::quoted(root.string()) << ",\"changes\":"
             << std::quoted(cold
                 ? "Independent actual L4 cold load; no Party, pose, camera, event, quest, clock, RNG or AI writes."
+                : restart
+                ? "Completed actual003 Breach-return input. Declare exactly one source Telelocator666 in "
+                  "member0 inventory. Empty held item and pending delivery are required. Supported pose/camera "
+                  "at original pedestal model93/face2; actual mouse surface402 consumes the item and reveals "
+                  "40 cog400 faces. Supported airborne pose above original model130/face9; ordinary gravity "
+                  "landing triggers source81. SDL text y and Return queue the original once-random destination; "
+                  "the next zero-dt App frame owns the campaign restart. No direct event execution, request "
+                  "processing, TelelocatorSet/quest/RNG/AI writes. Explicit new-path save, ordinary SDL Escape "
+                  "for the source MM7 intro when selected, then 0.5 seconds of normal continuation and one "
+                  "gameplay capture. This does not test or claim automatic saving."
                 : "Previously accepted controlled completed Breach input. Sole upstream quest fixture: "
                   "GotMainQuest=1, required for the ordinary root732/Hints branch. Original member2 learns31 "
                   "and WaterMagic10 Grandmaster only if needed. Preserve HP/SP, MetVerdant, completed flags, "
@@ -205,23 +274,32 @@ struct GameApplicationTestAccess
         std::ofstream trace(output / "trace.jsonl");
         trace << std::boolalpha << std::setprecision(17);
         Party::Snapshot beforeParty;
+        Party::Snapshot restartBefore, restartAfter;
+        std::array<std::string, 5> retainedBeforeHashes, retainedAfterHashes;
         PointerTarget pointer;
         std::string stage = "initialize";
         std::string captureLabel;
         std::string targetMap;
+        std::string restartIntroMovie;
         uint64_t started = 0, topicStarted = 0, messageStarted = 0, closedAt = 0;
         unsigned frames = 0, phaseFrame = 0, captureFrame = 0, captures = 0;
         unsigned castAttempts = 0, confirmations = 0, pointerClicks = 0;
         bool captureRequested = false, complete = false, coldVerified = false, firstContactDismissed = false;
         bool messageVerified = false, closedVerified = false, returned = false;
+        bool restartVerified = false;
+        bool restartIntroDismissed = false, restartIntroResumed = false;
+        uint32_t restartRandomBefore = 0, restartRandomAfter = 0;
+        unsigned telelocatorVisibleBefore = 0, telelocatorVisibleAfter = 0;
         int appResult = -1, manaBefore = 0;
         uint32_t expectedLevel = 1;
         double simulationSeconds = 0.0;
+        double restartContinueAt = 0.0;
         enum class Phase
         {
-            Cast, Portal, NormalWorld, Hints, Travel, Delay, Door, Pointer, Offer, Floor, Continue, Done
+            Cast, Portal, NormalWorld, Hints, Travel, Delay, Door, Pointer, Offer, Floor, Continue, Done,
+            RestartPedestal, RestartInstall, RestartLand, RestartCommit, RestartContinue
         };
-        Phase phase = cold ? Phase::Continue : Phase::Cast;
+        Phase phase = restart ? Phase::RestartPedestal : cold ? Phase::Continue : Phase::Cast;
 
         const auto screen = [&]() -> GameplayScreenRuntime &
             { return game.m_gameSession.gameplayScreenRuntime(); };
@@ -469,14 +547,101 @@ struct GameApplicationTestAccess
             frame.leftMouseButton = {};
             frame.rightMouseButton = {false, false, true};
             game.m_gameSession.updateGameplay(frame, 0);
-            require(events().pendingBreachMazeTransitionRequest.has_value(),
-                "Actual source surface input did not queue its typed maze request");
+            if (!restart)
+                require(events().pendingBreachMazeTransitionRequest.has_value(),
+                    "Actual source surface input did not queue its typed maze request");
             ++pointerClicks;
-            record("actual-source-pointer-queued");
+            record(restart ? "actual-source402-pointer-clicked" : "actual-source-pointer-queued");
+        };
+        const auto telelocatorVisibleFaces = [&]()
+        {
+            const auto *pMap = game.m_pOutdoorWorldRuntime->mapData();
+            require(pMap != nullptr, "No actual Telelocator geometry");
+            const auto snapshot = game.m_pOutdoorWorldRuntime->snapshot();
+            size_t flat = 0;
+            unsigned total = 0, visible = 0;
+            for (const auto &model : pMap->bmodels)
+                for (const auto &face : model.faces)
+                {
+                    const uint32_t attributes = snapshot.faceAttributes.at(flat++);
+                    if (face.cogNumber != 400) continue;
+                    ++total;
+                    if (!hasFaceAttribute(attributes, FaceAttribute::Invisible)) ++visible;
+                }
+            require(total == 40, "Authentic Breach Telelocator must have exactly 40 cog400 faces");
+            return visible;
+        };
+        const auto preparePedestal = [&]()
+        {
+            record("before-declared-pedestal402-pose");
+            const auto *pMap = game.m_pOutdoorWorldRuntime->mapData();
+            require(pMap && pMap->bmodels.size() > 130, "No authentic Breach models");
+            const auto &model = pMap->bmodels.at(93);
+            const auto &face = model.faces.at(2);
+            require(face.cogTriggeredNumber == 402 && hasFaceAttribute(face.attributes, FaceAttribute::Clickable)
+                && face.planeNormalX > 0 && !face.vertexIndices.empty(), "Original pedestal402 geometry differs");
+            pointer = {};
+            pointer.model = 93;
+            pointer.face = 2;
+            pointer.eventId = 402;
+            bx::Vec3 center{0, 0, 0};
+            float bottom = std::numeric_limits<float>::max();
+            for (uint16_t index : face.vertexIndices)
+            {
+                const auto &vertex = model.vertices.at(index);
+                const bx::Vec3 point{float(vertex.x), float(vertex.y), float(vertex.z)};
+                pointer.points.push_back(point);
+                center = bx::add(center, point);
+                bottom = std::min(bottom, point.z);
+            }
+            center = bx::mul(center, 1.0f / float(pointer.points.size()));
+            game.m_pOutdoorPartyRuntime->teleportTo(center.x + 256, center.y, bottom + 1);
+            const auto &pose = game.m_pOutdoorPartyRuntime->movementState();
+            require(!pose.airborne && pose.supportKind != OutdoorSupportKind::None,
+                "Declared pedestal402 position lacks native floor support");
+            aim(center, pose.footZ + game.m_outdoorGameView.m_cameraEyeHeight);
+            for (auto &point : pointer.points) point = bx::add(center, bx::mul(bx::sub(point, center), 0.65f));
+            pointer.points.insert(pointer.points.begin(), center);
+            record("after-declared-pedestal402-pose-and-camera");
+        };
+        const auto saveRestart = [&](const std::string &label)
+        {
+            const auto path = output / (label + ".oysav");
+            require(path != input && !std::filesystem::exists(path), "Restart save must use a fresh path");
+            require(game.quickSaveToPath(path, "155重新开始 " + label), "Explicit restart save failed");
+            const auto saved = loadGameDataFromPath(path, error);
+            require(saved && toLowerCopy(saved->mapFileName) == targetMap, error);
+            require(encodePartySnapshotForComparison(saved->party)
+                    == encodePartySnapshotForComparison(screen().party()->snapshot()),
+                "Explicit restart save changed the complete live Party record");
+            const auto &selected = game.m_gameDataLoader.getSelectedMap();
+            require(selected && !selected->map.canonicalId.empty(), "Restart has no canonical map identity");
+            const std::string &canonical = selected->map.canonicalId;
+            const size_t expectedCacheKeys = canonical == saved->mapFileName ? 1 : 2;
+            trace << "{\"event\":\"restart-save-cache-keys\",\"map\":" << std::quoted(saved->mapFileName)
+                << ",\"canonical\":" << std::quoted(canonical) << ",\"keys\":[";
+            bool comma = false;
+            for (const auto &[key, snapshot] : saved->outdoorWorldStates)
+            {
+                if (comma) trace << ',';
+                comma = true;
+                trace << std::quoted(key);
+            }
+            trace << "]}\n";
+            trace.flush();
+            require(saved->currentSceneKind == SceneKind::Outdoor && saved->hasOutdoorRuntimeState
+                && !saved->hasIndoorSceneState && saved->indoorSceneStates.empty()
+                && saved->outdoorWorldStates.size() == expectedCacheKeys
+                && saved->outdoorWorldStates.contains(saved->mapFileName)
+                && saved->outdoorWorldStates.contains(canonical)
+                && !saved->breachMaze && !saved->breachAlvarCompanions && !saved->heldInventoryItemActive,
+                "Restart save retained an old map cache, maze, companion receipt or held item");
+            record("explicit-restart-saved:" + label);
         };
         const auto writeResult = [&](bool passed, const std::string &failure)
         {
-            std::ofstream(output / "result.json") << std::boolalpha
+            std::ofstream result(output / "result.json");
+            result << std::boolalpha
                 << "{\"status\":" << std::quoted(passed ? "passed" : "failed") << ",\"controlled\":true,"
                    "\"natural_campaign\":false,\"mode\":" << std::quoted(mode) << ",\"stage\":" << std::quoted(stage)
                 << ",\"frames\":" << frames << ",\"simulation_seconds\":" << simulationSeconds
@@ -486,7 +651,29 @@ struct GameApplicationTestAccess
                 << ",\"message_verified\":" << messageVerified << ",\"close_delay_verified\":" << closedVerified
                 << ",\"returned_to_breach\":" << returned << ",\"cold_verified\":" << coldVerified
                 << ",\"normal_ai\":true,\"new_test_cases\":0,\"input_sha256\":" << std::quoted(inputHash)
-                << ",\"error\":" << std::quoted(failure) << "}\n";
+                << ",\"error\":" << std::quoted(failure);
+            if (restart)
+            {
+                result << ",\"restart_verified\":" << restartVerified
+                    << ",\"source_random_target\":" << std::quoted(targetMap)
+                    << ",\"source_rng_before\":" << restartRandomBefore
+                    << ",\"source_rng_after_single_draw\":" << restartRandomAfter
+                    << ",\"telelocator_visible_before\":" << telelocatorVisibleBefore
+                    << ",\"telelocator_visible_after\":" << telelocatorVisibleAfter
+                    << ",\"source_intro_movie\":" << std::quoted(restartIntroMovie)
+                    << ",\"source_intro_sdl_escape\":" << restartIntroDismissed
+                    << ",\"source_intro_resumed\":" << restartIntroResumed
+                    << ",\"explicit_save_only\":true,\"retained_members\":[";
+                for (size_t index = 0; index < retainedBeforeHashes.size(); ++index)
+                {
+                    if (index) result << ',';
+                    result << "{\"index\":" << index << ",\"expected_sha256\":"
+                        << std::quoted(retainedBeforeHashes[index]) << ",\"actual_sha256\":"
+                        << std::quoted(retainedAfterHashes[index]) << '}';
+                }
+                result << ']';
+            }
+            result << "}\n";
         };
         try
         {
@@ -499,7 +686,7 @@ struct GameApplicationTestAccess
                     require(quest("QuestFinished") == 1 && quest("GotEndCard") == 1,
                         "Input must already have completed Breach and displayed its one-time endcard");
                     require(!screen().activeEventDialog().isActive, "Input contains an unfinished dialogue");
-                    if (!cold)
+                    if (!cold && !restart)
                     {
                         events().namedGlobalVars[std::string(QuestPrefix) + "GotMainQuest"] = 1;
                         game.m_gameSession.setNamedGlobalVar(std::string(QuestPrefix) + "GotMainQuest", 1);
@@ -514,11 +701,48 @@ struct GameApplicationTestAccess
                     beforeParty = screen().party()->snapshot();
                     checkCustody(source->party, beforeParty);
                     started = SDL_GetTicks();
-                    if (cold)
+                    if (restart)
+                    {
+                        require(!screen().heldInventoryItem().active
+                            && pendingDeliveryCount(beforeParty) == 0
+                            && inventoryCount(beforeParty, 666) == 0,
+                            "Restart fixture requires empty hands/deliveries and no existing Telelocator666");
+                        const auto installed = events().namedMapVars.find("MMerge.Breach.TelelocatorSet");
+                        require(installed == events().namedMapVars.end() || installed->second == 0,
+                            "Input already has the source Telelocator installed");
+                        telelocatorVisibleBefore = telelocatorVisibleFaces();
+                        require(telelocatorVisibleBefore == 0, "Uninstalled source Telelocator is already visible");
+                        const ItemDefinition *pItem = screen().itemTable()->get(666);
+                        require(pItem != nullptr, "Source Telelocator666 item definition is missing");
+                        InventoryItem fixture;
+                        fixture.objectDescriptionId = 666;
+                        fixture.width = pItem->inventoryWidth;
+                        fixture.height = pItem->inventoryHeight;
+                        fixture.rarity = pItem->rarity;
+                        require(screen().party()->member(0)->addInventoryItem(fixture)
+                            && inventoryCount(screen().party()->snapshot(), 666) == 1,
+                            "Cannot declare exactly one Telelocator666 without replacing any carried item");
+                        record("declared-single-source666-inventory-fixture");
+                    }
+                    else if (cold)
                     {
                         require(game.m_gameSession.breachMazeRunData().has_value(), "Cold lost the committed maze");
-                        compareFloors(*source->breachMaze, *game.m_gameSession.breachMazeRunData());
-                        const auto &old = source->indoorScene.partyRuntime;
+                        // AfterLoad's pre-apply and final synchronization each capture once;
+                        // quickLoad's final apply captures the third snapshot.
+                        constexpr uint64_t ColdLoadCaptureCount = 3;
+                        const auto &savedRun = *source->breachMaze;
+                        const auto &loadedRun = *game.m_gameSession.breachMazeRunData();
+                        trace << "{\"event\":\"cold-run-identity-comparison\",\"expected_revision_increase\":"
+                            << ColdLoadCaptureCount << ",\"expected_syncs\":[\"AfterLoad pre-apply\","
+                               "\"AfterLoad final synchronization\",\"quickLoad final apply\"],\"saved\":";
+                        writeMazeRunIdentity(trace, savedRun);
+                        trace << ",\"live\":";
+                        writeMazeRunIdentity(trace, loadedRun);
+                        trace << "}\n";
+                        trace.flush();
+                        compareFloors(savedRun, loadedRun, ColdLoadCaptureCount);
+                        // buildSaveData deliberately clears generic indoorScene for an active maze.
+                        const auto &old = savedRun.floors.at(savedRun.currentLevel).runtime.scene.partyRuntime;
                         const auto now = indoor().partyRuntime().snapshot();
                         require(old.jumpState == now.jumpState
                             && old.movementAccumulatorSeconds == now.movementAccumulatorSeconds
@@ -547,7 +771,8 @@ struct GameApplicationTestAccess
                 {
                     require(++frames <= 600 && SDL_GetTicks() - started < 120000 && frames - phaseFrame < 240,
                         "Continuation exceeded its bounded frame/wall guard at " + stage);
-                    const float dt = captureLabel.empty() && phase != Phase::Done ? FrameSeconds : 0.0f;
+                    const float dt = captureLabel.empty() && phase != Phase::Done && phase != Phase::RestartCommit
+                        ? FrameSeconds : 0.0f;
                     game.renderFrame(width, height, wheel, dt);
                     simulationSeconds += dt;
                     require(simulationSeconds <= 10.01, "Continuation exceeded ten normal simulation seconds");
@@ -573,9 +798,244 @@ struct GameApplicationTestAccess
                             }
                         return;
                     }
-                    verifyParty();
+                    if (!restart) verifyParty();
+                    if (restart && phase == Phase::RestartContinue
+                        && !restartIntroMovie.empty() && !restartIntroResumed)
+                    {
+                        if (IScreen *pActiveScreen = game.m_screenManager.activeScreen())
+                        {
+                            require(dynamic_cast<CutsceneVideoScreen *>(pActiveScreen) != nullptr,
+                                "The original fresh-campaign intro opened an unexpected screen");
+                            if (!restartIntroDismissed)
+                            {
+                                SDL_Event escape{};
+                                escape.type = SDL_EVENT_KEY_DOWN;
+                                escape.key.key = SDLK_ESCAPE;
+                                escape.key.scancode = SDL_SCANCODE_ESCAPE;
+                                escape.key.down = true;
+                                game.handleSdlEvent(escape);
+                                escape.type = SDL_EVENT_KEY_UP;
+                                escape.key.down = false;
+                                game.handleSdlEvent(escape);
+                                restartIntroDismissed = true;
+                                record("original-mm7-intro-ordinary-sdl-escape");
+                            }
+                            return;
+                        }
+                        require(restartIntroDismissed && !events().pendingMovie
+                            && !game.m_gameAudioSystem.isBackgroundMusicPaused(),
+                            "Original MM7 intro did not resume gameplay and background music after Escape");
+                        restartIntroResumed = true;
+                        restartContinueAt = simulationSeconds;
+                        record("original-mm7-intro-closed-by-normal-app-frame");
+                        return;
+                    }
                     require(game.m_screenManager.activeScreen() == nullptr,
                         "Normal combat or another screen interrupted the bounded flow; no tactical retry");
+                    if (restart)
+                    {
+                        if (phase == Phase::RestartPedestal)
+                        {
+                            preparePedestal();
+                            advance(Phase::RestartInstall, "source402-pointer-ready");
+                        }
+                        else if (phase == Phase::RestartInstall)
+                        {
+                            require(inventoryCount(screen().party()->snapshot(), 666) == 1,
+                                "Telelocator fixture changed before the actual source402 click");
+                            clickDoor(width, height);
+                            require(events().namedMapVars.contains("MMerge.Breach.TelelocatorSet")
+                                && events().namedMapVars.at("MMerge.Breach.TelelocatorSet") == 1
+                                && inventoryCount(screen().party()->snapshot(), 666) == 0,
+                                "Actual source402 did not consume its single item and install the Telelocator");
+                            checkCustody(beforeParty, screen().party()->snapshot());
+                            telelocatorVisibleAfter = telelocatorVisibleFaces();
+                            require(telelocatorVisibleAfter == 40, "Source402 did not reveal all 40 Telelocator faces");
+                            trace << "{\"event\":\"source402-installation\",\"consumed_item\":666,\"quantity\":1,"
+                                "\"visible_faces_before\":0,\"visible_faces_after\":40}\n";
+                            record("before-declared-source81-airborne-pose");
+                            const auto *pMap = game.m_pOutdoorWorldRuntime->mapData();
+                            const auto &face = pMap->bmodels.at(130).faces.at(9);
+                            require(face.cogTriggeredNumber == 81
+                                && hasFaceAttribute(face.attributes, FaceAttribute::PressurePlate),
+                                "Original central tower floor is not source81");
+                            // This fixture is above the real triangle at z4640; only native landing enters it.
+                            game.m_pOutdoorPartyRuntime->teleportTo(0, 0, 4705);
+                            require(game.m_pOutdoorPartyRuntime->movementState().airborne,
+                                "Source81 pose fixture must start airborne");
+                            advance(Phase::RestartLand, "source81-awaiting-native-gravity-landing");
+                        }
+                        else if (phase == Phase::RestartLand && events().pendingInputPrompt)
+                        {
+                            const auto &trigger = events().lastPressurePlateTrigger;
+                            const auto prompt = *events().pendingInputPrompt;
+                            require(trigger && trigger->world == "outdoor" && trigger->eventId == 81
+                                && trigger->bmodelIndex == 130 && trigger->faceIndex == 9
+                                && !game.m_pOutdoorPartyRuntime->movementState().airborne
+                                && prompt.eventId == 81 && prompt.continueStep == 1 && !prompt.trimWhitespace
+                                && prompt.answers == std::vector<std::string>{"y"}
+                                && prompt.answerContinueSteps == std::vector<uint8_t>{2},
+                                "Native source81 landing did not present the original restart question");
+                            require(!screen().heldInventoryItem().active
+                                && pendingDeliveryCount(screen().party()->snapshot()) == 0,
+                                "Restart confirmation requires empty held item and pending deliveries");
+                            const auto beforePath = output / "restart-before-confirmation.oysav";
+                            require(!std::filesystem::exists(beforePath)
+                                && game.quickSaveToPath(beforePath, "155重新开始 确认前"),
+                                "Cannot preserve the exact pre-confirmation record at a new save path");
+                            restartBefore = screen().party()->snapshot();
+                            restartRandomBefore = events().eventRandomState;
+                            const auto variable = [&](EvtVariable id, int fallback)
+                            {
+                                const auto found = events().variables.find(uint32_t(id));
+                                return found == events().variables.end() ? fallback : found->second;
+                            };
+                            const int minutes = ((std::max(1, variable(EvtVariable::DayOfYear, 1)) - 1) * 24
+                                + std::max(0, variable(EvtVariable::Hour, 0))) * 60;
+                            const uint32_t seed = restartRandomBefore ? restartRandomBefore
+                                : 81u * 2654435761u ^ uint32_t(std::max(0, minutes));
+                            const uint32_t expectedRandom = seed * 1664525u + 1013904223u;
+                            record("source81-exact-before-sdl-confirmation");
+                            SDL_Event text{};
+                            text.type = SDL_EVENT_TEXT_INPUT;
+                            text.text.text = "y";
+                            game.handleSdlEvent(text);
+                            SDL_Event key{};
+                            key.type = SDL_EVENT_KEY_DOWN;
+                            key.key.key = SDLK_RETURN;
+                            key.key.scancode = SDL_SCANCODE_RETURN;
+                            key.key.down = true;
+                            game.handleSdlEvent(key);
+                            key.type = SDL_EVENT_KEY_UP;
+                            key.key.down = false;
+                            game.handleSdlEvent(key);
+                            require(!events().pendingInputPrompt && events().pendingCampaignRestartMap,
+                                "SDL y/Return did not queue the source restart request");
+                            restartRandomAfter = events().eventRandomState;
+                            targetMap = toLowerCopy(*events().pendingCampaignRestartMap);
+                            const std::array<std::string, 3> starts{"out01.odm", "7out01.odm", "oute3.odm"};
+                            require(restartRandomAfter == expectedRandom && targetMap == starts[expectedRandom % 3],
+                                "Source81 restart must draw exactly one of its original three start maps");
+                            ++confirmations;
+                            advance(Phase::RestartCommit, "source81-request-awaiting-normal-app-safe-point");
+                        }
+                        else if (phase == Phase::RestartCommit)
+                        {
+                            require(toLowerCopy(game.m_gameSession.currentMapFileName()) == targetMap
+                                && !world().isIndoorMap() && !events().pendingCampaignRestartMap
+                                && !game.m_gameSession.currentSavePath() && world().gameMinutes() == 540.0,
+                                "Normal App safe point did not commit a fresh source start at day1 09:00");
+                            const std::string expectedWorld = targetMap == "out01.odm" ? "mm8"
+                                : targetMap == "7out01.odm" ? "mm7" : "mm6";
+                            require(game.m_activeWorldManifest.id == expectedWorld,
+                                "Source restart did not mount the ordinary destination world");
+                            restartAfter = screen().party()->snapshot();
+                            // Preserve a failed retention comparison for independent SaveInspect diagnosis too.
+                            saveRestart("restart-complete");
+                            require(restartAfter.members.size() == restartBefore.members.size()
+                                && restartAfter.nextMemberId == restartBefore.nextMemberId,
+                                "Restart changed the original active members or stable-ID allocator");
+                            bool retained = true;
+                            for (size_t index = 0; index < restartBefore.members.size(); ++index)
+                            {
+                                const auto expected = retainedMemberBytes(restartBefore, index, true);
+                                const auto actual = retainedMemberBytes(restartAfter, index, false);
+                                retainedBeforeHashes[index] = hashBytes(expected);
+                                retainedAfterHashes[index] = hashBytes(actual);
+                                const bool same = expected == actual && restartAfter.members[index].awards.empty();
+                                retained = retained && same;
+                                trace << "{\"event\":\"restart-complete-member-record\",\"index\":" << index
+                                    << ",\"member_id\":" << restartAfter.members[index].memberId
+                                    << ",\"awards_before\":" << restartBefore.members[index].awards.size()
+                                    << ",\"awards_after\":" << restartAfter.members[index].awards.size()
+                                    << ",\"active_personal_buffs_before\":"
+                                    << std::count_if(restartBefore.characterBuffs[index].begin(),
+                                        restartBefore.characterBuffs[index].end(),
+                                        [](const auto &buff) { return buff.remainingSeconds > 0; })
+                                    << ",\"expected_sha256\":" << std::quoted(retainedBeforeHashes[index])
+                                    << ",\"actual_sha256\":" << std::quoted(retainedAfterHashes[index])
+                                    << ",\"equal\":" << same << ",\"transaction_simulation_seconds\":0}\n";
+                            }
+                            require(retained,
+                                "Restart changed a complete retained member/buff record beyond Awards/FX");
+                            require(restartAfter.gold == 200 && restartAfter.food == 5 && restartAfter.bankGold == 0
+                                && restartAfter.fineGold == 0 && restartAfter.adventurersInnMembers.empty()
+                                && restartAfter.detachedMembers.empty()
+                                && restartAfter.completedDetachmentOwners.empty()
+                                && restartAfter.hiredNpcFollowers.empty() && restartAfter.pendingItemDeliveries.empty()
+                                && !screen().heldInventoryItem().active && quest("QuestFinished") == 0
+                                && quest("GotEndCard") == 0 && quest("CoughtChaos") == 0,
+                                "Restart retained old campaign resources, custody or completion state");
+                            Party::Snapshot partyBuffs;
+                            partyBuffs.partyBuffs = restartAfter.partyBuffs;
+                            require(encodePartySnapshotForComparison(partyBuffs)
+                                == encodePartySnapshotForComparison(Party::Snapshot{}),
+                                "Restart retained old party-wide buffs outside source player records");
+                            for (const auto &[continent, history] : events().historyEventTimesByContinent)
+                                for (const auto &[id, time] : history)
+                                    require(time <= 540, "Restart retained a history timestamp from the old campaign");
+                            trace << "{\"event\":\"fresh-source-onload-state\",\"world\":"
+                                << std::quoted(game.m_activeWorldManifest.id) << ",\"quest_bits\":[";
+                            bool comma = false;
+                            for (uint32_t bit : restartAfter.questBits)
+                            {
+                                if (comma) trace << ',';
+                                comma = true;
+                                trace << bit;
+                            }
+                            trace << "],\"named_globals\":{";
+                            comma = false;
+                            for (const auto &[name, value] : events().namedGlobalVars)
+                            {
+                                if (comma) trace << ',';
+                                comma = true;
+                                trace << std::quoted(name) << ':' << value;
+                            }
+                            trace << "},\"history\":[";
+                            comma = false;
+                            for (const auto &[continent, history] : events().historyEventTimesByContinent)
+                                for (const auto &[id, time] : history)
+                                {
+                                    if (comma) trace << ',';
+                                    comma = true;
+                                    trace << "{\"continent\":" << continent << ",\"event\":" << id
+                                        << ",\"time\":" << time << '}';
+                                }
+                            trace << "]}\n";
+                            if (events().pendingMovie)
+                            {
+                                restartIntroMovie = events().pendingMovie->movieName;
+                                require(targetMap == "7out01.odm" && restartIntroMovie == "\"intro post\""
+                                    && events().pendingMovie->restoreAfterPlayback,
+                                    "Unexpected original movie queued by the fresh destination OnLoad");
+                                trace << "{\"event\":\"source-onload-queued-intro\",\"name\":"
+                                    << std::quoted(restartIntroMovie) << "}\n";
+                            }
+                            require(targetMap != "7out01.odm" || !restartIntroMovie.empty(),
+                                "Fresh MM7 OnLoad did not queue its original introduction");
+                            restartVerified = true;
+                            restartContinueAt = simulationSeconds;
+                            advance(Phase::RestartContinue, "fresh-campaign-before-short-normal-continuation");
+                        }
+                        else if (phase == Phase::RestartContinue && simulationSeconds - restartContinueAt >= 0.5)
+                        {
+                            checkCustody(restartAfter, screen().party()->snapshot());
+                            saveRestart("continued");
+                            capture("restart-continued");
+                            advance(Phase::Done, "restart-and-normal-continuation-complete");
+                        }
+                        else if (phase == Phase::Done)
+                        {
+                            require(restartVerified && captures == 1 && pointerClicks == 1 && confirmations == 1
+                                && fileHash(input) == inputHash, "Restart boundary incomplete or input changed");
+                            complete = true;
+                            record("complete");
+                            SDL_Event quit{};
+                            quit.type = SDL_EVENT_QUIT;
+                            SDL_PushEvent(&quit);
+                        }
+                        return;
+                    }
                     if (phase == Phase::Cast && frames >= 3)
                     {
                         require(!screen().activeEventDialog().isActive && castAttempts < 2
@@ -830,7 +1290,7 @@ int main(int argc, char **argv)
 {
     if (argc != 5)
     {
-        std::cerr << "breach_continuation_capture RUNTIME READONLY_SAVE NEW_OUTPUT actual|cold\n";
+        std::cerr << "breach_continuation_capture RUNTIME READONLY_SAVE NEW_OUTPUT actual|cold|restart\n";
         return 1;
     }
     try

@@ -1,0 +1,79 @@
+{
+  "schema": "openyamm.mercenary-release177.scoped-result.v1",
+  "checkpoint": 177,
+  "status": "ACCEPTED_SCOPED",
+  "accepted_at": "2026-10-28T11:17:11.871070+00:00",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh",
+  "runtime": "local-data/validation/mercenary-release-177/runtime-001",
+  "save_version": 103,
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "RC1_untouched": true,
+  "production_changes": [
+    "Authenticated global original release policy: source protected0/34/4, original two-second confirmation text738/sounds.",
+    "Inn double-click release removes selected old identity transactionally, clears target NPC caches and records reusable slot; map refill timer retained.",
+    "Save103 persists reusable slots with old-save empty migration; monthly generated replacement receives fresh memberId.",
+    "Original NPC template recreation is blocked for reusable slots; weak historical Breach bindings never rebind by reused roster."
+  ],
+  "actual": {
+    "record": "actual-002/result.json",
+    "SDL_clicks": 2,
+    "confirm_then_release": true,
+    "normal_frames": 30,
+    "save_event_caches_checked": 10,
+    "images_reviewed": 3,
+    "inherited_156_upstream_fixtures": true,
+    "new_live_party_npc_pose_clock_rng_fixtures": false,
+    "input_capture_delta": 0
+  },
+  "cold": {
+    "record": "cold-001/result.json",
+    "independent_process": true,
+    "normal_frames": 30,
+    "images_reviewed": 1,
+    "slot2_retained_old_identity_absent": true
+  },
+  "isolated_logic": {
+    "same_month_no_refill": true,
+    "next_month_generated_roster": 2,
+    "old_member_id": 2,
+    "replacement_member_id": 6,
+    "actual_join_claim": false,
+    "live_app_time_changed": false
+  },
+  "verification": {
+    "native": "native-build-005.command.json",
+    "original_import": "events-import-001.command.json",
+    "unsigned_generic_ios_release": "ios-release-001.command.json",
+    "new_unit_cases": 0,
+    "old_route_replays": 0,
+    "broad_regression_runs": 0
+  },
+  "limitations": [
+    "No protected0/4/34 live click matrix; source policy/import based.",
+    "New weak historical binding branch is source/build based; selected156 input had no Breach projections.",
+    "No actual recruitment after next-month wait; isolated production refresh and admission only.",
+    "Windowed Mac and inherited controlled input only; no natural campaign or iPad acceptance."
+  ],
+  "all_owned_jobs_collected": true,
+  "next": "178 BrAlvar7/301..315 and source60 Prince warning; user requests continued device-independent development.",
+  "evidence_sha256": {
+    "source-release-audit.json": "8f1ef9a818120039ef5833a51f21a1d6a6cb4900b0793a0b92588534e681f305",
+    "refill-design.json": "83500d8cb61366e281cab52a02514946b78c8f9f2ff270f14941cb5efed1f2d2",
+    "ui-implementation.json": "1ef4e8589f48f464482dc9b2296dcf71e6baf6496573148ddaa2205fd33e9481",
+    "runtime-diff-001.json": "60049c9be34820185025cdfe938d21d56012c13ed6748c0f16ab8eed57c4e8f5",
+    "production-manifest-001.json": "b0589287a9575c3e9b0d898554d15484cb2424ab2f7e81213686fbc3b2f3f9d0",
+    "visual-review-001.json": "56889285da9bcd8614b8dfc4b1db38bd9f0812e910e9017b7c2dfea67dec65e2",
+    "failure-history.json": "b24eb859fa3b25e454d36135a3fa0d48765a96eb699c8852322a17ee67d47a20",
+    "owned-jobs-final.json": "54bf912fee868371b90dd7d57e2e43291a6da6b26668905a878ca3843677a532",
+    "actual-002/result.json": "76c02d63471d341e7dac9ed149d043d614e9f6ca1416c073fbbedb7dbe707039",
+    "actual-002/released.oysav": "781e4c8e403170b72f66e475ac7cd761f8125bde1abf889a4c5f1ea5f70ace0e",
+    "cold-001/result.json": "0efeba09b11d9953380132fc47282ca16beff39415c8a647f35be8cc05b28620",
+    "cold-001/continued.oysav": "526715106492529a6b0be38ea87a8e796de6bb34edd679686c8a22fb0b03df52",
+    "native-build-005.command.json": "867c2b420f899d39dd10f21b30fce6bbdc68c9c6c5f2f9deffaa460c72566c48",
+    "events-import-001.command.json": "381cf0d6c5384d6aa61fefe33ab1bb1892274b6f3511e14eab2f15a68702efa2",
+    "ios-release-001.command.json": "b02aa25c22c242b8db08c28d60f9bdc89f08c2c413881eeb421701358cc7f76d"
+  }
+}

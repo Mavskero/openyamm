@@ -1,0 +1,73 @@
+{
+  "schema": "openyamm.bralvar-ordinary178.scoped-result.v1",
+  "checkpoint": 178,
+  "status": "ACCEPTED_SCOPED",
+  "accepted_at": "2026-10-28T11:39:31.733573+00:00",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh",
+  "runtime": "local-data/validation/bralvar-ordinary-interactions-178/runtime-001",
+  "save_version": 103,
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "RC1_untouched": true,
+  "production_changes": [
+    "Source7 opens original house231 Tavern; source301..315 use active-member DoorLocked only.",
+    "Source60 one-time original str2/group15 hostility/MapVar alarm uses authenticated Prince slot and authoritative current NPC house.",
+    "Prince query is independent of Join eligibility and reads current location; no-receipt valid source state means absent Prince.",
+    "Importer verifies original click bindings/house231/registered events; runtime replaces only BrAlvar Lua."
+  ],
+  "actual": {
+    "record": "actual-001/result.json",
+    "attempts": 1,
+    "production_event_dispatches": 5,
+    "world_SDL_clicks": 0,
+    "pressure_plate_walk": false,
+    "SDL_escape_closures": 2,
+    "house231_dialog_state": true,
+    "DoorLocked_face_and_speech_request": true,
+    "prince705_no_alarm": true,
+    "house0_once_alarm_group15_actual_hostile": true,
+    "repeat_no_alarm": true,
+    "normal_frames": 30,
+    "save_decoded": true,
+    "images_reviewed": 3,
+    "tavern_image_captured": false
+  },
+  "fixtures": [
+    "Inherited154 actual004 controlled admission and split save; no old journey replay.",
+    "One Party NPC773 house0 fixture then normal global-NPC projection; receipt/QuestFinished/custody/pose/RNG/health/AI unchanged by driver.",
+    "All input/capture frames delta0; only last30frames advance normal AI/gameplay at1/60s."
+  ],
+  "verification": {
+    "native": "native-build-001.command.json",
+    "original_import": "native-scenes-001-run.command.json",
+    "unsigned_generic_ios_release": "ios-release-001.command.json",
+    "new_unit_cases": 0,
+    "old_routes_replayed": 0,
+    "cold_replays": 0,
+    "broad_regression_runs": 0
+  },
+  "limitations": [
+    "Source world faces and pressure plates not clicked/walked in this scoped App; production event dispatch used.",
+    "Tavern screenshot is prior frame; house dialog state verified, image acceptance not claimed; no extra replay.",
+    "Only one of15 locked handlers actually dispatched; remaining source-registered.",
+    "No independent cold or natural campaign/device acceptance."
+  ],
+  "all_owned_jobs_collected": true,
+  "next": "179 exact MM7 mdt15 refill actor-count guard and item supplement; then BrAlvar source local hostility/Wimp/footstep gaps.",
+  "evidence_sha256": {
+    "source-audit.json": "a4ae8cdeffae0fd699b265a18179c7e260e84387640e6b3da6fe736e8414bd7b",
+    "runtime-diff-001.json": "f0f1c759e0eeab6357e4c025a2c0272aa1be659746262322b8ec217dd4ba010b",
+    "production-manifest-001.json": "1793d5aa72e64263b9e8de84c5a179ac5ed7ce6fa63664fad1495d7c3c0a2742",
+    "visual-review-001.json": "57884c71437bacf6790c5e705408a8f6fd5493622a6bf18e446ac283ef638aa7",
+    "actual-001/result.json": "a85b7527e4be2a7d68534c027ddfa48e42c0d2d37c97c9e15c4f7e3ef424e77d",
+    "actual-001/fixture.json": "e04f1e2b217b4c24ab57f65a07c5f9b12dc1fdc3e8655e2070069e4572526243",
+    "actual-001/trace.jsonl": "de32f3679b763a39e72917bcdf3ebea95dce0786a1ca0b43da246e713215893e",
+    "actual-001/ordinary-complete.oysav": "2e320363a24928f970029dc740bad32c26d894a9b00f25bb59953ed1a95658c6",
+    "native-build-001.command.json": "66b0f8266e1051ae91c65cbba8fb233ad9d9b43248ef5377340a0128674eec91",
+    "native-scenes-001-run.command.json": "73a3bb8928c166b2dd1156d4c7f33d1d591ee4d8eeff4bd3fce3001c443e520f",
+    "ios-release-001.command.json": "71d1d70510305f07f950455fc3aa9946bd2f48bc20c898e4d54e9864bc3deb2e",
+    "owned-jobs-final.json": "9d87884a9ef53918febde47ec4b5820bb7ef1be35120d4acb6cdd57b8b7b5a52"
+  }
+}

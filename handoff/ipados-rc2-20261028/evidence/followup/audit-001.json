@@ -1,0 +1,72 @@
+{
+  "updated_at": "2026-10-28T12:43:58.912439+00:00",
+  "status": "BOUNDED_READ_ONLY_REVIEW_COMPLETE_NO_CONFIRMED_NEW_DEFECT",
+  "baseline_release": "releases/first-playable-20261028-rc2",
+  "baseline_runtime": "local-data/validation/merge-source-polish-181/runtime-001",
+  "production_changes": 0,
+  "builds": 0,
+  "app_runs": 0,
+  "new_test_cases": 0,
+  "old_route_replays": 0,
+  "device_or_simulator_operations": 0,
+  "reviews": [
+    {
+      "agent": "astra_release_content_177",
+      "model": "gpt-6-astra/xhigh",
+      "scope": [
+        "ios/Launcher.mm",
+        "ios/ResourceImport.mm",
+        "ios/ResourceImport.h",
+        "RC2 asset layout"
+      ],
+      "findings": [
+        "Cancellation and copy failure preserve the active resource record; a unique pending import directory and atomic active record publish protect the previous resource set.",
+        "Launcher security-scoped URL access spans the coordinated background copy and is released on returning paths; only a successful import replaces the launcher record.",
+        "All six RC2 asset files pass the import selection filter, including worlds/mmmerge.zip; 3494497338 bytes is below the 8 GiB limit. Engine archive contains the required mobile/save/load/keyboard layouts."
+      ],
+      "result": "No source-confirmed import blocker or old-resource deletion defect found."
+    },
+    {
+      "agent": "astra_release_ui_audit_177",
+      "model": "gpt-6-astra/xhigh",
+      "scope": [
+        "engine/EngineApplication.cpp",
+        "engine/ApplePointer.mm",
+        "game/app/GameApplication.cpp",
+        "game/app/GameInputSystem.cpp",
+        "local SDL UIKit and SDL_video.c focus handling"
+      ],
+      "findings": [
+        "SDL UIKit clears keyboard state and emits focus loss before the background event; foreground and focus restoration events are drained before the next engine frame.",
+        "Engine pauses background rendering and resets frame timing on foreground restoration.",
+        "Finger cancellation does not enter the tap branch. The focus-loss cancellation flag survives until the next input frame, which clears pending HUD input, touches and double-tap state.",
+        "Pointer locking is recalculated from application activity and window focus; SDL focus handling also updates relative mouse mode."
+      ],
+      "result": "No source-confirmed stuck-input, unintended-action or foreground-restoration blocker found."
+    }
+  ],
+  "main_review": {
+    "basis": [
+      "second-playable-candidate-182/requirements.json",
+      "releases/first-playable-20261028-rc2/KNOWN_LIMITS.md",
+      "FIRST_PLAYABLE_RELEASE_PLAN.md"
+    ],
+    "confirmed_device_independent_backlog": "Closed through 181 and packaged in 182; no new definite defect established in this follow-up.",
+    "remaining_required_gate": "Target iPad installation, import, input, lifecycle, media and performance acceptance.",
+    "constraint": "User explicitly declined device operations; simulator operations also remain prohibited. Do not ask again.",
+    "excluded_inferences": [
+      "Not full natural-campaign proof",
+      "Not iPad acceptance",
+      "Not a guarantee that all software or arbitrary Merge scripts are complete"
+    ],
+    "no_added_requirement": "Do not require complete natural replays of every campaign or all side quest, party and long-refill combinations."
+  },
+  "goal_turn_classification": "NO_PROGRESS_EXTERNAL_AUTHORIZATION",
+  "blocking_audit": {
+    "consecutive_turns": 1,
+    "basis": "Previous goal turn made concrete progress on 179–182. This follow-up found no new actionable defect; target-device verification remains unavailable.",
+    "threshold": 3
+  },
+  "full_goal_achieved": false,
+  "goal_status": "active"
+}

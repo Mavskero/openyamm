@@ -1,0 +1,39 @@
+{
+  "schema": "openyamm.second-candidate182.scoped-result.v1",
+  "checkpoint": 182,
+  "status": "ACCEPTED_SECOND_PLAYABLE_CANDIDATE_SCOPED",
+  "accepted_at": "2026-10-28T12:29:44.708806+00:00",
+  "release": "releases/first-playable-20261028-rc2",
+  "version": "0.1.0-rc2-20261028",
+  "save_version": 103,
+  "baseline_runtime": "local-data/validation/merge-source-polish-181/runtime-001",
+  "package_check": "package-check-result.json",
+  "source_restore": "source-restore-result-001.json",
+  "runtime_bytes": 3494489946,
+  "source_files": 1909,
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh",
+  "RC1_untouched": true,
+  "confirmed_device_independent_findings_176_to_181": "implemented; exact source/actual limits retained per chapter",
+  "new_unit_cases": 0,
+  "old_routes_replayed": 0,
+  "new_packaged_menu_runs": 1,
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "all_owned_jobs_collected": true,
+  "remaining": [
+    "Target iPad installation/import/touch/lifecycle/media/performance acceptance requires currently declined device operations.",
+    "Natural complete campaign and all optional branch combinations unproved; no broad replay matrix added.",
+    "Arbitrary Merge Lua unsupported outside current authenticated projections."
+  ],
+  "next": "Keep full goal active; confirmed current device-independent fixes delivered. Further implementation requires a concrete defect or new supported-scope requirement; device permission remains declined, do not re-ask.",
+  "evidence_sha256": {
+    "package-check-result.json": "3cd7c95c0675177872d2c1fdefe257e960a0b0cbce03e10097475906a00b9b8c",
+    "source-restore-result-001.json": "06a022247a69de054eb1a9c65fa18bb2df95363f82c0a016886fff57655d0406",
+    "owned-jobs-final.json": "0c860f3c320d683c503d3a846de22785b2996116aca753693a82f0be52e225f5",
+    "assemble-001.command.json": "5bfb1225b3058c991ad58e40e515db734f1a6f6a138f5d1f9072157c6d552ec8",
+    "packaged-app-001.command.json": "004d9c3d2729a8858b42a02cb1fb627b0ee0391c02b6ed42cc135c069661ef30",
+    "source-restore-001.command.json": "8f29ecaf27df9ade7d33448a792982848ce160fcab1673ac6898cc84535290ae"
+  }
+}

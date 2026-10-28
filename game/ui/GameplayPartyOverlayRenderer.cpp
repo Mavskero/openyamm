@@ -8928,6 +8928,12 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             continue;
         }
 
+        if (normalizedLayoutId == "adventurersinndismissbutton"
+            && !context.selectedAdventurersInnReleaseIdentity())
+        {
+            continue;
+        }
+
         if (normalizedLayoutId == "characterawardsscrollthumb")
         {
             continue;

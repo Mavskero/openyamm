@@ -1,6 +1,7 @@
 #include "game/gameplay/GameplayDialogController.h"
 
 #include "game/StringUtils.h"
+#include "game/app/GameSession.h"
 #include "game/audio/SoundIds.h"
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/BountyHuntRuntime.h"
@@ -10,6 +11,7 @@
 #include "game/gameplay/HouseInteraction.h"
 #include "game/gameplay/MasteryTeacherDialog.h"
 #include "game/gameplay/MercenaryRecruitmentRuntime.h"
+#include "game/gameplay/OwnedMercenaryRuntime.h"
 #include "game/gameplay/TravelRuntime.h"
 #include "game/mm9/Mm9RudeDialogue.h"
 #include "game/mm9/Mm9MapTransition.h"
@@ -113,6 +115,12 @@ const char *eventDialogActionKindName(EventDialogActionKind kind)
             return "guild_membership_join";
         case EventDialogActionKind::GeneratedMercenaryJoinOffer:
             return "generated_mercenary_join_offer";
+        case EventDialogActionKind::OwnedMercenaryJoinOffer:
+            return "owned_mercenary_join_offer";
+        case EventDialogActionKind::OwnedMercenaryJoinAccept:
+            return "owned_mercenary_join_accept";
+        case EventDialogActionKind::OwnedMercenaryJoinDecline:
+            return "owned_mercenary_join_decline";
         case EventDialogActionKind::Mm9RudeTopic:
             return "mm9_rude_topic";
         case EventDialogActionKind::Mm9RudeSkillTrainerOffer:
@@ -993,6 +1001,7 @@ void syncAvailableRosterMembersToAdventurersInn(GameplayDialogController::Contex
     for (const RosterEntry *pRosterEntry : rosterEntries)
     {
         if (pRosterEntry == nullptr
+            || isReusableMercenaryRosterId(*context.pParty, pRosterEntry->id)
             || pRosterEntry->unlockQuestBitId == 0
             || !context.pParty->hasQuestBit(pRosterEntry->unlockQuestBitId)
             || context.pParty->hasRosterMember(pRosterEntry->id)
@@ -1014,15 +1023,15 @@ void syncAvailableRosterMembersToAdventurersInn(GameplayDialogController::Contex
     for (const auto &[npcId, recruit] : context.eventRuntimeState.generatedMercenaryRecruitsByNpcId)
     {
         if (!isAdventurersInnHouse(context, recruit.houseId)
-            || context.eventRuntimeState.unavailableNpcIds.contains(npcId)
-            || context.pParty->hasRosterMember(recruit.rosterId)
-            || partyHasAdventurersInnRosterMember(*context.pParty, recruit.rosterId))
+            || !isAvailableGeneratedMercenaryRecruit(*context.pParty, context.eventRuntimeState, npcId))
         {
             continue;
         }
 
-        context.pParty->addAdventurersInnMember(recruit.character, recruit.portraitPictureId);
-        generatedMercenaryNpcIdsToMoveToInn.push_back(npcId);
+        if (context.pParty->addAdventurersInnMember(recruit.character, recruit.portraitPictureId))
+        {
+            generatedMercenaryNpcIdsToMoveToInn.push_back(npcId);
+        }
     }
 
     for (uint32_t npcId : generatedMercenaryNpcIdsToMoveToInn)
@@ -1036,7 +1045,9 @@ void syncAvailableRosterMembersToAdventurersInn(GameplayDialogController::Contex
 
     for (const auto &[npcId, houseId] : context.eventRuntimeState.npcHouseOverrides)
     {
-        if (!isAdventurersInnHouse(context, houseId) || context.eventRuntimeState.unavailableNpcIds.contains(npcId))
+        if (!isAdventurersInnHouse(context, houseId) || context.eventRuntimeState.unavailableNpcIds.contains(npcId)
+            || isReusableMercenaryNpcId(*context.pParty, npcId)
+            || context.eventRuntimeState.generatedMercenaryRecruitsByNpcId.contains(npcId))
         {
             continue;
         }
@@ -1054,6 +1065,7 @@ void syncAvailableRosterMembersToAdventurersInn(GameplayDialogController::Contex
                 context.pNpcDialogTable->getRosterJoinOfferForTopic(topicId);
 
             if (!offer.has_value()
+                || isReusableMercenaryRosterId(*context.pParty, offer->rosterId)
                 || context.pParty->hasRosterMember(offer->rosterId)
                 || partyHasAdventurersInnRosterMember(*context.pParty, offer->rosterId))
             {
@@ -2131,6 +2143,55 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
         return result;
     }
 
+    const bool ownedMercenaryAction = action.kind == EventDialogActionKind::OwnedMercenaryJoinOffer
+        || action.kind == EventDialogActionKind::OwnedMercenaryJoinAccept
+        || action.kind == EventDialogActionKind::OwnedMercenaryJoinDecline;
+    const auto ownedTarget = context.pWorldRuntime && context.activeEventDialog.sourceActorIndex
+        ? context.pWorldRuntime->ownedMercenaryActorBinding(
+            context.activeEventDialog.sourceId, *context.activeEventDialog.sourceActorIndex)
+        : std::nullopt;
+    if (ownedMercenaryAction || ownedTarget)
+    {
+        GameSession *pSession = context.pWorldRuntime ? context.pWorldRuntime->boundGameSession() : nullptr;
+        if (!ownedMercenaryAction || !ownedTarget || !context.pParty || !pSession
+            || !pSession->hasDataRepository() || !pSession->data().breachMercenaryProfile())
+            return result;
+        const auto &profile = *pSession->data().breachMercenaryProfile();
+        const auto resolved = resolveOwnedMercenary(*context.pParty, ownedTarget->binding.memberId, profile);
+        const EventRuntimeState::OwnedMercenaryJoinOffer expected{
+            ownedTarget->binding, resolved.owner, ownedTarget->canonicalMapKey, ownedTarget->profileVersion,
+            ownedTarget->sourceSha256, ownedTarget->sceneGeneration, ownedTarget->sourceActorIndex};
+        auto &dialogue = context.eventRuntimeState.dialogueState;
+        if (action.kind == EventDialogActionKind::OwnedMercenaryJoinDecline)
+        {
+            dialogue.ownedMercenaryOffer.reset();
+            dialogue.pendingOwnedMercenaryJoin.reset();
+        }
+        else
+        {
+            if (resolved.code != OwnedMercenaryResolutionCode::Eligible || !ownedTarget->actorInteractable
+                || resolved.sourceRosterId != ownedTarget->binding.sourceRosterId
+                || resolved.npcId != context.activeEventDialog.sourceId
+                || ownedTarget->profileVersion != profile.version
+                || ownedTarget->canonicalMapKey != profile.canonicalMapKey
+                || ownedTarget->sourceSha256 != profile.sourceSha256)
+                return result;
+            if (action.kind == EventDialogActionKind::OwnedMercenaryJoinOffer)
+                dialogue.ownedMercenaryOffer = expected;
+            else
+            {
+                if (dialogue.ownedMercenaryOffer != expected || dialogue.pendingOwnedMercenaryJoin)
+                    return result;
+                dialogue.pendingOwnedMercenaryJoin = expected;
+                return result; // Only the normal App safe point may publish the prepared Join.
+            }
+        }
+        setPendingDialogueContext(context.eventRuntimeState, DialogueContextKind::NpcTalk,
+            context.activeEventDialog.sourceId, 0, context.activeEventDialog.sourceActorIndex);
+        result.shouldOpenPendingEventDialog = true;
+        return result;
+    }
+
     if (action.kind == EventDialogActionKind::Mm9RudeSkillTrainerBack
         || action.kind == EventDialogActionKind::Mm9RudeTransportBack)
     {
@@ -3006,7 +3067,9 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
     {
         const auto recruitIt = context.eventRuntimeState.generatedMercenaryRecruitsByNpcId.find(action.id);
 
-        if (recruitIt == context.eventRuntimeState.generatedMercenaryRecruitsByNpcId.end())
+        if (context.pParty == nullptr
+            || recruitIt == context.eventRuntimeState.generatedMercenaryRecruitsByNpcId.end()
+            || !isAvailableGeneratedMercenaryRecruit(*context.pParty, context.eventRuntimeState, action.id))
         {
             context.eventRuntimeState.messages.push_back("That companion is not ready to join yet.");
             result.shouldOpenPendingEventDialog = true;
@@ -3039,7 +3102,10 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
         const std::optional<NpcDialogTable::RosterJoinOffer> offer =
             context.pNpcDialogTable->getRosterJoinOfferForTopic(action.id);
 
-        if (!offer)
+        if (!offer || context.pParty == nullptr
+            || isReusableMercenaryRosterId(*context.pParty, offer->rosterId)
+            || isReusableMercenaryNpcId(*context.pParty, context.activeEventDialog.sourceId)
+            || context.eventRuntimeState.generatedMercenaryRecruitsByNpcId.contains(context.activeEventDialog.sourceId))
         {
             context.eventRuntimeState.messages.push_back("That companion is not ready to join yet.");
             result.shouldOpenPendingEventDialog = true;
@@ -3089,12 +3155,23 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
         if (generatedRecruitIt != context.eventRuntimeState.generatedMercenaryRecruitsByNpcId.end())
         {
             const EventRuntimeState::GeneratedMercenaryRecruit recruit = generatedRecruitIt->second;
+            if (invite.rosterId != recruit.rosterId
+                || !isAvailableGeneratedMercenaryRecruit(*context.pParty, context.eventRuntimeState, invite.npcId))
+            {
+                context.eventRuntimeState.messages.push_back("That companion is not ready to join yet.");
+                result.shouldOpenPendingEventDialog = true;
+                result.allowNpcFallbackContent = false;
+                return result;
+            }
 
             if (context.pParty->isFull())
             {
-                if (!partyHasAdventurersInnRosterMember(*context.pParty, recruit.rosterId))
+                if (!context.pParty->addAdventurersInnMember(recruit.character, recruit.portraitPictureId))
                 {
-                    context.pParty->addAdventurersInnMember(recruit.character, recruit.portraitPictureId);
+                    context.eventRuntimeState.messages.push_back("Recruitment is not available for this companion yet.");
+                    result.shouldOpenPendingEventDialog = true;
+                    result.allowNpcFallbackContent = false;
+                    return result;
                 }
 
                 context.eventRuntimeState.generatedMercenaryRecruitsByNpcId.erase(invite.npcId);
@@ -3139,6 +3216,18 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 DialogueContextKind::NpcTalk,
                 invite.npcId,
                 currentDialogueHostHouseId(context.eventRuntimeState));
+            result.shouldOpenPendingEventDialog = true;
+            result.allowNpcFallbackContent = false;
+            return result;
+        }
+
+        // A released source slot no longer owns its original roster template. An expired generated
+        // confirmation must not manufacture that template when its map-local candidate is absent.
+        if (isReusableMercenaryRosterId(*context.pParty, invite.rosterId)
+            || isReusableMercenaryNpcId(*context.pParty, invite.npcId)
+            || isGeneratedMercenaryNpcId(invite.npcId))
+        {
+            context.eventRuntimeState.messages.push_back("That companion is not ready to join yet.");
             result.shouldOpenPendingEventDialog = true;
             result.allowNpcFallbackContent = false;
             return result;
@@ -4103,6 +4192,8 @@ GameplayDialogController::Result GameplayDialogController::openNpcDialogue(
     }
 
     executeNpcHook(context, EventRuntimeHookKind::NpcEnter, npcId, sourceActorIndex);
+    context.eventRuntimeState.dialogueState.ownedMercenaryOffer.reset();
+    context.eventRuntimeState.dialogueState.pendingOwnedMercenaryJoin.reset();
     context.eventRuntimeState.dialogueState.hostHouseId = hostHouseId;
     setPendingDialogueContext(
         context.eventRuntimeState,
@@ -4307,6 +4398,16 @@ GameplayDialogController::CloseDialogRequestResult GameplayDialogController::han
 
         context.eventRuntimeState.dialogueState.menuStack.pop_back();
         setPendingDialogueContext(context.eventRuntimeState, DialogueContextKind::HouseService, sourceId, sourceId);
+        result.shouldOpenPendingEventDialog = true;
+        return result;
+    }
+
+    if (context.eventRuntimeState.dialogueState.ownedMercenaryOffer)
+    {
+        context.eventRuntimeState.dialogueState.ownedMercenaryOffer.reset();
+        context.eventRuntimeState.dialogueState.pendingOwnedMercenaryJoin.reset();
+        setPendingDialogueContext(context.eventRuntimeState, DialogueContextKind::NpcTalk,
+            context.activeEventDialog.sourceId, 0, context.activeEventDialog.sourceActorIndex);
         result.shouldOpenPendingEventDialog = true;
         return result;
     }

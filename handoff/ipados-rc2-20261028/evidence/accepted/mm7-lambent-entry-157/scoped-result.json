@@ -1,0 +1,62 @@
+{
+  "schema": "openyamm.checkpoint157.scoped-result.v1",
+  "status": "ACCEPTED_SCOPED",
+  "checkpoint": 157,
+  "accepted_at": "2026-10-23T08:07:01.340102+00:00",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/max",
+  "runtime": "local-data/validation/mm7-lambent-entry-157/runtime-001",
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "new_unit_test_cases": 0,
+  "product_change": "Authenticated original Merge 7d30.lua event416 replaces the permanent legacy MapVar6 theft lock with the source Q611/!Q612/current enemy-detector gate. The ordinary chest aftermath no longer prevents light-path mainline NPC access after enemies are absent. Original STR20/21 localization retained.",
+  "scope": "One new MM7 event overlay. Save101, game/engine logic and all previous runtime archive entries preserved. Native importer and actual capture compile; iOS embedded importer incrementally rebuilt.",
+  "actual": {
+    "passed": true,
+    "controlled": true,
+    "natural_campaign": false,
+    "frames": 21,
+    "captures": 2,
+    "door_clicks": 1,
+    "actor_invisible_fixture_count": 56,
+    "house220_with_npc419": true,
+    "failure": ""
+  },
+  "fixtures": {
+    "checkpoint": 157,
+    "controlled": true,
+    "natural_campaign": false,
+    "input": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/mm7-lambent-entry-157/runtime-001",
+    "changes": "Load an unchanged copy of the normal132 MM7 save. Debug-map jump to 7d30.blv; Q611=true, Q612=false, Q642=true, MapVar6=2 (the ordinary event176 chest aftermath). Declare NPC419 already moved to house220 in both Party and live event state. Set Invisible on every loaded 7d30 actor, preserving HP/AI/loot; no kills or rewards. Place the party 256 units south of original clickable face1962, at its bottom+1; aim at its center. All operation/render frames have zero simulation delta. One queued ordinary SDL mouse gesture must hit the real event416 door and show house220 with NPC419. No direct event execution, NPC topic selection, quest hand-in, ending, cold run or Character-byte comparison.",
+    "artifacts": "Two screenshots, declared-fixture.oysav, entered-house220.oysav; the explicit final save preserves gameplay state, not an open dialogue.",
+    "audio": "dummy",
+    "visual_review_required": true,
+    "new_unit_tests": 0
+  },
+  "limits": [
+    "Controlled faction/quest/NPC-location/near-door state;56 source actors markedInvisible only in the declared run to represent absent detected enemies. No natural combat-clear claim.",
+    "Actual one real face1962 event416 SDL mouse click -> house220 visible NPC419; one explicit save decoded. No NPC topic/quest reward/ending or independent cold run.",
+    "Dark/unaligned/enemy rejection follows reviewed source predicate; no additional live gate matrix.",
+    "No full natural campaign or iPad acceptance."
+  ],
+  "source_input_sha256": "d75d775dcce408e8ad5f1b2a18a84df47a425850114a3de3923894a83949fae9",
+  "source_files_unchanged_at_acceptance": true,
+  "replays": "One new boundary run only; no previously passed routes repeated.",
+  "evidence_sha256": {
+    "source-blocker.json": "c44fa5aa6767b6156204e95a2a3723e2a4311ad62c6b15c8d43724dc998c5bc4",
+    "production-source-manifest.json": "22d8691587e5c3642e464ecf7d5a697eaa9c0092234f9c29a134ddabb3462f1c",
+    "final-source-manifest-001.json": "696e164b336998f6c3ea6c3d10d70d6065f0bf6d990201047ac3496c04d90818",
+    "native-import-build-001.command.json": "c817f76ccf7247b5cb063f7ac5664429826309550bef6ee1802f30168f4a4187",
+    "capture-build-001.command.json": "234dd48efeb163b7610cd42f55742fcec758635e412e5826f7af17b108daf15a",
+    "ios-release-001.command.json": "c9bed3f8b005f38875d0a26d0399ce765124ce5cc6030ef8bcf2f6847b2df9c2",
+    "runtime-diff-001.json": "f4d8a83d021e680a0221e38708263724ebf7b29f66c3b7ee83095e6a1758bef5",
+    "actual-001-run.command.json": "3503103b20cc5f0e97635fa3e18a24f3c435d5eba8a522b855e740d101d1fd3b",
+    "actual-001/result.json": "272b5e4c96f32618504ad76602e7d8e5e238cf1ead962f3c31c3b1c1d514875c",
+    "actual-001/fixture.json": "c028e746580a9ae94e4eb78ad40f2ae43319f5297181bc71d190a597b764378e",
+    "actual-001/trace.jsonl": "dd1f3d77a2588598557c7ec8a4c9b9a7ce319c37bdab87a3e506dc8b6253be3e",
+    "actual-001/entered-house220.oysav": "6d0665c868f10cbbf737c7bc9e48e8719c30586cddb5eb4594d9260d9e1c8ffe",
+    "visual-review-001/result.json": "21e5e61549191cdbe0f8bf66caddc8f3091117ad73b189d9cc810d3dacaea3a8"
+  }
+}

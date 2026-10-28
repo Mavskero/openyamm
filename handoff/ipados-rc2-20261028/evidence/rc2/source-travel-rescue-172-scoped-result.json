@@ -1,0 +1,39 @@
+{
+  "checkpoint": 172,
+  "status": "ACCEPTED_SCOPED",
+  "date": "2026-10-28",
+  "default_runtime": "local-data/validation/source-travel-rescue-172/runtime-001",
+  "scope": [
+    "MM6 six source town-visit TownPortal unlocks",
+    "MM8 submarine entry Q214/619 and unconditional return",
+    "MM8 learned spell40 or scroll339 statue rescue"
+  ],
+  "production_changes": "Three source-authenticated modules and nine overlays integrated; no native gameplay or Save codec change. See source-audit.json.",
+  "validation": {
+    "native": "native-build-001.command.json",
+    "import": "events-import-001.command.json",
+    "package": "runtime-diff-001.json",
+    "ios": "ios-release-001.command.json; unsigned generic Release",
+    "launcher": "launcher-check-001.command.json",
+    "actual": "mm6-start-001.command.json",
+    "actual_frames": 181,
+    "reviewed_images": 2,
+    "save_observations": "inspection-001/result.json;five passed groups",
+    "new_unit_test_cases": 0,
+    "old_accepted_route_replays": 0,
+    "cold_replays": 0,
+    "actual_attempts": 1
+  },
+  "actual_scope": "Unmodified normal132 MM6 Goblinwatch save,oute3. Original quest bits retained; only313 added. Four members,Gold9067/Food14,item ownership retained. Normal world/HUD rendered and explicit save passed.",
+  "limitations": [
+    "No actual submarine/statue route or other-five-city/portalUIcast claim.",
+    "outc1 source OnLoad is not replayed when restoring complete legacy snapshot;missing315 is acquired on next ordinary visit.",
+    "No natural campaign,physicaldevice,simulator or full-game acceptance."
+  ],
+  "preservation": "Baseline171 members retained;only9 new overlays;no gameplayfixtures shipped;originalsource and normal132 saves unchanged.",
+  "failures": "No App/build failures. Existing inspection-notes.json preserves informational print field-name error;both save exports had succeeded.",
+  "requirements": "requirements.json",
+  "next": "next-source-work.json",
+  "full_game_complete": false,
+  "goal_status": "active"
+}

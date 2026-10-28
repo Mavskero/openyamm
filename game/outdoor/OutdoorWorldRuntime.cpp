@@ -82,6 +82,14 @@ constexpr float ImmolationEffectRange = 307.0f;
 constexpr float ImmolationEffectRangeSquared = ImmolationEffectRange * ImmolationEffectRange;
 constexpr size_t ImmolationMaxAffectedActors = 100;
 
+int effectiveOutdoorActorLevel(
+    const OutdoorWorldRuntime::MapActorState &actor, const MonsterTable::MonsterStatsEntry &stats)
+{
+    return actor.levelOverride
+        ? int(std::min<uint32_t>(*actor.levelOverride, uint32_t(std::numeric_limits<int>::max())))
+        : stats.level;
+}
+
 int rollImmolationDamage(uint32_t skillLevel, uint32_t seed)
 {
     const uint32_t diceCount = std::max<uint32_t>(1, skillLevel);
@@ -160,8 +168,6 @@ constexpr uint32_t ActorHostileBit = static_cast<uint32_t>(EvtActorAttribute::Ho
 constexpr uint32_t ActorAlertStatusBit = static_cast<uint32_t>(EvtActorAttribute::AlertStatus);
 constexpr float TicksPerSecond = 128.0f;
 constexpr float OeRealtimeRecoveryScale = 2.133333333333333f;
-constexpr float HostilityCloseRange = 1024.0f;
-constexpr float HostilityShortRange = 2560.0f;
 constexpr float HostilityMediumRange = 5120.0f;
 constexpr float HostilityLongRange = GameplayActorService::MaximumPartyEngagementRange;
 constexpr float OutdoorActorAiTraceIntervalSeconds = 0.5f;
@@ -575,23 +581,6 @@ void advanceActorInspectPreviewAnimation(
         static_cast<uint32_t>(TicksPerSecond));
 }
 
-float localRelationEngagementRange(int relation)
-{
-    switch (relation)
-    {
-        case 1:
-            return HostilityCloseRange;
-        case 2:
-            return HostilityShortRange;
-        case 3:
-            return HostilityMediumRange;
-        case 4:
-            return HostilityLongRange;
-        default:
-            return 0.0f;
-    }
-}
-
 std::optional<int32_t> localMonsterRelation(
     const EventRuntimeState *pEventRuntimeState,
     uint32_t leftMonsterId,
@@ -608,6 +597,35 @@ std::optional<int32_t> localMonsterRelation(
     return iterator != pEventRuntimeState->monsterRelationOverrides.end()
         ? std::optional<int32_t>(iterator->second)
         : std::nullopt;
+}
+
+void rememberLocalActorAggression(
+    EventRuntimeState *pEventRuntimeState,
+    size_t actorIndex,
+    const OutdoorWorldRuntime::MapActorState &actor)
+{
+    GameplayActorService actorService;
+    const int16_t relationMonsterId = actorService.relationMonsterId(actor.monsterId, actor.ally);
+    if (pEventRuntimeState == nullptr || relationMonsterId <= 0
+        || actorIndex > std::numeric_limits<uint32_t>::max()
+        || !localMonsterRelation(pEventRuntimeState, uint32_t(relationMonsterId), 0).has_value())
+    {
+        return;
+    }
+
+    // A map-local faction default must not clear hostility earned by attacking or an explicit spawn.
+    // Reuse the actor's saved Hostile bit rather than changing the shared monster table.
+    const uint32_t actorKey = static_cast<uint32_t>(actorIndex);
+    pEventRuntimeState->actorSetMasks[actorKey] |= ActorHostileBit;
+    const auto clearIt = pEventRuntimeState->actorClearMasks.find(actorKey);
+    if (clearIt != pEventRuntimeState->actorClearMasks.end())
+    {
+        clearIt->second &= ~ActorHostileBit;
+        if (clearIt->second == 0)
+        {
+            pEventRuntimeState->actorClearMasks.erase(clearIt);
+        }
+    }
 }
 
 bool chestViewContainsItem(const GameplayChestViewState &view, uint32_t itemId)
@@ -840,7 +858,9 @@ bool sameBreachAlvarActorBaseline(const OutdoorWorldRuntime::MapActorState &a,
         && a.suppressLowHealthFlee == b.suppressLowHealthFlee
         && a.breachAlvarCompanion == b.breachAlvarCompanion
         && a.breachAlvarCompanionRemoved == b.breachAlvarCompanionRemoved
-        && a.breachAlvarNextMaintenanceGameMinute == b.breachAlvarNextMaintenanceGameMinute;
+        && a.breachAlvarNextMaintenanceGameMinute == b.breachAlvarNextMaintenanceGameMinute
+        && a.sourceRemoved == b.sourceRemoved
+        && a.levelOverride == b.levelOverride;
 }
 
 
@@ -885,7 +905,7 @@ bool outdoorActorIsTerminalCorpse(const OutdoorWorldRuntime::MapActorState &acto
 
 bool outdoorActorCorpsePhysicsNeedsStep(const OutdoorWorldRuntime::MapActorState &actor)
 {
-    if (!outdoorActorIsTerminalCorpse(actor) || (actor.breachAlvarCompanionRemoved || actor.isInvisible))
+    if (!outdoorActorIsTerminalCorpse(actor) || (actor.isSourceRemoved() || actor.isInvisible))
     {
         return false;
     }
@@ -2757,6 +2777,15 @@ GameplayProjectileService::ProjectilePartyImpactDamageInput buildProjectileParty
 
     input.hasMonsterFacts = true;
     input.monsterLevel = pStats->level;
+    if (projectile.sourceKind == OutdoorWorldRuntime::ProjectileState::SourceKind::Actor)
+    {
+        const auto source = std::find_if(mapActors.begin(), mapActors.end(), [&](const auto &actor)
+            { return actor.actorId == projectile.sourceId; });
+        if (source != mapActors.end())
+        {
+            input.monsterLevel = effectiveOutdoorActorLevel(*source, *pStats);
+        }
+    }
     input.attack1Damage.diceRolls = pStats->attack1Damage.diceRolls;
     input.attack1Damage.diceSides = pStats->attack1Damage.diceSides;
     input.attack1Damage.bonus = pStats->attack1Damage.bonus;
@@ -3444,7 +3473,7 @@ bool isActorUnavailableForCombat(const OutdoorWorldRuntime::MapActorState &actor
 {
     GameplayActorService actorService = {};
     return actorService.isActorUnavailableForCombat(
-        (actor.breachAlvarCompanionRemoved || actor.isInvisible),
+        (actor.isSourceRemoved() || actor.isInvisible),
         actor.isDead,
         actor.currentHp <= 0,
         actor.aiState == OutdoorWorldRuntime::ActorAiState::Dying,
@@ -3500,7 +3529,7 @@ bool canEnterHitReaction(const OutdoorWorldRuntime::MapActorState &actor)
 {
     GameplayActorService actorService = {};
     return actorService.canActorEnterHitReaction(
-        (actor.breachAlvarCompanionRemoved || actor.isInvisible),
+        (actor.isSourceRemoved() || actor.isInvisible),
         actor.isDead,
         actor.currentHp <= 0,
         actor.aiState == OutdoorWorldRuntime::ActorAiState::Dying,
@@ -4516,9 +4545,6 @@ OutdoorTargetFacts resolveOutdoorTargetFacts(
             continue;
         }
 
-        const GameplayActorTargetPolicyResult targetPolicy =
-            pGameplayActorService->resolveActorTargetPolicy(actorPolicyState, candidate.policyState);
-        GameplayActorTargetPolicyResult effectiveTargetPolicy = targetPolicy;
         const uint32_t actorRelationMonsterId = actorPolicyState.relationMonsterId > 0
             ? static_cast<uint32_t>(actorPolicyState.relationMonsterId)
             : static_cast<uint32_t>(actorPolicyState.monsterId);
@@ -4529,7 +4555,7 @@ OutdoorTargetFacts resolveOutdoorTargetFacts(
             localMonsterRelation(pEventRuntimeState, actorRelationMonsterId, candidateRelationMonsterId);
         if (actor.breachAlvarCompanion && pCompanionRules != nullptr && candidate.policyState.monsterId > 0)
         {
-            const uint32_t targetKind = uint32_t(candidate.policyState.monsterId) / 3u + 1u;
+            const uint32_t targetKind = monsterTypeGroupId(candidate.policyState.monsterId);
             const auto rule = std::find_if(pCompanionRules->hostility.begin(), pCompanionRules->hostility.end(),
                 [targetKind](const BreachAlvarHostilityRule &entry) { return entry.targetMonsterKind == targetKind; });
             if (rule != pCompanionRules->hostility.end())
@@ -4538,16 +4564,9 @@ OutdoorTargetFacts resolveOutdoorTargetFacts(
             }
         }
 
-        if (!targetPolicy.canTarget && localRelationValue && *localRelationValue > 0)
-        {
-            effectiveTargetPolicy.canTarget = true;
-            effectiveTargetPolicy.relationToTarget = *localRelationValue;
-            effectiveTargetPolicy.engagementRange = localRelationEngagementRange(*localRelationValue);
-        }
-        else if (targetPolicy.canTarget && localRelationValue && *localRelationValue <= 0)
-        {
-            effectiveTargetPolicy = {};
-        }
+        const GameplayActorTargetPolicyResult effectiveTargetPolicy =
+            pGameplayActorService->resolveActorTargetPolicy(
+                actorPolicyState, candidate.policyState, localRelationValue);
 
         if (!effectiveTargetPolicy.canTarget)
         {
@@ -5318,6 +5337,8 @@ void OutdoorWorldRuntime::initialize(
 )
 {
     m_breachAlvarFriendActorRules.reset();
+    m_breachMercenaries.reset();
+    m_breachMercenaryProfile.reset();
     ++m_breachAlvarSceneGeneration;
     m_mapId = map.id;
     m_map = map;
@@ -6749,7 +6770,7 @@ void OutdoorWorldRuntime::applyFireSpikeTrapTriggerResult(
     const GameplayProjectileService::FireSpikeTrapTriggerResult &result)
 {
     if (!result.triggered || (result.actorIndex >= m_mapActors.size()
-            || m_mapActors[result.actorIndex].breachAlvarCompanionRemoved))
+            || m_mapActors[result.actorIndex].isSourceRemoved()))
     {
         return;
     }
@@ -6885,7 +6906,7 @@ void OutdoorWorldRuntime::refreshRuntimeActorVisualResources()
             || actor.spriteFrameIndex == 0
             || m_pActorSpriteFrameTable->getFrame(actor.spriteFrameIndex, 0) == nullptr;
 
-        if (!actor.breachAlvarCompanionRemoved && actor.monsterId > 0
+        if (!actor.isSourceRemoved() && actor.monsterId > 0
             && (actor.spawnedAtRuntime || missingCurrentFrame))
         {
             monsterIds.insert(actor.monsterId);
@@ -6906,7 +6927,7 @@ void OutdoorWorldRuntime::refreshRuntimeActorVisualResources()
 
     for (MapActorState &actor : m_mapActors)
     {
-        if (actor.breachAlvarCompanionRemoved || !monsterIds.contains(actor.monsterId))
+        if (actor.isSourceRemoved() || !monsterIds.contains(actor.monsterId))
         {
             continue;
         }
@@ -7040,7 +7061,7 @@ void OutdoorWorldRuntime::updateTurnBasedPausedActorAnimations(float deltaSecond
     for (size_t actorIndex = 0; actorIndex < m_mapActors.size(); ++actorIndex)
     {
         MapActorState &actor = m_mapActors[actorIndex];
-        if (actor.breachAlvarCompanionRemoved)
+        if (actor.isSourceRemoved())
         {
             continue;
         }
@@ -7143,7 +7164,7 @@ bool OutdoorWorldRuntime::turnBasedActorActionInProgress() const
         m_mapActors.end(),
         [](const MapActorState &actor)
         {
-            if (actor.breachAlvarCompanionRemoved || actor.isDead
+            if (actor.isSourceRemoved() || actor.isDead
                 || actor.aiState == ActorAiState::Dead || actor.aiState == ActorAiState::Dying)
             {
                 return false;
@@ -7164,7 +7185,7 @@ void OutdoorWorldRuntime::stopTurnBasedActorMovement()
 
     for (MapActorState &actor : m_mapActors)
     {
-        if (actor.breachAlvarCompanionRemoved || actor.isDead
+        if (actor.isSourceRemoved() || actor.isDead
                 || actor.aiState == ActorAiState::Dead || actor.aiState == ActorAiState::Dying)
         {
             ++skippedTerminalActors;
@@ -7644,6 +7665,7 @@ OutdoorWorldRuntime::Snapshot OutdoorWorldRuntime::snapshot() const
     snapshot.hasRainIntensityOverride = m_hasRainIntensityOverride;
     snapshot.rainIntensityPreset = m_rainIntensityPreset;
     snapshot.hasOutdoorRuntimeSaveParityFields = true;
+    snapshot.breachMercenaries = m_breachMercenaries;
     if (m_pOutdoorMapDeltaData != nullptr)
     {
         snapshot.fullyRevealedCells = m_pOutdoorMapDeltaData->fullyRevealedCells;
@@ -7702,6 +7724,8 @@ void OutdoorWorldRuntime::restoreSnapshot(const Snapshot &snapshot)
     m_timerDefinitionsInitialized = false;
     m_resetLegacyTimersOnInitialize = false;
     m_mapActors = snapshot.mapActors;
+    m_breachMercenaries = snapshot.breachMercenaries;
+    m_breachMercenaryProfile.reset();
     m_chests = snapshot.chests;
     m_materializedChestViews = snapshot.materializedChestViews;
     m_activeChestView = snapshot.activeChestView;
@@ -7865,7 +7889,7 @@ void OutdoorWorldRuntime::restoreSnapshot(const Snapshot &snapshot)
         enforceBreachAlvarFriendActorLifecycle(actor);
     }
     if (m_activeCorpseView && m_activeCorpseView->sourceIndex < m_mapActors.size()
-        && m_mapActors[m_activeCorpseView->sourceIndex].breachAlvarCompanionRemoved)
+        && m_mapActors[m_activeCorpseView->sourceIndex].isSourceRemoved())
     {
         m_activeCorpseView.reset();
     }
@@ -7894,7 +7918,7 @@ void OutdoorWorldRuntime::applyMapReentryReset()
     for (MapActorState &actor : m_mapActors)
     {
         const bool canAct =
-            !actor.breachAlvarCompanionRemoved && actor.currentHp > 0
+            !actor.isSourceRemoved() && actor.currentHp > 0
             && actor.aiState != ActorAiState::Dying
             && actor.aiState != ActorAiState::Dead;
 
@@ -8779,7 +8803,7 @@ std::vector<bool> OutdoorWorldRuntime::selectOutdoorActiveActors(float partyX, f
         const MapActorState &actor = m_mapActors[actorIndex];
         OutdoorActiveActorCandidate candidate = {};
         candidate.actorIndex = actorIndex;
-        candidate.eligible = !actor.isDead && !(actor.breachAlvarCompanionRemoved || actor.isInvisible);
+        candidate.eligible = !actor.isDead && !(actor.isSourceRemoved() || actor.isInvisible);
 
         if (candidate.eligible)
         {
@@ -8855,7 +8879,7 @@ std::optional<ActorAiFacts> OutdoorWorldRuntime::collectOutdoorActorAiFacts(
     float partyZ,
     std::vector<int8_t> &actorLineOfSightCache) const
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || m_pMonsterTable == nullptr)
     {
         return std::nullopt;
@@ -8965,7 +8989,7 @@ std::optional<ActorAiFacts> OutdoorWorldRuntime::collectOutdoorActorAiFacts(
     facts.identity.targetPolicy = buildGameplayActorTargetPolicyState(actor);
 
     facts.stats.aiType = actor.aiType;
-    facts.stats.monsterLevel = pStats->level;
+    facts.stats.monsterLevel = effectiveOutdoorActorLevel(actor, *pStats);
     facts.stats.currentHp = actor.currentHp;
     facts.stats.maxHp = actor.combatState.maximumHitPoints();
     facts.stats.armorClass = effectiveMapActorArmorClass(actorIndex);
@@ -9065,7 +9089,7 @@ std::optional<ActorAiFacts> OutdoorWorldRuntime::collectOutdoorActorAiFacts(
     facts.runtime.attackImpactTriggered = actor.attackImpactTriggered;
 
     facts.status.spellEffects = buildGameplayActorSpellEffectState(actor);
-    facts.status.invisible = (actor.breachAlvarCompanionRemoved || actor.isInvisible);
+    facts.status.invisible = (actor.isSourceRemoved() || actor.isInvisible);
     facts.status.dead = actor.isDead;
     facts.status.hostileToParty = actor.hostileToParty;
     facts.status.bloodSplatSpawned = actor.bloodSplatSpawned;
@@ -9235,7 +9259,7 @@ void OutdoorWorldRuntime::applyOutdoorActorAiFrameResult(
     for (const ActorAiUpdate &update : result.actorUpdates)
     {
         if ((update.actorIndex >= m_mapActors.size()
-            || m_mapActors[update.actorIndex].breachAlvarCompanionRemoved))
+            || m_mapActors[update.actorIndex].isSourceRemoved()))
         {
             continue;
         }
@@ -9383,7 +9407,7 @@ void OutdoorWorldRuntime::applyOutdoorActorAudioRequests(const std::vector<Actor
     for (const ActorAudioRequest &audioRequest : audioRequests)
     {
         if ((audioRequest.actorIndex >= m_mapActors.size()
-            || m_mapActors[audioRequest.actorIndex].breachAlvarCompanionRemoved))
+            || m_mapActors[audioRequest.actorIndex].isSourceRemoved()))
         {
             continue;
         }
@@ -9923,7 +9947,7 @@ void OutdoorWorldRuntime::syncOutdoorActorIntegerPosition(MapActorState &actor) 
 
 void OutdoorWorldRuntime::activateOutdoorActorCorpsePhysics(size_t actorIndex)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return;
     }
@@ -9967,7 +9991,7 @@ void OutdoorWorldRuntime::applyOutdoorActorCorpsePhysicsSteps(
 
     for (size_t actorIndex : m_actorCorpsePhysicsActorIndices)
     {
-        if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+        if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
             || m_pMonsterTable == nullptr)
         {
             continue;
@@ -10011,7 +10035,7 @@ bool OutdoorWorldRuntime::applyOutdoorActorPhysicsStep(
     const std::vector<bool> &activeActorMask,
     bool refreshActorColliders)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || !m_outdoorMovementController || m_pMonsterTable == nullptr)
     {
         return false;
@@ -10217,7 +10241,7 @@ void OutdoorWorldRuntime::applyOutdoorActorMovementIntegration(
     float &desiredMoveX,
     float &desiredMoveY)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || pStats == nullptr)
     {
         return;
@@ -10796,7 +10820,7 @@ void OutdoorWorldRuntime::updateOutdoorInactiveAndInvalidActors(
     for (size_t actorIndex = 0; actorIndex < m_mapActors.size(); ++actorIndex)
     {
         MapActorState &actor = m_mapActors[actorIndex];
-        if (actor.breachAlvarCompanionRemoved)
+        if (actor.isSourceRemoved())
         {
             continue;
         }
@@ -10931,7 +10955,7 @@ void OutdoorWorldRuntime::updateMm9ActorReactions(
 {
     for (size_t actorIndex : m_mm9CivilianActorIndices)
     {
-        if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+        if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
         {
             continue;
         }
@@ -11202,7 +11226,7 @@ void OutdoorWorldRuntime::updateMm9FoundPlayerEvents(
         }
 
         const size_t actorIndex = m_mm9FoundPlayerActorIndices[candidateIndex];
-        if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+        if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
             || m_pOutdoorMapDeltaData == nullptr
             || actorIndex >= m_pOutdoorMapDeltaData->actors.size())
         {
@@ -11985,7 +12009,7 @@ int OutdoorWorldRuntime::resolvePartyProjectileDamageMultiplier(
     const ProjectileState &projectile,
     size_t actorIndex) const
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || m_pParty == nullptr
         || m_pMonsterTable == nullptr)
     {
@@ -12016,7 +12040,7 @@ OutdoorWorldRuntime::buildProjectileDirectActorImpactInput(
 {
     GameplayProjectileService::ProjectileDirectActorImpactInput input = {};
 
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return input;
     }
@@ -13739,7 +13763,7 @@ void OutdoorWorldRuntime::applyProjectileFrameResult(
              areaImpact.impact.actorHits)
         {
             if ((actorHit.actorIndex >= m_mapActors.size()
-            || m_mapActors[actorHit.actorIndex].breachAlvarCompanionRemoved))
+            || m_mapActors[actorHit.actorIndex].isSourceRemoved()))
             {
                 continue;
             }
@@ -14052,7 +14076,7 @@ void OutdoorWorldRuntime::applyEventRuntimeState(bool syncPersistentHostilityMas
     const auto setActorHostilityFromEvent =
         [this](size_t actorIndex, bool hostileToParty)
         {
-            if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+            if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
             {
                 return;
             }
@@ -14205,6 +14229,33 @@ void OutdoorWorldRuntime::applyEventRuntimeState(bool syncPersistentHostilityMas
 
     }
 
+    // Faction relations provide the map's default. Explicit actor/group bits and requests
+    // remain authoritative, including BrAlvar's group15 alarm after its archers become neutral.
+    for (size_t actorIndex = 0; actorIndex < m_mapActors.size(); ++actorIndex)
+    {
+        const MapActorState &actor = m_mapActors[actorIndex];
+        const GameplayActorTargetPolicyState policyState = buildGameplayActorTargetPolicyState(actor);
+        const uint32_t relationMonsterId = policyState.relationMonsterId > 0
+            ? static_cast<uint32_t>(policyState.relationMonsterId)
+            : static_cast<uint32_t>(policyState.monsterId);
+        const std::optional<int32_t> partyRelation =
+            localMonsterRelation(&*m_eventRuntimeState, relationMonsterId, 0);
+        if (!partyRelation)
+        {
+            continue;
+        }
+
+        const bool authoredAggressor = !actor.spawnedAtRuntime && m_pOutdoorMapDeltaData != nullptr
+            && actorIndex < m_pOutdoorMapDeltaData->actors.size()
+            && (m_pOutdoorMapDeltaData->actors[actorIndex].attributes & ActorAggressorBit) != 0;
+        const bool hostileToParty = persistentHostilityOverrides[actorIndex].value_or(
+            authoredAggressor || *partyRelation > 0);
+        if (actor.hostileToParty != hostileToParty || outdoorActorIsPartyControlled(actor.controlMode))
+        {
+            setActorHostilityFromEvent(actorIndex, hostileToParty);
+        }
+    }
+
     if (syncPersistentHostilityMasks)
     {
         for (size_t actorIndex = 0; actorIndex < m_mapActors.size(); ++actorIndex)
@@ -14229,22 +14280,6 @@ void OutdoorWorldRuntime::applyEventRuntimeState(bool syncPersistentHostilityMas
             {
                 setActorHostilityFromEvent(actorIndex, hostileToParty);
             }
-        }
-    }
-
-    for (size_t actorIndex = 0; actorIndex < m_mapActors.size(); ++actorIndex)
-    {
-        const GameplayActorTargetPolicyState policyState =
-            buildGameplayActorTargetPolicyState(m_mapActors[actorIndex]);
-        const uint32_t relationMonsterId = policyState.relationMonsterId > 0
-            ? static_cast<uint32_t>(policyState.relationMonsterId)
-            : static_cast<uint32_t>(policyState.monsterId);
-        const std::optional<int32_t> partyRelation =
-            localMonsterRelation(&*m_eventRuntimeState, relationMonsterId, 0);
-
-        if (partyRelation)
-        {
-            setActorHostilityFromEvent(actorIndex, *partyRelation > 0);
         }
     }
 
@@ -14508,7 +14543,7 @@ bool OutdoorWorldRuntime::actorRuntimeState(size_t actorIndex, GameplayRuntimeAc
     state.radius = pActor->radius;
     state.height = pActor->height;
     state.isDead = pActor->isDead;
-    state.isInvisible = pActor->isInvisible;
+    state.isInvisible = pActor->isSourceRemoved() || pActor->isInvisible;
     state.hostileToParty = pActor->hostileToParty;
     state.hasDetectedParty = pActor->hasDetectedParty;
     state.combatTargetingParty = pActor->hostileToParty
@@ -14519,7 +14554,7 @@ bool OutdoorWorldRuntime::actorRuntimeState(size_t actorIndex, GameplayRuntimeAc
 
 bool OutdoorWorldRuntime::setMapActorPosition(size_t actorIndex, float x, float y, float z)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return false;
     }
@@ -14551,6 +14586,24 @@ bool OutdoorWorldRuntime::setMapActorPosition(size_t actorIndex, float x, float 
         deltaActor.z = actor.z;
     }
 
+    return true;
+}
+
+bool OutdoorWorldRuntime::setMapMonsterAiType(uint32_t monsterId, uint32_t aiType)
+{
+    if (monsterId == 0 || monsterId > uint32_t(std::numeric_limits<int16_t>::max())
+        || aiType > static_cast<uint32_t>(GameplayActorAiType::Aggressive))
+    {
+        return false;
+    }
+
+    for (MapActorState &actor : m_mapActors)
+    {
+        if (actor.monsterId == static_cast<int16_t>(monsterId))
+        {
+            actor.aiType = static_cast<GameplayActorAiType>(aiType);
+        }
+    }
     return true;
 }
 
@@ -14855,7 +14908,7 @@ bool OutdoorWorldRuntime::setPersistentItemMechanismVariant(
 
 bool OutdoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successRoll, uint32_t caughtRoll)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || m_pMonsterTable == nullptr || m_pParty == nullptr)
     {
         return false;
@@ -14863,7 +14916,7 @@ bool OutdoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successR
 
     MapActorState &actor = m_mapActors[actorIndex];
 
-    if (actor.isDead || (actor.breachAlvarCompanionRemoved || actor.isInvisible))
+    if (actor.isDead || (actor.isSourceRemoved() || actor.isInvisible))
     {
         return false;
     }
@@ -14935,7 +14988,7 @@ bool OutdoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successR
 
     StealingAttemptInput input = {};
     input.targetKind = StealingTargetKind::Monster;
-    input.monsterLevel = static_cast<int>(pStats->level);
+    input.monsterLevel = effectiveOutdoorActorLevel(actor, *pStats);
     input.distanceSquared = static_cast<int>(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
     input.hasLoot = !corpse.items.empty();
     input.reputationSensitiveTarget = reputationSensitiveTarget;
@@ -15049,7 +15102,7 @@ bool OutdoorWorldRuntime::actorInspectState(
 {
     const MapActorState *pActor = mapActorState(actorIndex);
 
-    if (pActor == nullptr)
+    if (pActor == nullptr || pActor->isSourceRemoved())
     {
         return false;
     }
@@ -15225,7 +15278,7 @@ std::optional<GameplayCombatActorInfo> OutdoorWorldRuntime::combatActorInfoById(
 
     for (const MapActorState &actor : m_mapActors)
     {
-        if (actor.actorId != actorId)
+        if (actor.actorId != actorId || actor.isSourceRemoved())
         {
             continue;
         }
@@ -15256,7 +15309,7 @@ std::optional<GameplayCombatActorInfo> OutdoorWorldRuntime::combatActorInfoById(
                     },
                     *pStats,
                     pMonsterEntry);
-            info.monsterLevel = pStats->level;
+            info.monsterLevel = effectiveOutdoorActorLevel(actor, *pStats);
             info.attackPreferences = pStats->attackPreferences;
             info.bolsterAffectsPlayerArmorClass = bolster.statsEnabled;
             info.specialAttackKind = pStats->specialAttackKind;
@@ -15394,7 +15447,7 @@ bool OutdoorWorldRuntime::applyReflectedDamageToActor(
 
 const OutdoorWorldRuntime::MapActorState *OutdoorWorldRuntime::mapActorState(size_t actorIndex) const
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return nullptr;
     }
@@ -15407,7 +15460,7 @@ std::optional<GameplayWorldPoint> OutdoorWorldRuntime::partyAttackFallbackProjec
 {
     const MapActorState *pActor = mapActorState(actorIndex);
 
-    if (pActor == nullptr)
+    if (pActor == nullptr || pActor->isSourceRemoved())
     {
         return std::nullopt;
     }
@@ -15425,7 +15478,7 @@ std::optional<GameplayPartyAttackActorFacts> OutdoorWorldRuntime::partyAttackAct
 {
     const MapActorState *pActor = mapActorState(actorIndex);
 
-    if (pActor == nullptr)
+    if (pActor == nullptr || pActor->isSourceRemoved())
     {
         return std::nullopt;
     }
@@ -15531,7 +15584,7 @@ std::optional<OutdoorWorldRuntime::ActorDecisionDebugInfo> OutdoorWorldRuntime::
     float partyZ
 ) const
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || m_pMonsterTable == nullptr)
     {
         return std::nullopt;
@@ -15559,7 +15612,7 @@ std::optional<OutdoorWorldRuntime::ActorDecisionDebugInfo> OutdoorWorldRuntime::
     info.idleDecisionCount = actor.idleDecisionCount;
     info.pursueDecisionCount = actor.pursueDecisionCount;
     info.attackDecisionCount = actor.attackDecisionCount;
-    info.monsterAiType = static_cast<int>(pStats->aiType);
+    info.monsterAiType = static_cast<int>(actor.aiType);
     info.movementAllowed = pStats->movementType != MonsterTable::MonsterMovementType::Stationary;
 
     const GameplayActorTargetPolicyState actorTargetPolicyState = buildGameplayActorTargetPolicyState(actor);
@@ -15617,7 +15670,7 @@ std::optional<OutdoorWorldRuntime::ActorDecisionDebugInfo> OutdoorWorldRuntime::
             *pActorService,
             actorTargetPolicyState,
             combatTarget,
-            gameplayActorAiTypeFromMonster(pStats->aiType),
+            actor.aiType,
             actor.hostilityType,
             actor.currentHp,
             actor.combatState.maximumHitPoints(),
@@ -15685,7 +15738,7 @@ bool OutdoorWorldRuntime::debugSpawnMapActorProjectile(
     float targetY,
     float targetZ)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return false;
     }
@@ -15740,7 +15793,7 @@ bool OutdoorWorldRuntime::debugSpawnEncounterFromSpawnPoint(size_t spawnIndex, u
 
 bool OutdoorWorldRuntime::setMapActorDead(size_t actorIndex, bool isDead, bool emitAudio)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return false;
     }
@@ -15823,7 +15876,7 @@ bool OutdoorWorldRuntime::applyMonsterActorMeleeAttackToMapActor(
     int attackBonus,
     CombatDamageType damageType)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || damage <= 0)
     {
         return false;
@@ -15905,7 +15958,7 @@ bool OutdoorWorldRuntime::applyMonsterAttackToMapActor(
     bool emitAudio,
     bool allowZeroDamageHit)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || damage < 0
         || (damage == 0 && !allowZeroDamageHit))
     {
@@ -16121,6 +16174,10 @@ bool OutdoorWorldRuntime::spawnEncounterFromResolvedData(
         }
 
         actor.hostileToParty = actor.hostileToParty || aggro;
+        if (aggro)
+        {
+            rememberLocalActorAggression(eventRuntimeState(), m_mapActors.size(), actor);
+        }
         applyOeOutdoorActorFloorCorrection(actor, *pStats);
 
         if (m_outdoorMovementController)
@@ -16155,7 +16212,7 @@ bool OutdoorWorldRuntime::setMapActorHostileToParty(
     float partyZ,
     bool resetActionState)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return false;
     }
@@ -16168,6 +16225,7 @@ bool OutdoorWorldRuntime::setMapActorHostileToParty(
     }
 
     actor.hostileToParty = true;
+    rememberLocalActorAggression(eventRuntimeState(), actorIndex, actor);
     actor.mm9FleeingFromParty = false;
     actor.mm9FleeRemainingSeconds = 0.0f;
     actor.mm9HelpCooldownSeconds = 0.0f;
@@ -16195,7 +16253,7 @@ bool OutdoorWorldRuntime::setMapActorHostileToParty(
 
 void OutdoorWorldRuntime::aggroNearbyMapActorFaction(size_t actorIndex, float partyX, float partyY, float partyZ)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || m_pMonsterTable == nullptr)
     {
         return;
@@ -16250,7 +16308,7 @@ bool OutdoorWorldRuntime::applyPartyAttackToMapActor(
     float partyY,
     float partyZ)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || damage <= 0)
     {
         return false;
@@ -16275,12 +16333,9 @@ bool OutdoorWorldRuntime::applyPartyAttackToMapActor(
         m_pParty->applyDamageToActiveMember(damage, "pain reflection");
     }
 
-    const MonsterTable::MonsterStatsEntry *pStats =
-        m_pMonsterTable != nullptr ? m_pMonsterTable->findStatsById(actor.monsterId) : nullptr;
     const bool suppressLowHealthFlee =
         actor.aiState == ActorAiState::Fleeing
-        && pStats != nullptr
-        && gameplayActorAiTypeFromMonster(pStats->aiType) != GameplayActorAiType::Wimp;
+        && actor.aiType != GameplayActorAiType::Wimp;
 
     GameplayActorService fallbackActorService = {};
     const GameplayActorService *pActorService =
@@ -16468,7 +16523,7 @@ void OutdoorWorldRuntime::applyPartyAttackMeleeEffects(
     const CharacterAttackResult &attack,
     const GameplayWorldPoint &source)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || (!attack.stunTarget
             && !attack.paralyzeTarget
             && !attack.fearTarget
@@ -16719,7 +16774,7 @@ bool OutdoorWorldRuntime::applyDirectSpellImpactToMapActor(
     uint32_t sourcePartyMemberIndex,
     const GameplayActorService::DirectSpellImpactResult &impact)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || impact.disposition != GameplayActorService::DirectSpellImpactDisposition::ApplyDamage)
     {
         return false;
@@ -16796,7 +16851,7 @@ bool OutdoorWorldRuntime::applyPartySpellToMapActor(
     float partyZ,
     uint32_t sourcePartyMemberIndex)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || m_pSpellTable == nullptr)
     {
         return false;
@@ -16814,7 +16869,7 @@ bool OutdoorWorldRuntime::applyPartySpellToMapActor(
 
     if (spellName == "reanimate")
     {
-        if ((actor.breachAlvarCompanionRemoved || actor.isInvisible)
+        if ((actor.isSourceRemoved() || actor.isInvisible)
             || (!actor.isDead
                 && actor.currentHp > 0
                 && actor.aiState != ActorAiState::Dying
@@ -16843,7 +16898,7 @@ bool OutdoorWorldRuntime::applyPartySpellToMapActor(
         const MonsterTable::MonsterStatsEntry *pStats =
             m_pMonsterTable != nullptr ? m_pMonsterTable->findStatsById(actor.monsterId) : nullptr;
 
-        if (pStats != nullptr && pStats->level > targetMonsterLevel)
+        if (pStats != nullptr && effectiveOutdoorActorLevel(actor, *pStats) > targetMonsterLevel)
         {
             return true;
         }
@@ -17182,7 +17237,7 @@ bool OutdoorWorldRuntime::applyPartySpellToActor(
 
 bool OutdoorWorldRuntime::healMapActor(size_t actorIndex, int amount)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || amount <= 0)
     {
         return false;
@@ -17202,7 +17257,7 @@ bool OutdoorWorldRuntime::healMapActor(size_t actorIndex, int amount)
 
 bool OutdoorWorldRuntime::resurrectMapActor(size_t actorIndex, int health, bool friendlyToParty)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return false;
     }
@@ -17259,7 +17314,7 @@ bool OutdoorWorldRuntime::resurrectMapActor(size_t actorIndex, int health, bool 
 
 bool OutdoorWorldRuntime::clearMapActorSpellEffects(size_t actorIndex)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return false;
     }
@@ -17279,7 +17334,7 @@ bool OutdoorWorldRuntime::clearMapActorSpellEffects(size_t actorIndex)
 
 int OutdoorWorldRuntime::effectiveMapActorArmorClass(size_t actorIndex) const
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return 0;
     }
@@ -17470,7 +17525,7 @@ std::vector<size_t> OutdoorWorldRuntime::collectVisibleMapActorIndicesWithinRadi
 
 bool OutdoorWorldRuntime::faceMapActorTowardPoint(size_t actorIndex, float targetX, float targetY)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return false;
     }
@@ -17498,7 +17553,7 @@ bool OutdoorWorldRuntime::faceMapActorTowardPoint(size_t actorIndex, float targe
 
 bool OutdoorWorldRuntime::notifyPartyContactWithMapActor(size_t actorIndex, float partyX, float partyY, float partyZ)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return false;
     }
@@ -17666,14 +17721,14 @@ void OutdoorWorldRuntime::commitActiveCorpseView()
 
 bool OutdoorWorldRuntime::openMapActorCorpseView(size_t actorIndex)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved)
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved())
     {
         return false;
     }
 
     const MapActorState &actor = m_mapActors[actorIndex];
 
-    if (!actor.isDead || actor.breachAlvarCompanionRemoved || actor.isInvisible
+    if (!actor.isDead || actor.isSourceRemoved() || actor.isInvisible
         || !actorShouldLeaveCorpse(m_pMonsterTable, actor))
     {
         return false;
@@ -18150,7 +18205,7 @@ void OutdoorWorldRuntime::addBloodSplat(uint32_t sourceActorId, float x, float y
 
 void OutdoorWorldRuntime::spawnBloodSplatForActorIfNeeded(size_t actorIndex)
 {
-    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].breachAlvarCompanionRemoved
+    if (actorIndex >= m_mapActors.size() || m_mapActors[actorIndex].isSourceRemoved()
         || m_pMonsterTable == nullptr)
     {
         return;
@@ -18629,6 +18684,91 @@ bool OutdoorWorldRuntime::summonEventPayload(
 }
 
 
+std::optional<OutdoorWorldRuntime::MapActorState> OutdoorWorldRuntime::prepareBreachMercenaryActor(
+    const Character &character, uint32_t monsterId, uint32_t npcId, uint32_t actorId,
+    const BreachMercenarySpot &spot, const BreachMercenaryActorRules &rules,
+    const SpriteFrameTable &frames, std::string &error) const
+{
+    const auto fail = [&error](const char *message) -> std::optional<MapActorState>
+    {
+        error = std::string("Breach mercenary actor: ") + message;
+        return std::nullopt;
+    };
+    if (m_pMonsterTable == nullptr || m_pOutdoorMapData == nullptr || !m_outdoorMovementController
+        || monsterId == 0 || monsterId > uint32_t(std::numeric_limits<int16_t>::max())
+        || npcId == 0 || npcId > uint32_t(std::numeric_limits<int16_t>::max())
+        || character.maxHealth <= 0 || character.level == 0
+        || character.level > uint32_t(std::numeric_limits<int>::max())
+        || rules.initiallyHostile || rules.gold != 0 || rules.item != 0)
+    {
+        return fail("invalid resources, source Character health/level or actor rules");
+    }
+    const MonsterTable::MonsterStatsEntry *pStats = m_pMonsterTable->findStatsById(int16_t(monsterId));
+    const MonsterEntry *pMonster = m_pMonsterTable->findById(int16_t(monsterId));
+    if (pStats == nullptr || pMonster == nullptr || pMonster->radius == 0 || pMonster->height == 0)
+    {
+        return fail("missing monster definitions or body dimensions");
+    }
+    const MonsterVisualState visuals = buildMonsterVisualState(frames, pMonster);
+    if (visuals.spriteFrameIndex == 0) return fail("missing resolved actor sprite");
+    for (const std::string &sprite : pMonster->spriteNames)
+    {
+        if (!sprite.empty() && toLowerCopy(sprite) != "null")
+        {
+            const std::optional<uint16_t> frame = frames.findFrameIndexBySpriteName(sprite);
+            if (!frame || *frame == 0 || frames.getFrame(*frame, 0) == nullptr)
+            {
+                return fail("missing authored action sprite");
+            }
+        }
+    }
+    MapActorState actor = buildSpawnedMapActorState(*m_pMonsterTable, m_pSpellTable, m_pOutdoorMapData,
+        *pStats, GameplayBolsterRuntimeContext{
+            .pMap = &m_map, .pMonsterTable = m_pMonsterTable, .pBolsterMapTable = m_pMergedBolsterMapTable,
+            .pBolsterMonsterTable = m_pMergedBolsterMonsterTable, .pParty = m_pParty,
+            .bolsterMonstersEnabled = m_bolsterMonstersEnabled,
+        }, actorId, 0, false, size_t(-1), 0, 0, float(spot.x), float(spot.y), float(spot.z));
+    const OutdoorSupportFloorSample floor = sampleOutdoorSupportFloor(*m_pOutdoorMapData,
+        actor.preciseX, actor.preciseY, actor.preciseZ, 0.0f, float(actor.radius));
+    if (!floor.hasFloor || !std::isfinite(floor.height) || floor.height > actor.preciseZ + CollisionEpsilon)
+    {
+        return fail("authored placement lacks a valid floor below it");
+    }
+    for (const OutdoorFaceGeometryData &face : m_outdoorFaces)
+    {
+        if (outdoorFaceBlocksMovement(face) && !face.isWalkable
+            && isOutdoorCylinderBlockedByFace(face, actor.preciseX, actor.preciseY, actor.preciseZ,
+                float(actor.radius), float(actor.height)))
+        {
+            return fail("authored placement intersects solid map geometry");
+        }
+    }
+    actor.movementState = m_outdoorMovementController->initializeActorStateForBodyPreservingZ(
+        actor.preciseX, actor.preciseY, actor.preciseZ, float(actor.radius));
+    if (actor.movementState.x != actor.preciseX || actor.movementState.y != actor.preciseY
+        || actor.movementState.footZ != actor.preciseZ)
+    {
+        return fail("authored placement is outside movement bounds");
+    }
+    actor.movementStateInitialized = true;
+    applyMonsterVisualState(actor, visuals);
+    if (!actor.combatState.setLegacyMaximumHitPoints(character.maxHealth))
+    {
+        return fail("source health requires legacy snapshot state");
+    }
+    actor.currentHp = character.maxHealth;
+    actor.levelOverride = character.level;
+    actor.displayName = character.name;
+    actor.npcId = int16_t(npcId);
+    actor.ally = rules.ally;
+    actor.wanderRadius = float(rules.guardRadius);
+    actor.hostileToParty = false;
+    actor.hasDetectedParty = false;
+    actor.proceduralDeathLoot = false;
+    actor.specialItemId = 0;
+    return actor;
+}
+
 OutdoorWorldRuntime::PreparedBreachAlvarFriendActorMutation::PreparedBreachAlvarFriendActorMutation(
     PreparedBreachAlvarFriendActorMutation &&other) noexcept
 {
@@ -18938,7 +19078,7 @@ std::optional<OutdoorWorldRuntime::Snapshot> OutdoorWorldRuntime::snapshotWithPr
     result.mapActors = prepared.m_afterActors;
     result.nextActorId = prepared.m_afterNextActorId;
     if (result.activeCorpseView && result.activeCorpseView->sourceIndex < result.mapActors.size()
-        && result.mapActors[result.activeCorpseView->sourceIndex].breachAlvarCompanionRemoved)
+        && result.mapActors[result.activeCorpseView->sourceIndex].isSourceRemoved())
     {
         result.activeCorpseView.reset();
     }
@@ -18959,7 +19099,7 @@ bool OutdoorWorldRuntime::publishPreparedBreachAlvarFriendActor(
     m_nextActorId = prepared.m_afterNextActorId;
     ++m_breachAlvarSceneGeneration;
     if (m_activeCorpseView && m_activeCorpseView->sourceIndex < m_mapActors.size()
-        && m_mapActors[m_activeCorpseView->sourceIndex].breachAlvarCompanionRemoved)
+        && m_mapActors[m_activeCorpseView->sourceIndex].isSourceRemoved())
     {
         m_activeCorpseView.reset();
     }
@@ -18969,25 +19109,7 @@ bool OutdoorWorldRuntime::publishPreparedBreachAlvarFriendActor(
 
 void OutdoorWorldRuntime::enforceBreachAlvarFriendActorLifecycle(MapActorState &actor) const
 {
-    if (!actor.breachAlvarCompanion || !actor.breachAlvarCompanionRemoved)
-    {
-        return;
-    }
-    // Removal is a durable lifecycle state, independent of event visibility and combat masks.
-    // Active companions retain ordinary damage, hostility and control behavior between source timer ticks.
-    actor.hostileToParty = false;
-    actor.hasDetectedParty = false;
-    actor.controlMode = ActorControlMode::None;
-    actor.controlRemainingSeconds = 0.0f;
-    actor.isInvisible = true;
-    actor.canReceiveDamage = false;
-    actor.aiState = ActorAiState::Standing;
-    actor.animation = ActorAnimation::Standing;
-    actor.moveDirectionX = actor.moveDirectionY = 0.0f;
-    actor.velocityX = actor.velocityY = actor.velocityZ = 0.0f;
-    actor.movementState.verticalVelocity = 0.0f;
-    actor.actionSeconds = 0.0f;
-    actor.attackImpactTriggered = false;
+    enforceSourceRemovedActorLifecycle(actor);
 }
 
 void OutdoorWorldRuntime::maintainBreachAlvarFriendActor()
@@ -19000,7 +19122,7 @@ void OutdoorWorldRuntime::maintainBreachAlvarFriendActor()
     for (size_t index = 0; index < m_mapActors.size(); ++index)
     {
         MapActorState &actor = m_mapActors[index];
-        if (!actor.breachAlvarCompanion || actor.breachAlvarCompanionRemoved)
+        if (!actor.breachAlvarCompanion || actor.isSourceRemoved())
         {
             continue;
         }
@@ -19202,6 +19324,7 @@ bool OutdoorWorldRuntime::summonHostileMonsterById(
         actor.hostileToParty = true;
         actor.hasDetectedParty = true;
         actor.hostilityType = std::max<uint8_t>(actor.hostilityType, 4);
+        rememberLocalActorAggression(eventRuntimeState(), m_mapActors.size(), actor);
         applyOeOutdoorActorFloorCorrection(actor, *pStats);
         m_mapActors.push_back(std::move(actor));
         spawnedAny = true;
@@ -19247,7 +19370,7 @@ bool OutdoorWorldRuntime::checkMonstersKilled(
 
     for (const MapActorState &actor : m_mapActors)
     {
-        if (actor.breachAlvarCompanionRemoved)
+        if (actor.isSourceRemoved())
         {
             continue;
         }

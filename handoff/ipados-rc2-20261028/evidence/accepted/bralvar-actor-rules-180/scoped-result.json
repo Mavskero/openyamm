@@ -1,0 +1,76 @@
+{
+  "schema": "openyamm.bralvar-actor-rules180.scoped-result.v1",
+  "checkpoint": 180,
+  "status": "ACCEPTED_SCOPED",
+  "accepted_at": "2026-10-28T12:09:13.340265+00:00",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh",
+  "runtime": "local-data/validation/bralvar-actor-rules-180/runtime-001",
+  "save_version": 103,
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "RC1_untouched": true,
+  "production_changes": [
+    "Authenticated source24 directed kind relations expand to198 map-local keys; existing policy consumes actual relation value while preserving group/control/summon checks.",
+    "Local party relations are defaults below persistent actor/group Hostile and requests; local-map attacks/explicit aggro persist in existing actor masks. Existing actor then group precedence retained.",
+    "Original294 AIType1 applies only current actors; native damage-flee/debug consumers use actor.aiType; isolated missing-version AfterLoad migration, normal OnLoad setup, modern cold no replay.",
+    "Eight authored texture footsteps load atomically from map sidecar and resolve face/cog/original texture before material fallback.",
+    "Complete runtime replacesBrAlvar Lua+mechanisms, adds8original textures including6animation dependencies; other fresh files unchanged."
+  ],
+  "actual": {
+    "record": "actual-001/result.json",
+    "attempts": 1,
+    "new_gameplay_fixtures": false,
+    "inherited_input": "178/actual-001/ordinary-complete.oysav with prior controlled admission/NPC house fixture",
+    "new_source_dispatches": 0,
+    "old_save_migration": true,
+    "local_relations": 198,
+    "Wimp_actors": 9,
+    "existing_hostile_guards": 44,
+    "normal_frames": 31,
+    "save_after_normal_frames": 30,
+    "images_reviewed": 1,
+    "save_decoded": true
+  },
+  "verification": {
+    "commands": [
+      "native-build-001.command.json",
+      "importer-build-001.command.json",
+      "native-scenes-001-run.command.json",
+      "assemble-runtime-001.command.json",
+      "ios-release-001.command.json",
+      "actual-run-001.command.json"
+    ],
+    "new_unit_cases": 0,
+    "old_routes_replayed": 0,
+    "independent_new_save_cold_replays": 0,
+    "broad_regression_runs": 0
+  },
+  "limitations": [
+    "Footstep mapping/import/consumer integrated; no walking audio or subjective audio acceptance.",
+    "No independent modern cold replay, explicit new attack or every faction combat branch claim.",
+    "Original actor/group mask precedence retained; generic future group-clear vs actor-attack precedence not changed.",
+    "No natural campaign or target iPad acceptance."
+  ],
+  "all_owned_jobs_collected": true,
+  "next": "181 companion target-kind third variant correction, original BrBase DoorLocked reaction and Breach8texture footsteps.",
+  "evidence_sha256": {
+    "actor-rules-audit.json": "18942ffcd8b31dc3e864651a046e651fe97c70b202926513fd9d0a97ab5fd29c",
+    "content-audit.json": "5f9620ca05454a0a52b71c54c7b0f06d2a347b7e190a8fe577ccd64a084044cf",
+    "footsteps-audit.json": "a6f003a78ae030cce85cdac372dca67b85e34751c8ae87c5fa34492d01078695",
+    "runtime-diff-001.json": "2b58364d2c8526194cf701e50132d9c99888cb9655d631819467addc28b07504",
+    "production-manifest-001.json": "1075767354abe44234b1f6d1e0516b09020f7b10d9f15b9108f2b3dc5281a5b8",
+    "visual-review-001.json": "bac4eafd1199f8b7dfe636e617e140eaefc449a31200c09ca0276b519e7986cf",
+    "actual-001/result.json": "84cbce1311fc4ed7cbe112c3847fc73ce1767bc9824b98cbdacf836de6197320",
+    "actual-001/fixture.json": "853b9f9e514e064a3e31d539c6b3fb669176446725765534a94a675bf0a23246",
+    "actual-001/actor-rules-complete.oysav": "c9c4a0a2b71d42e36f7b8f444e7b864d30825570ebb3fef064fc911f1ae3c072",
+    "owned-jobs-final.json": "0c860f3c320d683c503d3a846de22785b2996116aca753693a82f0be52e225f5",
+    "native-build-001.command.json": "738106e93a77f930443125a4aefb14addcda74437627840d56cb9b485e9262be",
+    "importer-build-001.command.json": "d9ede9ab82c5d6c1b56e7b22af7e8cdeb3d9ee36256a7f38b2266bbe2cba0f34",
+    "native-scenes-001-run.command.json": "9cc79bbd1bb621a0086e01acead103faee302370d5afb5a3e523b8c1e7caa475",
+    "assemble-runtime-001.command.json": "1479244169a0c1fe00b3376a14da1540e4cc45a23138504d9d04c44f4eb62b1f",
+    "ios-release-001.command.json": "60cacb3c76cbdf31080e1e747e436570de5bde0cf99bed67435e56b36391a54f",
+    "actual-run-001.command.json": "a38813df8a36b66edde080d3b9d7b00306c7c15375aa9825645f4f3173b00bfa"
+  }
+}

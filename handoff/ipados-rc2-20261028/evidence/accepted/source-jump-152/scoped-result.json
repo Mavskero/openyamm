@@ -1,0 +1,136 @@
+{
+  "schema": "openyamm.source-jump-152.scoped-result.v1",
+  "status": "ACCEPTED_SCOPED_SOURCE16_ACTUAL_AND_COLD_CONTINUATION",
+  "completed_at": "2026-10-19T13:17:39.719621+00:00",
+  "main": {
+    "model": "gpt-6-astra",
+    "reasoning": "xhigh"
+  },
+  "subagents": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "max",
+    "count": 3,
+    "all_frozen": true
+  },
+  "goal": {
+    "active": true,
+    "full_game_complete": false,
+    "overall_estimate": "55–60%, low-confidence subjective engineering estimate; unchanged"
+  },
+  "implementation": {
+    "party_motion": "Shared PartyJumpState DTO; delayed ordinary/special request, optional ordinary velocity/lift, persistent special XY, authoritative per-world vertical speed, fixed-step accumulator.",
+    "special_behavior": "Independent Party-only carrier-equivalent active state overrides ordinary XY; no free-flight drag; blocking collision/landing/Fly takeover/teleport ends following.",
+    "indoor": "Pending special consumed only in actual1/128 substep; grounded release and source vertical replacement prevent floor cancellation.",
+    "save_version": 98,
+    "compatibility": "Save97 Party motion schema unchanged; Save98 appends eventRandomState to all EventRuntimeState snapshots; <=97 missing RNG defaults0. Actual originalSave96 and preserved failedSave97 both readable.",
+    "lifecycle": "Normal cached Indoor entry clears old jump/acc/vz before OnLoad. Arrival placement keeps fresh OnLoad request. Ordinary failed map-load rollback now restores full saved runtime, turn state and held item. Last two paths code-reviewed/compiled, no deliberate actual fault injection.",
+    "actor_state": "No Party inertia fields added to actor MoveStates; optional Controller blocking feedback defaults null for existing callers.",
+    "no_reference_code_copied": true
+  },
+  "actual_mac": {
+    "controlled": true,
+    "natural_campaign": false,
+    "runtime": "../breach-alvar-149/normal-ascent-001/controlled-runtime-002",
+    "input": "../breach-alvar-149/normal-ascent-001/actual-005/top-arrived.oysav",
+    "fixture": "One initial navigation pose on real model96/face21 ramp; normal northward movement enters source96/50/event16. Existing actual source128 FeatherFall retained; transient actor AI queues discarded. No direct16 execution, RNG/HP/items/quest/buff writes.",
+    "source_observation": {
+      "event": "observed-source-launch",
+      "source_speed": 1800.0000012053201,
+      "observed_source_z_angle": 160.00000240221004,
+      "rng_before": 0,
+      "rng_after": 2486969231
+    },
+    "bridge": "bridge-002/result.json",
+    "frames": 153,
+    "captures": 2,
+    "active_moving_updates": 96,
+    "source_event_observed_once": true,
+    "launch_xyz": [
+      5888,
+      8604.67578125,
+      285
+    ],
+    "landing_xyz": [
+      5888,
+      5325.98828125,
+      339.75439453125
+    ],
+    "horizontal_displacement": 3278.6875,
+    "max_foot_z": 737.366943359375,
+    "normal_landing": true,
+    "independent_cold": [
+      {
+        "run": "airborne-cold-001/result.json",
+        "kind": "active airborne",
+        "frames": 96,
+        "captures": 2,
+        "same_future_updates": 86,
+        "comparison_groups": 13,
+        "comparison": "airborne-continuation-001.json"
+      },
+      {
+        "run": "pending-cold-001/result.json",
+        "kind": "pending before full substep",
+        "frames": 109,
+        "captures": 2,
+        "same_future_updates": 99,
+        "comparison_groups": 13,
+        "comparison": "pending-continuation-001.json"
+      }
+    ],
+    "exact_continuation_fields": [
+      "position",
+      "vertical velocity",
+      "support/airborne",
+      "jump DTO",
+      "accumulator",
+      "world clock",
+      "event RNG",
+      "FF remaining",
+      "members/items",
+      "actor count"
+    ],
+    "source_retrigger": false,
+    "input_bytes_unchanged": true,
+    "saved_documents_inspected": 7
+  },
+  "focused_indoor": {
+    "new_cases": 0,
+    "extended_existing_cases": 1,
+    "run_cases": 1,
+    "assertions": 873,
+    "result": "indoor-existing-case-001.log",
+    "source_content_claim": false,
+    "fixture": "Synthetic Indoor floor + explicit Party API jump. Pending/active snapshot continuation, XY persistence, landing, teleport reset and ordinary custom parameters."
+  },
+  "visual_review": "visual-review.json",
+  "reviewed_images": 3,
+  "builds": {
+    "native": "native-build-002.command.json",
+    "unsigned_generic_ios_release_arm64": "ios-release-001.command.json"
+  },
+  "failure_history": {
+    "run": "bridge-001/result.json",
+    "domain": "real product Save RNG omission",
+    "classification": "bridge-001/failure-classification.json",
+    "original_Save97_retained": true,
+    "new_reader_old_Save97": "save97-compat-inspect-001.json",
+    "motion_code_unchanged_for_retry": true
+  },
+  "source_evidence": {
+    "directory": "reference-behavior/",
+    "original_MM8_exe_sha256": "97be86a7597fbd9763f9b4b0ed1f4a7e47c960703fa30857c32daa056b7d403b",
+    "frozen_sources": "source-manifest-002.json",
+    "source_files": 20,
+    "final_hashes_unchanged": true
+  },
+  "limits": [
+    "Native carrier creation half-height property offset is not mapped; preserve previously accepted source128 foot/gravity scale, no exact original-binary trajectory equivalence claim.",
+    "Mounted original content audit found no Indoor evt.Jump. Indoor proof is explicit synthetic API state validation, not live source quest content.",
+    "Out13 original Merge custom FireSequence overlay still incomplete; source452 legacy full-speed decode repair does not prove it live.",
+    "Normal dynamic Merge admission remains closed. Default normal runtime remains mm7-shoals-144/runtime-001.",
+    "No device/simulator, natural campaign, full149 or full-game acceptance."
+  ],
+  "next": "BrAlvar101–103 source Time1/2/3 model definitions/handlers and light-only hour/minute projection; bounded audit at next-source-gap-audit.json.",
+  "owned_jobs": []
+}

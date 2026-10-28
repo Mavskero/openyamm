@@ -3,6 +3,7 @@
 #include "game/StringUtils.h"
 #include "game/app/GameApplication.h"
 #include "game/events/OutdoorLightTimeOverride.h"
+#include "game/gameplay/GameplayHeldItemController.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/maps/SaveGame.h"
 #include "game/outdoor/OutdoorMechanismRuntime.h"
@@ -230,9 +231,921 @@ bool differentLight(const OutdoorWorldRuntime::AtmosphereState &a, const Outdoor
 
 struct GameApplicationTestAccess
 {
+    static int runLoot(std::filesystem::path root, std::filesystem::path input, std::filesystem::path output)
+    {
+        root = std::filesystem::canonical(root);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(std::filesystem::is_regular_file(root / "worlds/mmmerge.zip")
+            && !std::filesystem::exists(output) && output.string().starts_with("/Volumes/NVMeSSD/"),
+            "Loot mode requires a complete runtime and new NVMe output directory");
+        std::string error;
+        const auto source = loadGameDataFromPath(input, error);
+        require(source && source->hasOutdoorRuntimeState && source->outdoorWorld.eventRuntimeState
+            && toLowerCopy(source->mapFileName) == "bralvar.odm" && !source->party.members.empty(),
+            "Loot input must be a prior actual BrAlvar arrival: " + error);
+        const std::string inputHash = fileDigest(input);
+        std::filesystem::create_directories(output);
+        std::filesystem::current_path(output);
+        std::ofstream(output / "fixture.json")
+            << "{\"checkpoint\":176,\"mode\":\"loot\",\"controlled\":true,\"natural_campaign\":false,\"input\":"
+            << std::quoted(input.string()) << ",\"input_sha256\":" << std::quoted(inputHash)
+            << ",\"runtime\":" << std::quoted(root.string()) << ",\"changes\":\"Member0 selected; RepairItem "
+               "removed, conditions cleared, HP=maxHP and recovery0 once. No inventory reward/lock fixture. "
+               "Existing held/pending items use normal inventory delivery and remain in the counted custody. "
+               "One pose near actual decoration702/event30, then original model11/face18/event82 at "
+               "(-258,-700,1992), with aimed cameras. One eventRNG=1 fixture before82 gives level3/type17. "
+               "Three ordinary SDL clicks:30 once,82 twice without moving. No direct event dispatch, "
+               "actor/AI edits, buff injection or old-route replay. Inspection, SDL inputs and captures use "
+               "renderFrame delta0; normal AI is enabled but does not advance during that phase. Only the final "
+               "30frames advance ordinary gameplay/AI at1/60 second, then write an explicit new save.\","
+               "\"event_rng_fixture\":1,\"expected_treasure_level\":3,\"expected_item_type\":17,"
+               "\"normal_ai\":true,\"new_unit_cases\":0,\"cold_replays\":0,\"visual_review_required\":true}\n";
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = root.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = settings.immortal = settings.unlimitedMana = settings.startFlying = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings(output / "settings.ini", settings, error), error);
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM BrAlvar loot176";
+        config.assetRoot = root.string();
+        config.activeWorldId = "mm8";
+        config.startupMapFileOverride = "out02.odm";
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        std::ofstream trace(output / "trace.jsonl");
+        trace << std::boolalpha << std::setprecision(17);
+        enum class Phase { Warmup, TrashReady, TrashClicked, LibraryPose, LibraryReady, LibraryClicked,
+            RepeatReady, RepeatClicked, Continue, Done };
+        Phase phase = Phase::Warmup;
+        std::string stage = "initialize", pendingCapture, libraryKey;
+        unsigned frames = 0, phaseFrame = 0, normalFrames = 0, captures = 0, clicks = 0;
+        uint64_t started = 0;
+        uint32_t bookId = 0, libraryRng = 0;
+        bool complete = false, savedVerified = false, repeatedVerified = false;
+        double simulationSeconds = 0;
+        std::map<uint32_t, uint64_t> baseline, afterTrash, afterLibrary;
+        const auto scene = [&]() -> OutdoorSceneRuntime &
+        {
+            require(game.m_pMapSceneRuntime && game.m_pMapSceneRuntime->kind() == SceneKind::Outdoor
+                && toLowerCopy(game.m_gameSession.currentMapFileName()) == "bralvar.odm", "Loot left BrAlvar");
+            return *static_cast<OutdoorSceneRuntime *>(game.m_pMapSceneRuntime.get());
+        };
+        const auto screen = [&]() -> GameplayScreenRuntime & { return game.m_gameSession.gameplayScreenRuntime(); };
+        const auto events = [&]() -> EventRuntimeState & { return *scene().eventRuntimeState(); };
+        const auto itemCounts = [](const Party::Snapshot &party, bool held, const InventoryItem &heldItem)
+        {
+            std::map<uint32_t, uint64_t> counts;
+            const auto add = [&](const InventoryItem &item)
+                { if (item.objectDescriptionId) counts[item.objectDescriptionId] += std::max(1u, item.quantity); };
+            for (const Character &member : party.members) for (const InventoryItem &item : member.inventory) add(item);
+            for (const auto &delivery : party.pendingItemDeliveries) add(delivery.item);
+            if (held) add(heldItem);
+            return counts;
+        };
+        const auto liveCounts = [&]()
+            { return itemCounts(scene().party().snapshot(), screen().heldInventoryItem().active,
+                screen().heldInventoryItem().item); };
+        const auto record = [&](const std::string &label)
+        {
+            const auto &pose = scene().partyRuntime().movementState();
+            trace << "{\"event\":" << std::quoted(label) << ",\"stage\":" << std::quoted(stage)
+                << ",\"frame\":" << frames << ",\"xyz\":[" << pose.x << ',' << pose.y << ',' << pose.footZ
+                << "],\"support\":[" << int(pose.supportKind) << ',' << pose.supportBModelIndex << ','
+                << pose.supportFaceIndex << "],\"event_rng\":" << events().eventRandomState
+                << ",\"library_key\":" << std::quoted(libraryKey) << ",\"library_lock\":"
+                << (libraryKey.empty() ? 0 : mapValue(events(), libraryKey.c_str())) << ",\"disease_medium\":"
+                << scene().party().members().at(0).conditions.test(size_t(CharacterCondition::DiseaseMedium))
+                << ",\"member0_hp\":" << scene().party().members().at(0).health
+                << ",\"member0_repair_present\":" << scene().party().members().at(0).skills.contains("RepairItem")
+                << ",\"held_item\":" << (screen().heldInventoryItem().active
+                    ? screen().heldInventoryItem().item.objectDescriptionId : 0)
+                << ",\"pending_deliveries\":" << scene().party().pendingItemDeliveries().size()
+                << ",\"actor_count\":" << scene().worldRuntime().mapActorCount() << ",\"items\":[";
+            bool comma = false;
+            for (const auto &[id, count] : liveCounts())
+            {
+                if (comma) trace << ',';
+                comma = true;
+                trace << '[' << id << ',' << count << ']';
+            }
+            trace << "]}\n";
+            trace.flush();
+        };
+        const auto stowHeld = [&]()
+        {
+            if (!screen().heldInventoryItem().active) return;
+            for (size_t member = 0; member < scene().party().members().size(); ++member)
+                if (GameplayHeldItemController::tryAutoPlaceHeldInventoryItemOnPartyMember(
+                        screen().heldInventoryItem(), scene().party(), member, error)) return;
+            throw std::runtime_error("No inventory space for existing held item; do not drop or overwrite it");
+        };
+        const auto flushDelivery = [&]()
+        {
+            const auto before = liveCounts();
+            stowHeld();
+            GameplayHeldItemController::applyPendingQuestItemDeliveries(screen());
+            stowHeld();
+            require(scene().party().pendingItemDeliveries().empty() && liveCounts() == before,
+                "Normal delivery lost custody or could not finish; no reward may be discarded");
+        };
+        const auto pose = [&](bool library)
+        {
+            record("before-declared-pose");
+            const auto *pMap = scene().worldRuntime().mapData();
+            require(pMap && pMap->entities.size() > 702 && pMap->bmodels.size() > 11,
+                "Original loot geometry is missing");
+            bx::Vec3 focus = {0.0f, 0.0f, 0.0f};
+            if (library)
+            {
+                require(pMap->bmodels[11].faces.at(18).cogTriggeredNumber == 82,
+                    "Original library model11/face18 changed");
+                scene().partyRuntime().teleportTo(-258, -700, 1992);
+                focus = {-258.5f, -889.0f, 2184.0f};
+                require(!scene().partyRuntime().movementState().airborne,
+                    "Original library pose has no supporting platform; stop without a click");
+            }
+            else
+            {
+                const auto &entity = pMap->entities[702];
+                require(entity.scriptEventId() == 30 && entity.x == -6944 && entity.y == -13232,
+                    "Original trash decoration702 changed");
+                scene().partyRuntime().teleportTo(float(entity.x), float(entity.y + 192), float(entity.z + 1));
+                focus = {float(entity.x), float(entity.y), float(entity.z + 32)};
+            }
+            const auto &position = scene().partyRuntime().movementState();
+            game.m_outdoorGameView.setCameraAngles(std::atan2(focus.y - position.y, focus.x - position.x),
+                std::atan2(focus.z - position.footZ - game.m_outdoorGameView.m_cameraEyeHeight,
+                    std::hypot(focus.x - position.x, focus.y - position.y)));
+            record(library ? "declared-library-pose" : "declared-trash-pose");
+        };
+        const auto click = [&](bool library, int width, int height)
+        {
+            auto &world = scene().worldRuntime();
+            std::vector<bx::Vec3> points;
+            if (library)
+            {
+                points.push_back({-258.5f, -889, 2184});
+                const auto &model = world.mapData()->bmodels[11];
+                for (uint16_t index : model.faces[18].vertexIndices)
+                    points.push_back(bx::add(points[0], bx::mul(bx::sub(
+                        outdoorBModelVertexToWorld(model.vertices[index]), points[0]), 0.65f)));
+            }
+            else for (float z : {16.0f, 32.0f, 48.0f, 64.0f}) points.push_back({-6944, -13232, 141 + z});
+            const auto camera = world.buildWorldPickRequest({0, 0, width, height, false});
+            float matrix[16];
+            bx::mtxMul(matrix, camera.viewMatrix.data(), camera.projectionMatrix.data());
+            std::optional<std::array<float, 2>> pixel;
+            for (const auto &point : points)
+            {
+                const auto projected = bx::mulH(point, matrix);
+                const float x = (projected.x + 1) * width * 0.5f, y = (1 - projected.y) * height * 0.5f;
+                if (x < 0 || y < 0 || x >= width || y >= height) continue;
+                const auto hit = world.pickMouseInteractionTarget(
+                    world.buildWorldPickRequest({x, y, width, height, true}));
+                const uint16_t sourceEvent = hit.eventTarget
+                    ? (library ? hit.eventTarget->triggeredEventId : hit.eventTarget->eventIdSecondary) : 0;
+                const bool accepted = hit.eventTarget && sourceEvent == (library ? 82 : 30)
+                    && (library ? hit.eventTarget->targetKind == GameplayWorldEventTargetKind::Surface
+                        && hit.eventTarget->targetIndex == 11 && hit.eventTarget->secondaryIndex == 18
+                        : (hit.eventTarget->targetKind == GameplayWorldEventTargetKind::Decoration
+                            || hit.eventTarget->targetKind == GameplayWorldEventTargetKind::Entity)
+                            && hit.eventTarget->targetIndex == 702)
+                    && world.canActivateWorldHit(hit, GameplayInteractionMethod::Mouse);
+                trace << "{\"event\":\"typed-pointer-probe\",\"source_event\":" << (library ? 82 : 30)
+                    << ",\"pixel\":[" << x << ',' << y << "],\"accepted\":" << accepted
+                    << ",\"hit_kind\":" << int(hit.kind) << ",\"hit_event\":"
+                    << sourceEvent << "}\n";
+                if (accepted) { pixel = std::array<float, 2>{x, y}; break; }
+            }
+            require(pixel.has_value(), "Original loot geometry is not reachable by actual picker; stop without retry");
+            int count = 0;
+            SDL_Window **pWindows = SDL_GetWindows(&count);
+            SDL_Window *pWindow = pWindows && count == 1 ? pWindows[0] : nullptr;
+            SDL_free(pWindows);
+            int pointWidth = 0, pointHeight = 0;
+            require(pWindow && SDL_GetWindowSize(pWindow, &pointWidth, &pointHeight), "Cannot find capture window");
+            const auto edge = [&](uint8_t button, bool down)
+            {
+                SDL_Event event{};
+                event.type = down ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
+                event.button.windowID = SDL_GetWindowID(pWindow);
+                event.button.button = button;
+                event.button.down = down;
+                event.button.clicks = 1;
+                event.button.x = (*pixel)[0] * float(pointWidth) / width;
+                event.button.y = (*pixel)[1] * float(pointHeight) / height;
+                require(SDL_PushEvent(&event), "Cannot queue ordinary SDL click");
+            };
+            edge(SDL_BUTTON_RIGHT, true); edge(SDL_BUTTON_LEFT, true);
+            edge(SDL_BUTTON_LEFT, false); edge(SDL_BUTTON_RIGHT, false);
+            ++clicks;
+            phaseFrame = frames;
+            record(library ? "queued-real82-click" : "queued-real30-click");
+        };
+        const auto capture = [&](const std::string &label)
+        {
+            require(pendingCapture.empty(), "Overlapping loot captures");
+            pendingCapture = label;
+            bgfx::requestScreenShot(BGFX_INVALID_HANDLE, label.c_str());
+        };
+        const auto result = [&](bool passed, const std::string &message)
+        {
+            std::ofstream(output / "result.json") << std::boolalpha << std::setprecision(17)
+                << "{\"status\":" << std::quoted(passed ? "passed" : "failed")
+                << ",\"checkpoint\":176,\"mode\":\"loot\",\"controlled\":true,\"natural_campaign\":false,\"stage\":"
+                << std::quoted(stage) << ",\"frames\":" << frames << ",\"captures\":" << captures
+                << ",\"SDL_clicks\":" << clicks << ",\"normal_frames\":" << normalFrames
+                << ",\"simulation_seconds\":" << simulationSeconds << ",\"book_id\":" << bookId
+                << ",\"library_key\":" << std::quoted(libraryKey) << ",\"repeat_no_reward_or_rng\":"
+                << repeatedVerified << ",\"save_verified\":" << savedVerified
+                << ",\"normal_ai\":true,\"inspection_input_delta_seconds\":0,"
+                   "\"AI_advances_only_in_final_continuation\":true,\"continuation_delta_seconds\":" << FrameSeconds
+                << ",\"new_unit_cases\":0,\"cold_replays\":0,\"error\":"
+                << std::quoted(message) << ",\"input_sha256_before\":" << std::quoted(inputHash)
+                << ",\"input_sha256_after\":" << std::quoted(fileDigest(input)) << "}\n";
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal
+                        && game.initializeRenderer() && game.loadSessionFromPath(input), "Actual loot input load failed");
+                    screen().closeActiveEventDialog();
+                    require(scene().localEventProgram() && scene().localEventProgram()->hasEvent(30)
+                        && scene().localEventProgram()->hasEvent(82), "Fresh source30/82 handlers are absent");
+                    record("loaded-input-before-fixtures");
+                    auto candidate = scene().party().snapshot();
+                    candidate.activeMemberIndex = 0;
+                    auto &member = candidate.members[0];
+                    member.skills.erase("RepairItem");
+                    member.conditions.reset();
+                    member.conditionStartGameMinutes.fill(0);
+                    member.health = member.maxHealth;
+                    member.recoverySecondsRemaining = 0;
+                    scene().party().restoreSnapshot(candidate);
+                    flushDelivery();
+                    baseline = liveCounts();
+                    pose(false);
+                    stage = "before-trash";
+                    started = SDL_GetTicks();
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames <= 240 && SDL_GetTicks() - started < 60000, "Bounded loot capture timed out");
+                    const bool continuing = phase == Phase::Continue;
+                    game.renderFrame(width, height, wheel, continuing ? FrameSeconds : 0.0f);
+                    require(game.m_screenManager.activeScreen() == nullptr && !screen().activeEventDialog().isActive
+                        && scene().party().hasActableMember(), "Normal loot flow was interrupted");
+                    if (continuing) { ++normalFrames; simulationSeconds += FrameSeconds; }
+                    if (!pendingCapture.empty())
+                    {
+                        if (auto image = Engine::BgfxContext::consumeScreenshot(pendingCapture))
+                        {
+                            SDL_Surface *pSurface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, image->bgraPixels.data(), int(image->width * 4));
+                            require(pSurface != nullptr, "Cannot create loot image");
+                            const bool saved = SDL_SaveBMP(pSurface, (output / (pendingCapture + ".bmp")).c_str());
+                            SDL_DestroySurface(pSurface);
+                            require(saved, "Cannot save loot image");
+                            record("captured:" + pendingCapture);
+                            pendingCapture.clear();
+                            ++captures;
+                        }
+                    }
+                    if (!pendingCapture.empty()) return;
+                    if (phase == Phase::Warmup && frames >= 8)
+                    {
+                        capture("before-trash"); phase = Phase::TrashReady;
+                    }
+                    else if (phase == Phase::TrashReady)
+                    {
+                        stage = "source30-SDL-click"; click(false, width, height); phase = Phase::TrashClicked;
+                    }
+                    else if (phase == Phase::TrashClicked && frames >= phaseFrame + 3)
+                    {
+                        auto expected = baseline; ++expected[315];
+                        require(liveCounts() == expected && scene().party().members()[0].conditions.test(
+                            size_t(CharacterCondition::DiseaseMedium)), "Real30 did not grant315 and yellow disease");
+                        afterTrash = liveCounts();
+                        record("source30-reward-and-disease");
+                        capture("trash-reward-disease"); phase = Phase::LibraryPose;
+                    }
+                    else if (phase == Phase::LibraryPose)
+                    {
+                        flushDelivery(); pose(true);
+                        const auto &position = scene().partyRuntime().movementState();
+                        const int key = int(std::ceil(std::lround(position.x) / 200.0)
+                            + std::ceil(std::lround(position.y) / 200.0) + std::ceil(std::lround(position.footZ) / 100.0));
+                        libraryKey = "MMerge.BrAlvar.LibKeys." + std::to_string(key);
+                        require(mapValue(events(), libraryKey.c_str()) == 0, "This source position was already looted");
+                        trace << "{\"event\":\"declared-one-RNG-fixture\",\"before\":" << events().eventRandomState
+                            << ",\"after\":1,\"first_draw\":1015568748,\"second_draw\":1586005467,"
+                               "\"level\":3,\"type\":17}\n";
+                        events().eventRandomState = 1;
+                        phaseFrame = frames; phase = Phase::LibraryReady;
+                    }
+                    else if (phase == Phase::LibraryReady && frames >= phaseFrame + 3)
+                    {
+                        stage = "source82-SDL-click"; click(true, width, height); phase = Phase::LibraryClicked;
+                    }
+                    else if (phase == Phase::LibraryClicked && frames >= phaseFrame + 3)
+                    {
+                        afterLibrary = liveCounts();
+                        auto expected = afterTrash;
+                        for (const auto &[id, quantity] : afterLibrary)
+                        {
+                            const auto old = afterTrash.find(id);
+                            if (quantity == (old == afterTrash.end() ? 0 : old->second) + 1)
+                            {
+                                require(bookId == 0, "More than one library reward appeared"); bookId = id;
+                            }
+                        }
+                        const auto *pItem = game.m_gameSession.data().itemTable().get(bookId);
+                        require(bookId && pItem && toLowerCopy(pItem->equipStat) == "book",
+                            "Source type17 did not produce an actual spell book");
+                        ++expected[bookId];
+                        require(afterLibrary == expected && mapValue(events(), libraryKey.c_str()) == 1,
+                            "Real82 reward or original position lock differs");
+                        libraryRng = events().eventRandomState;
+                        record("source82-book-and-original-sum-key");
+                        capture("library-book"); phase = Phase::RepeatReady;
+                    }
+                    else if (phase == Phase::RepeatReady)
+                    {
+                        flushDelivery(); stage = "source82-repeat-same-position";
+                        click(true, width, height); phase = Phase::RepeatClicked;
+                    }
+                    else if (phase == Phase::RepeatClicked && frames >= phaseFrame + 3)
+                    {
+                        require(liveCounts() == afterLibrary && events().eventRandomState == libraryRng
+                            && mapValue(events(), libraryKey.c_str()) == 1, "Repeated82 duplicated loot or RNG");
+                        repeatedVerified = true; record("repeat-no-reward-no-RNG");
+                        stage = "normal30frames"; phase = Phase::Continue;
+                    }
+                    else if (phase == Phase::Continue && normalFrames >= 30)
+                    {
+                        const auto path = output / "loot-complete.oysav";
+                        require(game.quickSaveToPath(path, "176原始垃圾堆与图书馆"), "Loot save failed");
+                        const auto saved = loadGameDataFromPath(path, error);
+                        require(saved && saved->outdoorWorld.eventRuntimeState
+                            && itemCounts(saved->party, saved->heldInventoryItemActive, saved->heldInventoryItem)
+                                == afterLibrary
+                            && saved->party.members[0].conditions.test(size_t(CharacterCondition::DiseaseMedium))
+                            && mapValue(*saved->outdoorWorld.eventRuntimeState, libraryKey.c_str()) == 1,
+                            "Save lost source reward, disease or position lock: " + error);
+                        savedVerified = true; record("saved-after30-normal-frames"); phase = Phase::Done;
+                    }
+                    else if (phase == Phase::Done)
+                    {
+                        require(captures == 3 && clicks == 3 && fileDigest(input) == inputHash,
+                            "Loot evidence is incomplete or input changed");
+                        complete = true; stage = "complete";
+                        SDL_Event quit{}; quit.type = SDL_EVENT_QUIT;
+                        require(SDL_PushEvent(&quit), "Cannot quit completed loot capture");
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete, "Loot capture ended before completion");
+            result(true, "");
+            return 0;
+        }
+        catch (const std::exception &failure)
+        {
+            trace << "{\"event\":\"failure\",\"stage\":" << std::quoted(stage)
+                << ",\"error\":" << std::quoted(failure.what()) << "}\n";
+            result(false, failure.what());
+            throw;
+        }
+    }
+
+    static int runOrdinary(std::filesystem::path root, std::filesystem::path input, std::filesystem::path output)
+    {
+        root = std::filesystem::canonical(root);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(std::filesystem::is_regular_file(root / "worlds/mmmerge.zip")
+            && !std::filesystem::exists(output) && output.string().starts_with("/Volumes/NVMeSSD/"),
+            "Ordinary mode requires a complete runtime and a new NVMe output directory");
+        std::string error;
+        const auto source = loadGameDataFromPath(input, error);
+        require(source && source->hasOutdoorRuntimeState && source->outdoorWorld.eventRuntimeState
+            && toLowerCopy(source->mapFileName) == "bralvar.odm" && source->party.members.size() == 1
+            && source->breachAlvarCompanions && source->party.npcHouseOverrides.contains(773)
+            && source->party.npcHouseOverrides.at(773) == 705,
+            "Ordinary input must be the accepted154 split arrival with Prince in705: " + error);
+        // Check the one declared NPC-location fixture against the existing save contract before opening the App.
+        GameSaveData fixtureCandidate = *source;
+        fixtureCandidate.party.npcHouseOverrides[773] = 0;
+        require(validateSavedBreachAlvarCompanions(fixtureCandidate, error),
+            "NPC773 house0 fixture conflicts with companion save validation: " + error);
+        const std::string inputHash = fileDigest(input);
+        std::filesystem::create_directories(output);
+        std::filesystem::current_path(output);
+        std::ofstream(output / "fixture.json")
+            << "{\"checkpoint\":178,\"mode\":\"ordinary\",\"controlled\":true,\"natural_campaign\":false,"
+               "\"input\":" << std::quoted(input.string()) << ",\"input_sha256\":" << std::quoted(inputHash)
+            << ",\"runtime\":" << std::quoted(root.string())
+            << ",\"inherited_fixtures\":\"154 actual004 continued arrival inherits GotFinalQuest=1,Q1713,"
+               "member2 spell31/WaterMagic10 Grandmaster and the original out02 position fixture. Its actual "
+               "TownPortal arrival and split receipt are reused without replay.\",\"changes\":\"Only after "
+               "the Prince-in705 negative dispatch, Party NPC773 house becomes0 once and its normal NPC "
+               "projection is published into live events. No receipt, QuestFinished, custody, pose, reward, "
+               "RNG, health, buff or AI fixture. Original301,7,60 handlers use the actual Scene/EventRuntime "
+               "dispatch API; no world mouse clicks or pressure-plate walking are claimed. Two SDL Escape "
+               "key pairs close the house and message. Inspection/render/capture frames use delta0; only "
+               "the final30 frames advance normal gameplay and AI at1/60 second.\",\"world_SDL_clicks\":0,"
+               "\"normal_ai\":true,\"new_unit_cases\":0,\"cold_replays\":0,\"visual_review_required\":true}\n";
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = root.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = settings.immortal = settings.unlimitedMana = settings.startFlying = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings(output / "settings.ini", settings, error), error);
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM BrAlvar ordinary178";
+        config.assetRoot = root.string();
+        config.activeWorldId = "mm8";
+        config.startupMapFileOverride = "out02.odm";
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        std::ofstream trace(output / "trace.jsonl");
+        trace << std::boolalpha << std::setprecision(17);
+        constexpr const char *AlarmKey = "MMerge.BrAlvar.SwordsAggro";
+        constexpr uint32_t Hostile = 0x01000000;
+        enum class Phase { Warmup, Locked, House, CloseHouse, Alarm, CloseAlarm, Continue, Done };
+        Phase phase = Phase::Warmup;
+        std::string stage = "initialize", pendingCapture, alarmText;
+        unsigned frames = 0, phaseFrame = 0, captures = 0, normalFrames = 0, dispatches = 0;
+        uint64_t started = 0;
+        uint32_t portraitSequence = 0;
+        bool complete = false, lockedVerified = false, houseVerified = false, guardVerified = false;
+        bool alarmVerified = false, repeatVerified = false, saveVerified = false;
+        const auto scene = [&]() -> OutdoorSceneRuntime &
+        {
+            require(game.m_pMapSceneRuntime && game.m_pMapSceneRuntime->kind() == SceneKind::Outdoor
+                && toLowerCopy(game.m_gameSession.currentMapFileName()) == "bralvar.odm", "Ordinary flow left BrAlvar");
+            return *static_cast<OutdoorSceneRuntime *>(game.m_pMapSceneRuntime.get());
+        };
+        const auto screen = [&]() -> GameplayScreenRuntime & { return game.m_gameSession.gameplayScreenRuntime(); };
+        const auto events = [&]() -> EventRuntimeState & { return *scene().eventRuntimeState(); };
+        const auto groupMask = [](const EventRuntimeState &state)
+        {
+            const auto found = state.actorGroupSetMasks.find(15);
+            return found == state.actorGroupSetMasks.end() ? 0u : found->second;
+        };
+        const auto questFinished = [](const auto &variables) -> std::optional<int32_t>
+        {
+            const auto found = variables.find("MMerge.CrossContinents.QuestFinished");
+            return found == variables.end() ? std::nullopt : std::optional<int32_t>(found->second);
+        };
+        const auto record = [&](const std::string &label)
+        {
+            const auto party = scene().party().snapshot();
+            const auto &member = party.members.at(party.activeMemberIndex);
+            trace << "{\"event\":" << std::quoted(label) << ",\"stage\":" << std::quoted(stage)
+                << ",\"frame\":" << frames << ",\"prince_house\":" << party.npcHouseOverrides.at(773)
+                << ",\"alarm\":" << mapValue(events(), AlarmKey) << ",\"group15_set_mask\":" << groupMask(events())
+                << ",\"portrait\":" << unsigned(member.portraitState)
+                << ",\"portrait_sequence\":" << member.portraitSequenceCounter
+                << ",\"event_rng\":" << events().eventRandomState << ",\"dialog_source\":"
+                << screen().activeEventDialog().sourceId << ",\"dialog_active\":"
+                << screen().activeEventDialog().isActive << "}\n";
+            trace.flush();
+        };
+        const auto dispatch = [&](uint16_t id)
+        {
+            require(!screen().activeEventDialog().isActive, "Close the prior dialog before source dispatch");
+            size_t previous = 0;
+            require(scene().executeMapEventById(id, previous), "Source dispatch failed: " + std::to_string(id));
+            ++dispatches;
+            screen().presentPendingEventDialog(previous, false);
+            record("native-source-dispatch:" + std::to_string(id));
+        };
+        const auto escape = [&]()
+        {
+            int count = 0;
+            SDL_Window **pWindows = SDL_GetWindows(&count);
+            SDL_Window *pWindow = pWindows && count == 1 ? pWindows[0] : nullptr;
+            SDL_free(pWindows);
+            require(pWindow != nullptr, "Cannot find ordinary capture window");
+            SDL_Event key{};
+            key.type = SDL_EVENT_KEY_DOWN;
+            key.key.windowID = SDL_GetWindowID(pWindow);
+            key.key.key = SDLK_ESCAPE;
+            key.key.scancode = SDL_SCANCODE_ESCAPE;
+            key.key.down = true;
+            require(SDL_PushEvent(&key), "Cannot queue Escape down");
+            key.type = SDL_EVENT_KEY_UP;
+            key.key.down = false;
+            require(SDL_PushEvent(&key), "Cannot queue Escape up");
+            phaseFrame = frames;
+        };
+        const auto capture = [&](const std::string &label)
+        {
+            require(pendingCapture.empty() && captures < 3, "Ordinary capture limit exceeded");
+            pendingCapture = label;
+            bgfx::requestScreenShot(BGFX_INVALID_HANDLE, label.c_str());
+        };
+        const auto result = [&](bool passed, const std::string &message)
+        {
+            std::ofstream(output / "result.json") << std::boolalpha << std::setprecision(17)
+                << "{\"status\":" << std::quoted(passed ? "passed" : "failed")
+                << ",\"checkpoint\":178,\"mode\":\"ordinary\",\"controlled\":true,\"natural_campaign\":false,"
+                   "\"world_SDL_clicks\":0,\"pressure_plate_walk\":false,\"stage\":" << std::quoted(stage)
+                << ",\"frames\":" << frames << ",\"captures\":" << captures << ",\"source_dispatches\":"
+                << dispatches << ",\"DoorLocked_verified\":" << lockedVerified << ",\"house231_verified\":"
+                << houseVerified << ",\"prince705_guard_verified\":" << guardVerified
+                << ",\"alarm_verified\":" << alarmVerified << ",\"repeat_no_alarm\":" << repeatVerified
+                << ",\"save_verified\":" << saveVerified << ",\"normal_frames\":" << normalFrames
+                << ",\"simulation_seconds\":" << normalFrames * double(FrameSeconds)
+                << ",\"normal_ai\":true,\"inspection_input_delta_seconds\":0,\"new_unit_cases\":0,"
+                   "\"cold_replays\":0,\"error\":" << std::quoted(message)
+                << ",\"input_sha256_before\":" << std::quoted(inputHash)
+                << ",\"input_sha256_after\":" << std::quoted(fileDigest(input)) << "}\n";
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal
+                        && game.initializeRenderer() && game.loadSessionFromPath(input), "Ordinary input load failed");
+                    screen().closeActiveEventDialog();
+                    require(scene().localEventProgram() && scene().localEventProgram()->hasEvent(7)
+                        && scene().localEventProgram()->hasEvent(301) && scene().localEventProgram()->hasEvent(60),
+                        "Fresh source7/301/60 handlers are absent");
+                    alarmText = scene().localEventProgram()->getLocalString(2).value_or("");
+                    require(!alarmText.empty() && mapValue(events(), AlarmKey) == 0
+                        && (groupMask(events()) & Hostile) == 0, "Input already consumed the source alarm");
+                    record("loaded154-arrival-without-new-fixture");
+                    started = SDL_GetTicks();
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames <= 180 && SDL_GetTicks() - started < 60000, "Bounded ordinary capture timed out");
+                    const bool continuing = phase == Phase::Continue;
+                    game.renderFrame(width, height, wheel, continuing ? FrameSeconds : 0.0f);
+                    require(game.m_screenManager.activeScreen() == nullptr && scene().party().hasActableMember(),
+                        "Ordinary flow was interrupted");
+                    if (continuing) ++normalFrames;
+                    if (!pendingCapture.empty())
+                    {
+                        if (auto image = Engine::BgfxContext::consumeScreenshot(pendingCapture))
+                        {
+                            SDL_Surface *pSurface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, image->bgraPixels.data(), int(image->width * 4));
+                            require(pSurface != nullptr, "Cannot create ordinary image");
+                            const bool saved = SDL_SaveBMP(pSurface, (output / (pendingCapture + ".bmp")).c_str());
+                            SDL_DestroySurface(pSurface);
+                            require(saved, "Cannot save ordinary image");
+                            record("captured:" + pendingCapture);
+                            pendingCapture.clear();
+                            ++captures;
+                        }
+                        if (!pendingCapture.empty()) return;
+                    }
+                    if (phase == Phase::Warmup && frames >= 8)
+                    {
+                        stage = "source301-native-dispatch";
+                        const auto before = scene().party().snapshot();
+                        const uint32_t rng = events().eventRandomState;
+                        portraitSequence = before.members.at(before.activeMemberIndex).portraitSequenceCounter;
+                        dispatch(301);
+                        const auto &audio = scene().party().pendingAudioRequests();
+                        require(std::any_of(audio.begin(), audio.end(), [&](const auto &request)
+                            { return request.kind == Party::PendingAudioRequest::Kind::Speech
+                                && request.speechId == SpeechId::DoorLocked && request.memberIndex == before.activeMemberIndex; }),
+                            "Source301 did not request the active member's DoorLocked reaction");
+                        require(events().eventRandomState == rng && events().openedChestRequests.empty()
+                            && events().grantedItems.empty() && events().grantedItemIds.empty()
+                            && scene().party().snapshot().questBits == before.questBits
+                            && !screen().activeEventDialog().isActive, "Locked source301 produced unexpected effects");
+                        lockedVerified = true;
+                        phaseFrame = frames;
+                        phase = Phase::Locked;
+                    }
+                    else if (phase == Phase::Locked && frames >= phaseFrame + 2)
+                    {
+                        const auto &member = scene().party().members().at(scene().party().activeMemberIndex());
+                        const auto *animation = game.m_gameSession.data().faceAnimationTable().find(FaceAnimationId::DoorLocked);
+                        require(animation && member.portraitSequenceCounter > portraitSequence
+                            && std::find(animation->portraitIds.begin(), animation->portraitIds.end(), member.portraitState)
+                                != animation->portraitIds.end(), "DoorLocked did not reach its ordinary portrait presentation");
+                        capture("locked-reaction");
+                        phase = Phase::House;
+                    }
+                    else if (phase == Phase::House)
+                    {
+                        stage = "source7-native-dispatch";
+                        dispatch(7);
+                        const auto &dialog = screen().activeEventDialog();
+                        require(dialog.isActive && dialog.isHouseDialog && dialog.sourceId == 231,
+                            "Source7 did not present original house231");
+                        houseVerified = true;
+                        capture("tavern231");
+                        phase = Phase::CloseHouse;
+                        phaseFrame = 0;
+                    }
+                    else if (phase == Phase::CloseHouse)
+                    {
+                        if (phaseFrame == 0) { escape(); return; }
+                        if (frames < phaseFrame + 3) return;
+                        require(!screen().activeEventDialog().isActive, "Escape did not close house231");
+                        stage = "source60-prince705-negative";
+                        const auto beforeMessages = events().messages;
+                        const auto beforeMask = groupMask(events());
+                        dispatch(60);
+                        require(events().messages == beforeMessages && !screen().activeEventDialog().isActive
+                            && mapValue(events(), AlarmKey) == 0 && groupMask(events()) == beforeMask,
+                            "Source60 alarm fired while the Prince remained in705");
+                        guardVerified = true;
+                        stage = "declared-party-NPC773-house0";
+                        scene().party().setNpcHouseOverride(773, 0);
+                        scene().party().applyGlobalNpcStateTo(events());
+                        require(game.m_gameSession.breachAlvarCompanions() == source->breachAlvarCompanions
+                            && questFinished(game.m_gameSession.namedGlobalVars()) == questFinished(source->namedGlobalVars),
+                            "Location fixture changed receipt or QuestFinished");
+                        record("one-NPC-house-fixture-published");
+                        stage = "source60-first-alarm";
+                        dispatch(60);
+                        const auto &dialog = screen().activeEventDialog();
+                        require(mapValue(events(), AlarmKey) == 1 && (groupMask(events()) & Hostile) != 0
+                            && dialog.isActive && std::find(dialog.lines.begin(), dialog.lines.end(), alarmText)
+                                != dialog.lines.end(), "Source60 did not display original str2 and set the one-time alarm");
+                        size_t groupActors = 0;
+                        for (size_t index = 0; index < scene().worldRuntime().mapActorCount(); ++index)
+                        {
+                            const auto *actor = scene().worldRuntime().mapActorState(index);
+                            if (!actor || actor->group != 15) continue;
+                            ++groupActors;
+                            require(actor->hostileToParty, "Group15 hostility did not reach its actual actor consumer");
+                        }
+                        require(groupActors > 0, "Original group15 actors are absent");
+                        alarmVerified = true;
+                        phase = Phase::Alarm;
+                    }
+                    else if (phase == Phase::Alarm)
+                    {
+                        capture("prince-alarm-str2");
+                        phase = Phase::CloseAlarm;
+                        phaseFrame = 0;
+                    }
+                    else if (phase == Phase::CloseAlarm)
+                    {
+                        if (phaseFrame == 0) { escape(); return; }
+                        if (frames < phaseFrame + 3) return;
+                        require(!screen().activeEventDialog().isActive, "Escape did not close the alarm message");
+                        stage = "source60-repeat";
+                        const auto beforeMessages = events().messages;
+                        const auto beforeMask = groupMask(events());
+                        dispatch(60);
+                        require(events().messages == beforeMessages && !screen().activeEventDialog().isActive
+                            && mapValue(events(), AlarmKey) == 1 && groupMask(events()) == beforeMask,
+                            "Repeated source60 produced a second alarm");
+                        repeatVerified = true;
+                        stage = "normal30frames";
+                        phase = Phase::Continue;
+                    }
+                    else if (phase == Phase::Continue && normalFrames >= 30)
+                    {
+                        require(!screen().activeEventDialog().isActive, "Ordinary continuation opened another dialog");
+                        const auto path = output / "ordinary-complete.oysav";
+                        require(game.quickSaveToPath(path, "178布雷阿瓦尔普通交互"), "Ordinary save failed");
+                        const auto saved = loadGameDataFromPath(path, error);
+                        require(saved && saved->outdoorWorld.eventRuntimeState
+                            && saved->breachAlvarCompanions == source->breachAlvarCompanions
+                            && questFinished(saved->namedGlobalVars) == questFinished(source->namedGlobalVars)
+                            && saved->party.questBits == source->party.questBits
+                            && saved->party.nextMemberId == source->party.nextMemberId
+                            && saved->party.npcHouseOverrides.at(773) == 0
+                            && mapValue(*saved->outdoorWorld.eventRuntimeState, AlarmKey) == 1
+                            && (groupMask(*saved->outdoorWorld.eventRuntimeState) & Hostile) != 0,
+                            "Save lost alarm/location or changed split receipt/quest state: " + error);
+                        saveVerified = true;
+                        record("saved-after30-normal-frames");
+                        phase = Phase::Done;
+                    }
+                    else if (phase == Phase::Done)
+                    {
+                        require(captures == 3 && dispatches == 5 && fileDigest(input) == inputHash,
+                            "Ordinary evidence is incomplete or original input changed");
+                        complete = true;
+                        stage = "complete";
+                        SDL_Event quit{}; quit.type = SDL_EVENT_QUIT;
+                        require(SDL_PushEvent(&quit), "Cannot quit completed ordinary capture");
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete, "Ordinary capture ended before completion");
+            result(true, "");
+            return 0;
+        }
+        catch (const std::exception &failure)
+        {
+            trace << "{\"event\":\"failure\",\"stage\":" << std::quoted(stage)
+                << ",\"error\":" << std::quoted(failure.what()) << "}\n";
+            result(false, failure.what());
+            throw;
+        }
+    }
+
+    static int runActorRules(std::filesystem::path root, std::filesystem::path input, std::filesystem::path output)
+    {
+        root = std::filesystem::canonical(root);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(std::filesystem::is_regular_file(root / "worlds/mmmerge.zip")
+            && !std::filesystem::exists(output) && output.string().starts_with("/Volumes/NVMeSSD/"),
+            "Actor rules mode requires a complete runtime and a new NVMe output directory");
+        std::string error;
+        const auto source = loadGameDataFromPath(input, error);
+        constexpr const char *RulesKey = "MMerge.BrAlvar.ActorRulesVersion";
+        constexpr uint32_t Hostile = 0x01000000;
+        require(source && source->hasOutdoorRuntimeState && source->outdoorWorld.eventRuntimeState
+            && toLowerCopy(source->mapFileName) == "bralvar.odm"
+            && mapValue(*source->outdoorWorld.eventRuntimeState, RulesKey) == 0
+            && source->outdoorWorld.eventRuntimeState->actorGroupSetMasks.contains(15)
+            && (source->outdoorWorld.eventRuntimeState->actorGroupSetMasks.at(15) & Hostile) != 0,
+            "Use the original178 save with its existing source alarm and no actor-rule migration: " + error);
+        const std::string inputHash = fileDigest(input);
+        std::filesystem::create_directories(output);
+        std::filesystem::current_path(output);
+        std::ofstream(output / "fixture.json")
+            << "{\"checkpoint\":180,\"input\":" << std::quoted(input.string())
+            << ",\"input_sha256\":" << std::quoted(inputHash) << ",\"runtime\":" << std::quoted(root.string())
+            << ",\"controlled\":true,\"natural_campaign\":false,\"new_gameplay_fixtures\":false,"
+               "\"inherited_fixtures\":\"178 ordinary-complete inherits154 controlled admission plus NPC773 house0.\","
+               "\"scope\":\"Load old save through real App, inspect isolated AfterLoad migration, preserve prior alarm,"
+               " render, advance30 normal frames, save and decode. No source dispatch, pose, AI, health or RNG injection.\","
+               "\"subjective_audio\":false,\"new_unit_cases\":0,\"old_routes_replayed\":0}\n";
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = root.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = settings.immortal = settings.unlimitedMana = settings.startFlying = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings(output / "settings.ini", settings, error), error);
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM BrAlvar actor rules180";
+        config.assetRoot = root.string();
+        config.activeWorldId = "mm8";
+        config.startupMapFileOverride = "out02.odm";
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        std::ofstream trace(output / "trace.jsonl");
+        unsigned frames = 0, normalFrames = 0, captures = 0;
+        size_t wimps = 0, guards = 0, relations = 0;
+        uint64_t started = 0;
+        bool capturePending = false, complete = false;
+        std::string stage = "initialize";
+        const auto scene = [&]() -> OutdoorSceneRuntime &
+        {
+            require(game.m_pMapSceneRuntime && game.m_pMapSceneRuntime->kind() == SceneKind::Outdoor
+                && toLowerCopy(game.m_gameSession.currentMapFileName()) == "bralvar.odm", "Actor rules flow left BrAlvar");
+            return *static_cast<OutdoorSceneRuntime *>(game.m_pMapSceneRuntime.get());
+        };
+        const auto inspect = [&](const EventRuntimeState &events, const auto &actors)
+        {
+            require(mapValue(events, RulesKey) == 1, "Source actor-rule migration was not committed");
+            const auto relation = [&](uint32_t left, uint32_t right, int value)
+            {
+                const auto found = events.monsterRelationOverrides.find(EventRuntime::monsterRelationOverrideKey(left, right));
+                require(found != events.monsterRelationOverrides.end() && found->second == value,
+                    "Original directional relation is missing");
+            };
+            relation(649, 292, 4); relation(292, 649, 1);
+            relation(475, 0, 0); relation(73, 0, 4); relation(0, 73, 4); relation(73, 75, 0);
+            relations = events.monsterRelationOverrides.size();
+            require(relations >= 198, "Source local relation expansion is incomplete");
+            wimps = guards = 0;
+            for (const auto &actor : actors)
+            {
+                if (actor.monsterId == 294)
+                {
+                    ++wimps;
+                    require(actor.aiType == GameplayActorAiType::Wimp, "Original294 Wimp AI was lost");
+                }
+                if (actor.group == 15 && !actor.isDead && !actor.isSourceRemoved())
+                {
+                    ++guards;
+                    require(actor.hostileToParty, "Local159 neutral default cancelled the existing source alarm");
+                }
+            }
+            require(wimps == 9 && guards > 0, "Expected original294 and alarm guard actors");
+            require((events.actorGroupSetMasks.at(15) & Hostile) != 0, "Source alarm mask was lost");
+        };
+        const auto result = [&](bool passed, const std::string &message)
+        {
+            std::ofstream(output / "result.json") << std::boolalpha
+                << "{\"status\":" << std::quoted(passed ? "passed" : "failed")
+                << ",\"checkpoint\":180,\"mode\":\"actor-rules\",\"stage\":" << std::quoted(stage)
+                << ",\"controlled\":true,\"natural_campaign\":false,\"new_gameplay_fixtures\":false,"
+                   "\"frames\":" << frames << ",\"normal_frames\":" << normalFrames
+                << ",\"captures\":" << captures << ",\"wimp_actors\":" << wimps << ",\"hostile_guards\":"
+                << guards << ",\"local_relations\":" << relations
+                << ",\"subjective_audio\":false,\"source_dispatches\":0,\"new_unit_cases\":0,"
+                   "\"error\":" << std::quoted(message) << ",\"input_sha256_before\":" << std::quoted(inputHash)
+                << ",\"input_sha256_after\":" << std::quoted(fileDigest(input)) << "}\n";
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal
+                        && game.initializeRenderer() && game.loadSessionFromPath(input), "Actor rules load failed");
+                    game.m_gameSession.gameplayScreenRuntime().closeActiveEventDialog();
+                    const auto restored = scene().worldRuntime().snapshot();
+                    inspect(*scene().eventRuntimeState(), restored.mapActors);
+                    checkPartyCustody(source->party, scene().party().snapshot());
+                    require(game.m_gameSession.breachAlvarCompanions() == source->breachAlvarCompanions,
+                        "Actor-rule migration changed the split receipt");
+                    require(scene().worldRuntime().mapData()->textureFootstepSoundOverrides.size() == 8,
+                        "Authenticated source texture footsteps were not loaded");
+                    trace << "{\"event\":\"old-save-migrated-with-existing-alarm\"}\n";
+                    stage = "render";
+                    started = SDL_GetTicks();
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames <= 100 && SDL_GetTicks() - started < 60000, "Actor rules capture timed out");
+                    const bool continuing = captures == 1;
+                    game.renderFrame(width, height, wheel, continuing ? FrameSeconds : 0.0f);
+                    require(game.m_screenManager.activeScreen() == nullptr && scene().party().hasActableMember(),
+                        "Actor rules continuation was interrupted");
+                    if (continuing) ++normalFrames;
+                    if (capturePending)
+                    {
+                        if (auto image = Engine::BgfxContext::consumeScreenshot("actor-rules"))
+                        {
+                            SDL_Surface *pSurface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, image->bgraPixels.data(), int(image->width * 4));
+                            require(pSurface != nullptr, "Cannot create actor rules image");
+                            const bool saved = SDL_SaveBMP(pSurface, (output / "actor-rules.bmp").c_str());
+                            SDL_DestroySurface(pSurface);
+                            require(saved, "Cannot save actor rules image");
+                            capturePending = false;
+                            ++captures;
+                            stage = "normal30frames";
+                        }
+                    }
+                    else if (captures == 0 && frames >= 8)
+                    {
+                        capturePending = true;
+                        bgfx::requestScreenShot(BGFX_INVALID_HANDLE, "actor-rules");
+                    }
+                    else if (normalFrames >= 30 && !complete)
+                    {
+                        stage = "save";
+                        const auto path = output / "actor-rules-complete.oysav";
+                        require(game.quickSaveToPath(path, "180布雷阿瓦尔生物规则"), "Actor rules save failed");
+                        const auto saved = loadGameDataFromPath(path, error);
+                        require(saved && saved->outdoorWorld.eventRuntimeState, "Cannot decode actor rules save: " + error);
+                        inspect(*saved->outdoorWorld.eventRuntimeState, saved->outdoorWorld.mapActors);
+                        require(saved->breachAlvarCompanions == source->breachAlvarCompanions
+                            && fileDigest(input) == inputHash, "Receipt or original input changed");
+                        trace << "{\"event\":\"saved-after30-normal-frames\"}\n";
+                        complete = true;
+                        stage = "complete";
+                        SDL_Event quit{}; quit.type = SDL_EVENT_QUIT;
+                        require(SDL_PushEvent(&quit), "Cannot quit actor rules capture");
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete, "Actor rules capture ended before completion");
+            result(true, "");
+            return 0;
+        }
+        catch (const std::exception &failure)
+        {
+            result(false, failure.what());
+            throw;
+        }
+    }
+
     static int run(std::filesystem::path root, std::filesystem::path input,
         std::filesystem::path output, const std::string &mode)
     {
+        if (mode == "loot") return runLoot(std::move(root), std::move(input), std::move(output));
+        if (mode == "ordinary") return runOrdinary(std::move(root), std::move(input), std::move(output));
+        if (mode == "actor-rules") return runActorRules(std::move(root), std::move(input), std::move(output));
         const bool cold = mode == "cold";
         require(cold || mode == "actual", "Expected actual or cold mode");
         root = std::filesystem::canonical(root);
@@ -853,7 +1766,7 @@ int main(int argc, char **argv)
 {
     if (argc != 5)
     {
-        std::cerr << "br_alvar_daylight_capture FRESH_RUNTIME READONLY_SAVE NEW_OUTPUT actual|cold\n";
+        std::cerr << "br_alvar_daylight_capture FRESH_RUNTIME READONLY_SAVE NEW_OUTPUT actual|cold|loot|ordinary|actor-rules\n";
         return 1;
     }
     try

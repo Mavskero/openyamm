@@ -1,0 +1,52 @@
+{
+  "schema": "openyamm.control-cube-refill179.scoped-result.v1",
+  "checkpoint": 179,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "accepted_at": "2026-10-28T11:48:17.352692+00:00",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh",
+  "runtime": "local-data/validation/mm7-control-cube-refill-179/runtime-001",
+  "save_version": 103,
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "RC1_untouched": true,
+  "production_changes": [
+    "Authenticated original mdt15 AfterLoadMap/Map.Refilled supplement with registry-owned672day interval.",
+    "MapRefill65473 checks actual actor count before resetting actor0/1 item1477+866; existing original EVT1 and Q759 first-pass behavior unchanged.",
+    "Read-only evt.GetMapActorCount exposes current world actor array; existing item override/refill persistence reused.",
+    "Complete runtime adds only one MM7 Lua member; original event and all other freshly imported members byte-equal to baseline."
+  ],
+  "verification": {
+    "commands": [
+      "native-configure-001.command.json",
+      "native-build-001.command.json",
+      "events-import-001.command.json",
+      "assemble-runtime-001.command.json",
+      "ios-configure-001.command.json",
+      "ios-release-001.command.json"
+    ],
+    "new_unit_cases": 0,
+    "App_replays": 0,
+    "cold_replays": 0,
+    "broad_regression_runs": 0
+  },
+  "limitations": [
+    "No actual672day refill or new live quest-item branch claim.",
+    "No natural campaign or iPad acceptance."
+  ],
+  "all_owned_jobs_collected": true,
+  "next": "180 BrAlvar source actor relations, Wimp AI and texture footsteps.",
+  "evidence_sha256": {
+    "source-audit.json": "f1a278a1d6a90b07e883833e5730bf413318995d5e5185af9a3c1a4ba906110f",
+    "runtime-diff-001.json": "1b90eb48e40388e78e8729a5bad5eb126995ec7356a360abc52fbad9f5b6e251",
+    "production-manifest-001.json": "732f3f4dc16933babf59e0d356a5b8e4843151da10dffb294da6aa06eaaa1dff",
+    "owned-jobs-final.json": "eed2495fc46c7de67a5c31c2918682132384664d25838e5a8871f20c82cdf28a",
+    "native-configure-001.command.json": "5e5a3a94df8d871c5c76abe48a3530021306195844f807df84d7333b25e43f56",
+    "native-build-001.command.json": "75664dfe6c49a6f34dc6c23747b0ac6a6f42685f4b0373ba5d1ef6aac1769753",
+    "events-import-001.command.json": "d8ed54b822ef506623bb12c7e40e562593a2ba08a946d9e0ca2d1d44eff00857",
+    "assemble-runtime-001.command.json": "3be6a5583ddc8cfb8e80bfae990343193102cdf7f11fa483b4543b6efae45e3f",
+    "ios-configure-001.command.json": "a42a5393fca6e3b6bb731d0f6ad2c80ef7def0e6b5d8831d810859b486b2d7ba",
+    "ios-release-001.command.json": "fa999f0fb24d99e15cdaca4b3408ea89f3b56aa41b0faa68b2e6b293339dedc2"
+  }
+}

@@ -18,7 +18,7 @@ constexpr std::string_view ExpectedSha256 =
     "95ddcdcfbfa41519d072652e02e6c94bd5365bdbe5041eadc00052ec6d718957";
 
 constexpr std::string_view Overlay = R"OY_HARMONDALE(
--- OpenYAMM translation of the audited MMerge Castle Harmondale entrance replacement only.
+-- SHA-gated translation of the source Castle Harmondale entrance and Judge Grey succession trigger.
 ReplaceMapEvent(301, "进入哈蒙代尔城堡", function()
     if not IsQBitSet(QBit(519)) then
         evt.FaceAnimation(FaceAnimation.DoorLocked)
@@ -41,6 +41,41 @@ ReplaceMapEvent(301, "进入哈蒙代尔城堡", function()
     evt.MoveNPC(397, 240)
     evt.SpeakNPC(397)
 end, "进入哈蒙代尔城堡")
+
+local rebuiltDateKey = "MMerge.HarmondaleRebuiltDate"
+local sixMonthsTicks = 6 * 28 * 24 * 60 * 256
+
+-- Source LoadMap records the first post-repair visit, including when an older save first enters here.
+ReplaceMapEvent(211, nil, function()
+    if not IsQBitSet(QBit(610)) then
+        return
+    end
+
+    local now = evt.GameTimeTicks()
+    -- A missing date uses now; a saved zero remains a valid date, not an uninitialized sentinel.
+    local rebuiltDate = evt.GetGlobalTimeTicks(rebuiltDateKey, now)
+    evt.SetGlobalTimeTicks(rebuiltDateKey, rebuiltDate)
+
+    if IsQBitSet(QBit(646)) then
+        return
+    end
+
+    if IsQBitSet(QBit(659)) or IsQBitSet(QBit(596)) or IsQBitSet(QBit(597))
+        or now > rebuiltDate + sixMonthsTicks then
+        evt.SpeakNPC(430)
+        SetQBit(QBit(665))
+        AddValue(History(6), 0)
+        evt.MoveNPC(406, 0)
+        evt.MoveNPC(407, 0)
+        evt.MoveNPC(414, 1169)
+        evt.MoveNPC(415, 1169)
+        evt.MoveNPC(416, 244)
+        evt.MoveNPC(417, 243)
+        SetQBit(QBit(646))
+    end
+end)
+-- ReplaceMapEvent removed the legacy OnLoad entry; retain the new handler and register it once.
+RegisterMapOnLoadEvent(211, nil, nil)
 )OY_HARMONDALE";
 
 bool pathEscapesRoot(const std::filesystem::path &path, const std::filesystem::path &root)
@@ -90,7 +125,7 @@ std::optional<HarmondaleCastleProfile> loadHarmondaleCastleProfile(
     if (sourceSha256 != ExpectedSha256)
     {
         throw std::runtime_error("Unsupported Scripts/Maps/7out02.lua fingerprint; "
-            "review this Merge version before enabling the Castle Harmondale entrance overlay");
+            "review this Merge version before enabling the Castle Harmondale source overlay");
     }
 
     return HarmondaleCastleProfile{"7out02", sourceSha256, std::string(Overlay)};

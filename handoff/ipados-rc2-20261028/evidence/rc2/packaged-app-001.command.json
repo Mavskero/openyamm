@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "releases/first-playable-20261028-rc2/Start-Mac.command"
+  ],
+  "cwd": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados",
+  "pid": 64610,
+  "started_at": "2026-10-28T12:25:06.051212+00:00",
+  "finished_at": "2026-10-28T12:26:49.010073+00:00",
+  "exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 180.0,
+  "log": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/local-data/validation/second-playable-candidate-182/packaged-app-001.log",
+  "executed_binary": "releases/first-playable-20261028-rc2/Start-Mac.command",
+  "executed_binary_sha256": "9db6a266fc78d5d92f32ea7362afc2461c728ac0533e68c11d17a100c49ee3ab",
+  "environment": {
+    "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/external-storage/tmp/",
+    "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/external-storage/xcode-deriveddata/current"
+  }
+}

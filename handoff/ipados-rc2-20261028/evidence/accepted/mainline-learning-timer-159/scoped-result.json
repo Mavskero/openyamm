@@ -1,0 +1,52 @@
+{
+  "schema": "openyamm.checkpoint159.source-scoped-result.v1",
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "checkpoint": 159,
+  "accepted_at": "2026-10-23T08:41:01.588358+00:00",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/max",
+  "runtime": "local-data/validation/mainline-learning-timer-159/runtime-001",
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "new_unit_test_cases": 0,
+  "new_app_runs": 0,
+  "accepted_source_fixes": {
+    "mm6_terminal": "Source-authenticated additive event61 grants basic Blaster1 only to current party members whose packed skill is zero. Original texture/Q1300/message/PressAnyKey and nonzero skills are preserved. Repeat visits can teach later members; no class restriction.",
+    "mm7_arbiter": "Original 7out02 source211: Q610 first load stores exact game ticks; Q646 once-only; Q659/Q596/Q597 or strictly more than 168 days publishes NPC430, Q665, History6 and source NPC house moves. Existing event301 unchanged;211 reattached exactly once to OnLoad.",
+    "persistence": "Uses existing named global game-time Hi/Lo codec under MMerge.HarmondaleRebuiltDate. Valid zero is retained. No Save version or native gameplay API change; old saves begin their missing baseline at the first qualifying load, not an invented historical repair date."
+  },
+  "source_sha256": {
+    "sci-fi.lua": "ad17446014d220995db9fba7a61e70926f2ef7e3076680af5ef844fcfa7d348f",
+    "7out02.lua": "95ddcdcfbfa41519d072652e02e6c94bd5365bdbe5041eadc00052ec6d718957"
+  },
+  "validation": [
+    "Source predicates, native skill/time API and existing persistence paths reviewed.",
+    "One native importer build and original two-map import passed fingerprint, Lua parse and source event/lifecycle registration guards.",
+    "Complete runtime preserves all other compressed archive entries; runtime engine has the reused Lua helpers.",
+    "One incremental unsigned generic iOS Release passed, including the embedded importer.",
+    "No new unit tests, new replay tool, actual-App branch or cold run. Passed unrelated routes were not repeated."
+  ],
+  "limits": [
+    "These two repaired branches have source/import/build acceptance, not new actual-App or natural-campaign acceptance.",
+    "Ordinary artifact-delivery judge selection already existed; this fixes only the original elapsed-time fallback.",
+    "Terminal learning was a normal skill/equipment-path gap, not proof every completion route was blocked.",
+    "No full-game or iPad acceptance."
+  ],
+  "runtime_change": "Append MM6 Blaster learning overlay; replace existing MM7 castle overlay without duplicate ZIP members. No gameplay fixtures shipped.",
+  "source_files_unchanged_at_acceptance": true,
+  "next": "Read-only narrow MM7 Blaster topic950 audit is in progress; prioritize confirmed mainline prerequisites, not replay matrices.",
+  "evidence_sha256": {
+    "scope.json": "67355f86ff3c18c1be29b29bca6e895d28205cccdd8a84e913477482722b5a32",
+    "source-manifest-001.json": "72df789b28bbb1b3a3ef892d11b0a5f18d3287f52033dc8de5ac5e03256650b4",
+    "runtime-diff-001.json": "1df8c96b20739283d172ce98893dbf46782dd69a65d0ea5fcccec6c20dccf8ec",
+    "native-configure-001.command.json": "398f607a23eb0f65afa2e2e160e4af056ee4a86e3b176a221003af448bc4a67f",
+    "native-build-001.command.json": "1c2ed43eb0f47294094f683dc98983d6a1ea852316a7b93e18691c659acd61d2",
+    "events-import-001.command.json": "28ef0060c2dd30fcf5c9bc9bf6c17df3f373aa05bfabab264cd573d139c971ec",
+    "assemble-runtime-001.command.json": "17e7f818662a7c81ad5012c20c77fc50084b63ffdb97455e1b1adef9f8417242",
+    "ios-configure-001.command.json": "bc891d0fcfe5184436587f1a1cf0cb7da2764ec8fe05311a55d0f85a7ab5dc7d",
+    "ios-release-001.command.json": "0b71efa526d40f817b26ab98f98c3a9e87d77ec06a9a116c6f8f012f357afb40",
+    "events-001/worlds/mm6/events/maps/sci-fi_mmmerge_blaster_learning.lua": "0c317540fc786886f39580633bfd8127b8923e8ad2d3666b9a08bc344032628d",
+    "events-001/worlds/mm7/events/maps/7out02_mmmerge_castle_history.lua": "80120c77632ce3c9d4c61b8acf01632875b768abd31929be734a70c8aba583f3"
+  }
+}

@@ -364,6 +364,7 @@ enum class GameplayCharacterPointerTargetType
     AwardScrollDownButton,
     AwardScrollTrack,
     AdventurersInnHireButton,
+    AdventurersInnDismissButton,
     AdventurersInnScrollUpButton,
     AdventurersInnScrollDownButton,
     AdventurersInnPortrait,
@@ -659,6 +660,8 @@ struct GameplayOverlayInteractionState
     bool characterMemberCycleLatch = false;
     std::optional<size_t> pendingCharacterDismissMemberIndex = std::nullopt;
     uint64_t pendingCharacterDismissExpiresTicks = 0;
+    std::optional<OwnedMercenaryIdentity> pendingAdventurersInnRelease;
+    uint64_t pendingAdventurersInnReleaseExpiresTicks = 0;
     bool spellbookClickLatch = false;
     GameplaySpellbookPointerTarget spellbookPressedTarget = {};
     uint64_t lastSpellbookSpellClickTicks = 0;

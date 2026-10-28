@@ -1,5 +1,6 @@
 #pragma once
 
+#include "game/content/OwnedMercenaryState.h"
 #include "game/events/EventRuntime.h"
 #include "game/gameplay/GameMechanics.h"
 #include "game/gameplay/GameplayWorldInteraction.h"
@@ -456,6 +457,21 @@ enum class GameplayInteractionMethod
     Mouse,
 };
 
+// A recognized projection remains recognized when its member is active, released or otherwise ineligible.
+// Ownership/Join eligibility is resolved separately; this value must never enable template recruitment.
+struct GameplayOwnedMercenaryActorTarget
+{
+    OwnedMercenaryActorBinding binding;
+    std::string canonicalMapKey; // Source profile key, not an App cache alias.
+    uint32_t profileVersion = 0;
+    std::array<std::string, 3> sourceSha256;
+    uint64_t sceneGeneration = 0;
+    uint32_t sourceActorIndex = 0;
+    bool actorInteractable = false;
+
+    bool operator==(const GameplayOwnedMercenaryActorTarget &) const = default;
+};
+
 class IGameplayWorldRuntime
 {
 public:
@@ -466,6 +482,13 @@ public:
     GameSession *boundGameSession() const { return m_pBoundGameSession; }
 
     virtual const std::string &mapName() const = 0;
+    virtual std::optional<GameplayOwnedMercenaryActorTarget> ownedMercenaryActorBinding(
+        uint32_t npcId, uint32_t sourceActorIndex) const
+    {
+        (void)npcId;
+        (void)sourceActorIndex;
+        return std::nullopt;
+    }
     virtual const MonsterTable *monsterTable() const
     {
         return nullptr;

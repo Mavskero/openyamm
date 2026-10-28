@@ -433,6 +433,11 @@ void writeCharacter(const OpenYAMM::Game::Character &member)
     writeJsonString(member.className);
     std::cout << ",\"portrait_texture_name\":";
     writeJsonString(member.portraitTextureName);
+    std::cout << ",\"source_mercenary_retention\":{\"kind\":" << int(member.sourceMercenaryRetention.kind)
+        << ",\"provenance\":" << int(member.sourceMercenaryRetention.provenance) << ",\"source_roster_id\":";
+    if (member.sourceMercenaryRetention.sourceRosterId) std::cout << *member.sourceMercenaryRetention.sourceRosterId;
+    else std::cout << "null";
+    std::cout << '}';
     std::cout << ",\"character_data_id\":" << member.characterDataId
         << ",\"member_id\":" << member.memberId
         << ",\"roster_id\":" << member.rosterId
@@ -808,6 +813,20 @@ int main(int argc, char **argv)
         << ",\n  \"party_members\": " << save->party.members.size()
         << ",\n  \"active_member\": " << save->party.activeMemberIndex
         << ",\n  \"next_member_id\": " << save->party.nextMemberId
+        << ",\n  \"reusable_mercenary_roster_ids\": [";
+    const std::vector<uint32_t> reusable = [&]()
+    {
+        std::vector<uint32_t> result(save->party.reusableMercenaryRosterIds.begin(),
+            save->party.reusableMercenaryRosterIds.end());
+        std::sort(result.begin(), result.end());
+        return result;
+    }();
+    for (size_t index = 0; index < reusable.size(); ++index)
+    {
+        if (index != 0) std::cout << ',';
+        std::cout << reusable[index];
+    }
+    std::cout << "]"
         << ",\n  \"gold\": " << save->party.gold
         << ",\n  \"bank_gold\": " << save->party.bankGold
         << ",\n  \"deaths\": " << deaths
@@ -1049,6 +1068,20 @@ int main(int argc, char **argv)
             std::cout << ':' << value;
             first = false;
         }
+    }
+    std::cout << "},\n  \"session_saved_locations\": {";
+    bool firstLocation = true;
+    const std::map<std::string, OpenYAMM::Game::EventRuntimeState::SavedLocation> locations(
+        save->sessionSavedLocations.begin(), save->sessionSavedLocations.end());
+    for (const auto &[name, location] : locations)
+    {
+        std::cout << (firstLocation ? "" : ",");
+        writeJsonString(name);
+        std::cout << ":{\"map\":";
+        writeJsonString(location.mapName);
+        std::cout << ",\"x\":" << location.x << ",\"y\":" << location.y << ",\"z\":" << location.z
+            << ",\"continent\":" << location.continentId << '}';
+        firstLocation = false;
     }
     std::cout << "},\n  \"named_global_vars\": {";
     const std::map<std::string, int32_t> orderedGlobals(save->namedGlobalVars.begin(), save->namedGlobalVars.end());
@@ -1466,6 +1499,9 @@ int main(int argc, char **argv)
                 << ",\"breach_alvar_companion\":" << actor.breachAlvarCompanion
                 << ",\"breach_alvar_companion_removed\":" << actor.breachAlvarCompanionRemoved
                 << ",\"breach_alvar_next_maintenance_game_minute\":" << actor.breachAlvarNextMaintenanceGameMinute;
+            std::cout << ",\"source_removed\":" << actor.sourceRemoved << ",\"level_override\":";
+            if (actor.levelOverride) std::cout << *actor.levelOverride;
+            else std::cout << "null";
             std::cout << ",\"combat_state\":";
             writeActorCombatState(actor.combatState);
             if (index < state->mapActorCorpseViews.size())
@@ -1478,6 +1514,34 @@ int main(int argc, char **argv)
             std::cout << '}';
         }
         std::cout << ']';
+    }
+    std::cout << "},\n  \"breach_mercenary_projections\": {";
+    firstMap = true;
+    for (const auto &[map, state] : outdoorStates)
+    {
+        if (!state->breachMercenaries) continue;
+        std::cout << (firstMap ? "" : ",");
+        firstMap = false;
+        writeJsonString(map);
+        const auto &projection = *state->breachMercenaries;
+        std::cout << ":{\"version\":" << projection.version
+            << ",\"profile_version\":" << projection.profileVersion << ",\"canonical_map_key\":";
+        writeJsonString(projection.canonicalMapKey);
+        std::cout << ",\"source_sha256\":[";
+        for (size_t index = 0; index < projection.sourceSha256.size(); ++index)
+        {
+            std::cout << (index ? "," : "");
+            writeJsonString(projection.sourceSha256[index]);
+        }
+        std::cout << "],\"bindings\":[";
+        for (size_t index = 0; index < projection.bindings.size(); ++index)
+        {
+            const auto &binding = projection.bindings[index];
+            std::cout << (index ? "," : "") << "{\"member_id\":" << binding.memberId
+                << ",\"source_roster_id\":" << binding.sourceRosterId << ",\"npc_id\":" << binding.npcId
+                << ",\"actor_id\":" << binding.actorId << ",\"source_spot_index\":" << binding.sourceSpotIndex << '}';
+        }
+        std::cout << "]}";
     }
     std::cout << "},\n  \"outdoor_chests\": {";
     firstMap = true;

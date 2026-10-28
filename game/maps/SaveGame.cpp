@@ -28,7 +28,10 @@ namespace OpenYAMM::Game
 {
 namespace
 {
-constexpr uint32_t SaveVersion = 100;
+constexpr uint32_t SaveVersion = 103;
+constexpr uint32_t SaveVersionReusableMercenarySlots = 103;
+constexpr uint32_t SaveVersionSessionLocations = 102;
+constexpr uint32_t SaveVersionOwnedMercenaries = 101;
 constexpr uint32_t SaveVersionOutdoorDecorationFlags = 100;
 constexpr uint32_t SaveVersionOutdoorLightTime = 99;
 constexpr uint32_t SaveVersionEventRandomState = 98;
@@ -1342,6 +1345,28 @@ bool readValue(BinaryReader &reader, TimedPrimaryStatBonus &value)
         && readValue(reader, value.remainingSeconds);
 }
 
+void writeValue(BinaryWriter &writer, const SourceMercenaryRetention &value)
+{
+    writeValue(writer, uint8_t(value.kind));
+    writeValue(writer, uint8_t(value.provenance));
+    writeValue(writer, value.sourceRosterId);
+}
+
+bool readValue(BinaryReader &reader, SourceMercenaryRetention &value)
+{
+    uint8_t kind = 0, provenance = 0;
+    if (!readValue(reader, kind) || !readValue(reader, provenance)
+        || kind > uint8_t(SourceMercenaryRetentionKind::Released)
+        || provenance > uint8_t(SourceMercenaryProvenance::AuthenticatedSource)
+        || !readValue(reader, value.sourceRosterId))
+    {
+        return false;
+    }
+    value.kind = SourceMercenaryRetentionKind(kind);
+    value.provenance = SourceMercenaryProvenance(provenance);
+    return true;
+}
+
 void writeValue(BinaryWriter &writer, const Character &value)
 {
     writeValue(writer, value.name);
@@ -1406,10 +1431,12 @@ void writeValue(BinaryWriter &writer, const Character &value)
     writeValue(writer, value.memberId);
     writeValue(writer, value.armageddonCastsToday);
     writeValue(writer, value.biography);
+    writeValue(writer, value.sourceMercenaryRetention);
 }
 
 bool readValue(BinaryReader &reader, Character &value)
 {
+    std::string retentionError;
     return readValue(reader, value.name)
         && readValue(reader, value.role)
         && readValue(reader, value.className)
@@ -1474,7 +1501,10 @@ bool readValue(BinaryReader &reader, Character &value)
             || readValue(reader, value.timedPrimaryStatBonuses))
         && (reader.version() < SaveVersionDetachedPartyMembers || readValue(reader, value.memberId))
         && (reader.version() < SaveVersionDetachedPartyMembers || readValue(reader, value.armageddonCastsToday))
-        && (reader.version() < SaveVersionBreachAlvarGeneration || readValue(reader, value.biography));
+        && (reader.version() < SaveVersionBreachAlvarGeneration || readValue(reader, value.biography))
+        && (reader.version() < SaveVersionOwnedMercenaries
+            || (readValue(reader, value.sourceMercenaryRetention)
+                && validSourceMercenaryRetention(value, retentionError)));
 }
 
 void writeValue(BinaryWriter &writer, const PartyBuffState &value)
@@ -1618,6 +1648,25 @@ void writeValue(BinaryWriter &writer, const Party::Snapshot &value)
     }
     writeValue(writer, value.completedDetachmentOwners);
     writeValue(writer, value.nextMemberId);
+    std::vector<uint32_t> reusable(value.reusableMercenaryRosterIds.begin(), value.reusableMercenaryRosterIds.end());
+    std::sort(reusable.begin(), reusable.end());
+    writeValue(writer, uint32_t(reusable.size()));
+    for (uint32_t rosterId : reusable) writeValue(writer, rosterId);
+}
+
+bool readReusableMercenarySlots(BinaryReader &reader, Party::Snapshot &value)
+{
+    value.reusableMercenaryRosterIds.clear();
+    if (reader.version() < SaveVersionReusableMercenarySlots) return true;
+    uint32_t count = 0;
+    if (!readValue(reader, count) || count > 49) return false;
+    for (uint32_t index = 0; index < count; ++index)
+    {
+        uint32_t rosterId = 0;
+        if (!readValue(reader, rosterId) || rosterId == 0 || rosterId > 49
+            || !value.reusableMercenaryRosterIds.insert(rosterId).second) return false;
+    }
+    return true;
 }
 
 bool readDetachedPartyMembers(BinaryReader &reader, Party::Snapshot &value)
@@ -1730,7 +1779,8 @@ bool readValue(BinaryReader &reader, Party::Snapshot &value)
         && (reader.version() < SaveVersionGlobalNpcState || readValue(reader, value.unavailableNpcIds))
         && (reader.version() < SaveVersionPartyHiredNpcFollowers || readValue(reader, value.hiredNpcFollowers))
         && (reader.version() < SaveVersionPendingItemDelivery || readPendingItemDeliveries(reader, value))
-        && (reader.version() < SaveVersionDetachedPartyMembers || readDetachedPartyMembers(reader, value));
+        && (reader.version() < SaveVersionDetachedPartyMembers || readDetachedPartyMembers(reader, value))
+        && readReusableMercenarySlots(reader, value);
 }
 
 void writeValue(BinaryWriter &writer, const OutdoorMoveState &value)
@@ -2316,6 +2366,8 @@ void writeValue(BinaryWriter &writer, const EventRuntimeState::PendingMapMove &v
     writeValue(writer, value.mapName);
     writeValue(writer, value.directionDegrees);
     writeValue(writer, value.useMapStartPosition);
+    writeValue(writer, value.lookAngleDegrees);
+    writeValue(writer, value.clearSessionLocation);
 }
 
 bool readValue(BinaryReader &reader, EventRuntimeState::PendingMapMove &value)
@@ -2325,7 +2377,9 @@ bool readValue(BinaryReader &reader, EventRuntimeState::PendingMapMove &value)
         && readValue(reader, value.z)
         && readValue(reader, value.mapName)
         && readValue(reader, value.directionDegrees)
-        && readValue(reader, value.useMapStartPosition);
+        && readValue(reader, value.useMapStartPosition)
+        && (reader.version() < SaveVersionSessionLocations || readValue(reader, value.lookAngleDegrees))
+        && (reader.version() < SaveVersionSessionLocations || readValue(reader, value.clearSessionLocation));
 }
 
 void writeValue(BinaryWriter &writer, const EventRuntimeState::PendingDialogueContext &value)
@@ -3607,6 +3661,8 @@ void writeValue(BinaryWriter &writer, const OutdoorWorldRuntime::MapActorState &
     writeValue(writer, value.breachAlvarCompanionRemoved);
     writeValue(writer, value.breachAlvarNextMaintenanceGameMinute);
     writeValue(writer, value.combatState);
+    writeValue(writer, value.sourceRemoved);
+    writeValue(writer, value.levelOverride);
 }
 
 bool readValue(BinaryReader &reader, OutdoorWorldRuntime::MapActorState &value)
@@ -3765,7 +3821,9 @@ bool readValue(BinaryReader &reader, OutdoorWorldRuntime::MapActorState &value)
             || (readValue(reader, value.breachAlvarCompanion)
                 && readValue(reader, value.breachAlvarCompanionRemoved)
                 && readValue(reader, value.breachAlvarNextMaintenanceGameMinute)))
-        && (reader.version() < SaveVersionResolvedActorCombat || readValue(reader, value.combatState));
+        && (reader.version() < SaveVersionResolvedActorCombat || readValue(reader, value.combatState))
+        && (reader.version() < SaveVersionOwnedMercenaries
+            || (readValue(reader, value.sourceRemoved) && readValue(reader, value.levelOverride)));
 }
 
 void writeValue(BinaryWriter &writer, const OutdoorWorldRuntime::ChestItemState &value)
@@ -4249,6 +4307,45 @@ bool readValue(BinaryReader &reader, OutdoorWorldRuntime::AtmosphereState &value
         && readValue(reader, value.clearColorAbgr);
 }
 
+void writeValue(BinaryWriter &writer, const OwnedMercenaryActorBinding &value)
+{
+    writeValue(writer, value.memberId);
+    writeValue(writer, value.sourceRosterId);
+    writeValue(writer, value.npcId);
+    writeValue(writer, value.actorId);
+    writeValue(writer, value.sourceSpotIndex);
+}
+
+bool readValue(BinaryReader &reader, OwnedMercenaryActorBinding &value)
+{
+    return readValue(reader, value.memberId) && readValue(reader, value.sourceRosterId)
+        && readValue(reader, value.npcId) && readValue(reader, value.actorId)
+        && readValue(reader, value.sourceSpotIndex);
+}
+
+void writeValue(BinaryWriter &writer, const BreachMercenaryProjectionState &value)
+{
+    writeValue(writer, value.version);
+    writeValue(writer, value.profileVersion);
+    writeValue(writer, value.canonicalMapKey);
+    writeValue(writer, value.sourceSha256);
+    writeValue(writer, uint64_t(value.bindings.size()));
+    for (const auto &binding : value.bindings) writeValue(writer, binding);
+}
+
+bool readValue(BinaryReader &reader, BreachMercenaryProjectionState &value)
+{
+    uint64_t count = 0;
+    if (!readValue(reader, value.version) || !readValue(reader, value.profileVersion)
+        || !readValue(reader, value.canonicalMapKey) || !readValue(reader, value.sourceSha256)
+        || !readValue(reader, count) || count > 11)
+        return false;
+    value.bindings.resize(size_t(count));
+    for (auto &binding : value.bindings)
+        if (!readValue(reader, binding)) return false;
+    return true;
+}
+
 void writeValue(BinaryWriter &writer, const OutdoorWorldRuntime::Snapshot &value)
 {
     writeValue(writer, value.gameMinutes);
@@ -4289,6 +4386,7 @@ void writeValue(BinaryWriter &writer, const OutdoorWorldRuntime::Snapshot &value
     writeValue(writer, value.faceAttributes);
     writeValue(writer, value.searchedLootPropSourceIds);
     writeValue(writer, value.decorationFlags);
+    writeValue(writer, value.breachMercenaries);
 }
 
 bool readValue(BinaryReader &reader, OutdoorWorldRuntime::Snapshot &value)
@@ -4336,7 +4434,8 @@ bool readValue(BinaryReader &reader, OutdoorWorldRuntime::Snapshot &value)
         && (reader.version() < SaveVersionMm9ItemSourceState
             || readValue(reader, value.searchedLootPropSourceIds))
         && (reader.version() < SaveVersionOutdoorDecorationFlags
-            || readValue(reader, value.decorationFlags));
+            || readValue(reader, value.decorationFlags))
+        && (reader.version() < SaveVersionOwnedMercenaries || readValue(reader, value.breachMercenaries));
 
     if (loaded && reader.version() >= SaveVersionOutdoorRuntimeSaveParity)
     {
@@ -4970,6 +5069,7 @@ void writeValue(BinaryWriter &writer, const GameSaveData &value)
     writeValue(writer, value.turnBasedCombat);
     writeValue(writer, value.breachAlvarCompanions);
     writeValue(writer, value.breachMaze);
+    writeValue(writer, value.sessionSavedLocations);
 }
 
 bool readValue(BinaryReader &reader, GameSaveData &value)
@@ -5004,7 +5104,8 @@ bool readValue(BinaryReader &reader, GameSaveData &value)
         && readValue(reader, value.previewBmp)
         && (reader.version() < SaveVersionTurnBasedCombat || readValue(reader, value.turnBasedCombat))
         && (reader.version() < SaveVersionBreachAlvarCompanions || readValue(reader, value.breachAlvarCompanions))
-        && (reader.version() < SaveVersionBreachMaze || readValue(reader, value.breachMaze));
+        && (reader.version() < SaveVersionBreachMaze || readValue(reader, value.breachMaze))
+        && (reader.version() < SaveVersionSessionLocations || readValue(reader, value.sessionSavedLocations));
 }
 }
 
@@ -5342,6 +5443,13 @@ std::vector<uint8_t> encodePartySnapshotForComparison(const Party::Snapshot &sna
     return writer.bytes();
 }
 
+std::vector<uint8_t> encodeOutdoorWorldSnapshotForComparison(const OutdoorWorldRuntime::Snapshot &snapshot)
+{
+    BinaryWriter writer(true);
+    writeValue(writer, snapshot);
+    return writer.bytes();
+}
+
 std::vector<uint8_t> encodeInventoryItemForComparison(const InventoryItem &item)
 {
     BinaryWriter writer;
@@ -5440,6 +5548,50 @@ void migrateLegacyPartyMemberIdentities(GameSaveData &data, uint32_t sourceSaveV
     {
         Party::initializeLegacyMemberIdentities(data.party);
     }
+}
+
+namespace
+{
+bool validSavedMercenaryRetention(const GameSaveData &data, std::string &error)
+{
+    for (const Character &member : data.party.members)
+        if (!validSourceMercenaryRetention(member, error)) return false;
+    for (const auto &member : data.party.adventurersInnMembers)
+        if (!validSourceMercenaryRetention(member.character, error)) return false;
+    for (const auto &member : data.party.detachedMembers)
+        if (!validSourceMercenaryRetention(member.character, error)) return false;
+    return true;
+}
+
+bool migrateLegacyMercenaryRetention(GameSaveData &data, uint32_t version, std::string &error)
+{
+    if (version >= SaveVersionOwnedMercenaries || !data.breachAlvarCompanions)
+        return validSavedMercenaryRetention(data, error);
+
+    // The receipt has already passed its ownership and source-generation invariants. Only the
+    // original active companions were dismissed; generated/reserved companions prove no Hired fact.
+    const auto &receipt = data.breachAlvarCompanions->receipt;
+    const auto migrate = [&](Character &member)
+    {
+        for (size_t index = 0; index + 1 < receipt.initialActiveCount; ++index)
+        {
+            if (member.memberId == receipt.companions[index].memberId)
+            {
+                return setSourceMercenaryRetention(member, member.memberId,
+                    SourceMercenaryRetentionKind::Retained,
+                    SourceMercenaryProvenance::LegacyBrAlvarActiveDismissal, std::nullopt, error);
+            }
+        }
+        return true;
+    };
+    for (Character &member : data.party.members)
+        if (!migrate(member)) return false;
+    for (auto &member : data.party.adventurersInnMembers)
+        if (!migrate(member.character)) return false;
+    for (auto &member : data.party.detachedMembers)
+        if (!migrate(member.character)) return false;
+    return validSavedMercenaryRetention(data, error);
+}
 }
 
 bool validateRequiredContentPackages(
@@ -5866,8 +6018,59 @@ bool validateSavedActorCombat(const GameSaveData &data, std::string &error)
     return true;
 }
 
+bool validateSavedBreachMercenaries(const GameSaveData &data, std::string &error,
+    const BreachMercenaryProfile *pProfile, bool requireContentProfile)
+{
+    if (!validSavedMercenaryRetention(data, error)) return false;
+    Party party;
+    party.restoreSnapshot(data.party);
+    const bool hasProjection = (data.hasOutdoorRuntimeState && data.outdoorWorld.breachMercenaries)
+        || std::any_of(data.outdoorWorldStates.begin(), data.outdoorWorldStates.end(),
+            [](const auto &entry) { return entry.second.breachMercenaries.has_value(); });
+    std::optional<std::vector<uint8_t>> canonicalBreachWorld;
+    const auto validate = [&](const std::string &map, const OutdoorWorldRuntime::Snapshot &world)
+    {
+        const std::string lower = toLowerCopy(map);
+        const bool breachMap = lower == "breach.odm" || lower == BreachMercenaryMap
+            || lower == buildCanonicalMapId("mmmerge", "breach.odm");
+        if (world.breachMercenaries)
+        {
+            if (requireContentProfile && pProfile == nullptr)
+            {
+                error = "Saved Breach mercenaries require their authenticated content profile";
+                return false;
+            }
+            if (!breachMap)
+            {
+                error = "Breach mercenary projection is stored under a different map";
+                return false;
+            }
+        }
+        if (hasProjection && breachMap)
+        {
+            const auto bytes = encodeOutdoorWorldSnapshotForComparison(world);
+            if (canonicalBreachWorld && *canonicalBreachWorld != bytes)
+            {
+                error = "Breach mercenary world aliases contain conflicting persistent state";
+                return false;
+            }
+            if (!canonicalBreachWorld) canonicalBreachWorld = bytes;
+        }
+        return OutdoorWorldRuntime::validateBreachMercenaryProjection(world, party, pProfile, error);
+    };
+    if (data.hasOutdoorRuntimeState)
+    {
+        const std::string map = data.currentSceneKind == SceneKind::Outdoor ? data.mapFileName
+            : (data.outdoorWorld.eventRuntimeState ? data.outdoorWorld.eventRuntimeState->mapFileName : "");
+        if (!validate(map, data.outdoorWorld)) return false;
+    }
+    for (const auto &[map, world] : data.outdoorWorldStates)
+        if (!validate(map, world)) return false;
+    return true;
+}
+
 bool saveGameDataToPath(const std::filesystem::path &path, const GameSaveData &data, std::string &error,
-    const BreachAlvarFriendActorRules *pCompanionRules)
+    const BreachAlvarFriendActorRules *pCompanionRules, const BreachMercenaryProfile *pMercenaryProfile)
 {
     if (!validateSavedOutdoorLightTimes(data, error) || !validateSavedPartyMotion(data, error)
         || !validateSavedBreachMaze(data, error) || !validateSavedActorCombat(data, error))
@@ -5879,7 +6082,8 @@ bool saveGameDataToPath(const std::filesystem::path &path, const GameSaveData &d
         error = "Saving Breach companions requires their loaded source content rules";
         return false;
     }
-    if (!validateSavedBreachAlvarCompanions(data, error, pCompanionRules))
+    if (!validateSavedBreachAlvarCompanions(data, error, pCompanionRules)
+        || !validateSavedBreachMercenaries(data, error, pMercenaryProfile, true))
     {
         return false;
     }
@@ -5960,6 +6164,43 @@ bool saveGameDataToPath(const std::filesystem::path &path, const GameSaveData &d
     return true;
 }
 
+namespace
+{
+void migrateLegacyBottleReturn(GameSaveData &data, uint32_t version)
+{
+    if (version >= SaveVersionSessionLocations) return;
+    constexpr const char *Key = "TempleInABottleReturn";
+    std::optional<EventRuntimeState::SavedLocation> origin;
+    bool ambiguous = false;
+    const bool insideBottle = normalizeMapFileStem(data.mapFileName) == "7nwc";
+    const auto collect = [&](std::optional<EventRuntimeState> &state)
+    {
+        if (!state) return;
+        const auto found = state->savedLocations.find(Key);
+        if (found == state->savedLocations.end()) return;
+        const EventRuntimeState::SavedLocation &candidate = found->second;
+        if (insideBottle && !candidate.mapName.empty() && normalizeMapFileStem(candidate.mapName) != "7nwc")
+        {
+            if (origin && (origin->mapName != candidate.mapName || origin->x != candidate.x
+                || origin->y != candidate.y || origin->z != candidate.z
+                || origin->continentId != candidate.continentId))
+            {
+                ambiguous = true;
+            }
+            else origin = candidate;
+        }
+        state->savedLocations.erase(found);
+    };
+    collect(data.outdoorWorld.eventRuntimeState);
+    collect(data.indoorScene.eventRuntimeState);
+    for (auto &[key, world] : data.outdoorWorldStates) collect(world.eventRuntimeState);
+    for (auto &[key, scene] : data.indoorSceneStates) collect(scene.eventRuntimeState);
+    if (data.breachMaze)
+        for (auto &[level, floor] : data.breachMaze->floors) collect(floor.runtime.scene.eventRuntimeState);
+    if (origin && !ambiguous) data.sessionSavedLocations.emplace(Key, std::move(*origin));
+}
+}
+
 std::optional<GameSaveData> loadGameDataFromPath(const std::filesystem::path &path, std::string &error)
 {
     std::ifstream input(path, std::ios::binary);
@@ -6034,7 +6275,13 @@ std::optional<GameSaveData> loadGameDataFromPath(const std::filesystem::path &pa
         return std::nullopt;
     }
     migrateLegacyPartyMemberIdentities(data, version);
+    migrateLegacyBottleReturn(data, version);
     if (!validateSavedBreachAlvarCompanions(data, error))
+    {
+        return std::nullopt;
+    }
+
+    if (!migrateLegacyMercenaryRetention(data, version, error) || !validateSavedBreachMercenaries(data, error))
     {
         return std::nullopt;
     }

@@ -1,4 +1,5 @@
 #include "game/app/GameSession.h"
+#include "game/app/BreachAlvarSessionSupport.h"
 
 #include "game/StringUtils.h"
 #include "game/content/BreachAlvarCompanionProfile.h"
@@ -81,7 +82,9 @@ int32_t globalValue(const GameSession &session, const EventRuntimeState &state, 
     return found == state.namedGlobalVars.end() ? session.namedGlobalVar(name) : found->second;
 }
 
-std::optional<BreachAlvarCompanionTopicFacts> topicFacts(
+}
+
+std::optional<BreachAlvarCompanionTopicFacts> resolveBreachAlvarCompanionTopicFacts(
     const GameSession &session, const EventRuntimeState &state, std::string &error)
 {
     BreachAlvarCompanionTopicFacts facts;
@@ -125,6 +128,8 @@ std::optional<BreachAlvarCompanionTopicFacts> topicFacts(
     return facts;
 }
 
+namespace
+{
 bool validLiveReceipt(const GameSession &session, const RuntimeContext &context, std::string &error)
 {
     if (!validBreachAlvarCompanionState(session.breachAlvarCompanions(), context.pParty->snapshot(), error))
@@ -203,7 +208,9 @@ bool validReturnDialogue(const GameSession &session, const RuntimeContext &conte
     return true;
 }
 
-void applyNpcProjection(EventRuntimeState &events, const BreachAlvarCompanionNpcs &npcs, bool split)
+}
+
+void applyBreachAlvarNpcProjection(EventRuntimeState &events, const BreachAlvarCompanionNpcs &npcs, bool split)
 {
     for (const auto &npc : npcs)
     {
@@ -235,6 +242,8 @@ void applyNpcProjection(EventRuntimeState &events, const BreachAlvarCompanionNpc
     }
 }
 
+namespace
+{
 // Compare exactly the event containers that will be published. Other event outputs are never
 // replaced wholesale by an older copy; they remain owned by the normal event/UI handoff.
 bool sameEventWriteSet(const EventRuntimeState &before, const EventRuntimeState &live)
@@ -264,6 +273,25 @@ bool sameHeldItem(const GameplayUiController::HeldInventoryItemState &before,
 }
 }
 
+std::optional<bool> GameSession::breachAlvarPrinceOutsideHouse705() const
+{
+    std::string error;
+    const auto context = runtimeContext(*this, error);
+    if (!context || !validLiveReceipt(*this, *context, error)) return std::nullopt;
+    // Original BrAlvar.lua 201–228 records the first house705 companion as Prince.
+    // The supported split receipt preserves that slot even after the Character returns.
+    if (!m_breachAlvarCompanions) return true;
+    const auto house = std::find(context->pProfile->houseIds.begin(), context->pProfile->houseIds.end(), 705u);
+    if (house == context->pProfile->houseIds.end()) return std::nullopt;
+    const size_t index = size_t(house - context->pProfile->houseIds.begin());
+    const uint32_t npcId = context->pProfile->npcIds[index];
+    const Party::Snapshot party = context->pParty->snapshot();
+    const auto currentHouse = party.npcHouseOverrides.find(npcId);
+    if (currentHouse != party.npcHouseOverrides.end()) return currentHouse->second != 705;
+    const auto *pNpc = data().npcDialogTable().getNpc(npcId);
+    return pNpc == nullptr || pNpc->houseId != 705;
+}
+
 bool GameSession::isBreachAlvarCompanionAvailable(uint32_t npcId) const
 {
     if (npcId < 772 || npcId > 775 || !m_breachAlvarCompanions
@@ -279,7 +307,7 @@ bool GameSession::isBreachAlvarCompanionAvailable(uint32_t npcId) const
         {
             return false;
         }
-        const auto facts = topicFacts(*this, *context->pEvents, error);
+        const auto facts = resolveBreachAlvarCompanionTopicFacts(*this, *context->pEvents, error);
         if (!facts || facts->questFinished)
         {
             return false;
@@ -370,7 +398,7 @@ BreachAlvarSessionResult GameSession::processBreachAlvarCompanionRequest(const R
                 return {Result::Code::Rejected, "Breach Alvar source NPC or house definition is absent"};
             }
         }
-        const auto facts = topicFacts(*this, events, error);
+        const auto facts = resolveBreachAlvarCompanionTopicFacts(*this, events, error);
         if (!facts)
         {
             return {Result::Code::Rejected, std::move(error)};
@@ -553,7 +581,7 @@ BreachAlvarSessionResult GameSession::processBreachAlvarCompanionRequest(const R
         }
         std::optional<BreachAlvarCompanionState> candidateReceipt =
             BreachAlvarCompanionState{mutation.m_receipt, actor->binding()};
-        applyNpcProjection(candidateEvents, mutation.m_npcs, split);
+        applyBreachAlvarNpcProjection(candidateEvents, mutation.m_npcs, split);
         auto candidateGlobals = m_namedGlobalVars;
         for (const auto &[key, value] : candidateEvents.namedGlobalVars)
         {

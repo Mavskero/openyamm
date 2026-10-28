@@ -1,0 +1,6 @@
+{
+  "applies_to": "scoped-result.json production_changes[3]",
+  "correction": "Compared399 fresh resources total:6engine and393mmmerge. Exactly1Breach sidecar changed;398 fresh resources unchanged.",
+  "reason": "Off-by-one descriptive count; implementation, package diff and acceptance unchanged.",
+  "runtime_diff_sha256": "7cd9e7d13b0e17bddcd60d99f03b1347024e9ae5e2f19212b1d9d7d6b7255973"
+}

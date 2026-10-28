@@ -3,6 +3,8 @@
 #include "engine/AssetFileSystem.h"
 #include "game/arcomage/ArcomageTypes.h"
 #include "game/content/BreachAlvarCompanionProfile.h"
+#include "game/content/BreachMercenaryProfile.h"
+#include "game/content/MercenaryReleaseProfile.h"
 #include "game/content/BreachMazeRuntimeProfile.h"
 #include "game/gameplay/MergeMonsterSourceProfile.h"
 #include "game/tables/AwardTable.h"
@@ -107,6 +109,8 @@ public:
     const SpellTable &getSpellTable() const;
     const CombatTextTable &getCombatTextTable() const;
     const std::optional<BreachAlvarCompanionProfile> &getBreachAlvarCompanionProfile() const;
+    const std::optional<BreachMercenaryProfile> &getBreachMercenaryProfile() const;
+    const std::optional<MercenaryReleaseProfile> &getMercenaryReleaseProfile() const;
     const HouseServiceTextTable &getHouseServiceTextTable() const;
     const ItemTable &getItemTable() const;
     const std::unordered_map<std::string, uint32_t> &getLoadedContentPackageSchemas() const;
@@ -258,6 +262,8 @@ private:
     SpellTable m_spellTable;
     CombatTextTable m_combatTextTable;
     std::optional<BreachAlvarCompanionProfile> m_breachAlvarCompanionProfile;
+    std::optional<BreachMercenaryProfile> m_breachMercenaryProfile;
+    std::optional<MercenaryReleaseProfile> m_mercenaryReleaseProfile;
     HouseServiceTextTable m_houseServiceTextTable;
     ItemTable m_itemTable;
     std::unordered_map<std::string, uint32_t> m_loadedContentPackageSchemas = {{"engine", 1}};

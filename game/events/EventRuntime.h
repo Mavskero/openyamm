@@ -144,6 +144,8 @@ struct EventRuntimeState
         std::optional<int32_t> lookAngleDegrees;
         bool useMapStartPosition = false;
         bool useFullscreenLoading = false;
+        // Session-owned return points are consumed only after the destination loads successfully.
+        std::string clearSessionLocation;
         std::string traceSourceKind;
         uint32_t traceSourceId = 0;
         uint32_t traceActionId = 0;
@@ -324,6 +326,19 @@ struct EventRuntimeState
         bool exitCallbackExecuted = false;
     };
 
+    struct OwnedMercenaryJoinOffer
+    {
+        OwnedMercenaryActorBinding binding;
+        OwnedMercenaryOwner owner;
+        std::string canonicalMapKey;
+        uint32_t profileVersion = 0;
+        std::array<std::string, 3> sourceSha256;
+        uint64_t sceneGeneration = 0;
+        uint32_t sourceActorIndex = 0;
+
+        bool operator==(const OwnedMercenaryJoinOffer &) const = default;
+    };
+
     struct DialogueRuntimeState
     {
         // Ephemeral script branch, rebuilt on NPC enter; omitted from save data.
@@ -332,6 +347,9 @@ struct EventRuntimeState
         uint32_t hostHouseId = 0;
         std::vector<DialogueMenuId> menuStack;
         std::optional<DialogueOfferState> currentOffer;
+        // Both are transient. Normal dialogue close, scene change and cold load clear them together.
+        std::optional<OwnedMercenaryJoinOffer> ownedMercenaryOffer;
+        std::optional<OwnedMercenaryJoinOffer> pendingOwnedMercenaryJoin;
         std::array<uint8_t, 4> templeDonationCounters = {};
         uint32_t trainingHouseId = 0;
         std::vector<uint32_t> trainingLevelsByMember;
@@ -834,7 +852,8 @@ public:
         Party *pParty,
         const std::vector<size_t> &targetMemberIndices,
         const ISceneEventContext *pSceneEventContext = nullptr,
-        PortraitFxAction action = PortraitFxAction::Set
+        PortraitFxAction action = PortraitFxAction::Set,
+        Party::ClassChangeMode classChangeMode = Party::ClassChangeMode::ApplyClassEffects
     );
     static void addVariableValue(
         EventRuntimeState &runtimeState,
@@ -842,7 +861,8 @@ public:
         int32_t value,
         Party *pParty,
         const std::vector<size_t> &targetMemberIndices,
-        const ISceneEventContext *pSceneEventContext = nullptr
+        const ISceneEventContext *pSceneEventContext = nullptr,
+        Party::ClassChangeMode classChangeMode = Party::ClassChangeMode::ApplyClassEffects
     );
     static void subtractVariableValue(
         EventRuntimeState &runtimeState,

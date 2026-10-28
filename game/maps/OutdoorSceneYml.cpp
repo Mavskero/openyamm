@@ -2492,7 +2492,8 @@ bool OutdoorSceneYmlLoader::applyMechanismsFromText(
         return false;
     }
     const std::set<std::string> rootFields = {
-        "format_version", "kind", "map", "source", "mechanisms", "runtime_restrictions"};
+        "format_version", "kind", "map", "source", "mechanisms", "runtime_restrictions",
+        "texture_footstep_sound_overrides"};
     std::set<std::string> presentRootFields;
     for (const auto &field : rootNode)
     {
@@ -2522,6 +2523,63 @@ bool OutdoorSceneYmlLoader::applyMechanismsFromText(
     {
         errorMessage = "mechanisms companion map does not match loaded ODM";
         return false;
+    }
+    const YAML::Node textureFootstepsNode = rootNode["texture_footstep_sound_overrides"];
+    std::vector<OutdoorTextureFootstepSoundOverride> textureFootsteps;
+    if (textureFootstepsNode)
+    {
+        if (!textureFootstepsNode.IsSequence())
+        {
+            errorMessage = "texture_footstep_sound_overrides must be a sequence";
+            return false;
+        }
+        const std::set<std::string> allowedFields = {"texture", "walk_sound_id", "run_sound_id"};
+        std::set<std::string> textures;
+        textureFootsteps.reserve(textureFootstepsNode.size());
+        for (const YAML::Node &entryNode : textureFootstepsNode)
+        {
+            if (!entryNode.IsMap())
+            {
+                errorMessage = "texture footstep sound override must be a map";
+                return false;
+            }
+            std::set<std::string> presentFields;
+            for (const auto &field : entryNode)
+            {
+                if (!field.first.IsScalar() || !allowedFields.contains(field.first.Scalar())
+                    || !presentFields.insert(field.first.Scalar()).second)
+                {
+                    errorMessage = "texture footstep sound override contains an unsupported or duplicate field";
+                    return false;
+                }
+            }
+            OutdoorTextureFootstepSoundOverride entry;
+            int64_t walkSoundId = 0;
+            int64_t runSoundId = 0;
+            if (!readScalarNode(entryNode, "texture", entry.textureName, errorMessage)
+                || !readScalarNode(entryNode, "walk_sound_id", walkSoundId, errorMessage)
+                || !readScalarNode(entryNode, "run_sound_id", runSoundId, errorMessage))
+            {
+                return false;
+            }
+            entry.textureName = toLowerCopy(entry.textureName);
+            if (entry.textureName.empty() || std::any_of(entry.textureName.begin(), entry.textureName.end(),
+                    [](unsigned char character) { return std::isspace(character); })
+                || !textures.insert(entry.textureName).second)
+            {
+                errorMessage = "texture footstep names must be nonempty, contain no whitespace and be unique";
+                return false;
+            }
+            if (walkSoundId <= 0 || uint64_t(walkSoundId) > std::numeric_limits<uint32_t>::max()
+                || runSoundId <= 0 || uint64_t(runSoundId) > std::numeric_limits<uint32_t>::max())
+            {
+                errorMessage = "texture footstep sound IDs must be positive uint32 values";
+                return false;
+            }
+            entry.walkSoundId = static_cast<uint32_t>(walkSoundId);
+            entry.runSoundId = static_cast<uint32_t>(runSoundId);
+            textureFootsteps.push_back(std::move(entry));
+        }
     }
     MapRuntimeRestrictions candidateRestrictions = runtimeRestrictions;
     const YAML::Node restrictionsNode = rootNode["runtime_restrictions"];
@@ -2648,6 +2706,7 @@ bool OutdoorSceneYmlLoader::applyMechanismsFromText(
     }
     if (changedAttributes) ++mapDeltaData.surfaceRevision;
     runtimeRestrictions = candidateRestrictions;
+    if (textureFootstepsNode) outdoorMapData.textureFootstepSoundOverrides.swap(textureFootsteps);
     return true;
 }
 

@@ -576,11 +576,45 @@ bool ScriptedEventProgram::populateMetadataFromLua(
         program.m_canShowTopicEventIds = readHandlerIds(pLuaState, LuaScopeCanShowTopic);
     }
 
+    // A map chunk cannot opt the whole session into a global source rule.
+    const ScriptedEventScope otherScope = scope == ScriptedEventScope::Global
+        ? ScriptedEventScope::Map : ScriptedEventScope::Global;
+    if (pushEvtMetaScope(pLuaState, otherScope))
+    {
+        lua_getfield(pLuaState, -1, "sourceManagedLichEffects");
+        const bool misplacedDeclaration = !lua_isnil(pLuaState, -1);
+        lua_pop(pLuaState, 4);
+        if (misplacedDeclaration)
+        {
+            error = "sourceManagedLichEffects must be declared in global program metadata";
+            return false;
+        }
+    }
+
     if (!pushEvtMetaScope(pLuaState, scope))
     {
         error = "missing evt.meta." + std::string(luaScopeName(scope));
         return false;
     }
+
+    lua_getfield(pLuaState, -1, "sourceManagedLichEffects");
+    if (!lua_isnil(pLuaState, -1))
+    {
+        if (scope != ScriptedEventScope::Global)
+        {
+            error = "sourceManagedLichEffects must be declared in global program metadata";
+            lua_pop(pLuaState, 4);
+            return false;
+        }
+        if (!lua_isboolean(pLuaState, -1))
+        {
+            error = "sourceManagedLichEffects metadata must be boolean";
+            lua_pop(pLuaState, 4);
+            return false;
+        }
+        program.m_sourceManagedLichEffects = lua_toboolean(pLuaState, -1) != 0;
+    }
+    lua_pop(pLuaState, 1);
 
     program.m_onLoadEventIds = readIntegerArrayFromField<uint16_t>(pLuaState, -1, "onLoad", true);
     program.m_afterLoadEventIds = readIntegerArrayFromField<uint16_t>(pLuaState, -1, "afterLoad", true);
@@ -690,6 +724,11 @@ uint64_t ScriptedEventProgram::cacheId() const
 ScriptedEventScope ScriptedEventProgram::scope() const
 {
     return m_scope;
+}
+
+bool ScriptedEventProgram::sourceManagedLichEffects() const
+{
+    return m_sourceManagedLichEffects;
 }
 
 const std::vector<uint16_t> &ScriptedEventProgram::eventIds() const

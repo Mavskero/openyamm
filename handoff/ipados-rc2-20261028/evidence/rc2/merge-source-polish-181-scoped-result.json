@@ -1,0 +1,50 @@
+{
+  "schema": "openyamm.merge-source-polish181.scoped-result.v1",
+  "checkpoint": 181,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "accepted_at": "2026-10-28T12:23:20.520981+00:00",
+  "main": "gpt-6.1-sol/max",
+  "subagents": "gpt-6-astra/xhigh",
+  "runtime": "local-data/validation/merge-source-polish-181/runtime-001",
+  "save_version": 103,
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "RC1_untouched": true,
+  "production_changes": [
+    "Companion target monster kind uses existing correct1-based helper; third variants75/450/651 remain in source kinds25/150/217. Source friend-self metadata preserved.",
+    "BrBase unfinished Down guard requests original active-member DoorLocked through shared speech/portrait path; same guard/transition behavior.",
+    "Authenticated Breach receives same8source texture walk/run rules asBrAlvar; original hash gates, texture/animation/sound dependencies retained.",
+    "Complete runtime replaces onlyBreach mechanisms sidecar; other399fresh resource files byte-identical."
+  ],
+  "verification": {
+    "commands": [
+      "native-build-001.command.json",
+      "native-scenes-001-run.command.json",
+      "assemble-runtime-001.command.json",
+      "ios-release-001.command.json"
+    ],
+    "new_unit_cases": 0,
+    "App_replays": 0,
+    "cold_replays": 0,
+    "broad_regression_runs": 0
+  },
+  "limitations": [
+    "No new actual companion combat, locked-down interaction or subjective footstep playback claim.",
+    "No natural campaign or target iPad acceptance."
+  ],
+  "all_owned_jobs_collected": true,
+  "next": "182 package independent RC2 with current code/resources/source and concise accurate release notes; preserve RC1.",
+  "evidence_sha256": {
+    "source-audit.json": "814711490724762d12425249884506a12d70062b6d0f9e823c9ecb59f1625130",
+    "actor-and-feedback-audit.json": "e7beffd31999950fd63127fc500a91fdc53e15f2f44f0453a9002b8d36d6cc9b",
+    "content-audit.json": "17ca3c8109b21e0733c4c30e81eb2aa318332b3a7b45a1c9b079a9c8e197c885",
+    "runtime-diff-001.json": "7cd9e7d13b0e17bddcd60d99f03b1347024e9ae5e2f19212b1d9d7d6b7255973",
+    "production-manifest-001.json": "b2c650b823710cdd7df5efd0892e6a175fa8f443e1d959d56f848e86c72e1fbe",
+    "owned-jobs-final.json": "0c860f3c320d683c503d3a846de22785b2996116aca753693a82f0be52e225f5",
+    "native-build-001.command.json": "0622e8318046ef6e4a63af53e34e24063f12def843b037b5e7b6e9094beee406",
+    "native-scenes-001-run.command.json": "b59b425d3843e62ebfbc03f51fbcbb1f09cb4c99419dcc12c84f07c2c7081f2a",
+    "assemble-runtime-001.command.json": "abf8bfd6cd0048b3032ad9acd196adcea495941e4043556b3e216c41066b9e58",
+    "ios-release-001.command.json": "3c241e47bdb73c8c3b0ce602893a09b827b1bd4e5a0ec3ea51c56f1bcda25646"
+  }
+}

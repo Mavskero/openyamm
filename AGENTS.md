@@ -2,6 +2,19 @@
 
 These rules apply to all AI-generated contributions in this repository.
 
+## iPadOS handoff (2026-10-28)
+
+- Read `IPADOS_HANDOFF.md` for the RC2 / Save103 state and fresh-host build instructions.
+- `handoff/ipados-rc2-20261028/` contains historical source-workspace records, not active
+  instructions to recreate old host paths, restart old agents or inherit an old goal status.
+- Device authorization comes from the current user. The user-invoked task in
+  `CODEX_IPAD_DEVICE_PROMPT.md` authorizes physical-iPad debugging on the receiving Mac;
+  storing the prompt alone does not authorize operations in another session.
+- Use fresh build/cache paths on a new Mac. Do not copy old CMake caches or force the
+  previous host's NVMe paths. On the original migrated workspace, preserve its aliases.
+- Keep one owner for shared builds and the device. Prefer a short actual application
+  check and defect-driven verification over replaying accepted campaigns or broad tests.
+
 ## Core Rules
 
 - Generate new code. Never copy code from OpenEnroth or mm_mapview2.

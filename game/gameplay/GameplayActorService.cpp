@@ -856,7 +856,8 @@ bool GameplayActorService::hasPainReflection(const GameplayActorSpellEffectState
 
 GameplayActorTargetPolicyResult GameplayActorService::resolveActorTargetPolicy(
     const GameplayActorTargetPolicyState &actor,
-    const GameplayActorTargetPolicyState &target) const
+    const GameplayActorTargetPolicyState &target,
+    std::optional<int32_t> factionRelationOverride) const
 {
     GameplayActorTargetPolicyResult result = {};
     const bool actorIsPartyControlled = isPartyControlledActor(actor.controlMode);
@@ -884,9 +885,11 @@ GameplayActorTargetPolicyResult GameplayActorService::resolveActorTargetPolicy(
         return result;
     }
 
-    const int factionRelation = m_pMonsterTable != nullptr
-        ? m_pMonsterTable->getRelationBetweenMonsters(actorRelationMonsterId, targetRelationMonsterId)
-        : 0;
+    const int factionRelation = factionRelationOverride.has_value()
+        ? *factionRelationOverride
+        : m_pMonsterTable != nullptr
+            ? m_pMonsterTable->getRelationBetweenMonsters(actorRelationMonsterId, targetRelationMonsterId)
+            : 0;
     const bool hostileByFaction = factionRelation > 0;
 
     if (!hostileByFaction && !hostileToSummon)

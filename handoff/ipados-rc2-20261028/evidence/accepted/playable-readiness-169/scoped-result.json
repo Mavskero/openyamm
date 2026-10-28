@@ -1,0 +1,54 @@
+{
+  "checkpoint": 169,
+  "status": "ACCEPTED_SCOPED",
+  "date": "2026-10-28",
+  "scope": "Current complete original-source runtime delivery, one normal-save Mac startup and bounded required-path reconciliation",
+  "default_runtime": "local-data/validation/playable-readiness-169/runtime-001",
+  "production_changes": {
+    "gameplay_source_edits": 0,
+    "delivery_fix": "Fresh current native import propagates the existing152 decoder repair to six previously stale MM8 Jump speeds,220 to1500.",
+    "changed_normal_package_members": [
+      "engine.zip:events/Global.lua (two comments only)",
+      "worlds/mm8.zip:events/maps/elemf.lua (452-454)",
+      "worlds/mm8.zip:events/maps/out02.lua (491-493)"
+    ],
+    "normal_member_sets_retained": true,
+    "other_normal_members": "CRC and size unchanged",
+    "inspection_archive": "Fresh isolated inspection/merge-scenes.zip; absent from baseline165 and not arbitrary Merge admission"
+  },
+  "validation": {
+    "native_build": "native-build-001.command.json: exit0",
+    "full_original_import": "full-import-001.command.json: exit0;203 normal maps loaded through production loader;three authenticated normal Merge projections retained",
+    "mac": "mac-start-001.command.json: exit0;normal132 MM8 d07 save,181 Metal frames,after-render.oysav,two reviewed images",
+    "launcher": "launcher-check-001.command.json: exit0;default169",
+    "new_test_cases": 0,
+    "old_route_replays": 0,
+    "actual_startup_runs": 1,
+    "dedicated_cold_matrix": 0,
+    "new_ios_build": false,
+    "ios_basis": "165 unsigned generic iOS Release accepted;169 changes no gameplay source.168 capture target is Mac-only. No new169 iOS claim."
+  },
+  "source_audits": [
+    "mm7-required-path-audit.json",
+    "shared-item-lifecycle-audit.json",
+    "jump-package-reconciliation-001.json"
+  ],
+  "preserved": [
+    "Readonly original source",
+    "All old runtime inputs and normal132 save provenance",
+    "Original failed/read-only inventory attempt described in package-diff-notes-001.json"
+  ],
+  "limits": [
+    "No direct original face/decoration binding found for the six Jump IDs; no proven required-navigation blocker or actual Jump claim",
+    "203 map loads and one startup do not establish complete gameplay or natural campaign completion",
+    "MM7 Dark ending source evidence only; prior light ending actual scope remains unchanged",
+    "Ordinary full-backpack reward durability supported; extreme128 accumulated pending items and arbitrary transient clear-held boundaries not fully established",
+    "No physical-device/simulator/audio acceptance",
+    "conversion.json runtime_ready remainsfalse for wider scope; historical deeper-maze population wording is superseded only by155 scoped L4+ evidence"
+  ],
+  "requirements": "requirements.json",
+  "next": "next-source-work.json",
+  "full_game_complete": false,
+  "goal_status": "active",
+  "progress_estimate": "55-60%, low-confidence engineering estimate; no automatic increase"
+}

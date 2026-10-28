@@ -1,0 +1,486 @@
+{
+  "handoff_date": "2026-10-28",
+  "timezone": "Asia/Shanghai",
+  "repository": "https://github.com/Mavskero/openyamm",
+  "branch": "codex/ipados",
+  "source_baseline_before_commit": "e1a5915491ce929329102582ffed1cb9f7fb0d72",
+  "release": "0.1.0-rc2-20261028",
+  "save_version": 103,
+  "scope": "Copied metadata and historical project documents only; no raw runtime archives, screenshots, saves, binaries, build caches or credentials. Relative links inside historical records may refer to files kept only on source workstation.",
+  "records": [
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/README.md",
+      "path": "release/README.md",
+      "bytes": 3154,
+      "sha256": "7911ab8580a28bbd8faae2b3c4244a1f93c31ae74247e0c8f93307278bfbea8b"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/KNOWN_LIMITS.md",
+      "path": "release/KNOWN_LIMITS.md",
+      "bytes": 3722,
+      "sha256": "47f2ade33990bda1ab310b3972e4b968303a1308591d86050164a22607124682"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/VERSION.json",
+      "path": "release/VERSION.json",
+      "bytes": 2144,
+      "sha256": "780538e9836a12462d46268b0e19678f8cf7b00c18eaf8753caa9dbd3422df45"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/source/source-manifest.json",
+      "path": "release/RC2_SOURCE_MANIFEST.json",
+      "bytes": 373067,
+      "sha256": "5bdc60dac3a4a1aebcfca3ae5157c10e652be2eeacac9e25731d52c14d7c9e3f"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/assemble-001.command.json",
+      "path": "evidence/rc2/assemble-001.command.json",
+      "bytes": 916,
+      "sha256": "5bfb1225b3058c991ad58e40e515db734f1a6f6a138f5d1f9072157c6d552ec8"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/bralvar-actor-rules-180-scoped-result.json",
+      "path": "evidence/rc2/bralvar-actor-rules-180-scoped-result.json",
+      "bytes": 4477,
+      "sha256": "adbe10c6a613053fbd5739495cb57842e0c1f06348490b66d9a483b29968720f"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/bralvar-ordinary-interactions-178-scoped-result.json",
+      "path": "evidence/rc2/bralvar-ordinary-interactions-178-scoped-result.json",
+      "bytes": 3965,
+      "sha256": "898d4bafc6f553a2979937db4bae34b7c81c029f35df21deeaf05db51919631e"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/device-independent-playability-176-requirements.json",
+      "path": "evidence/rc2/device-independent-playability-176-requirements.json",
+      "bytes": 7800,
+      "sha256": "598ab2bf8f9048188d4f9ae0c52d92f0b488405288046a8e018c823a8e7e1c10"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/device-independent-playability-176-scoped-result.json",
+      "path": "evidence/rc2/device-independent-playability-176-scoped-result.json",
+      "bytes": 4958,
+      "sha256": "cc38a85d5d4daa277d15426c11c44feda831954da5f963707ca3c80821ed4a96"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/finalize-001.command.json",
+      "path": "evidence/rc2/finalize-001.command.json",
+      "bytes": 920,
+      "sha256": "315bf3ba1830f42739fe0f94108cbe1bcf4384005f089866bf7d5e79557792b0"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/first-playable-candidate-174-requirements.json",
+      "path": "evidence/rc2/first-playable-candidate-174-requirements.json",
+      "bytes": 7347,
+      "sha256": "18af002b992e522f9e008c84964ac911c17348553169064c2babd62531e6507d"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/first-playable-candidate-174-scoped-result.json",
+      "path": "evidence/rc2/first-playable-candidate-174-scoped-result.json",
+      "bytes": 2883,
+      "sha256": "0f701b388ecba8c1fec2bfe60a0f790ce13b2d566eb9c231f916fdbcec55cb1e"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/ios-release-001.command.json",
+      "path": "evidence/rc2/ios-release-001.command.json",
+      "bytes": 1163,
+      "sha256": "3c241e47bdb73c8c3b0ce602893a09b827b1bd4e5a0ec3ea51c56f1bcda25646"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/mercenary-release-177-scoped-result.json",
+      "path": "evidence/rc2/mercenary-release-177-scoped-result.json",
+      "bytes": 4123,
+      "sha256": "25afca54fda06162c8c832ced926f8db46aa19be851fe6bcccdaafc7eb5c2020"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/merge-source-polish-181-record-correction.json",
+      "path": "evidence/rc2/merge-source-polish-181-record-correction.json",
+      "bytes": 394,
+      "sha256": "496e7ab874ceb6997226897b099be0a0d8725bfc4c61e78cfda40ba94c8fc024"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/merge-source-polish-181-requirements.json",
+      "path": "evidence/rc2/merge-source-polish-181-requirements.json",
+      "bytes": 9097,
+      "sha256": "81ea502f4702674303601ebd4741ba760a618dad03ca2e342678ab34c6e537a1"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/merge-source-polish-181-scoped-result.json",
+      "path": "evidence/rc2/merge-source-polish-181-scoped-result.json",
+      "bytes": 2768,
+      "sha256": "892fed79311a670d5768407097647e2b26d7911d6e38deb332b77f3c4fc169e8"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/mm7-control-cube-refill-179-scoped-result.json",
+      "path": "evidence/rc2/mm7-control-cube-refill-179-scoped-result.json",
+      "bytes": 2710,
+      "sha256": "8d0d8a5f8167424df2f682d07bd189cd05ddb10609f0eee95005424ed24e2877"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/mm7-dark-ending-175-requirements.json",
+      "path": "evidence/rc2/mm7-dark-ending-175-requirements.json",
+      "bytes": 7326,
+      "sha256": "7e9756138d669dea767cb65a5d8d91b62333d9f2b82403dfe0f141411332133d"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/mm7-dark-ending-175-scoped-result.json",
+      "path": "evidence/rc2/mm7-dark-ending-175-scoped-result.json",
+      "bytes": 4657,
+      "sha256": "23503a4a6e8b9684f469030b5ead426a72fe92e0aeeaa10083f7ee9386e936a9"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/native-build-001.command.json",
+      "path": "evidence/rc2/native-build-001.command.json",
+      "bytes": 937,
+      "sha256": "0622e8318046ef6e4a63af53e34e24063f12def843b037b5e7b6e9094beee406"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/ordinary-reentry-173-requirements.json",
+      "path": "evidence/rc2/ordinary-reentry-173-requirements.json",
+      "bytes": 6773,
+      "sha256": "894d324f0318428c790bf68b58941b81fcaff8d171e9b81172bca3cd3a512773"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/ordinary-reentry-173-scoped-result.json",
+      "path": "evidence/rc2/ordinary-reentry-173-scoped-result.json",
+      "bytes": 3040,
+      "sha256": "e332ca54b6030a1a46cc86e49fbade04a826a616b464e88b7e06dbb66832031e"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/package-check-result.json",
+      "path": "evidence/rc2/package-check-result.json",
+      "bytes": 1258,
+      "sha256": "3cd7c95c0675177872d2c1fdefe257e960a0b0cbce03e10097475906a00b9b8c"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/packaged-app-001.command.json",
+      "path": "evidence/rc2/packaged-app-001.command.json",
+      "bytes": 872,
+      "sha256": "004d9c3d2729a8858b42a02cb1fb627b0ee0391c02b6ed42cc135c069661ef30"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/requirements-182.json",
+      "path": "evidence/rc2/requirements-182.json",
+      "bytes": 9485,
+      "sha256": "a88fd432ce6b7c13315e94d79726c4d00f00ad7441de8b323b759f448913a320"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/scoped-result-182.json",
+      "path": "evidence/rc2/scoped-result-182.json",
+      "bytes": 2179,
+      "sha256": "23b57947429418b86f72231037141c3150ff194cf62c46f08d51bbfce6c68d70"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/source-restore-001.command.json",
+      "path": "evidence/rc2/source-restore-001.command.json",
+      "bytes": 923,
+      "sha256": "8f29ecaf27df9ade7d33448a792982848ce160fcab1673ac6898cc84535290ae"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/source-restore-result-001.json",
+      "path": "evidence/rc2/source-restore-result-001.json",
+      "bytes": 531,
+      "sha256": "06a022247a69de054eb1a9c65fa18bb2df95363f82c0a016886fff57655d0406"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/source-travel-rescue-172-requirements.json",
+      "path": "evidence/rc2/source-travel-rescue-172-requirements.json",
+      "bytes": 6366,
+      "sha256": "b2299ebc02b9c00ed0017e55e27fb42b3d62bbf459d76136d44921d84a852732"
+    },
+    {
+      "source_workspace_path": "releases/first-playable-20261028-rc2/evidence/source-travel-rescue-172-scoped-result.json",
+      "path": "evidence/rc2/source-travel-rescue-172-scoped-result.json",
+      "bytes": 2021,
+      "sha256": "5136c93beb13d170069bf9aaddba3552333875723f25a33a0b278065ee57e656"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-maze-lifecycle-148/module-a-result.json",
+      "path": "evidence/accepted/breach-maze-lifecycle-148/module-a-result.json",
+      "bytes": 1511,
+      "sha256": "7c6f00f27408304f9f4245dabec73a205d3964e271ca6cd43bf6c610d3e5194b"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-alvar-149/module-a-result.json",
+      "path": "evidence/accepted/breach-alvar-149/module-a-result.json",
+      "bytes": 1348,
+      "sha256": "234cb811c3930b94fee4409ad3e7b1eda7ce8cbc38814535b25d18af48b00708"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-alvar-149/module-b-result.json",
+      "path": "evidence/accepted/breach-alvar-149/module-b-result.json",
+      "bytes": 4487,
+      "sha256": "aee46518792105dba8777ac8ebe3093e8cf42ed903c41f99a0f263ddfb14ed65"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-maze-lifecycle-148/module-b2-result.json",
+      "path": "evidence/accepted/breach-maze-lifecycle-148/module-b2-result.json",
+      "bytes": 1762,
+      "sha256": "79e018b33b958b91c4b73b7d6dab194cf0c7e7f0011b3a44b7ecc35f281ef07e"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-maze-lifecycle-148/live-entry-003/scoped-entry-result.json",
+      "path": "evidence/accepted/breach-maze-lifecycle-148/live-entry-003/scoped-entry-result.json",
+      "bytes": 2272,
+      "sha256": "da2353e1b18434e8d6f9d99441a2f064e4001ba7d619c9b13eece79454310971"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-alvar-149/normal-doors-001/scoped-result.json",
+      "path": "evidence/accepted/breach-alvar-149/normal-doors-001/scoped-result.json",
+      "bytes": 4329,
+      "sha256": "d5e0d8409755e32fd7c962943c8af5a98e56799caab4f369bc1ebb3249d4e257"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-alvar-149/chaos-return-001/scoped-result.json",
+      "path": "evidence/accepted/breach-alvar-149/chaos-return-001/scoped-result.json",
+      "bytes": 6092,
+      "sha256": "c113d9a8508a1055b6feed32f212ce9b6e6b136f0b71cf4eab752ab2efe30b88"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-alvar-149/reserve-generation-001/scoped-result.json",
+      "path": "evidence/accepted/breach-alvar-149/reserve-generation-001/scoped-result.json",
+      "bytes": 5283,
+      "sha256": "d56326957350b05a7e9a6f551a56a68113723037aaac7709325beeb718736381"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-alvar-149/normal-ascent-001/scoped-result.json",
+      "path": "evidence/accepted/breach-alvar-149/normal-ascent-001/scoped-result.json",
+      "bytes": 7368,
+      "sha256": "af1ca6bc82abef4c28cae2f7c210fa17a62dbebf094b0268c773645e7608936e"
+    },
+    {
+      "source_workspace_path": "local-data/validation/source-jump-152/scoped-result.json",
+      "path": "evidence/accepted/source-jump-152/scoped-result.json",
+      "bytes": 5963,
+      "sha256": "e8c8f5d6ca085ec33b9513e039e9c4d962f36299abe0b459379f3befc1b1f3f0"
+    },
+    {
+      "source_workspace_path": "local-data/validation/br-alvar-daylight-153/scoped-result.json",
+      "path": "evidence/accepted/br-alvar-daylight-153/scoped-result.json",
+      "bytes": 3673,
+      "sha256": "4e175c0a7e60a8adeb58f1734c9a9d7a3e3cb2560703519bba56ca6804f797c6"
+    },
+    {
+      "source_workspace_path": "local-data/validation/normal-merge-admission-154/scoped-result.json",
+      "path": "evidence/accepted/normal-merge-admission-154/scoped-result.json",
+      "bytes": 5884,
+      "sha256": "e89338d0736557733b5bfd399a46bfac5b250865099d05cea956a8df8945c945"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-continuation-155/scoped-result.json",
+      "path": "evidence/accepted/breach-continuation-155/scoped-result.json",
+      "bytes": 6980,
+      "sha256": "559d6516285d1dfa14c59d7b191a1607ec4ec1ac0fa6bf843e3b37a5dd6f991a"
+    },
+    {
+      "source_workspace_path": "local-data/validation/breach-mercenaries-156/scoped-result.json",
+      "path": "evidence/accepted/breach-mercenaries-156/scoped-result.json",
+      "bytes": 6687,
+      "sha256": "50e0a0b09075cf4dd274d55293e923604cadd8bafe52cc2a357c7ae90ac56cd7"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mm7-lambent-entry-157/scoped-result.json",
+      "path": "evidence/accepted/mm7-lambent-entry-157/scoped-result.json",
+      "bytes": 4639,
+      "sha256": "105ce964527428fc0cedcce76467cec97d48cdb04ebd93522925c5b5831fd3bb"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mainline-source-gates-158/scoped-result.json",
+      "path": "evidence/accepted/mainline-source-gates-158/scoped-result.json",
+      "bytes": 4010,
+      "sha256": "cab87c14a70021a6ff8e346313593293647caa06951f1d659e91c7c85619c1cf"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mainline-learning-timer-159/scoped-result.json",
+      "path": "evidence/accepted/mainline-learning-timer-159/scoped-result.json",
+      "bytes": 4101,
+      "sha256": "69b2887b8a89eb645fc6727fbbc4490b1697b8305abdbcda7067027362166500"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mm7-mainline-acquisition-160/scoped-result.json",
+      "path": "evidence/accepted/mm7-mainline-acquisition-160/scoped-result.json",
+      "bytes": 4228,
+      "sha256": "c50e0b1f209aa4c671869fb9e81ae2bf9c221280b6a5bdd8652bc448c67484ef"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mm7-mainline-acquisition-160/live-learning-001/scoped-result.json",
+      "path": "evidence/accepted/mm7-mainline-acquisition-160/live-learning-001/scoped-result.json",
+      "bytes": 3776,
+      "sha256": "843d28570b29f9cefa354b6c6ddd6ae55b871349aac7d487bef5fe8f3effe5dc"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mm7-lich-promotion-161/scoped-result.json",
+      "path": "evidence/accepted/mm7-lich-promotion-161/scoped-result.json",
+      "bytes": 4136,
+      "sha256": "ec9a46941ae0f7f35480e21b6c297c2b00285b6362626c59c0938287f2a58158"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mm8-first-lich-162/scoped-result.json",
+      "path": "evidence/accepted/mm8-first-lich-162/scoped-result.json",
+      "bytes": 3444,
+      "sha256": "09053df4c72d2d3fc99daff98a0c17ea655ceb10339142d385d35c892f08c1ac"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mm7-ending-163/scoped-result.json",
+      "path": "evidence/accepted/mm7-ending-163/scoped-result.json",
+      "bytes": 6787,
+      "sha256": "9f9052830e3ddb0394c7fc85e62c38bc1bc7fd6916b55f91c52dcc29318e9e22"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mainline-closure-164/scoped-result.json",
+      "path": "evidence/accepted/mainline-closure-164/scoped-result.json",
+      "bytes": 3314,
+      "sha256": "ef5587813ae17bcb396ae54f60d5243e24d616315eab373fad0646ae8358e7df"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mainline-acquisition-165/scoped-result.json",
+      "path": "evidence/accepted/mainline-acquisition-165/scoped-result.json",
+      "bytes": 1801,
+      "sha256": "9a7427f32f6498b3cc2339f2628aae919a594f253c836a488457143e12e11fc9"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mm8-regna-cannon-168/scoped-result.json",
+      "path": "evidence/accepted/mm8-regna-cannon-168/scoped-result.json",
+      "bytes": 3147,
+      "sha256": "74ee125fb97b09536cab77a6508d653cdc44008fe624eaf91abff47630ccab63"
+    },
+    {
+      "source_workspace_path": "local-data/validation/playable-readiness-169/scoped-result.json",
+      "path": "evidence/accepted/playable-readiness-169/scoped-result.json",
+      "bytes": 2979,
+      "sha256": "5b6d5d4cbb424ffac60cf2b4d6c8f60f4b59ad53f7b9d056672c8f6ed912a12f"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mainline-prerequisites-170/result.json",
+      "path": "evidence/accepted/mainline-prerequisites-170/result.json",
+      "bytes": 1079,
+      "sha256": "65faefc34bb78dbc25fb023ee3c602eaa11d5e2056bcac9b39dde702ef28df17"
+    },
+    {
+      "source_workspace_path": "local-data/validation/map-source-completion-171/scoped-result.json",
+      "path": "evidence/accepted/map-source-completion-171/scoped-result.json",
+      "bytes": 3786,
+      "sha256": "5c577ac3a87dc5edfc9e79ff17d453c1f7105e5d0671ee5d54ffb893452c45d0"
+    },
+    {
+      "source_workspace_path": "local-data/validation/source-travel-rescue-172/scoped-result.json",
+      "path": "evidence/accepted/source-travel-rescue-172/scoped-result.json",
+      "bytes": 2021,
+      "sha256": "5136c93beb13d170069bf9aaddba3552333875723f25a33a0b278065ee57e656"
+    },
+    {
+      "source_workspace_path": "local-data/validation/ordinary-reentry-173/scoped-result.json",
+      "path": "evidence/accepted/ordinary-reentry-173/scoped-result.json",
+      "bytes": 3040,
+      "sha256": "e332ca54b6030a1a46cc86e49fbade04a826a616b464e88b7e06dbb66832031e"
+    },
+    {
+      "source_workspace_path": "local-data/validation/first-playable-candidate-174/scoped-result.json",
+      "path": "evidence/accepted/first-playable-candidate-174/scoped-result.json",
+      "bytes": 2883,
+      "sha256": "0f701b388ecba8c1fec2bfe60a0f790ce13b2d566eb9c231f916fdbcec55cb1e"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mm7-dark-ending-175/scoped-result.json",
+      "path": "evidence/accepted/mm7-dark-ending-175/scoped-result.json",
+      "bytes": 4657,
+      "sha256": "23503a4a6e8b9684f469030b5ead426a72fe92e0aeeaa10083f7ee9386e936a9"
+    },
+    {
+      "source_workspace_path": "local-data/validation/device-independent-playability-176/scoped-result.json",
+      "path": "evidence/accepted/device-independent-playability-176/scoped-result.json",
+      "bytes": 4958,
+      "sha256": "cc38a85d5d4daa277d15426c11c44feda831954da5f963707ca3c80821ed4a96"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mercenary-release-177/scoped-result.json",
+      "path": "evidence/accepted/mercenary-release-177/scoped-result.json",
+      "bytes": 4123,
+      "sha256": "25afca54fda06162c8c832ced926f8db46aa19be851fe6bcccdaafc7eb5c2020"
+    },
+    {
+      "source_workspace_path": "local-data/validation/bralvar-ordinary-interactions-178/scoped-result.json",
+      "path": "evidence/accepted/bralvar-ordinary-interactions-178/scoped-result.json",
+      "bytes": 3965,
+      "sha256": "898d4bafc6f553a2979937db4bae34b7c81c029f35df21deeaf05db51919631e"
+    },
+    {
+      "source_workspace_path": "local-data/validation/mm7-control-cube-refill-179/scoped-result.json",
+      "path": "evidence/accepted/mm7-control-cube-refill-179/scoped-result.json",
+      "bytes": 2710,
+      "sha256": "8d0d8a5f8167424df2f682d07bd189cd05ddb10609f0eee95005424ed24e2877"
+    },
+    {
+      "source_workspace_path": "local-data/validation/bralvar-actor-rules-180/scoped-result.json",
+      "path": "evidence/accepted/bralvar-actor-rules-180/scoped-result.json",
+      "bytes": 4477,
+      "sha256": "adbe10c6a613053fbd5739495cb57842e0c1f06348490b66d9a483b29968720f"
+    },
+    {
+      "source_workspace_path": "local-data/validation/merge-source-polish-181/scoped-result.json",
+      "path": "evidence/accepted/merge-source-polish-181/scoped-result.json",
+      "bytes": 2768,
+      "sha256": "892fed79311a670d5768407097647e2b26d7911d6e38deb332b77f3c4fc169e8"
+    },
+    {
+      "source_workspace_path": "local-data/validation/second-playable-candidate-182/scoped-result.json",
+      "path": "evidence/accepted/second-playable-candidate-182/scoped-result.json",
+      "bytes": 2179,
+      "sha256": "23b57947429418b86f72231037141c3150ff194cf62c46f08d51bbfce6c68d70"
+    },
+    {
+      "source_workspace_path": "FIRST_PLAYABLE_RELEASE_PLAN.md",
+      "path": "historical-workspace/FIRST_PLAYABLE_RELEASE_PLAN.md",
+      "bytes": 11297,
+      "sha256": "2991d6e404d2164702122a56c9b5e6d476c9dc6593abe61fd3cf653b3c2db914"
+    },
+    {
+      "source_workspace_path": "OpenYAMM-iPadOS-开发进度.md",
+      "path": "historical-workspace/OpenYAMM-iPadOS-开发进度.md",
+      "bytes": 221733,
+      "sha256": "1f9a7b0b5fc879d00cfba9cd9dd5016de5b742d6de056a121b5f05b0aabd7f1f"
+    },
+    {
+      "source_workspace_path": "OpenYAMM-iPadOS-可行性与实施方案.md",
+      "path": "historical-workspace/OpenYAMM-iPadOS-可行性与实施方案.md",
+      "bytes": 15895,
+      "sha256": "7d8800e4ef7a3f48000c59a52ef58add4b561c0177dcfcd8dff6b508c76fcdfa"
+    },
+    {
+      "source_workspace_path": "OpenYAMM-iPadOS-测试操作.md",
+      "path": "historical-workspace/OpenYAMM-iPadOS-测试操作.md",
+      "bytes": 4009,
+      "sha256": "cf4423f95901961667d07923c4c220fd95fddfe3b58b5ba822f94b3eb576645d"
+    },
+    {
+      "source_workspace_path": "AGENTS.md",
+      "path": "historical-workspace/source-workspace-instructions.snapshot.txt",
+      "bytes": 47752,
+      "sha256": "56fa206efa75b536f7ad068f2c4d69864a6e96a4243a463b50b15324ab1ac6ed"
+    },
+    {
+      "source_workspace_path": "handoffs/astra-campaign-20261002/STATE.json",
+      "path": "historical-workspace/STATE-at-handoff.json",
+      "bytes": 8690,
+      "sha256": "65bc5810aa2c2c78d88c27108eafe36832fc7414f4d7254f897a26ce6f875e20"
+    },
+    {
+      "source_workspace_path": "local-data/validation/rc2-followup-20261028/audit-001.json",
+      "path": "evidence/followup/audit-001.json",
+      "bytes": 3733,
+      "sha256": "7a06d44fb7c09710dfeafb16027cfa1e0d1315c5fcfd0b981a44e457fac8f668"
+    },
+    {
+      "source_workspace_path": "local-data/validation/rc2-followup-20261028/audit-002.json",
+      "path": "evidence/followup/audit-002.json",
+      "bytes": 1278,
+      "sha256": "645a2316ff46a3e95ac7e2da41e88bb710a7549c4a0efc1e1c52f6d12b816fe8"
+    },
+    {
+      "source_workspace_path": "local-data/validation/rc2-followup-20261028/audit-003.json",
+      "path": "evidence/followup/audit-003.json",
+      "bytes": 1790,
+      "sha256": "040fbe817d5c1903700123f7b0db8f6af671f08e1e00576d9a753fd026f0d2b3"
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "status": "ACCEPTED_SCOPED",
+  "date": "2026-10-19T11:14:37.285300+00:00",
+  "owner": "01a0fb51-a792-7082-a973-ac6064548959",
+  "main": {
+    "model": "gpt-6-astra",
+    "reasoning": "xhigh"
+  },
+  "subagents": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "max",
+    "files_exclusive": true,
+    "builds_and_actual": "main only"
+  },
+  "scope": "Source one-to-four active member reserve-generation implementation; actual four/one boundary flows, custody and Save96 persistence",
+  "implementation": [
+    "Strict content v2 admits active1..5, verifies12 original generation script/table fingerprints and retains v1 five-only compatibility.",
+    "Default source mercenary generation uses complete class/portrait/name/skill/typed gear/stat/spell/resistance/age/condition/biography rules; source fixed-roster gate XP100000 and Level10 only.",
+    "Prepare on full baseline Character with source-written fields overwritten, preserve stable identity and source-unwritten payload; no live RNG or new IDs during generation.",
+    "Party candidate atomically allocates only new reserves, transfers existing inn/detached records, preserves buffs/pending, updates generated derived equipment caches/full vitals and item history.",
+    "Source split plans preserve original member ordering, lead character, current-switch4 portrait rules, sequential portrait history and conditional Q1714.",
+    "Save96 persists biography and typed generation/random receipts; strict Save91–95 existing-five migration, no original save rewrites."
+  ],
+  "native": {
+    "configure": "native-configure-001.command.json",
+    "build": "native-build-002.command.json",
+    "status": "passed"
+  },
+  "runtime": {
+    "path": "controlled-runtime-001",
+    "diff": "runtime-diff.json",
+    "changed_engine_members": [
+      "breach_alvar_companions.txt"
+    ],
+    "unchanged_engine_members": 16989,
+    "normal_dynamic_admission": "closed",
+    "default_runtime_changed": false
+  },
+  "actual": {
+    "reserve": {
+      "record": "reserve4-actual-001/result.json",
+      "command": "reserve4-actual-001-run.command.json",
+      "frames": 127,
+      "captures": 3,
+      "new_generated": 1,
+      "total_owned": 5,
+      "final_active": 5,
+      "final_detached": 0,
+      "real_pointer_house_hint_join": true,
+      "normal_campaign": false
+    },
+    "reserve1": {
+      "record": "reserve1-actual-001/result.json",
+      "command": "reserve1-actual-001-run.command.json",
+      "frames": 127,
+      "captures": 3,
+      "new_generated": 4,
+      "total_owned": 8,
+      "final_active": 5,
+      "final_detached": 0,
+      "real_pointer_house_hint_join": true,
+      "normal_campaign": false
+    }
+  },
+  "cold": {
+    "command": "cold-reserve1-001-run.command.json",
+    "status": "passed",
+    "frames": 181,
+    "comparison": "cold-comparison.json",
+    "comparison_groups": 22,
+    "input": "reserve1-actual-001/split.oysav",
+    "output": "cold-reserve1-001/after-render.oysav",
+    "observation": "Actual time advanced1.511game minutes; actor settles4864->4863, source maintenance deadline advances1minute; all generated/full detached, inn, global, history and receipt payloads identical."
+  },
+  "old_save_migration": {
+    "input": "../chaos-return-001/actual-005/completed.oysav",
+    "output_inspection": "save95-migration.json",
+    "status": "passed",
+    "initial_active_count": 5,
+    "generated_count": 0,
+    "original_rewritten": false
+  },
+  "visual": {
+    "record": "visual-review.json",
+    "reviewed_images": 4,
+    "status": "passed"
+  },
+  "ios": {
+    "configure": "ios-configure-001.command.json",
+    "build": "ios-release-001.command.json",
+    "status": "passed",
+    "target": "unsigned generic iOS Release arm64",
+    "device_or_simulator": false
+  },
+  "new_test_cases": 0,
+  "retained_failure": {
+    "record": "native-build-001.command.json",
+    "type": "main integration compile error",
+    "cause": "BreachAlvarSession used SourceMercenaryGenerationTables with only a forward declaration",
+    "repair": "Include its owning SourceMercenaryGenerationRuntime header",
+    "verification": "native-build-002 and ios-release-001 passed"
+  },
+  "source_manifest": "source-manifest-002.json",
+  "limitations": [
+    "Controlled scene navigation, including declared map jump; not natural campaign completion.",
+    "reserve1 explicitly dismisses three original members to inn through standard Party calls before its custody baseline; not natural/UI dismissal acceptance.",
+    "No actual2/3-member matrix; user priority is application continuity and fewer replays/cases.",
+    "Fixed native PRNG preserves source draw ranges/order/distributions, not exact Lua RNG stream equivalence.",
+    "Normal BrAlvar tower/top jump mechanisms remain unregistered; earlier event81 used declared TopFloor navigation.",
+    "No physical device/simulator or iPad performance/control acceptance; full game incomplete."
+  ],
+  "next": "Implement source tower104–109/topjump126–128 plus15/16 prerequisites to reach the end via normal ascent.",
+  "engineering_progress": {
+    "range_percent": [
+      55,
+      60
+    ],
+    "confidence": "low",
+    "changed": false,
+    "meaning": "subjective engineering estimate, not campaign/quest/device coverage"
+  },
+  "full_goal_complete": false
+}

@@ -1,0 +1,74 @@
+{
+  "checkpoint": 171,
+  "status": "ACCEPTED_SCOPED",
+  "date": "2026-10-28",
+  "scope": "Original-source ordinary EmeraldIsle harbor access,FreeHaven temple follower transaction and inn entry;two affected controlled Mac flows",
+  "default_runtime": "local-data/validation/map-source-completion-171/runtime-002",
+  "source_inventory": {
+    "files": 70,
+    "mm6": 28,
+    "mm7": 26,
+    "mm8": 16,
+    "source_lines": 2271,
+    "excludes": "Three large Merge supplements already covered by earlier scopes; not an all-game compatibility proof"
+  },
+  "production_changes": [
+    "Authenticated7out03 OnLoad:Q519false enables original Wednesday6day EmeraldIsle route at House486/route4;Q519true clears override back to original route44.",
+    "Authenticatedoutc2 event19 uses actual hired professions63+64 instead of staleQ1708/1709. Repair setsQ1130,removes twoartisans,displays originalSTR29,retainsGold/XP and unrelated follower. Existing repaired/chalice branches retained; standalone sourceMessage now uses SimpleMessage.",
+    "outc2 real event140 is registered to original AdventurersInn1607; source/import evidence only."
+  ],
+  "actual": {
+    "harbor": {
+      "result": "harbor-002/result.json",
+      "runtime": "runtime-001",
+      "final_runtime_equivalence": "final-runtime-harbor-equivalence.json",
+      "frames": 56,
+      "door_sdl_clicks": 1,
+      "transport_action": "Normal dialogue action API, not physical route click",
+      "fare": 92,
+      "travel_days": 6,
+      "arrival": "7out01 original12552,800,193",
+      "source_intro": "Q513-518 opened;original intro shown and normalEscape;Q519remainsfalse",
+      "normal_frames": 30,
+      "final_save": true,
+      "reviewed_images": 3
+    },
+    "temple": {
+      "result": "temple-004/result.json",
+      "runtime": "runtime-002",
+      "frames": 49,
+      "door_sdl_clicks": 1,
+      "effects": "Q1130,true;two sourceartisans removed;unrelatedNPC1112 retained;Gold9067/XP/identity unchanged;originalSTR29 visible",
+      "normal_frames": 30,
+      "final_save": true,
+      "saved_map_followers": true,
+      "reviewed_images": 3
+    }
+  },
+  "validation": {
+    "native": "native-build-002.command.json",
+    "import": "events-import-002.command.json",
+    "package": "runtime-diff-002.json",
+    "ios": "ios-release-003.command.json,unsignedgenericRelease,no device",
+    "launcher": "launcher-check-001.command.json",
+    "new_unit_test_cases": 0,
+    "old_accepted_route_replays": 0,
+    "cold_replays": 0,
+    "actual_attempts": 6,
+    "accepted_actual_flows": 2
+  },
+  "failures": "preserved-failures.json;all original logs,runtime001 and failed attempts retained.1 missing-message product observation and3 driver failures;2 earlier build failures also preserved.",
+  "limitations": [
+    "Map/pose and upstreamstate fixtures explicitlydeclared;harbor advancesclock/addsGold;temple seedsQ1129 and actual hiredfollowers.No natural campaign or observed hiring journey.",
+    "No full temple/chalice/follower matrix,actualinn140 or Q519true route replay;source-only branches distinguished.",
+    "Save structure verified in same process,not independent cold replay.",
+    "No physicaldevice/simulator/audio/fullgame acceptance.",
+    "Current map-supplement inventory confirms next sixMM6 TownPortal unlocks and MM8 submarine return defects;full goal remains active."
+  ],
+  "preservation": "All baseline normal package members retained,onlytwo new overlays;other archives referenced from169;no gameplayfixtures shipped;originalsource/normal132 saves unchanged.",
+  "requirements": "requirements.json",
+  "next": "next-source-work.json",
+  "full_game_complete": false,
+  "goal_status": "active",
+  "progress_estimate": "55-60%,lowconfidenceengineeringestimate;nottaskcoverageorautomaticchapterincrease"
+}

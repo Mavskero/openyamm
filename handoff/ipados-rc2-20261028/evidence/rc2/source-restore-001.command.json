@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "python3",
+    "local-data/validation/second-playable-candidate-182/verify_source_001.py"
+  ],
+  "cwd": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados",
+  "pid": 66154,
+  "started_at": "2026-10-28T12:27:10.170463+00:00",
+  "finished_at": "2026-10-28T12:27:10.875717+00:00",
+  "exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 300.0,
+  "log": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/local-data/validation/second-playable-candidate-182/source-restore-001.log",
+  "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/.tools-venv/bin/python3",
+  "executed_binary_sha256": "30b2a6bf9706029b609327ca5db722cd458239df96efc87e1f8e37beed49db2e",
+  "environment": {
+    "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/external-storage/tmp/",
+    "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/external-storage/xcode-deriveddata/current"
+  }
+}

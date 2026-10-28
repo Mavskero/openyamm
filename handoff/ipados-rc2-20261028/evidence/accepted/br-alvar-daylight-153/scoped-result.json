@@ -1,0 +1,72 @@
+{
+  "schema": "openyamm.bralvar.daylight153.v1",
+  "status": "ACCEPTED_SCOPED_TYPED_DAYLIGHT_GEOMETRY_RENDER_AND_COLD_RESTORATION",
+  "accepted_at_utc": "2026-10-19T13:58:28.235785+00:00",
+  "model": "gpt-6.1-sol",
+  "reasoning": "max",
+  "controlled": true,
+  "natural_campaign": false,
+  "source": "source-behavior.json",
+  "frozen_sources": "source-manifest-004.json",
+  "frozen_source_count": 14,
+  "changes": [
+    "Original101–103 Time model definitions and source all-open/selected-toggle handlers, normal reentry fixed Time1 and feature-only old-save migration.",
+    "Generic source light time projection4:12,6:12,11:integer actualminute; real clock/date/weather/buffs preserved.",
+    "Continuous outdoor mechanism reversal; map AfterLoad lifecycle; Save99 typed optionalhour/minute with <=98 absent migration.",
+    "Generic nighttime/gameplay overlay clipping fixed: plane1 was behindOutdoorCameraNearClip4; plane8 displays both world darkness and gameplay overlays."
+  ],
+  "runtime": {
+    "fresh": "controlled-runtime-001",
+    "diff": "runtime-diff.json",
+    "default_runtime_changed": false,
+    "normal_dynamic_admission": "closed",
+    "ordinary_worlds_preserved": true
+  },
+  "actual": {
+    "authoritative": "actual-003/result.json",
+    "frames": 387,
+    "captures": 5,
+    "simulation_seconds": 6.050000315532088,
+    "normal_ai": true,
+    "source102_actual_pointer": true,
+    "source103_actual_pointer": true,
+    "intermediate_live_geometry": true,
+    "light_minute_inheritance_crossed_integer": true,
+    "actual_clock_rate": "0.5game-minute/real-second",
+    "geometry_endpoints": "selected0,other two-10; integer collision rounding and30Hz interpolation bound only whilemoving",
+    "save_version": 99,
+    "input_unchanged": true,
+    "party_fixture": "One supported pose244/48 and fixedcamera. No event/RNG/quest/HP/item/buff injection."
+  },
+  "cold": {
+    "current": "cold-002/result.json",
+    "current_precontinuation_restoration": "passed; typed selection/version, source RNG, three complete motion states, real transformed vertices, Party pose/jump/accumulator, clock and custody",
+    "current_command_exit": 1,
+    "interruption": "cold-002-classification.json",
+    "prior_full_half_second": "cold-001/result.json passed same codec before overlay-only correction",
+    "restored_current": "cold-002/restored.oysav",
+    "no_retry_for_expected_combat": true
+  },
+  "visual_review": "visual-review-002.json",
+  "builds": {
+    "native": "native-build-004.command.json",
+    "unsigned_generic_ios_release_arm64": "ios-release-002.command.json"
+  },
+  "retained_findings": [
+    "native-build-001 tool bx::Vec3 initializer compile failure; fixed without gameplay edits.",
+    "actual-001 driver comparator continuousfraction vs integer30Hz collision cache.",
+    "actual-002 source/state/cold pass exposed real clippednight overlay; original images preserved.",
+    "cold-002 normalcombat interruption after exact restoration."
+  ],
+  "new_unit_cases": 0,
+  "unit_suite_rerun": false,
+  "limitations": [
+    "Controlled save composition and single pose; not natural campaign or iPad/simulator acceptance.",
+    "Normal reentry initialization is source-grounded and compiled, not exercised as a full source OnLoad/re-split journey here.",
+    "Normal AI retained and caused injury/incapacitation; not a combat survival demonstration.",
+    "Dynamic normal package remains closed; BrAlvar secondary events, first-journey restrictions, Breach source postgame and level4+ remain work."
+  ],
+  "next": "next-normal-admission-audit.json",
+  "full_game_complete": false,
+  "engineering_estimate": "55–60%, low confidence; unchanged"
+}

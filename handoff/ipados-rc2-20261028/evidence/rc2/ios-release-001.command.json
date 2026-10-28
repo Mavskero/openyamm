@@ -1,0 +1,33 @@
+{
+  "argv": [
+    "xcodebuild",
+    "-project",
+    "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+    "-scheme",
+    "openyamm_ipados",
+    "-configuration",
+    "Release",
+    "-destination",
+    "generic/platform=iOS",
+    "-derivedDataPath",
+    "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/external-storage/xcode-deriveddata/current",
+    "-jobs",
+    "3",
+    "CODE_SIGNING_ALLOWED=NO",
+    "build"
+  ],
+  "cwd": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados",
+  "pid": 59006,
+  "started_at": "2026-10-28T12:17:37.859342+00:00",
+  "finished_at": "2026-10-28T12:17:49.814852+00:00",
+  "exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 600.0,
+  "log": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/local-data/validation/merge-source-polish-181/ios-release-001.log",
+  "executed_binary": "/usr/bin/xcodebuild",
+  "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+  "environment": {
+    "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/external-storage/tmp/",
+    "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/external-storage/xcode-deriveddata/current"
+  }
+}
