@@ -2,9 +2,9 @@
 
 These rules apply to all AI-generated contributions in this repository.
 
-## iPadOS handoff (2026-10-28)
+## iPadOS handoff (2026-10-29)
 
-- Read `IPADOS_HANDOFF.md` for the RC2 / Save103 state and fresh-host build instructions.
+- Read `IPADOS_HANDOFF.md` for the RC3 / Save103 state and fresh-host build instructions.
 - `handoff/ipados-rc2-20261028/` contains historical source-workspace records, not active
   instructions to recreate old host paths, restart old agents or inherit an old goal status.
 - Device authorization comes from the current user. The user-invoked task in

@@ -1,27 +1,31 @@
-# iPadOS RC2 接手与真机调试
+# OpenYAMM RC3 接手与真机调试
 
 更新：2026-10-29。仓库：<https://github.com/Mavskero/openyamm>。
-原交付分支：`codex/ipados` / `ec5a8435`；真机修复分支：`codex/ipad-device-debug`。
+交付分支：`codex/ipados`；原 RC2 交付提交：`ec5a8435`；真机修复分支：`codex/ipad-device-debug`。
 可直接交给另一台 Mac 的 Codex 的任务见 [CODEX_IPAD_DEVICE_PROMPT.md](CODEX_IPAD_DEVICE_PROMPT.md)。
 
 ## 当前版本与验收边界
 
-源码基线对应 **0.1.0-rc2-20261028 / Save103 / checkpoint182**，完整开发资源基线是
-`merge-source-polish-181/runtime-001`。原交付提交汇总 RC2 源码及接手材料，
-并修正新机配置脚本在 macOS Bash 3.2 中展开空依赖参数数组的错误。
-本轮在此基础上修复 iOS 场景交互入口和触摸释放处理，完成真机短流程及受影响步骤复验。
+本轮交付目标为 **0.1.0-rc3-20261029 / Save103 / checkpoint189**。生产源码基线是
+`8f91f2b9276b649c3529fae049beaf91a5668996`，完整资源基线为
+`local-data/validation/loadscreen-parchment-188/runtime-001`。RC3 的最终源码归档提交、
+文件清单、二进制校验值及候选包实际检查状态，以随包 `VERSION.json` 和 `evidence/` 为准。
+现有构建依据是 checkpoint187 的 Mac 程序及 checkpoint188 的未签名通用 iOS Release。
+RC3已完成一次独立 `Start-Mac.command` 启动、相对 `../assets` 资源读取、1280×800菜单及
+Cmd+Q退出检查，27.763秒、退出码0；没有新建、读档或战役回放。详细状态以随包记录为准，RC2原包保留。
 
 | 项目 | 当前依据 |
 | --- | --- |
-| Mac 正常游玩与保存 | RC1 候选实际启动、正常 MM6 读档、移动、背包、保存、独立重启读取通过；RC2 新启动器菜单启动/正常退出通过 |
+| Mac 正常游玩与保存 | RC1 正常 MM6 读档、移动、背包、保存及独立重启读取通过；183–188 的受影响短流程见下文。RC3新启动器/相对资源/窗口菜单/退出通过，没有新增游戏内回放；详情见其 VERSION/evidence |
 | MM6/MM7/MM8/Merge 必要通关路径 | 原源、实现和分段实际证据；MM7 光明与黑暗终局、Merge 归队/结束卡及续玩均保留各自受控范围 |
-| 最近实现 | 主线取得/重入、瓶中神殿返回、Inn 永久遣散与槽回收、BrAlvar 普通交互/角色关系/AI、MM7 后期控制方块刷新、迷宫反馈与脚步映射 |
-| iPadOS 构建 | 新 Mac 的 Xcode 26.3 / iPhoneOS SDK 26.2 已完成 arm64 Release 自动签名、保留数据安装及实际运行 |
+| 最近实现 | 已合并真机触控修复，补齐建队背景/移动按钮/片头、卷宗阅读和问题输入，修复 Mac 全屏释放坐标及 UI 皮肤资源导入；Save103 不变 |
+| iPadOS 构建 | 原电脑 checkpoint188 未签名通用 arm64 Release 构建通过；接收 Mac 另有早期签名安装报告，两者不等同于 RC3 目标 iPad 验收 |
 | 完整自然战役、所有支线/队伍组合 | 未证明；不要求接手端先重打所有战役 |
-| 当前版本真机 | `ec5a8435` 完成核心短流程；本分支修复版在 iPad17,2 / iPadOS 27.0 复验中文档加载、触控移动与房屋交互、房屋视频、Home 恢复、背包、菜单和正常退出。原 8 档全部哈希不变。音乐/音效由用户试听确认；片头及长期性能仍未验收 |
+| 接收 Mac 历史真机反馈 | 接收端报告 `ec5a8435` 及其触控修复分支完成核心短流程；iPad17,2 / iPadOS 27.0 的中文档加载、移动/房屋交互、房屋视频、Home 恢复、背包、菜单、退出及原 8 档哈希均有记录，音乐/音效由接收端用户试听确认。183–188 补丁没有新增目标 iPad 验收 |
 
 2026-10-28 至 29 日新 Mac 首轮设备记录见
 [handoff/ipados-device-20261028/README.md](handoff/ipados-device-20261028/README.md)。
+原始真机日志、截图和存档仍在接收 Mac；原电脑读取了交接记录及校验索引，没有独立查看这些真机像素。
 真实阻断是旧 iOS 配置未启用场景交互按钮、触摸释放未完整进入既有 HUD 路径；
 采用一次性设置迁移和共享输入路径修复，保留 Standard 布局、旧存档及原资源。未重打 Mac 战役。
 实际 RC2 包缺少建队背景 `makeme` 和部分移动界面图标，Enroth 新游戏片头未触发，已单独记录；
@@ -29,23 +33,23 @@
 
 checkpoint 183 已合并真机修复，并补齐建队背景和 72 张自有按钮图片，恢复主菜单 Enroth 建队后的
 原版片头。普通 Mac 新建/片头/Escape/续玩/退出、UI 导入及通用 iOS 构建通过；本补丁没有新真机验收。
-详细范围见 [183 交接](handoff/device-feedback-183/README.md)。新运行包使用原 RC2 四个 world ZIP，
-再从 [183 资源补丁](https://github.com/Mavskero/openyamm/releases/tag/ipados-device-feedback-183-20261029)
-取得新的 `engine.zip`、`conversion.json` 和校验清单。App 也须重新构建更新。
+详细范围见 [183 交接](handoff/device-feedback-183/README.md)。历史
+[183 资源补丁](https://github.com/Mavskero/openyamm/releases/tag/ipados-device-feedback-183-20261029)
+保留；当前使用下文的188资源包，它已包含183修复。App 也须更新。
 
 checkpoint 184 修复消息卷宗的头像阅读层被同帧清除、检查手势提前锁存及背包阅读冲突。
 原始 VARN 宝箱取卷、阅读、真实机关输入密码、续玩和保存的受控 Mac 短流程通过，通用 iOS
-Release通过；见 [184交接](handoff/mainline-playability-184/README.md)。资源仍用183，Save103不变，
-仅需更新App。真机只补受影响的卷宗操作，不重做资源导入和已通过战役。
+Release通过；见 [184交接](handoff/mainline-playability-184/README.md)。该阶段沿用183资源，
+Save103不变；当前交付统一用188。真机只补受影响的卷宗操作，不重做已通过战役。
 
 checkpoint 185 补齐密码/谜题的点击提交、取消、UTF-8退格和键盘避让区域；Mac受影响短流程
-与通用iOS Release通过，见 [185交接](handoff/event-question-input-185/README.md)。沿用183资源，
-目标iPad仅补问题输入的触控、中文编辑及键盘遮挡确认。
+与通用iOS Release通过，见 [185交接](handoff/event-question-input-185/README.md)。该阶段没有资源修改；
+当前交付统一用188，目标iPad仅补问题输入的触控、中文编辑及键盘遮挡确认。
 
 checkpoint 186 首次受控 Mac 潜艇往返雷格那、原影片/Escape和保存通过；无生产或资源修改，
 无新增真机任务，见 [186交接](handoff/mm8-submarine-journey-186/README.md)。
 
-checkpoint 187 修复 Mac 全屏菜单释放坐标错误，一次实际读取菜单/取消/退出通过；仅改Cocoa，
+checkpoint 187 修复 Mac 全屏菜单释放坐标错误，一次实际全屏读档菜单/取消/退出通过；仅改Cocoa，
 无需新的iPad验证或资源包，见 [187交接](handoff/fullscreen-input-187/README.md)。
 
 checkpoint 188 补齐原版侧栏纹理和所选UI皮肤伴随包顺序，Mac读档页告警消失，通用iOS构建通过。
@@ -60,8 +64,9 @@ checkpoint 188 补齐原版侧栏纹理和所选UI皮肤伴随包顺序，Mac读
 
 本仓库保留原有项目树和历史，并提交当前所有修改及新增的生产源码、导入器、诊断工具、
 CMake 配置和 UI。`ios/`、`scripts/`、`cmake/patches/` 已在版本管理中。
-源码提交不嵌入运行 ZIP；按用户追加的测试要求，完整 RC2 运行资源另放在下述 GitHub Release。
-签名凭据、存档、构建缓存、二进制程序或原始截图没有上传。
+源码提交不嵌入运行 ZIP；当前资源由下述188补丁与RC2四个world附件组合。
+RC3 的 Mac 启动包、未签名 iOS 包和固定源码归档分别交付，是否已发布及实际文件名以交付记录为准。
+签名凭据、存档、构建缓存和原始截图不纳入这些附件。
 真机分支另外提交输入/设置修复、对应单测和交接记录；接手电脑的 `winBG.PCX`
 大小写冲突改动保留在该电脑工作区，未纳入提交。
 
@@ -73,6 +78,19 @@ CMake 配置和 UI。`ios/`、`scripts/`、`cmake/patches/` 已在版本管理�
 
 历史完整日志、截图、受控与正常存档仍在原工作区，不在公开仓库。历史 JSON 中提到的这些路径
 表示证据来源，不保证新电脑存在；不要把缺少历史文件改写成一次新验证通过。
+
+## RC3 目录与附件
+
+本地完整候选目录为 `releases/first-playable-20261029-rc3/`，包含 `Start-Mac.command`、
+`macOS/OpenYAMM-RC3.app`、完整 `assets/`、空的 `userdata/saves/`、未签名 iOS App及源码恢复材料。
+Mac预编译包要求 **Apple Silicon及macOS 26或更高**，默认1280×800窗口启动。
+当前二进制部署目标为macOS 26.0，构建SDK为27.0；旧系统需从源码调整部署目标后自行构建，
+尚未验证该路径。保持整个目录的相对结构；单独移动 `.app` 不包含全部运行资源。
+
+GitHub 的 Mac 启动 ZIP 不含 `assets/`。解压后按下文下载资源，或手动复制一份已校验的188
+完整 `assets/` 到 `Start-Mac.command` 同级，再启动。未签名 iOS ZIP需接收 Mac使用自己的有效签名
+安装；交付副本排除旧 `_CodeSignature` 和 `embedded.mobileprovision`，不能直接安装。
+旧 App和存档应保留；设置与存档不能从开发目录混入交付副本。
 
 ## 另一台 Mac 克隆
 
@@ -160,39 +178,45 @@ xcodebuild -project build-ios-xcode/OpenYAMM.xcodeproj \
 
 ## 游戏资源下载与传输
 
-完整资源可从 [RC2 运行资源 Release](https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028)
-下载。附件是六个原样文件，另有 `SHA256SUMS` 和目录说明；不要用页面自动生成的
-Source code ZIP 代替运行资源，也不要解压五个运行 ZIP。
+当前完整资源由两处附件组合：从
+[188 UI 资源 Release](https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-resources-188-20261029)
+下载 `engine.zip`、`conversion.json`、`SHA256SUMS`，从
+[RC2 运行资源 Release](https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028)
+只下载四个world ZIP。188已包含183的建队背景和移动按钮修复，无需另下183补丁或RC2旧engine。
+不要用页面自动生成的 Source code ZIP 代替运行资源，也不要解压五个运行 ZIP。
 
-安装 GitHub CLI 后，在新的可写目录执行：
+安装 GitHub CLI 后，在新的可写目录或未含assets的RC3 Mac启动包根目录执行：
 
 ```sh
 mkdir -p assets/worlds
-gh release download ipados-rc2-runtime-20261028 --repo Mavskero/openyamm \
+gh release download ipados-ui-resources-188-20261029 --repo Mavskero/openyamm \
   --dir assets --pattern engine.zip --pattern conversion.json --pattern SHA256SUMS
 gh release download ipados-rc2-runtime-20261028 --repo Mavskero/openyamm \
   --dir assets/worlds --pattern mm6.zip --pattern mm7.zip --pattern mm8.zip --pattern mmmerge.zip
 (cd assets && shasum -a 256 -c SHA256SUMS)
 ```
 
-已有同名文件时先检查，不添加覆盖参数。也可从网页逐个下载并按下方目录摆放。
+188的 `SHA256SUMS` 使用 `worlds/mm6.zip` 等相对路径，因此四个world必须放在 `assets/worlds/`，
+校验命令必须在 `assets/` 中执行。已有同名文件时先检查，不添加覆盖参数。
+本地完整候选已含资源时只需校验；也可从网页逐个下载并按下方目录摆放。
 
-现有完整 RC2 资源在原电脑：
+RC3完整资源目录结构：
 
 ```text
-/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/releases/first-playable-20261028-rc2/assets/
+assets/
   conversion.json
   engine.zip
   worlds/mm6.zip
   worlds/mm7.zip
   worlds/mm8.zip
   worlds/mmmerge.zip
+  SHA256SUMS
 ```
 
-五个 ZIP 总计 **3,494,489,946 字节，约 3.25 GiB**。也可通过磁盘/AirDrop
-复制整个本地 `assets` 目录。仓库内对应校验清单在
-[runtime-SHA256SUMS](handoff/ipados-rc2-20261028/runtime-SHA256SUMS)。
-把清单路径换成克隆仓库实际路径后，可在资源目录执行 `shasum -a 256 -c /path/to/runtime-SHA256SUMS`。
+五个 ZIP 总计 **3,496,520,110 字节，约 3.26 GiB**。也可通过磁盘/AirDrop复制本地完整候选的
+`assets` 目录，或把已下载的188基础资源与RC2四个world组装到新目录，再用188的清单校验。
+完整六文件的大小和校验值还见 [188资源清单](handoff/loadscreen-parchment-188/runtime-manifest.json)。
+RC2历史清单对应旧engine，不能用于确认188完整包。
 不要把上游零散 `assets_dev`、事件补丁 ZIP 或 `import_source.py` 的初步提取输出当成完整运行包。
 
 把资源目录放到 iPad“文件”可访问的位置，启动 App，选“选择游戏资源目录”，选择整个
@@ -202,12 +226,14 @@ gh release download ipados-rc2-runtime-20261028 --repo Mavskero/openyamm \
 如需续用旧 OpenYAMM `.oysav`，先复制并保留原件，再通过开发设备容器确认 App 的
 `Library/Application Support/saves` 目录。菜单使用 `save1.oysav` 等槽位文件，先检查已有槽位，
 只写未占用槽位。普通 Documents 文件共享不会自动放入游戏读取目录。
-RC2 写 Save103，旧档加载后保存会升级；
+RC3与RC2均写 Save103，较早旧档加载后保存会升级；
 不要用 RC1 读取新保存，不承诺原 Windows/MMMerge 存档兼容。
 
 ## 第一轮真机调试
 
-先让真实程序跑起来，按以下短流程推进；只有失败的步骤才做定位与局部重验：
+先读已有接收端记录。此前短流程通过时，只补183–185、188受影响的背景/片头/必要按钮、
+卷宗阅读、问题输入及侧栏显示；187只改Mac，无新增iPad任务。不重做已通过步骤。
+没有目标设备短流程依据时，先让真实程序跑起来，按以下流程推进；只有失败的步骤才定位与局部重验：
 
 1. 确认安装/启动，完成完整资源目录导入，普通新建或复制的正常存档进入游戏。
 2. 触摸移动、转向、停止，以及一次菜单/背包/交互，确认画面和输入对应。
