@@ -1,6 +1,6 @@
 {
   "source_workspace_directory": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/releases/first-playable-20261028-rc2/assets",
-  "destination": "User-chosen private runtime directory, then iPad Files folder import",
+  "destination": "Download published Release assets into the documented assets/worlds directory layout, then import the whole assets folder on iPad.",
   "files": [
     {
       "path": "conversion.json",
@@ -34,6 +34,8 @@
     }
   ],
   "total_bytes": 3494497338,
-  "public_github_payload_included": false,
-  "hash_basis": "Five ZIP hashes retained from sealed RC2 VERSION.json; conversion.json hashed at handoff. No new gameplay or device validation."
+  "public_github_payload_included": true,
+  "hash_basis": "All six local files rehashed at upload; all eight Release attachment sizes and GitHub SHA256 digests independently matched before publication.",
+  "release_url": "https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028",
+  "distribution": "GitHub Release attachments; runtime ZIPs are not added as source Git blobs."
 }

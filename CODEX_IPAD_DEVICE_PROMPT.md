@@ -21,12 +21,12 @@ NVMe 路径别名或 external-storage/env.sh。检查完整 Xcode、iPhoneOS SDK
 目标设备和本机签名 Team；每次 xcodebuild 明确 scheme 和项目内 derivedDataPath。
 先按 `IPADOS_HANDOFF.md` 的最短构建路径准备 shaderc 和 iOS 工程，再构建设备 Release。
 
-完整资源不在公开 GitHub。需要从原电脑复制整个
-`/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/releases/first-playable-20261028-rc2/assets/`，
-包含 conversion.json、engine.zip 及 worlds 下 mm6/mm7/mm8/mmmerge 四个 ZIP；
-复制后核对交接目录的 runtime-SHA256SUMS，再从 iPad 启动页选择整个资源文件夹。
-若这台电脑还没有资源，先定位可访问的磁盘或我已提供的位置；缺少时询问位置，
-同时继续不依赖资源的构建/签名准备，不虚构资源已就绪。
+完整资源已作为 Release 提供：
+https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028 。
+按 IPADOS_HANDOFF.md 下载并组装 assets/：conversion.json、engine.zip，以及 worlds 下
+mm6/mm7/mm8/mmmerge 四个 ZIP；不要解压 ZIP。核对 SHA256SUMS，再从 iPad 启动页
+选择整个资源文件夹。也可使用原电脑 RC2 assets 的完整副本。
+资源下载期间继续不依赖资源的构建/签名准备；网络或权限失败时说明实际问题，不虚构资源已就绪。
 
 第一轮按“启动/导入 → 正常进入游戏 → 触摸移动转向及一次 UI 交互 → 中文保存 →
 Home/返回继续 → 退出重启读取”推进，再补必要音画和短运行观察。旧存档只用副本。

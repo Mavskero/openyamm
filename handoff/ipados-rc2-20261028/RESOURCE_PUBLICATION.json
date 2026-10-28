@@ -1,0 +1,58 @@
+{
+  "status": "PASSED",
+  "release_id": 426762884,
+  "url": "https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028",
+  "draft": false,
+  "asset_count": 8,
+  "checked": "Server-reported SHA256 digest and size equal local data for every asset. No re-download of large archives.",
+  "assets": [
+    {
+      "name": "conversion.json",
+      "bytes": 7392,
+      "digest": "sha256:238c74a7c998409642fb3698e15a185a67fd8cab30e2f7cb3b5808a5ea16ae42",
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-rc2-runtime-20261028/conversion.json"
+    },
+    {
+      "name": "engine.zip",
+      "bytes": 703982335,
+      "digest": "sha256:c920e6e896dbffe4b01488b9543f77053f9b5f533b5e925964c93f2e900e9a17",
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-rc2-runtime-20261028/engine.zip"
+    },
+    {
+      "name": "mm6.zip",
+      "bytes": 641035786,
+      "digest": "sha256:75fe15bf35bb0805a8f07456f0283d476a6d41fb963a4e945814791249473b5f",
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-rc2-runtime-20261028/mm6.zip"
+    },
+    {
+      "name": "mm7.zip",
+      "bytes": 1019770494,
+      "digest": "sha256:f836ce251c4514e9c0503459603ab694dd2ced8952704914328609b35c5ef96a",
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-rc2-runtime-20261028/mm7.zip"
+    },
+    {
+      "name": "mm8.zip",
+      "bytes": 978259456,
+      "digest": "sha256:2455c3f580e2df671a313cfb085de98924132910831ce9911fc1af4deca632f9",
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-rc2-runtime-20261028/mm8.zip"
+    },
+    {
+      "name": "mmmerge.zip",
+      "bytes": 151441875,
+      "digest": "sha256:1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e",
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-rc2-runtime-20261028/mmmerge.zip"
+    },
+    {
+      "name": "README-RC2-ASSETS.md",
+      "bytes": 1903,
+      "digest": "sha256:41ab9af24c832c7ad11f9022b3243e46d1e4a488303f336693a10199bddbf2d4",
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-rc2-runtime-20261028/README-RC2-ASSETS.md"
+    },
+    {
+      "name": "SHA256SUMS",
+      "bytes": 487,
+      "digest": "sha256:a1d5fd9c926ea8777dc2073fb4dd70c6fa712ad0f40930d8e54bc6e2130a0f9b",
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-rc2-runtime-20261028/SHA256SUMS"
+    }
+  ]
+}

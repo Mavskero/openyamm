@@ -10,7 +10,8 @@
 | `release/VERSION.json` | RC2 版本、Save103、资源与可执行文件校验值 |
 | `release/KNOWN_LIMITS.md` | 各修复实际验证范围及未验收项 |
 | `release/RC2_SOURCE_MANIFEST.json` | RC2 当时 1909 个已存在源码文件的内容清单；本次 Git 另增加接手文档并更新入口说明 |
-| `RESOURCE_TRANSFER.json`、`runtime-SHA256SUMS` | 私下传输的六个资源文件路径、大小、校验值 |
+| `RESOURCE_TRANSFER.json`、`runtime-SHA256SUMS` | 独立 Release 下载的六个资源文件路径、大小、校验值 |
+| `RESOURCE_PUBLICATION.json` | 已公开发布的八个附件下载地址、服务器 SHA256 和大小核对结果 |
 | `evidence/rc2/requirements-182.json` | 完整目标各项要求与证据边界 |
 | `evidence/accepted/` | 工作状态所列接受模块的原始 JSON 副本 |
 | `evidence/rc2/` | RC2 随包记录，包括构建、封装、源码恢复及181统计更正 |
@@ -25,7 +26,8 @@
 
 证据 JSON 可能引用原工作区保留的日志、截图、存档和运行目录；这些大文件没有公开上传，
 也没有为本次 Git 交接重新生成。源码核对和已有接受记录不等于第二台 Mac 或目标 iPad 已实测。
-原游戏资源须单独传输，不把这个目录中的校验清单误认为资源本体。
+运行资源由独立 [RC2 Release](https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028)
+提供，不把这个目录中的校验清单误认为资源本体。`release/` 下的说明仍保留首次本地交付时的状态。
 
 相对 RC2 的接手改动包括说明、历史记录，以及新机 Xcode 配置脚本在 Bash 3.2 下的空数组修复。
 游戏逻辑没有再次修改；没有新增游戏回测或本机设备操作。

@@ -27,7 +27,8 @@
 
 本仓库保留原有项目树和历史，并提交当前所有修改及新增的生产源码、导入器、诊断工具、
 CMake 配置和 UI。`ios/`、`scripts/`、`cmake/patches/` 已在版本管理中。
-本次没有上传新游戏资源、签名凭据、存档、构建缓存、二进制程序或原始截图。
+源码提交不嵌入运行 ZIP；按用户追加的测试要求，完整 RC2 运行资源另放在下述 GitHub Release。
+签名凭据、存档、构建缓存、二进制程序或原始截图没有上传。
 
 [handoff/ipados-rc2-20261028/](handoff/ipados-rc2-20261028/) 包含：
 
@@ -119,7 +120,24 @@ xcodebuild -project build-ios-xcode/OpenYAMM.xcodeproj \
 可用 Xcode Run 或已安装 Xcode 的 `devicectl` 安装/启动；先查本机命令帮助，保留旧 App 数据。
 不在交接文档、日志或 Git 中保存账户密码、私钥、证书密码、令牌或 provisioning 文件。
 
-## 游戏资源单独复制
+## 游戏资源下载与传输
+
+完整资源可从 [RC2 运行资源 Release](https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028)
+下载。附件是六个原样文件，另有 `SHA256SUMS` 和目录说明；不要用页面自动生成的
+Source code ZIP 代替运行资源，也不要解压五个运行 ZIP。
+
+安装 GitHub CLI 后，在新的可写目录执行：
+
+```sh
+mkdir -p assets/worlds
+gh release download ipados-rc2-runtime-20261028 --repo Mavskero/openyamm \
+  --dir assets --pattern engine.zip --pattern conversion.json --pattern SHA256SUMS
+gh release download ipados-rc2-runtime-20261028 --repo Mavskero/openyamm \
+  --dir assets/worlds --pattern mm6.zip --pattern mm7.zip --pattern mm8.zip --pattern mmmerge.zip
+(cd assets && shasum -a 256 -c SHA256SUMS)
+```
+
+已有同名文件时先检查，不添加覆盖参数。也可从网页逐个下载并按下方目录摆放。
 
 现有完整 RC2 资源在原电脑：
 
@@ -133,8 +151,8 @@ xcodebuild -project build-ios-xcode/OpenYAMM.xcodeproj \
   worlds/mmmerge.zip
 ```
 
-五个 ZIP 总计 **3,494,489,946 字节，约 3.25 GiB**。通过用户自己的磁盘/AirDrop/私有传输
-复制整个 `assets` 目录；公开 GitHub 不提供这个资源包。校验清单在
+五个 ZIP 总计 **3,494,489,946 字节，约 3.25 GiB**。也可通过磁盘/AirDrop
+复制整个本地 `assets` 目录。仓库内对应校验清单在
 [runtime-SHA256SUMS](handoff/ipados-rc2-20261028/runtime-SHA256SUMS)。
 把清单路径换成克隆仓库实际路径后，可在资源目录执行 `shasum -a 256 -c /path/to/runtime-SHA256SUMS`。
 不要把上游零散 `assets_dev`、事件补丁 ZIP 或 `import_source.py` 的初步提取输出当成完整运行包。
