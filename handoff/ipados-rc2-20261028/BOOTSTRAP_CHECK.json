@@ -1,0 +1,23 @@
+{
+  "status": "PASSED",
+  "shell": "GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)",
+  "scope": "Configuration shell argument dispatch only. CMake and xcrun replaced with local stubs; no SDK, build, signing, application or device operations. Paths include spaces.",
+  "results": [
+    {
+      "name": "before-fresh",
+      "exit_code": 1,
+      "cmake_invoked": false
+    },
+    {
+      "name": "after-fresh",
+      "exit_code": 0,
+      "cmake_invoked": true
+    },
+    {
+      "name": "after-reused-sources",
+      "exit_code": 0,
+      "cmake_invoked": true
+    }
+  ],
+  "production_game_logic_changed": false
+}

@@ -7,6 +7,7 @@
 
 当前源码对应 **0.1.0-rc2-20261028 / Save103 / checkpoint182**，完整开发资源基线是
 `merge-source-polish-181/runtime-001`。本次 Git 提交汇总 RC2 已构建的本地源码及接手材料，
+并修正新机配置脚本在 macOS Bash 3.2 中展开空依赖参数数组的错误。
 不把 Git 提交当作新一轮游戏验收，也不重新构建未改动的游戏逻辑。
 
 | 项目 | 当前依据 |
@@ -142,8 +143,10 @@ xcodebuild -project build-ios-xcode/OpenYAMM.xcodeproj \
 `assets` 文件夹，复制成功后“开始游戏”。不要只选单个 ZIP。
 导入复制到 App 自己的 `Application Support/GameImports/<id>`，不自动导入存档。
 
-如需续用旧 OpenYAMM `.oysav`，先复制并保留原件，再放入 App 实际 Documents 下的 saves
-目录；通过设备容器/文件共享确认路径。RC2 写 Save103，旧档加载后保存会升级；
+如需续用旧 OpenYAMM `.oysav`，先复制并保留原件，再通过开发设备容器确认 App 的
+`Library/Application Support/saves` 目录。菜单使用 `save1.oysav` 等槽位文件，先检查已有槽位，
+只写未占用槽位。普通 Documents 文件共享不会自动放入游戏读取目录。
+RC2 写 Save103，旧档加载后保存会升级；
 不要用 RC1 读取新保存，不承诺原 Windows/MMMerge 存档兼容。
 
 ## 第一轮真机调试
