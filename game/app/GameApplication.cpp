@@ -8231,9 +8231,22 @@ void GameApplication::openNewGameScreen(const std::string &source)
         m_settings.newGameGodLich,
         IncludeGodLichCharacterCreationCandidate,
         m_settings.allowIncompleteCharacterCreation,
-        [this](const std::vector<Character> &characters, uint32_t continentId, bool preserveDebugLoadout)
+        [this, fromMainMenu = source == "main_menu"](
+            const std::vector<Character> &characters, uint32_t continentId, bool preserveDebugLoadout)
         {
-            startNewSessionFromCharacterCreation(characters, continentId, preserveDebugLoadout, true);
+            const bool playEnrothIntro = fromMainMenu && continentId == 3;
+            if (!startNewSessionFromCharacterCreation(characters, continentId, preserveDebugLoadout, true))
+            {
+                return;
+            }
+            // Merge's continent menu plays 6intro for a main-menu new game, never for a loaded save or reentry.
+            if (playEnrothIntro)
+            {
+                if (EventRuntimeState *pEvents = m_gameplayController.eventRuntimeState())
+                {
+                    pEvents->pendingMovie = EventRuntimeState::PendingMovie{"6intro", true};
+                }
+            }
         },
         [this]()
         {

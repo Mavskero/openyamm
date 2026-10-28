@@ -10,6 +10,33 @@ file(GLOB OPENYAMM_GAMEPLAY_LAYOUT_FILES CONFIGURE_DEPENDS
 target_sources(openyamm_ipados PRIVATE ${OPENYAMM_GAMEPLAY_LAYOUT_FILES})
 set_source_files_properties(${OPENYAMM_GAMEPLAY_LAYOUT_FILES} PROPERTIES
     MACOSX_PACKAGE_LOCATION "runtime/gameplay_layouts")
+
+set(OPENYAMM_OWNED_UI_IMAGE_MANIFEST
+    "${PROJECT_SOURCE_DIR}/assets_dev/engine/ui/gameplay/owned_images.txt")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${OPENYAMM_OWNED_UI_IMAGE_MANIFEST}")
+file(STRINGS "${OPENYAMM_OWNED_UI_IMAGE_MANIFEST}" OPENYAMM_OWNED_UI_IMAGE_NAMES)
+if (NOT OPENYAMM_OWNED_UI_IMAGE_NAMES)
+    message(FATAL_ERROR "Owned UI image manifest must not be empty.")
+endif()
+set(OPENYAMM_OWNED_UI_IMAGE_FILES)
+foreach (OPENYAMM_OWNED_UI_IMAGE_NAME IN LISTS OPENYAMM_OWNED_UI_IMAGE_NAMES)
+    if (NOT OPENYAMM_OWNED_UI_IMAGE_NAME MATCHES "^[a-z0-9_]+[.]png$")
+        message(FATAL_ERROR "Invalid owned UI image name: ${OPENYAMM_OWNED_UI_IMAGE_NAME}")
+    endif()
+    set(OPENYAMM_OWNED_UI_IMAGE_FILE
+        "${PROJECT_SOURCE_DIR}/assets_dev/engine/icons/${OPENYAMM_OWNED_UI_IMAGE_NAME}")
+    if (NOT EXISTS "${OPENYAMM_OWNED_UI_IMAGE_FILE}")
+        message(FATAL_ERROR "Missing owned UI image: ${OPENYAMM_OWNED_UI_IMAGE_FILE}")
+    endif()
+    list(APPEND OPENYAMM_OWNED_UI_IMAGE_FILES "${OPENYAMM_OWNED_UI_IMAGE_FILE}")
+endforeach()
+target_sources(openyamm_ipados PRIVATE
+    "${OPENYAMM_OWNED_UI_IMAGE_MANIFEST}" ${OPENYAMM_OWNED_UI_IMAGE_FILES})
+set_source_files_properties("${OPENYAMM_OWNED_UI_IMAGE_MANIFEST}" PROPERTIES
+    MACOSX_PACKAGE_LOCATION "runtime/gameplay_layouts")
+set_source_files_properties(${OPENYAMM_OWNED_UI_IMAGE_FILES} PROPERTIES
+    MACOSX_PACKAGE_LOCATION "icons")
 target_link_libraries(openyamm_ipados PRIVATE openyamm_game openyamm_engine openyamm_menu_import
     openyamm_outdoor_import openyamm_story_import openyamm_ui_import openyamm_decoration_import
     openyamm_runtime_import

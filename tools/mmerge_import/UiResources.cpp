@@ -227,6 +227,33 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
         layouts.emplace(name, bytes);
     }
     require(layouts.contains("gameplay.yml"), "Main gameplay layout is missing");
+    // These OpenYAMM images are owned by the UI, including context/resume icons selected at runtime.
+    std::map<std::string, std::filesystem::path> ownedImages;
+    const std::filesystem::path ownedManifest = layoutsRoot / "owned_images.txt";
+    require(!layouts.contains("gameplay_mobile.yml") || std::filesystem::exists(ownedManifest),
+        "Mobile UI requires owned_images.txt");
+    if (std::filesystem::exists(ownedManifest))
+    {
+        const Bytes manifestBytes = read(checkedPath(layoutsRoot, "owned_images.txt"));
+        std::istringstream manifest(std::string(manifestBytes.begin(), manifestBytes.end()));
+        const std::filesystem::path iconsRoot =
+            std::filesystem::canonical(layoutsRoot.parent_path().parent_path() / "icons");
+        const std::filesystem::path relativeOutput = output.lexically_relative(iconsRoot);
+        require(!relativeOutput.empty() && !relativeOutput.is_absolute() && *relativeOutput.begin() == "..",
+            "UI output must be outside owned images");
+        std::string fileName;
+        while (std::getline(manifest, fileName))
+        {
+            if (!fileName.empty() && fileName.back() == '\r') fileName.pop_back();
+            require(safeName(fileName) && lower(fileName) == fileName && fileName.ends_with(".png"),
+                "Invalid owned UI image: " + fileName);
+            const std::string name = fileName.substr(0, fileName.size() - 4);
+            require(ownedImages.emplace(name, checkedPath(iconsRoot, fileName)).second,
+                "Duplicate owned UI image: " + name);
+            images.insert(name);
+        }
+        require(!ownedImages.empty(), "Owned UI image manifest is empty");
+    }
     for (const auto &[name, region] : textureRegions)
     {
         require(!textureRegions.contains(region.source), "UI texture regions must reference original images");
@@ -290,6 +317,7 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
             << ",\"image_references\":" << images.size() << ",\"font_references\":" << fonts.size()
             << ",\"dimension_door_image_references\":" << dimensionDoorImageReferences.size()
             << ",\"loading_image_references\":" << loadingImageReferences.size()
+            << ",\"owned_image_references\":" << ownedImages.size()
             << ",\"images\":[";
         bool first = true;
         std::set<std::string> missingImages;
@@ -297,17 +325,36 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
         std::map<std::string, std::pair<int, int>> imageSizes;
         for (const std::string &name : images)
         {
-            require(!(iconOwners.contains(name) && imageOwners.contains(name)),
-                "Ambiguous icon/language image: " + name);
-            const Owners &owners = iconOwners.contains(name) ? iconOwners : imageOwners;
-            const Owners::const_iterator owner = owners.find(name);
+            const auto owned = ownedImages.find(name);
+            if (owned != ownedImages.end())
+            {
+                const Bytes bytes = read(owned->second);
+                const std::string fileName = owned->second.filename().string();
+                const auto decoded = Engine::decodeImagePixelsBgra(bytes, fileName);
+                require(decoded.has_value(), "Owned UI image decoding failed: " + name);
+                writeConvertedResource(output / "engine/icons" / fileName, bytes);
+                imageSizes[name] = {decoded->width, decoded->height};
+                report << (first ? "" : ",") << "{\"name\":" << std::quoted(fileName)
+                    << ",\"owner\":\"openyamm_ui\",\"width\":" << decoded->width
+                    << ",\"height\":" << decoded->height << '}';
+                first = false;
+                continue;
+            }
+            // Layouts use image stems; original LOD members can retain their PCX extension (e.g. makeme.pcx).
+            const std::string sourceName = iconOwners.contains(name) || imageOwners.contains(name)
+                || name.ends_with(".pcx") ? name : name + ".pcx";
+            require(!(iconOwners.contains(sourceName) && imageOwners.contains(sourceName)),
+                "Ambiguous icon/language image: " + sourceName);
+            const Owners &owners = iconOwners.contains(sourceName) ? iconOwners : imageOwners;
+            const Owners::const_iterator owner = owners.find(sourceName);
             if (owner == owners.end())
             {
                 require(!loadingImageReferences.contains(name), "Missing required loading image: " + name);
                 missingImages.insert(name);
                 continue;
             }
-            const ConvertedLodImage converted = convertLodImages({owner->second}, {name}, output / "engine/icons")[0];
+            const ConvertedLodImage converted =
+                convertLodImages({owner->second}, {sourceName}, output / "engine/icons")[0];
             const std::optional<Engine::ImagePixelsBgra> decoded = Engine::decodeImagePixelsBgra(
                 read(output / "engine/icons" / converted.name), converted.name);
             require(decoded && decoded->width == converted.width && decoded->height == converted.height,

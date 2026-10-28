@@ -24,11 +24,11 @@
 [handoff/ipados-device-20261028/README.md](handoff/ipados-device-20261028/README.md)。
 真实阻断是旧 iOS 配置未启用场景交互按钮、触摸释放未完整进入既有 HUD 路径；
 采用一次性设置迁移和共享输入路径修复，保留 Standard 布局、旧存档及原资源。未重打 Mac 战役。
-实际 RC2 包缺少建队背景 `makeme`、Enroth 首图片头触发 overlay 和部分移动界面图标，已单独记录；
+实际 RC2 包缺少建队背景 `makeme` 和部分移动界面图标，Enroth 新游戏片头未触发，已单独记录；
 资源六文件全部导入成功不代表内容无缺口，短流程通过不等于完整自然通关。
 
-旧电脑的持续开发 goal 因用户暂不允许设备操作而标记 blocked，**不是游戏已经完成**。
-用户现在要求在另一台电脑接手真机调试；实际授权以用户在接手会话发送的提示词为准。
+2026-10-29 用户依据新真机反馈恢复持续开发 goal，当前为 active，**不是游戏已经完成**。
+原电脑继续无设备操作的集成开发；真机操作授权仅适用于收到用户授权的接手会话。
 历史快照中的禁用设备、旧机器路径、过时 next 指令和百分比不是接手任务的新约束。
 
 ## GitHub 中有什么
@@ -65,6 +65,9 @@ cd openyamm
 git sparse-checkout set .github android cmake engine game ios packaging scripts \
   tests tools util third_party/doctest handoff \
   assets_dev/engine/rendering assets_dev/engine/scripts/common assets_dev/engine/ui
+git sparse-checkout reapply --no-cone
+sed 's#^#/assets_dev/engine/icons/#' assets_dev/engine/ui/gameplay/owned_images.txt \
+  | git sparse-checkout add --stdin
 git log -1 --oneline
 ```
 
@@ -200,8 +203,8 @@ RC2 写 Save103，旧档加载后保存会升级；
 ## 开发约定与继续提交
 
 主代理负责架构、集成、共享构建目录和设备。需要子代理时，按用户指定使用
-`gpt-6-astra / xhigh`，先做有界只读定位，再分配独立文件；不允许并行构建或操作同一设备。
-本次接手用户指定主、子代理均为 `gpt-6-astra / xhigh`；实际模型以接手端可配置设置为准，不冒称已切换。
+`gpt-6.1-sol / max`，先做有界只读定位，再分配独立文件；不允许并行构建或操作同一设备。
+最新用户指定主、子代理均为 `gpt-6.1-sol / max`；实际模型以接手端可配置设置为准，不冒称已切换。
 保留未提交改动、失败记录和原始资源。修复共享机制；导出的 Lua 在导入器或原源 overlay 修，
 不要改生成物，也不要复制参考引擎代码。具体规则见 [AGENTS.md](AGENTS.md)。
 
