@@ -1,0 +1,56 @@
+{
+  "checkpoint": 187,
+  "status": "ACCEPTED_SCOPED",
+  "accepted_at": "2026-10-28T18:59:30.695620+00:00",
+  "source_base": "717527dfd5989e72c8bc5652d1ba66549b333192",
+  "summary": "Mac absolute pointer releases retain native event coordinates instead of premature cached-position synthetic release; fullscreen Load/Cancel/Quit passed.",
+  "root_cause": {
+    "observed_before": "actual-003: menu down (1185,355), premature up (263.38,965.407), same window3; click rejected as outside button.",
+    "source": "SDL Cocoa_ReconcileButtonState runs before native mouseUp; cached-coordinate synthetic up suppresses later authoritative native up as duplicate.",
+    "fix": "For native Left/Right/OtherMouseUp in absolute mode, defer to native Cocoa listener. Keep relative mode and reconciliation for other events; existing event-position patch and Ctrl-left mapping retained.",
+    "modified_files": [
+      "cmake/PatchSdlCocoa.cmake",
+      "cmake/patches/sdl-cocoa-button-release.patch"
+    ]
+  },
+  "verification": {
+    "native_configure": "native-configure-002.command.json",
+    "native_build": "native-build-001.command.json",
+    "actual": "actual-004.command.json",
+    "duration_seconds": 33.74018,
+    "clicks": 3,
+    "reviewed_images": 3,
+    "down_up_pairs_match": true,
+    "normal_exit": true,
+    "new_unit_cases": 0,
+    "old_campaign_replays": 0,
+    "new_ios_build": false,
+    "ios_reason": "Patch function excludes iOS and changed source is Cocoa only; prior185 generic iOS evidence retained without new claim.",
+    "device_or_simulator": false
+  },
+  "binary_sha256": "7aa9101da463a2e9a3c2bd91450eb08de3545d7e0828c9db523e4bbd37b48389",
+  "runtime": "device-feedback-183/runtime-001",
+  "runtime_changed": false,
+  "save_version": 103,
+  "save_version_changed": false,
+  "preserved_attempts": {
+    "actual001": "Driver selected/launched old183 bundle; excluded from current-product evidence; both owned processes terminated. Accidental old bundle launch may have written its userdata/logs; those files were not restored or erased.",
+    "actual002": "Current pre-fix app: two clicks did not advance, Cmd+Q normal exit.",
+    "actual003": "Pre-fix SDL log proves mismatched release coordinates; later physical user input/quit retained; no continuation after user requested no fullscreen.",
+    "native_configure001": "First release draft applied successfully, then reversed without building to add absolute-only guard. Draft retained in before-fix/release-draft.patch."
+  },
+  "user_authorization": "User re-authorized fullscreen after leaving computer; previous no-fullscreen request superseded. No device operations.",
+  "agent": "sol_fullscreen_input_187, gpt-6.1-sol/max read-only diagnosis/review; no writes or builds.",
+  "limitations": [
+    "One fullscreen absolute left-button menu flow; no fresh right/Ctrl/multiple-button/relative-motion matrix.",
+    "No saved game loaded in this run; no gameplay/campaign/iPad acceptance.",
+    "Missing UI-Parch log spam observed in load screen; separate bounded source inspection, not hidden by input fix."
+  ],
+  "engineering_progress": {
+    "estimate": "80–85%",
+    "confidence": "low",
+    "meaning": "first playable/completable engineering estimate, not quest coverage or measured completion rate"
+  },
+  "full_goal_complete": false,
+  "owned_jobs_remaining": []
+}

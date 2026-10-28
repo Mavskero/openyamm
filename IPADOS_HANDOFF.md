@@ -45,6 +45,9 @@ checkpoint 185 补齐密码/谜题的点击提交、取消、UTF-8退格和键�
 checkpoint 186 首次受控 Mac 潜艇往返雷格那、原影片/Escape和保存通过；无生产或资源修改，
 无新增真机任务，见 [186交接](handoff/mm8-submarine-journey-186/README.md)。
 
+checkpoint 187 修复 Mac 全屏菜单释放坐标错误，一次实际读取菜单/取消/退出通过；仅改Cocoa，
+无需新的iPad验证或资源包，见 [187交接](handoff/fullscreen-input-187/README.md)。
+
 2026-10-29 用户依据新真机反馈恢复持续开发 goal，当前为 active，**不是游戏已经完成**。
 原电脑继续无设备操作的集成开发；真机操作授权仅适用于收到用户授权的接手会话。
 历史快照中的禁用设备、旧机器路径、过时 next 指令和百分比不是接手任务的新约束。

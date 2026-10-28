@@ -1,0 +1,22 @@
+--- a/src/video/cocoa/SDL_cocoamouse.m
++++ b/src/video/cocoa/SDL_cocoamouse.m
+@@ -493,6 +493,19 @@
+ static void Cocoa_ReconcileButtonState(NSEvent *event)
+ {
++    // The native release handler supplies this event's position and button mapping.
++    // Do not replace an absolute release with one at the last motion position.
++    switch ([event type]) {
++    case NSEventTypeLeftMouseUp:
++    case NSEventTypeRightMouseUp:
++    case NSEventTypeOtherMouseUp:
++        if (!SDL_GetMouse()->relative_mode) {
++            return;
++        }
++        break;
++    default:
++        break;
++    }
+     // Send mouse up events for any buttons that are no longer pressed
+     Uint32 buttons = SDL_GetMouseState(NULL, NULL);
+     if (buttons && ![NSEvent pressedMouseButtons]) {
+         Uint8 button = SDL_BUTTON_LEFT;
