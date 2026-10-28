@@ -1,0 +1,65 @@
+{
+  "schema": "openyamm.device-feedback183.scoped-result.v1",
+  "checkpoint": 183,
+  "status": "ACCEPTED_SCOPED",
+  "accepted_at": "2026-10-28T17:16:40.156833+00:00",
+  "main": "gpt-6.1-sol/max requested",
+  "subagents": "gpt-6.1-sol/max",
+  "device_branch": "73205957d117859722df9249ebfe3a4e59acebd2",
+  "merge_commit": "6c25d82d7a4ac874974165a8078a7ffe16516be8",
+  "runtime": "local-data/validation/device-feedback-183/runtime-001",
+  "save_version": 103,
+  "production_changes": [
+    "Integrated reported actual-iPad touch interaction and one-time settings migration.",
+    "Importer resolves original stem/PCX member names; makeme.pcx added.",
+    "Explicit manifest imports 72 existing UI PNGs; iOS bundles identical sources and manifest for original-source conversion.",
+    "Main-menu Enroth creation queues original 6intro after successful creation; save-load/reentry/gameplay-menu new game do not enter this branch. No generated map overlay or Save change."
+  ],
+  "verification": {
+    "recorded_commands": [
+      "configure-native-001",
+      "native-build-001",
+      "ui-import-001",
+      "configure-ios-001",
+      "ios-release-001",
+      "assemble-runtime-001",
+      "actual-run-001"
+    ],
+    "actual_mac": "One ordinary main-menu Enroth creation: male Knight, 15 normal points distributed 5 Might/5 Endurance/5 Accuracy, Bow and Armsmaster selected. Background rendered; 6intro opening visibly animated; Escape returned to outdoor play; gameplay menu and normal Quit accepted. No gameplay fixtures.",
+    "reviewed_images": [
+      "actual-001/creation.png",
+      "actual-001/creation-complete.png",
+      "actual-001/intro.png",
+      "actual-001/continued.png"
+    ],
+    "runtime_added_members": 73,
+    "native_png_decode": 72,
+    "ios_png_bundle_exact_bytes": 72,
+    "new_test_cases": 0,
+    "test_suites_run": 0,
+    "campaign_replays": 0,
+    "cold_runs": 0
+  },
+  "limitations": [
+    "Remote iPad core flow is reported by returned handoff and hash index; raw remote evidence was not downloaded/reviewed here.",
+    "This patch has no new iPad operation/acceptance or mobile-HUD interaction run.",
+    "F9 was attempted by CUA but no save file appeared; no save or cold-load success is claimed. Do not label this uninvestigated key delivery as a save defect.",
+    "New-game movie starts after creation, later than original continent-selection timing; only Enroth missing intro is changed.",
+    "No natural full campaign or complete game acceptance."
+  ],
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "current_host_device_or_simulator": false,
+  "originals_and_rc2_preserved": true,
+  "production_sha256": {
+    "game/app/GameApplication.cpp": "79636d48fcb0c4676fa2121a75899548c0499c3cabec70a99138ca569ec7611a",
+    "game/app/GameSettings.h": "c1944cb110098d4324709285a400ca50c89e2abbea78c2ed5cc970f31362c562",
+    "game/app/GameSettings.cpp": "153366205de1d7154f54bf72e66b7bfdd6dc1febf88ef155d1e161624cf6230c",
+    "game/gameplay/GameplayScreenController.cpp": "25f5f7abb00983a4e64de7d67d6fea3c3e96feffbac237ba176dd249431b8a4b",
+    "tools/mmerge_import/UiResources.cpp": "1b62e3ac33da0d91a3ce2b2ace786c081216f75ef2a86ec4e48776c93f5b61e0",
+    "ios/CMakeLists.txt": "70e86fea0a6ec152d49ccb6bf79e495c11f213dae28215f341ce35ab169090d1",
+    "assets_dev/engine/ui/gameplay/owned_images.txt": "ebbc58ae105ec0c7610fec17f0300e38eb728f29d74967f4ebba5a59d3e610d4"
+  },
+  "all_owned_jobs_collected": true,
+  "next": "Deliver code/runtime delta to GitHub; use existing mainline evidence to select concrete remaining transition blocker, not broad replay."
+}

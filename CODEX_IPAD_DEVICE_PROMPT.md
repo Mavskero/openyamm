@@ -5,6 +5,9 @@
 确认当前 Git 提交和工作区改动；未克隆时按交接文档克隆。以 RC2 / Save103 为基线，
 创建 `codex/ipad-device-debug` 分支（若已存在则检查并继续，不重置）。
 
+首轮真机短流程已有交接记录时，先读 `handoff/ipados-device-20261028/README.md` 和
+`handoff/device-feedback-183/README.md`，只复验新增补丁涉及的背景、片头及必要按钮，不重复已通过步骤。
+
 本次目标：**尽快在这台 Mac 连接的目标 iPad 上完成签名、安装、完整资源导入、正常游玩、
 中文保存、前后台恢复和重启读档，发现实际阻断就修复，直到首轮真机短流程通过。**
 先运行应用，少做回测、少加测试用例，不重跑已通过的 Mac 战役，不把构建成功当成真机通过。
@@ -27,6 +30,10 @@ https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028 �
 mm6/mm7/mm8/mmmerge 四个 ZIP；不要解压 ZIP。核对 SHA256SUMS，再从 iPad 启动页
 选择整个资源文件夹。也可使用原电脑 RC2 assets 的完整副本。
 资源下载期间继续不依赖资源的构建/签名准备；网络或权限失败时说明实际问题，不虚构资源已就绪。
+
+最新 183 资源补丁：https://github.com/Mavskero/openyamm/releases/tag/ipados-device-feedback-183-20261029 。
+用其中 engine.zip、conversion.json 更新一份 RC2 assets 副本，四个 world ZIP 保持不变；
+使用补丁 SHA256SUMS 校验完整六文件，并更新 App。不要改旧导入目录或存档。
 
 第一轮按“启动/导入 → 正常进入游戏 → 触摸移动转向及一次 UI 交互 → 中文保存 →
 Home/返回继续 → 退出重启读取”推进，再补必要音画和短运行观察。旧存档只用副本。

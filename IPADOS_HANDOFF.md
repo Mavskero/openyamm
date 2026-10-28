@@ -27,6 +27,12 @@
 实际 RC2 包缺少建队背景 `makeme` 和部分移动界面图标，Enroth 新游戏片头未触发，已单独记录；
 资源六文件全部导入成功不代表内容无缺口，短流程通过不等于完整自然通关。
 
+checkpoint 183 已合并真机修复，并补齐建队背景和 72 张自有按钮图片，恢复主菜单 Enroth 建队后的
+原版片头。普通 Mac 新建/片头/Escape/续玩/退出、UI 导入及通用 iOS 构建通过；本补丁没有新真机验收。
+详细范围见 [183 交接](handoff/device-feedback-183/README.md)。新运行包使用原 RC2 四个 world ZIP，
+再从 [183 资源补丁](https://github.com/Mavskero/openyamm/releases/tag/ipados-device-feedback-183-20261029)
+取得新的 `engine.zip`、`conversion.json` 和校验清单。App 也须重新构建更新。
+
 2026-10-29 用户依据新真机反馈恢复持续开发 goal，当前为 active，**不是游戏已经完成**。
 原电脑继续无设备操作的集成开发；真机操作授权仅适用于收到用户授权的接手会话。
 历史快照中的禁用设备、旧机器路径、过时 next 指令和百分比不是接手任务的新约束。

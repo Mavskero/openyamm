@@ -39,4 +39,9 @@ F9 曾通过自动操作发送，但目录未出现存档；本轮不声称保�
 代码修复需要更新 App；背景和按钮资源修复还需要更新 `engine.zip` 与 `conversion.json`。
 四个 world ZIP 无变化。只复验本轮改变的背景、片头和必要按钮，不重复原首轮全流程。
 
+资源补丁：[checkpoint 183 Release](https://github.com/Mavskero/openyamm/releases/tag/ipados-device-feedback-183-20261029)。
+其中 `engine.zip`、`conversion.json` 替换一份原 RC2 资源副本中的同名文件；四个 world ZIP
+复用原 RC2 Release。补丁的 `SHA256SUMS` 覆盖最终完整六文件目录。四个附件均已核对 GitHub
+服务器 SHA256 与本地文件大小；旧 RC2 Release 保留。
+
 主代理与新子代理按最新用户要求使用 `gpt-6.1-sol / max`；主代理独占集成、构建和应用操作。
