@@ -5,6 +5,7 @@
 确认当前 Git 提交和工作区改动；未克隆时按交接文档克隆。以 RC3 / Save103 为当前交付目标，
 生产源码基线为 `8f91f2b9276b649c3529fae049beaf91a5668996`；固定源码归档提交及包实际检查状态
 以RC3的 `VERSION.json`、源码清单和 `evidence/` 为准，不能把旧候选检查直接当成RC3通过。
+RC3附件已发布：https://github.com/Mavskero/openyamm/releases/tag/ipados-rc3-20261029 ，交付记录见 `handoff/third-playable-candidate-189/README.md`。
 创建 `codex/ipad-device-debug` 分支（若已存在则检查并继续，不重置）。
 
 首轮真机短流程已有交接记录时，先读 `handoff/ipados-device-20261028/README.md` 和

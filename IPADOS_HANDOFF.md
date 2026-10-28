@@ -81,6 +81,8 @@ RC3 的 Mac 启动包、未签名 iOS 包和固定源码归档分别交付，是
 
 ## RC3 目录与附件
 
+[RC3 Release已发布](https://github.com/Mavskero/openyamm/releases/tag/ipados-rc3-20261029)，提供Mac启动包、未签名iPadOS包、固定源码及校验/恢复说明。具体限定结果见 [189交付记录](handoff/third-playable-candidate-189/README.md)。固定源码提交为 `09ae801f432c8772230b37ae512392f3c2f94346`，后续交付记录提交只补说明和验收元数据。
+
 本地完整候选目录为 `releases/first-playable-20261029-rc3/`，包含 `Start-Mac.command`、
 `macOS/OpenYAMM-RC3.app`、完整 `assets/`、空的 `userdata/saves/`、未签名 iOS App及源码恢复材料。
 Mac预编译包要求 **Apple Silicon及macOS 26或更高**，默认1280×800窗口启动。
