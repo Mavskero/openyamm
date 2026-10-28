@@ -5667,6 +5667,12 @@ void GameApplication::loadOrCreateSettings()
         std::cout << "GameApplication: migrated legacy settings to Android profile version "
                   << m_settings.settingsProfileVersion << '\n';
     }
+#elif defined(SDL_PLATFORM_IOS)
+    if (migrateLegacyIosSettings(m_settings))
+    {
+        std::cout << "GameApplication: migrated legacy settings to iOS touch profile version "
+                  << m_settings.settingsProfileVersion << '\n';
+    }
 #endif
 
     m_settings.startWorldId = normalizeWorldId(m_config.activeWorldId);

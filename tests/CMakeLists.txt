@@ -74,6 +74,7 @@ add_executable(openyamm_unit_tests
     RegressionGameData.cpp
     SpellbookUiLayoutTests.cpp
     TableRegressionTests.cpp
+    IosSettingsMigrationTests.cpp
     TextTableTests.cpp
     TextureFilteringTests.cpp
     TurnBasedCombatRuntimeTests.cpp

@@ -1,0 +1,396 @@
+{
+  "schema_version": 1,
+  "run": "20261028-local-001",
+  "source_base": "ec5a8435f32b1f75e71370c045f9bd5f3a604e08",
+  "branch": "codex/ipad-device-debug",
+  "run_path_relative_to_repository": "local-data/device-validation/20261028-local-001",
+  "note": "Original files and output copies are local only. Hashes describe closeout snapshots; active console source may later grow. No assets or private signing material committed.",
+  "final_binary_sha256": "c9e926bb8ae151c504f156e33d875af05f1d5dcaf7fb74ea590394810bfe8ede",
+  "evidence": [
+    {
+      "kind": "screenshot",
+      "run_relative_path": "import-rc2-attachments/8956241F-FC20-410E-9235-F69FB8ACE35F.png",
+      "output_relative_path": "screenshots/01-native-six-file-import.png",
+      "bytes": 256471,
+      "sha256": "c866d96cff0629263dfc6d4be00ebfb622c7ab2ff6a283c323c683737a32bb14"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "normal-game-world-attachments/A51F6165-E483-4E96-8324-8A788827C596.png",
+      "output_relative_path": "screenshots/02-normal-new-game.png",
+      "bytes": 5554909,
+      "sha256": "6e1e080a5a28a66f8d9c3fde5afd7228e1400a71deea2aed8b04d053b27fb185"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "save9-ime-commit-attachments/A05718CC-2435-408F-A3F8-006348C50190.png",
+      "output_relative_path": "screenshots/03-chinese-ime.png",
+      "bytes": 1393887,
+      "sha256": "a87079422ede89dc67dd0e2f67c2b8505807eb015274b087dcd71f18149d0a15"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "save9-return-save-attachments/DAAF5B14-3DB9-415D-9A33-00379B8A1C9D.png",
+      "output_relative_path": "screenshots/04-chinese-save9.png",
+      "bytes": 5689009,
+      "sha256": "808deb9f639ee4e5b604f528e2bacc418dcf91aa027e5b44cbbcb7fcca740293"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "cold-load-save9-attachments/B8697D3F-E0AB-4C53-A04A-8E1D44DC6D0B.png",
+      "output_relative_path": "screenshots/05-independent-relaunch-load.png",
+      "bytes": 5730275,
+      "sha256": "0ef042e73562c6599fb2026923b4332b4fabb70c4cd4943e04eb5b3f6cdde12c"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "context-fix-near-door-attachments/AE54D833-83B4-42E7-9138-0CB4204338CA.png",
+      "output_relative_path": "screenshots/06-fixed-visible-house-button.png",
+      "bytes": 5265593,
+      "sha256": "07d7523688fd2a5acd5223276440834c6aab49ae43374d2faece0ba72f7f332f"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "context-fix-enter-tavern-attachments/68BB74E2-224F-4A62-97E6-175749C4C7EF.png",
+      "output_relative_path": "screenshots/07-house-video-frame-a.png",
+      "bytes": 3387139,
+      "sha256": "247723bd9ff41b4837bb9a901e6af7728f22c31a9e07117843953febf296fb89"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "context-fix-house-and-ui-attachments/AC59C1ED-73DA-4728-9CD7-C0F5305A6E4A.png",
+      "output_relative_path": "screenshots/08-house-video-frame-b.png",
+      "bytes": 3398348,
+      "sha256": "d6f78ac5668a13d21e8bb4e0c7f8c2dfd76952cf2f33462c9ceeb07690d07673"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "context-fix-exit-house-inventory-attachments/320FA3DB-06CE-4881-8D2A-8C15478EF042.png",
+      "output_relative_path": "screenshots/09-fixed-house-after-home-return.png",
+      "bytes": 3397391,
+      "sha256": "4991ad348d93e4ca292fbe520e536b7ea73cca4d2363ce0ce5a6c726edf3e7ba"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "context-fix-exit-house-inventory-attachments/4BC8A217-EDEA-4563-8586-BAEB3D8F63DC.png",
+      "output_relative_path": "screenshots/10-fixed-inventory.png",
+      "bytes": 4031918,
+      "sha256": "40fa8580e16ce5458ee6f1b884a7d3d0d1a0da1eedc8453e4aba9e3a997e7e6b"
+    },
+    {
+      "kind": "screenshot",
+      "run_relative_path": "context-fix-final-normal-quit-attachments/784AD491-C84C-4989-85FF-AB31221BD0FE.png",
+      "output_relative_path": "screenshots/11-final-normal-exit.png",
+      "bytes": 252541,
+      "sha256": "2ece889d77bb22af341835a0478d21ef478060de3233f6f341cc50567dc250b5"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "runtime-sha256-verified.json",
+      "output_relative_path": "metadata/runtime-sha256-verified.json",
+      "bytes": 1160,
+      "sha256": "c4ae870f705a41363d669a8ba8de76fae1bbe7de7f6ffe87d2e6321d19f38c6d"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "device-staged-runtime.json",
+      "output_relative_path": "metadata/device-staged-runtime.json",
+      "bytes": 2222,
+      "sha256": "a695b50303882a877e7e3829c07233a7773d50f56377fc0d1b88d610382ed756"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "context-fix-built-app.json",
+      "output_relative_path": "metadata/context-fix-built-app.json",
+      "bytes": 425,
+      "sha256": "090330826c73f0ea65eaf3041f6e23b40fd509a7600743ecfcca5577390fdfc2"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "saves-before-sha256.json",
+      "output_relative_path": "metadata/saves-before-sha256.json",
+      "bytes": 1115,
+      "sha256": "4478c207ab269868ebffcffaaecb16d33a84d8c309fadf561026c4febdb8cdc1"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "saves-final.json",
+      "output_relative_path": "metadata/saves-final.json",
+      "bytes": 1759,
+      "sha256": "037f579296e269a7e2ac4536457ef21dbae2a17058232add5486c3e115f6b595"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "save9-first-write/verification.json",
+      "output_relative_path": "metadata/save9-first-write/verification.json",
+      "bytes": 579,
+      "sha256": "d2180ca454696e101b071071649f0e4908c08635ac30b9020cab32328526bf64"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "save9-after-cold-load/verification.json",
+      "output_relative_path": "metadata/save9-after-cold-load/verification.json",
+      "bytes": 579,
+      "sha256": "38b972dbf240cd60e92bda3239a8e8337cbb786efb34a176747ef6a4f7d16910"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "save9-final/verification.json",
+      "output_relative_path": "metadata/save9-final/verification.json",
+      "bytes": 579,
+      "sha256": "57329842e47260cc3be927fccc44a782db96e33ac86233ef6b7b614f0fcffa40"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "final-settings-diff.json",
+      "output_relative_path": "metadata/final-settings-diff.json",
+      "bytes": 959,
+      "sha256": "cfaf3f59db952f6b817c83ada62f30c1544c2b31e8680505423c23e1671f2f74"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "audio-user-confirmation.json",
+      "output_relative_path": "metadata/audio-user-confirmation.json",
+      "bytes": 162,
+      "sha256": "cdfa62ccb6336f29be7af1789d665a2651d28a74a93e0ee09870627fbbbb90e8"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "short-observation.json",
+      "output_relative_path": "metadata/short-observation.json",
+      "bytes": 524,
+      "sha256": "f5cf8f2f9692aad76c9aaacfee6d3976733a937b5ab150c50e149e33b526dccd"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "runtime-content-gaps.json",
+      "output_relative_path": "metadata/runtime-content-gaps.json",
+      "bytes": 1398,
+      "sha256": "a3c694adc6c709abdab4a62441cb2d4b57143f6334d8b710190655f34305ed7b"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "settings-experiment-restoration.json",
+      "output_relative_path": "metadata/settings-experiment-restoration.json",
+      "bytes": 394,
+      "sha256": "c9a987497de210f699dfd82ba8af5a282871eb3f546ece08aa4f24353cd35fe7"
+    },
+    {
+      "kind": "metadata",
+      "run_relative_path": "install-context-fix.json",
+      "output_relative_path": "metadata/install-context-fix.json",
+      "bytes": 1220,
+      "sha256": "cb44c4f93558912ad7cd322f072d5c8dc051c537f991b75e6e6ec305177369cb"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "device-release-build-03.log",
+      "output_relative_path": "logs/device-release-build-03.log",
+      "bytes": 3073068,
+      "sha256": "0d01da813a718ac8e3e5fabd310c9f1151fdb4b13042cd48addc8dec6bfbb038"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "device-context-fix-build.log",
+      "output_relative_path": "logs/device-context-fix-build.log",
+      "bytes": 70413,
+      "sha256": "dbb35340556779cf5e1295bf289cc0689bb16b5b75af6f4349b835d71ce2f5f4"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "ios-context-test-build.log",
+      "output_relative_path": "logs/ios-context-test-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "ios-context-migration-test.log",
+      "output_relative_path": "logs/ios-context-migration-test.log",
+      "bytes": 295,
+      "sha256": "e151328ca05f4f82da9c91b406812ba288ff8ba5feacc2ac2b077eeffaa09c5e"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "app-console.log",
+      "output_relative_path": "logs/app-console.log",
+      "bytes": 4151557,
+      "sha256": "c736bcc9b16a4010499be0086219302744c7bdfeae1e6206b81a0ba70155fa9a"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "app-console-relaunch.log",
+      "output_relative_path": "logs/app-console-relaunch.log",
+      "bytes": 6660130,
+      "sha256": "2c4de9a66206d8913157ee42206e0ba48ef0964a966ca5f279bf0805e3e2d04c"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "app-console-context-fix.log",
+      "output_relative_path": "logs/app-console-context-fix.log",
+      "bytes": 1210332,
+      "sha256": "c28f2ba1617f4cdf325488ec1236732ecbbe853895d4045c058bde45926105d6"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "import-rc2.log",
+      "output_relative_path": "logs/import-rc2.log",
+      "bytes": 5715,
+      "sha256": "7d56e5557c391a36aa8e68c864382e5b0db734baa80c4cac08728cc6385f2924"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "normal-quit.log",
+      "output_relative_path": "logs/normal-quit.log",
+      "bytes": 7158,
+      "sha256": "df33e20e0a692bfae79c4d1bd1b63b8191ffeaec18a198fb56385bbfa0c9c7f4"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "cold-load-save9.log",
+      "output_relative_path": "logs/cold-load-save9.log",
+      "bytes": 6938,
+      "sha256": "bdaa7bcc0b3e3d8be071949202c24741ca62ed9637fdbfa2f723dd77c34b3c19"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "context-fix-load-save9.log",
+      "output_relative_path": "logs/context-fix-load-save9.log",
+      "bytes": 8258,
+      "sha256": "167091bde0405c241d851513405144afb748106353a80cb53a6258aac5de05f9"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "context-fix-enter-tavern.log",
+      "output_relative_path": "logs/context-fix-enter-tavern.log",
+      "bytes": 5717,
+      "sha256": "76db753f7777f08ffe81122c1ca32c7f4e8a8fda1ba24da133806a7f1678e4a3"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "context-fix-house-and-ui.log",
+      "output_relative_path": "logs/context-fix-house-and-ui.log",
+      "bytes": 7422,
+      "sha256": "3002c5b40f41ec9af32db1f42defa7a0df6bad70e89b0d4922aef5264782cb19"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "context-fix-exit-house-inventory.log",
+      "output_relative_path": "logs/context-fix-exit-house-inventory.log",
+      "bytes": 6589,
+      "sha256": "3fe3a2ad236db82c68c2e10ac91de05277b783409bd4b05f3280487701063e5b"
+    },
+    {
+      "kind": "log",
+      "run_relative_path": "context-fix-final-normal-quit.log",
+      "output_relative_path": "logs/context-fix-final-normal-quit.log",
+      "bytes": 7950,
+      "sha256": "5478f4777847daea2b42d3bab02d2ace344349bd31a59cf0ffeeec9cf4d77fe0"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/import-rc2.json",
+      "output_relative_path": "plans/import-rc2.json",
+      "bytes": 172,
+      "sha256": "51fa934d73e06993102c2ab86cd6e2d565b350329f56bf5ba96f3d7f73334b28"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/touch-move-turn.json",
+      "output_relative_path": "plans/touch-move-turn.json",
+      "bytes": 310,
+      "sha256": "7a12a6b98199cea269c5180dfc876f3d7137aee6cf00e97e00fd3994b71e9a5e"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/background-return.json",
+      "output_relative_path": "plans/background-return.json",
+      "bytes": 300,
+      "sha256": "291274a6678e54ac3edb0eb5e82bc4b31badbef222728d801e09432f2f983978"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/normal-quit.json",
+      "output_relative_path": "plans/normal-quit.json",
+      "bytes": 284,
+      "sha256": "8cd521865be121eaf29f8e368eba32fa8107a4f5706b5aa0762091a266bdda53"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/cold-launcher-start.json",
+      "output_relative_path": "plans/cold-launcher-start.json",
+      "bytes": 218,
+      "sha256": "e70619509a50faf43063f41898a24a1227ded615943c8b3a0a4fea1748a6ba68"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/cold-load-save9.json",
+      "output_relative_path": "plans/cold-load-save9.json",
+      "bytes": 260,
+      "sha256": "d45a262f1c8c04650e3fa2b299bbf8115f56b39422d8dcde5789bb31b1ae23f7"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/context-fix-load-save9.json",
+      "output_relative_path": "plans/context-fix-load-save9.json",
+      "bytes": 385,
+      "sha256": "b98f3a66e3e033f7f8dbf02eca8da854faf414b8b4441cfd3a7a3b08889f7e45"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/context-fix-near-door.json",
+      "output_relative_path": "plans/context-fix-near-door.json",
+      "bytes": 151,
+      "sha256": "89118e3f344a2c8015adf73545be1138be9a4242fc5d199981287300c917a486"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/context-fix-enter-tavern.json",
+      "output_relative_path": "plans/context-fix-enter-tavern.json",
+      "bytes": 120,
+      "sha256": "d0839010ad843cc07f514656dfb0c17de9029b51f3cfeca3142a9e850622f63f"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/context-fix-house-and-ui.json",
+      "output_relative_path": "plans/context-fix-house-and-ui.json",
+      "bytes": 346,
+      "sha256": "070eedfd6ffb4bbe58c33f8989d069cb1379ac5e5b3ad40d139563d1b8cb770b"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/context-fix-exit-house-inventory.json",
+      "output_relative_path": "plans/context-fix-exit-house-inventory.json",
+      "bytes": 270,
+      "sha256": "c8db5987eb7cdb1e93cadc0a687c9cef012a471f2cb8de0ef9376c16e4a527c5"
+    },
+    {
+      "kind": "ui_plan",
+      "run_relative_path": "plans/context-fix-final-normal-quit.json",
+      "output_relative_path": "plans/context-fix-final-normal-quit.json",
+      "bytes": 316,
+      "sha256": "2aac72170f15a6fde818af9f0035efe844dee18cfb6eb24a5e6d93a42a0630a9"
+    },
+    {
+      "kind": "new_save_copy",
+      "run_relative_path": "save9-final/save9.oysav",
+      "output_relative_path": "saves/save9-真机首测.oysav",
+      "bytes": 1257751,
+      "sha256": "a1cbc3fbec10effdf9228fb2632c0a105880e0268a2b0494409101797a0615e5"
+    },
+    {
+      "kind": "device_recording",
+      "run_relative_path": "context-fix-enter-tavern-attachments/5605B52C-265F-4B39-9DF0-A5D29EE6BD16.mp4",
+      "output_relative_path": "house-entry.mp4",
+      "bytes": 2443451,
+      "sha256": "e844826ea826a5efc0e13917144c1220ae42c2eb801ce85b81bb5a0bc4292efd"
+    },
+    {
+      "kind": "accessibility",
+      "run_relative_path": "context-fix-final-normal-quit-attachments/B6CA48C8-9BCE-42B4-8740-4E61544473B4.txt",
+      "output_relative_path": "metadata/final-native-launcher-ax.txt",
+      "bytes": 818,
+      "sha256": "b3b0633c68ade48f469dab03e293e3d4f7f68fbdcebf6bcaaefbec3409ba6e57"
+    }
+  ]
+}
