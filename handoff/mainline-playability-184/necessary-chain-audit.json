@@ -1,0 +1,27 @@
+{
+  "checkpoint": 184,
+  "mode": "bounded read-only agents; no tests/App",
+  "runtime": "183/runtime-001",
+  "new_confirmed_blockers": 0,
+  "mm6": [
+    "VARN six password items have original chest/event sources; five pools/captain/control doors have real face bindings",
+    "Control center weapons in original chests; source61 basic learning is in package",
+    "Hive writes Q784 and continent3 bridge; normal Merge refresh reads Q784"
+  ],
+  "mm7_mm8": [
+    "MM7 920/922 write Q783; normal Merge refresh reads continent2",
+    "MM8 final lord sets Q56; out02/3 sets Q228; normal Merge refresh reads continent1",
+    "183 package retains castle, Shoals/Lincoln, submarine and crystal/prison reentry overlays; GameDataLoader enumerates them"
+  ],
+  "evidence_limits": [
+    "Source/resource/implementation review; not new live gameplay acceptance",
+    "VARN ordinary UI was not previously exercised; selected for first short actual flow",
+    "MM8 submarine/certain reentry physical clicks remain source-bound evidence, not newly proven"
+  ],
+  "merge": [
+    "Third reward -> next load establishes one-week catch -> GotFinalQuest/Q1713 matches authenticated original",
+    "Ordinary out02 portal uses original final-quest/radius/completion gates, no extra Instructions gate",
+    "Chaos capture establishes real follower; source81 validates follower and transactionally returns/removes follower/rewards each active member100000XP",
+    "Breach arrival commits QuestFinished/once-only endcard/clears1713–1715;183 has six current related overlays"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "checkpoint": 184,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-28T18:01:11.563624+00:00",
+  "goal_turn_classification": "PROGRESS_PRODUCT_FIX_AND_ACTUAL",
+  "source_base": "8bac395b009366cbd4f5dfb629da58d81ba2ea98",
+  "runtime": "local-data/validation/device-feedback-183/runtime-001",
+  "runtime_changed": false,
+  "save_version_changed": false,
+  "production_changes": [
+    "game/gameplay/GameplayHudInputController.cpp",
+    "game/gameplay/GameplayPartyOverlayInputController.cpp",
+    "game/gameplay/GameplayScreenController.cpp"
+  ],
+  "production_sha256": {
+    "game/gameplay/GameplayHudInputController.cpp": "50b5ec8515594bcdf8e310d0e59dbb0abc93dd077778aa2725997190696e88a3",
+    "game/gameplay/GameplayPartyOverlayInputController.cpp": "66933c9d1875b57cb28981f29806e0460e0303d200c4dfb30b614c0f77bea0f9",
+    "game/gameplay/GameplayScreenController.cpp": "5185d8e2029977ef39f2e8190db0abca7de94c9152f16eab4c6bfb2b6f41d8a9"
+  },
+  "fixes": [
+    "Keep a portrait-readable scroll visible for its held right/inspect gesture instead of clearing it in the same world-input frame; release cleanup runs before house/modal gates",
+    "Do not consume the portrait-use gesture before an actual portrait is targeted, allowing modifier-first input",
+    "Character inventory doll-reader update preserves a still-held portrait-readable popup"
+  ],
+  "actual": {
+    "directory": "actual-006",
+    "result": {
+      "passed": true,
+      "frames": 70,
+      "phase": 20,
+      "normal_frames": 30,
+      "normal_seconds": 0.492876,
+      "captures": 3,
+      "source_world_clicks": 2,
+      "scroll_read": true,
+      "answer_observed": true,
+      "final_save_verified": true,
+      "natural_campaign": false,
+      "device_acceptance": false,
+      "new_unit_tests": 0,
+      "cold_replays": 0,
+      "failure": ""
+    },
+    "source_chest": "Pyramid face3061/event42 -> original trapped chest2 -> real2158",
+    "gesture": "SDL chest pickup; right down outside portrait then target portrait while held; readable Chinese source/password; release/store",
+    "source_password": "Real picker/SDL face47 event21; visible kcops text; Return -> MapVar12=1, Q1253=false, 2158 consumed, other five password flags and final door flag untouched",
+    "persistence": "30 normal frames with original actors/AI, ordinary explicit save, decode source flags/consumption/depleted chest/memberIDs/XP/Gold; no independent cold run",
+    "screenshots_reviewed": [
+      "visual-review-final/original-chest2.png",
+      "visual-review-final/first-mate-scroll.png",
+      "visual-review-final/password-input.png"
+    ]
+  },
+  "fixtures": [
+    "Unchanged normal132 MM6 save copy; declared debug map jump to Pyramid and two poses/camera directions",
+    "Member0 DisarmTraps Normal16 exactly meets original map difficulty8*2; original chest trap unchanged until real interaction",
+    "Simulation delta0 during UI/framing/captures; final30 frames normal; no item grants/quest writes/AI/HP/immunity fixtures"
+  ],
+  "builds": {
+    "native_application": "native-build-007.command.json",
+    "native_capture": "native-build-008.command.json",
+    "unsigned_generic_ios_release": "ios-release-002.command.json"
+  },
+  "failure_history": {
+    "native-build-001": "Capture API const/container type compile errors; corrected in tool only",
+    "actual-001": "Driver checked before four queued mouse edges were delivered; no product defect",
+    "actual-002_and_003": "Real scroll popup was cleared within the same frame;003 records right held and portrait latch, production defect confirmed",
+    "actual-004": "Scroll fix passed; pool click pose/sample exceeded usable512 interaction range, driver framing corrected",
+    "actual-005": "Initial successful full short flow;006 reconfirmed final production cleanup order and centered visible pool interaction"
+  },
+  "limits": [
+    "Source audits found no additional necessary quest-chain condition defect; they are not new full campaign gameplay proof",
+    "Character-inventory and house-modal variants are source/build reviewed, not separately exercised live",
+    "Native SDL modifier/target gesture is not physical-iPad touch acceptance",
+    "No six-password matrix, Oracle installation, full VARN navigation, natural campaign or complete-game claim",
+    "No device/simulator operations;183/184 target-iPad affected UI confirmation remains pending",
+    "Capture tool received line-wrap-only formatting after actual006; production files are the exact final compiled and exercised versions"
+  ],
+  "new_unit_cases": 0,
+  "cold_runs": 0,
+  "old_campaign_replays": 0,
+  "actual_attempts": 6,
+  "all_owned_jobs_collected": true,
+  "full_goal_achieved": false,
+  "next": "Use changed scroll interaction on receiving iPad when authorized there; continue only concrete progression blockers, not broad replay of accepted campaigns."
+}

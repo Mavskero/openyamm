@@ -2220,10 +2220,15 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
     if (pParty != nullptr)
     {
-        context.itemService().updateReadableScrollOverlayForHeldItem(
-            selectedPartyMemberIndex,
-            hoveredCharacterTarget,
-            isLeftMousePressed);
+        // A portrait right-click may have opened a scroll earlier in this frame.
+        // The doll's left-button reader must not clear that still-held popup.
+        if (!input.rightMouseButton.held || !context.readableScrollOverlayReadOnly().active)
+        {
+            context.itemService().updateReadableScrollOverlayForHeldItem(
+                selectedPartyMemberIndex,
+                hoveredCharacterTarget,
+                isLeftMousePressed);
+        }
 
         if (rightMousePressed
             && context.heldInventoryItem().active

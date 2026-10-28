@@ -241,14 +241,19 @@ void GameplayHudInputController::handlePartyPortraitInput(
     else if (!context.interactionState().partyPortraitRightClickItemUseLatch
              && context.heldInventoryItem().active)
     {
-        context.interactionState().partyPortraitRightClickItemUseLatch = true;
-
         const std::optional<size_t> memberIndex =
             context.resolvePartyPortraitIndexAtPoint(
                 config.screenWidth,
                 config.screenHeight,
                 config.pointerX,
                 config.pointerY);
+
+        // A touch inspect modifier can precede the second finger selecting a portrait.
+        // Only a real portrait attempt consumes the gesture.
+        if (memberIndex)
+        {
+            context.interactionState().partyPortraitRightClickItemUseLatch = true;
+        }
 
         const bool keepCharacterScreenOpen =
             context.characterScreenReadOnly().open

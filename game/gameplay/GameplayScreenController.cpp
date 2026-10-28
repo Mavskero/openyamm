@@ -914,6 +914,19 @@ GameplayStandardWorldInputGateResult GameplayScreenController::gateStandardWorld
     GameplayScreenRuntime &context,
     const GameplayStandardWorldInputGateConfig &config)
 {
+    // The character overlay owns its doll/portrait reader. Outside that overlay,
+    // dismiss on right-button release even when a house or other modal blocks world input.
+    if (config.closeReadableScrollOverlay && !context.characterScreenReadOnly().open)
+    {
+        // Portrait item use can open this earlier in the same input frame.
+        if (context.readableScrollOverlayReadOnly().active
+            && config.pInputFrame != nullptr && config.pInputFrame->rightMouseButton.held)
+        {
+            return {.blocked = true};
+        }
+        context.itemService().closeReadableScrollOverlay();
+    }
+
     if (config.blockOnDialogue && context.activeEventDialog().isActive)
     {
         return {.blocked = true};
@@ -998,11 +1011,6 @@ GameplayStandardWorldInputGateResult GameplayScreenController::gateStandardWorld
     if (config.clearCharacterOverlayInputState)
     {
         context.resetCharacterOverlayInteractionState();
-    }
-
-    if (config.closeReadableScrollOverlay)
-    {
-        context.itemService().closeReadableScrollOverlay();
     }
 
     return {};

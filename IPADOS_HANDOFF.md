@@ -33,6 +33,11 @@ checkpoint 183 已合并真机修复，并补齐建队背景和 72 张自有按�
 再从 [183 资源补丁](https://github.com/Mavskero/openyamm/releases/tag/ipados-device-feedback-183-20261029)
 取得新的 `engine.zip`、`conversion.json` 和校验清单。App 也须重新构建更新。
 
+checkpoint 184 修复消息卷宗的头像阅读层被同帧清除、检查手势提前锁存及背包阅读冲突。
+原始 VARN 宝箱取卷、阅读、真实机关输入密码、续玩和保存的受控 Mac 短流程通过，通用 iOS
+Release通过；见 [184交接](handoff/mainline-playability-184/README.md)。资源仍用183，Save103不变，
+仅需更新App。真机只补受影响的卷宗操作，不重做资源导入和已通过战役。
+
 2026-10-29 用户依据新真机反馈恢复持续开发 goal，当前为 active，**不是游戏已经完成**。
 原电脑继续无设备操作的集成开发；真机操作授权仅适用于收到用户授权的接手会话。
 历史快照中的禁用设备、旧机器路径、过时 next 指令和百分比不是接手任务的新约束。
