@@ -630,6 +630,8 @@ if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_link_libraries(prerequisite_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(varn_password_capture tools/VarnPasswordCapture.cpp)
     target_link_libraries(varn_password_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(submarine_journey_capture tools/SubmarineJourneyCapture.cpp)
+    target_link_libraries(submarine_journey_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(source_jump_state_check tests/UnitTestMain.cpp tests/GameplayRuleRegressionTests.cpp
         tests/RegressionGameData.cpp)
     target_include_directories(source_jump_state_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")

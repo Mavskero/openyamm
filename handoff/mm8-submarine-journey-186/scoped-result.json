@@ -1,0 +1,115 @@
+{
+  "checkpoint": 186,
+  "status": "ACCEPTED_SCOPED",
+  "accepted_at": "2026-10-28T18:37:14.094267+00:00",
+  "source_base": "3a86381e70c2a6afe05f8008dceaad0da2899cde",
+  "runtime": "local-data/validation/device-feedback-183/runtime-001",
+  "save_format": 103,
+  "outcome": "First actual controlled MM8 submarine round trip passes; no new production defect or production fix claimed.",
+  "route": "d06 physical451 -> original Subcut/Escape -> d34 physical501/visibleOK -> out13 actual arrival -> physical504/visibleOK -> d34 physical451/visibleOK -> d06 continued play/save",
+  "actual": {
+    "passed": true,
+    "checkpoint": 186,
+    "controlled": true,
+    "natural_campaign": false,
+    "device_acceptance": false,
+    "input_sha256": "7787ccc0ff122032fec4a67788fc61e104079adc42547ec954ee6b40d17e5e22",
+    "input_original_unchanged": true,
+    "frames": 145,
+    "phase": 17,
+    "captures": 4,
+    "physical_world_clicks": 4,
+    "visible_confirmation_clicks": 3,
+    "key_carrier_member_id": 1,
+    "key_grid": [
+      2,
+      0
+    ],
+    "key_instance_id_available": false,
+    "source_subcut_verified": true,
+    "movie_started": true,
+    "movie_captured": true,
+    "movie_closed_by_escape": true,
+    "movie_frames": 48,
+    "movie_seconds": 0.871078496508,
+    "movie_samples": 1,
+    "blank_movie_samples_discarded": 0,
+    "actual_regna_landing_observed": true,
+    "near_cave_pose_used": false,
+    "normal_frames": 30,
+    "normal_seconds": 2.21650435287,
+    "final_save_verified": true,
+    "new_unit_tests": 0,
+    "cold_replays": 0,
+    "visual_review_required": true,
+    "failure": ""
+  },
+  "wall_seconds": 24.61657,
+  "fixtures": [
+    "Unchanged normal132 MM8 save copy; one declared d06 map placement.",
+    "Exactly one real-table submarine key619 placed into an existing member; no Q214 fixture.",
+    "Three declared indoor navigation poses; source Regna arrival untouched, no outdoor fallback pose used.",
+    "UI/navigation simulation delta0; original movie real delta; final30 normal frames/2.2165seconds.",
+    "Dummy audio; no actor, health, immunity or buff edits."
+  ],
+  "verified": [
+    "Original event setsQ214 while retaining exactly one619 in same member/cell.",
+    "Four actual surface picks/SDL clicks and three visible confirmations use original source destinations.",
+    "Original movie renders and ordinary Escape allows pending travel to complete.",
+    "Regna arrival and all return landings recorded before subsequent navigation pose placement.",
+    "Same five-member identity/order, Inn/detached custody, money/food/fine retained.",
+    "Ordinary final save decodes withQ214/key, exact finalpose/time and cached d34/out13; pending events settled.",
+    "Read-only normal input and preserved seed hashes unchanged."
+  ],
+  "visual_review": [
+    {
+      "image": "actual-001/subcut-movie.png",
+      "observation": "Original submarine and cave movie is rendered, not a blank frame; ordinary Escape returns to travel."
+    },
+    {
+      "image": "actual-001/original-exit-confirmation.png",
+      "observation": "Original exit confirmation title, mixed English/Chinese prompt and both action buttons are visible. Left artwork region is black in this UI-delta-zero capture; no transition-art/video acceptance claim."
+    },
+    {
+      "image": "actual-001/actual-Regna-landing.png",
+      "observation": "Actual Regna arrival shows coast, palm trees, actors, minimap and five portraits before any outdoor pose edit."
+    },
+    {
+      "image": "actual-001/continued-d06-game.png",
+      "observation": "Returned d06 wooden platform, indoor scene, minimap and five portraits visible after normal continuation."
+    }
+  ],
+  "build": {
+    "native": "native-build-001.command.json; capture target only, passed",
+    "ios": "Not repeated: production sources/resources unchanged from accepted185 iOS002; new capture target is macOS-only."
+  },
+  "production_hashes_unchanged": {
+    "game/app/GameApplication.cpp": true,
+    "game/app/GameApplication.h": true,
+    "game/ui/GameplayDialogueRenderer.cpp": true,
+    "game/events/EventRuntime.cpp": true,
+    "game/indoor/IndoorWorldRuntime.cpp": true,
+    "game/outdoor/OutdoorWorldRuntime.cpp": true,
+    "tools/mmerge_import/SubmarineTravelResources.cpp": true
+  },
+  "runtime_pointer_unchanged": true,
+  "source_changes": [
+    "CMakeLists.txt: macOS-only capture target",
+    "tools/SubmarineJourneyCapture.cpp: single bounded actual route tool"
+  ],
+  "limits": [
+    "Controlled late-quest prerequisite, not naturally acquired key or full natural MM8 campaign.",
+    "No cannon/combat replay, no independent cold launch, no device/simulator operations.",
+    "Movie sample and skip accepted; complete movie playback/audio not assessed.",
+    "Exit artwork not accepted from black capture; no claim of a new production defect from paused UI frame.",
+    "Current183–185 affected target-iPad UI confirmation remains pending."
+  ],
+  "new_unit_tests": 0,
+  "actual_attempts": 1,
+  "cold_replays": 0,
+  "old_campaign_replays": 0,
+  "owned_jobs_remaining": [],
+  "full_goal_achieved": false,
+  "progress_estimate": "80–85%, low confidence subjective first-playable/completable engineering estimate, unchanged.",
+  "next": "Prioritize concrete progression defects or returned device feedback; do not replay accepted submarine route or expand a campaign matrix."
+}
