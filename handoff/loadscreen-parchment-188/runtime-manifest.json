@@ -1,0 +1,32 @@
+[
+  {
+    "path": "engine.zip",
+    "bytes": 706012499,
+    "sha256": "9072381d2000fe85d206e78f5ee8f510bcde9ecdfbfe98b25096e47960e7fc78"
+  },
+  {
+    "path": "conversion.json",
+    "bytes": 22552,
+    "sha256": "0c7fdbda82c5fa17c1beea858d859523a56f299a09d11815a1e0138a0fc493ab"
+  },
+  {
+    "path": "worlds/mm6.zip",
+    "bytes": 641035786,
+    "sha256": "75fe15bf35bb0805a8f07456f0283d476a6d41fb963a4e945814791249473b5f"
+  },
+  {
+    "path": "worlds/mm7.zip",
+    "bytes": 1019770494,
+    "sha256": "f836ce251c4514e9c0503459603ab694dd2ced8952704914328609b35c5ef96a"
+  },
+  {
+    "path": "worlds/mm8.zip",
+    "bytes": 978259456,
+    "sha256": "2455c3f580e2df671a313cfb085de98924132910831ce9911fc1af4deca632f9"
+  },
+  {
+    "path": "worlds/mmmerge.zip",
+    "bytes": 151441875,
+    "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e"
+  }
+]

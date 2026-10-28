@@ -1,0 +1,137 @@
+{
+  "checkpoint": 188,
+  "status": "ACCEPTED_SCOPED",
+  "accepted_at": "2026-10-28T19:05:39.872066+00:00",
+  "source_base": "114f75e8d5e764c1baa192575ced16b06d4edf82",
+  "summary": "Import required UI-Parch and selected skin companion .UI.lod in original order; fullscreen load-screen side panels render with no missing-texture warnings.",
+  "defect": "Observed187 actual-004 had1046 missing UI-Parch warnings; central load menu remained usable, so this was not a save-loading blocker.",
+  "source_rule": "Original Additional UI.lua LoadLod mounts selected main LOD then existing layout-suffix companion. Current import profile is fixed UI suffix.",
+  "implementation": [
+    "ui-parch required outside YAML dynamic image collection; missing source fails import clearly.",
+    "Selected icon and language-image archives load optional .UI.lod companion after required main archive, with existing canonical path checks.",
+    "Default UI retains base icons.UI.lod."
+  ],
+  "runtime_diff": {
+    "runtime": "local-data/validation/loadscreen-parchment-188/runtime-001",
+    "additions": [
+      {
+        "path": "icons/ui-parch.bmp",
+        "size": 196662,
+        "sha256": "1862ee6a18c7060e574b7b0719c6105f02a6cf6daa8b6c7cd7cf06f3f6b09592"
+      }
+    ],
+    "changes": [
+      {
+        "path": "icons/mapframe.bmp",
+        "size": 54294,
+        "sha256": "0b823dcf1185e695a12a3d661202e89ff3ec5cf1236853a406a8c511cd1aeb26",
+        "previous_sha256": "d7a5b76b611533ee4e0fadd0653716e8fd02a92f2ee5a216284d5e26172bf83b"
+      },
+      {
+        "path": "icons/ui-orr.bmp",
+        "size": 3254,
+        "sha256": "176091faed107ae09c3e82620e6419e2cb77e051fd312e2086a73f420731a8ca",
+        "previous_sha256": "20436de193b88a7a1fc0a1c28e5faea55744d6bea222de4ed2f5baf240025c11"
+      },
+      {
+        "path": "icons/ui-frmnu.bmp",
+        "size": 14742,
+        "sha256": "9fed2036ade80e028c2831141feeb20e27286ed8d388f5dc6d045fe697ef8191",
+        "previous_sha256": "78da92e585225e1d7e79d6e497d8e4a60d3b5893982a06ace5549c554f15b37d"
+      },
+      {
+        "path": "icons/ui-frgol.bmp",
+        "size": 10542,
+        "sha256": "25bf1878c1344f378f3f3d1e7aa2bc968fd3ebf06a761eb2e23b38b5202b8d49",
+        "previous_sha256": "63bc6725431277b69b7720b872da5d0141a57e51d44a6d7808dbd960b4eebab2"
+      },
+      {
+        "path": "icons/ui-orl.bmp",
+        "size": 3126,
+        "sha256": "5cf5fc7f23f1b80f6198fb87addc3c479c79b4cf8207ab195bc2d2cdf2806d27",
+        "previous_sha256": "46c3732b4b37bb20143bbf6641d344b3174e054c70ff0f31d66d8e680cd8f8b8"
+      },
+      {
+        "path": "icons/ui-frsp.bmp",
+        "size": 13722,
+        "sha256": "1bdd5ac057e4545cbdb188c09fad2067bae711ffcd63284be12b81b80026703e",
+        "previous_sha256": "fc970c3e5502b02fedbc4a54237ce676fe1dc1105eefc5f0cad68f38e7f54ab1"
+      }
+    ],
+    "unchanged_imported_ui_members": 437,
+    "all_other_engine_members_retained": true,
+    "world_packages_copied_unchanged": true
+  },
+  "converted_images": [
+    {
+      "name": "mapframe.bmp",
+      "archive": "Data/Additional UI/6UI.icons.UI.lod",
+      "width": 159,
+      "height": 113
+    },
+    {
+      "name": "ui-frgol.bmp",
+      "archive": "Data/Additional UI/6UI.icons.UI.lod",
+      "width": 151,
+      "height": 23
+    },
+    {
+      "name": "ui-frmnu.bmp",
+      "archive": "Data/Additional UI/6UI.icons.UI.lod",
+      "width": 144,
+      "height": 34
+    },
+    {
+      "name": "ui-frsp.bmp",
+      "archive": "Data/Additional UI/6UI.icons.UI.lod",
+      "width": 67,
+      "height": 67
+    },
+    {
+      "name": "ui-orl.bmp",
+      "archive": "Data/Additional UI/6UI.icons.UI.lod",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "name": "ui-orr.bmp",
+      "archive": "Data/Additional UI/6UI.icons.UI.lod",
+      "width": 33,
+      "height": 32
+    },
+    {
+      "name": "ui-parch.bmp",
+      "archive": "Data/Additional UI/6UI.icons.UI.lod",
+      "width": 256,
+      "height": 256
+    }
+  ],
+  "verification": {
+    "native_importer_build": "native-importer-build-001.command.json",
+    "ui_import": "ui-import-001.command.json",
+    "assembly": "assemble-runtime-001.command.json",
+    "ios_release": "ios-release-001.command.json",
+    "actual": "actual-001.command.json",
+    "actual_seconds": 36.934665,
+    "menu_action_logged": true,
+    "missing_texture_warnings": 0,
+    "reviewed_image": "actual-001/load.jpg",
+    "quit": "Cmd+Q; exit0",
+    "new_unit_cases": 0,
+    "campaign_replays": 0,
+    "device_or_simulator": false
+  },
+  "limits": [
+    "Actual visual check covers fullscreen empty load screen side panels only; no save loaded, no gameplay or natural campaign claim.",
+    "Other six source-authenticated skin images converted/decoded and ownership checked, not separately exercised in HUD.",
+    "Default/UI2 and arbitrary UILayout combinations not newly verified; no new target-iPad acceptance."
+  ],
+  "runtime": "local-data/validation/loadscreen-parchment-188/runtime-001",
+  "save_version": 103,
+  "save_changed": false,
+  "desktop_binary": "Unchanged187; native desktop does not link UI importer. iOS importer/library/app rebuilt.",
+  "agent": "sol_loadscreen_asset_188 gpt-6.1-sol/max; one-file exclusive implementation; main integrated and owned builds/App.",
+  "full_goal_complete": false,
+  "engineering_estimate": "80–85%, low confidence; not quest coverage",
+  "owned_jobs_remaining": []
+}

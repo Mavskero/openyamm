@@ -48,6 +48,10 @@ checkpoint 186 首次受控 Mac 潜艇往返雷格那、原影片/Escape和保�
 checkpoint 187 修复 Mac 全屏菜单释放坐标错误，一次实际读取菜单/取消/退出通过；仅改Cocoa，
 无需新的iPad验证或资源包，见 [187交接](handoff/fullscreen-input-187/README.md)。
 
+checkpoint 188 补齐原版侧栏纹理和所选UI皮肤伴随包顺序，Mac读档页告警消失，通用iOS构建通过。
+新[188资源包](https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-resources-188-20261029)
+包含183所有资源修复；四个world ZIP仍复用RC2。见 [188交接](handoff/loadscreen-parchment-188/README.md)。
+
 2026-10-29 用户依据新真机反馈恢复持续开发 goal，当前为 active，**不是游戏已经完成**。
 原电脑继续无设备操作的集成开发；真机操作授权仅适用于收到用户授权的接手会话。
 历史快照中的禁用设备、旧机器路径、过时 next 指令和百分比不是接手任务的新约束。

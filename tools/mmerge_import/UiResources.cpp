@@ -266,6 +266,10 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
         images.insert(dimensionDoorImageReferences.begin(), dimensionDoorImageReferences.end());
     }
 
+    // Menu and gameplay overlays select this original side-panel image outside the YAML layouts.
+    const std::set<std::string> requiredDynamicImageReferences = {"ui-parch"};
+    images.insert(requiredDynamicImageReferences.begin(), requiredDynamicImageReferences.end());
+
     // LoadingOverlayScreen selects these original images dynamically, outside the YAML layouts.
     std::set<std::string> loadingImageReferences = {
         "loading1.pcx", "loading2.pcx", "loading3.pcx", "loading4.pcx", "loading5.pcx", "loadprog", "bardata"};
@@ -292,13 +296,20 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
     {
         addArchive(imageOwners, root, "Data/" + name);
     }
+    // This import profile uses the original "UI" layout suffix, matching the base icons.UI.lod.
     if (ui.lodName != "default")
     {
-        addArchive(iconOwners, root, "Data/Additional UI/" + ui.lodName, true);
+        std::filesystem::path archive = "Data/Additional UI/" + ui.lodName;
+        addArchive(iconOwners, root, archive.generic_string(), true);
+        archive.replace_extension(".UI.lod");
+        addArchive(iconOwners, root, archive.generic_string());
     }
     if (!ui.dLodName.empty())
     {
-        addArchive(imageOwners, root, "Data/Additional UI/" + ui.dLodName, true);
+        std::filesystem::path archive = "Data/Additional UI/" + ui.dLodName;
+        addArchive(imageOwners, root, archive.generic_string(), true);
+        archive.replace_extension(".UI.lod");
+        addArchive(imageOwners, root, archive.generic_string());
     }
     Owners fontOwners;
     addArchive(fontOwners, root, "Data/mmmerge.T.lod");
@@ -349,6 +360,7 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
             const Owners::const_iterator owner = owners.find(sourceName);
             if (owner == owners.end())
             {
+                require(!requiredDynamicImageReferences.contains(name), "Missing required dynamic UI image: " + name);
                 require(!loadingImageReferences.contains(name), "Missing required loading image: " + name);
                 missingImages.insert(name);
                 continue;
