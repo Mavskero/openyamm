@@ -1,0 +1,37 @@
+[
+  {
+    "name": "OpenYAMM-RC3-Mac-arm64.zip",
+    "bytes": 8829252,
+    "sha256": "e6ef4cb9785b7d443dddf1d1014170b313ef127a54534897e628e1493b97b3f8"
+  },
+  {
+    "name": "OpenYAMM-RC3-iPadOS-unsigned.zip",
+    "bytes": 12686846,
+    "sha256": "61d4c41c61f32ba037e11e35ecbbec7d175bd53901fb026cf69eae56419dc8a7"
+  },
+  {
+    "name": "OpenYAMM-RC3-source.tar.gz",
+    "bytes": 22441429,
+    "sha256": "c93167462c0e3ef6321c3d1d3d89bb900436b9c8fc5ace8ca3f61877f0d99889"
+  },
+  {
+    "name": "README-RC3.md",
+    "bytes": 4869,
+    "sha256": "10a9cb47ac128f392c84acf291a4d6275fb29c1d739315c9d25f3dcb983d58b4"
+  },
+  {
+    "name": "RESTORE-SOURCE.md",
+    "bytes": 2478,
+    "sha256": "9cf99b0661bc5e370a0b24e8f4f11c856b835231ec0396cb2805f8aa6024e6fa"
+  },
+  {
+    "name": "SOURCE-MANIFEST.json",
+    "bytes": 416636,
+    "sha256": "f74544c6a6ed1834f5bf173cb9c69441398a9d3d95d5c26884dcc5fd47bced57"
+  },
+  {
+    "name": "VERSION.json",
+    "bytes": 3310,
+    "sha256": "12e58fed0bc44ed506b57d31a7795de8c69cca6af6a6ce3a042da0ca58430947"
+  }
+]

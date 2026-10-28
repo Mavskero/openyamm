@@ -1,0 +1,105 @@
+{
+  "schema": "openyamm.third-candidate189.scoped-result.v1",
+  "checkpoint": 189,
+  "status": "ACCEPTED_THIRD_PLAYABLE_CANDIDATE_SCOPED",
+  "accepted_at": "2026-10-28T19:25:51.840804+00:00",
+  "release": "releases/first-playable-20261029-rc3",
+  "version": "0.1.0-rc3-20261029",
+  "save_version": 103,
+  "production_source_base": "8f91f2b9276b649c3529fae049beaf91a5668996",
+  "source_snapshot_head": "09ae801f432c8772230b37ae512392f3c2f94346",
+  "baseline_runtime": "local-data/validation/loadscreen-parchment-188/runtime-001",
+  "runtime_payloads": [
+    {
+      "path": "engine.zip",
+      "bytes": 706012499,
+      "sha256": "9072381d2000fe85d206e78f5ee8f510bcde9ecdfbfe98b25096e47960e7fc78"
+    },
+    {
+      "path": "conversion.json",
+      "bytes": 22552,
+      "sha256": "0c7fdbda82c5fa17c1beea858d859523a56f299a09d11815a1e0138a0fc493ab"
+    },
+    {
+      "path": "worlds/mm6.zip",
+      "bytes": 641035786,
+      "sha256": "75fe15bf35bb0805a8f07456f0283d476a6d41fb963a4e945814791249473b5f"
+    },
+    {
+      "path": "worlds/mm7.zip",
+      "bytes": 1019770494,
+      "sha256": "f836ce251c4514e9c0503459603ab694dd2ced8952704914328609b35c5ef96a"
+    },
+    {
+      "path": "worlds/mm8.zip",
+      "bytes": 978259456,
+      "sha256": "2455c3f580e2df671a313cfb085de98924132910831ce9911fc1af4deca632f9"
+    },
+    {
+      "path": "worlds/mmmerge.zip",
+      "bytes": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e"
+    }
+  ],
+  "source_files": 2088,
+  "source_archive_sha256": "c93167462c0e3ef6321c3d1d3d89bb900436b9c8fc5ace8ca3f61877f0d99889",
+  "mac_binary_sha256": "7aa9101da463a2e9a3c2bd91450eb08de3545d7e0828c9db523e4bbd37b48389",
+  "ios_binary_sha256": "ed4f08b3e444bcea02d5230c7dd6d9cb0bf9ad1ac5e72bbb7b5388999345bf27",
+  "package_check": {
+    "status": "PASSED_MENU_START_EXIT",
+    "entry": "Start-Mac.command -> uniqueRC3 bundle Launcher -> current native187 binary",
+    "runtime": "complete188 copied under relative assets/",
+    "duration_seconds": 27.763455,
+    "menu_screenshot": "menu-001.jpg",
+    "reviewed": true,
+    "normal_exit_code": 0,
+    "scope": "Standalone startup/menu/quit only",
+    "new_unit_cases": 0,
+    "old_campaign_replays": 0,
+    "device_or_simulator": false,
+    "fresh_saved_game": false
+  },
+  "source_restore": {
+    "status": "PASSED",
+    "archive": "current-source.tar.gz",
+    "archive_sha256": "c93167462c0e3ef6321c3d1d3d89bb900436b9c8fc5ace8ca3f61877f0d99889",
+    "restored_files": 2088,
+    "bytes": 53797794,
+    "comparison": "File bytes, permissions and symlink targets; no rebuild or gameplay replay",
+    "scope": "All present tracked and nonignored untracked files in the current sparse checkout",
+    "restored_directory": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/third-playable-candidate-189/source-restored-001"
+  },
+  "main": "gpt-6.1-sol/max",
+  "subagent": "gpt-6.1-sol/max; delivery docs only",
+  "changes": [
+    "Standalone candidate now includes accepted183–188 fixes and current runtime188.",
+    "Handoff and receiving-Mac prompt now download188 engine/conversion plus unchangedRC2 worlds.",
+    "Fresh iOS delivery copy excludes stale signing/provisioning metadata; original build remains unchanged.",
+    "Source snapshot restores exact present sparse-checkout bytes, modes and symlink targets.",
+    "Documented arm64/macOS26 minimum; relative launcher with separate empty user data."
+  ],
+  "production_changes_in_189": false,
+  "new_builds": 0,
+  "new_unit_cases": 0,
+  "old_routes_replayed": 0,
+  "new_packaged_menu_runs": 1,
+  "RC1_RC2_untouched": true,
+  "device_or_simulator": false,
+  "full_game_complete": false,
+  "natural_campaign": false,
+  "next": "Publish this fixed candidate; remaining affected iPad UI confirmation belongs to receiving host. No broad campaign replay gate.",
+  "remaining": [
+    "New183–185 and188 target-iPad affected UI confirmation is pending; earlier remote feedback remains separate.",
+    "Full natural campaigns and every optional branch remain unproved.",
+    "Arbitrary Merge Lua outside authenticated current projections remains unsupported.",
+    "No fresh-host build or run claim from source restoration alone."
+  ],
+  "evidence_sha256": {
+    "package-check-result.json": "801fc7b024c6c5a1fa23323d472e4aaeee12fac668c9b43dc36c3b6b863c4797",
+    "source-restore-result-001.json": "aa11b71f079ea4129c5399f357a19123bcca34930708504f629edbcb78b2acc2",
+    "assemble-001.command.json": "6b5e955336522babcc4df74540183f4c7263cbb2f7112f49dd0776bc8ea6accc",
+    "packaged-app-001.command.json": "6e51deead9a95dc1f25d4cd6dce8d16442221221fbe34c44f8537d5cc835c6bd",
+    "source-snapshot-001.command.json": "6e6024dad5a91cd3537deb29effcf52efc4f02f05cac21720f94790a28f184ea",
+    "ios-signature-state.json": "ba89fe1d1dec0881b8556b5a949595f4076213255a324ca888e7c18db0068eb4"
+  }
+}

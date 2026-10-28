@@ -1,0 +1,79 @@
+{
+  "version": "0.1.0-rc3-20261029",
+  "checkpoint": 189,
+  "stage": "candidate",
+  "save_version": 103,
+  "production_source_base": "8f91f2b9276b649c3529fae049beaf91a5668996",
+  "source_head": "09ae801f432c8772230b37ae512392f3c2f94346",
+  "baseline_runtime": "loadscreen-parchment-188/runtime-001",
+  "mac_binary_sha256": "7aa9101da463a2e9a3c2bd91450eb08de3545d7e0828c9db523e4bbd37b48389",
+  "ios_binary_sha256": "ed4f08b3e444bcea02d5230c7dd6d9cb0bf9ad1ac5e72bbb7b5388999345bf27",
+  "ios_signed": false,
+  "ios_provisioning_or_signature_files_included": false,
+  "physical_device_verified_for_rc3": false,
+  "natural_full_campaign_verified": false,
+  "runtime_payloads": [
+    {
+      "path": "engine.zip",
+      "bytes": 706012499,
+      "sha256": "9072381d2000fe85d206e78f5ee8f510bcde9ecdfbfe98b25096e47960e7fc78"
+    },
+    {
+      "path": "conversion.json",
+      "bytes": 22552,
+      "sha256": "0c7fdbda82c5fa17c1beea858d859523a56f299a09d11815a1e0138a0fc493ab"
+    },
+    {
+      "path": "worlds/mm6.zip",
+      "bytes": 641035786,
+      "sha256": "75fe15bf35bb0805a8f07456f0283d476a6d41fb963a4e945814791249473b5f"
+    },
+    {
+      "path": "worlds/mm7.zip",
+      "bytes": 1019770494,
+      "sha256": "f836ce251c4514e9c0503459603ab694dd2ced8952704914328609b35c5ef96a"
+    },
+    {
+      "path": "worlds/mm8.zip",
+      "bytes": 978259456,
+      "sha256": "2455c3f580e2df671a313cfb085de98924132910831ce9911fc1af4deca632f9"
+    },
+    {
+      "path": "worlds/mmmerge.zip",
+      "bytes": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e"
+    }
+  ],
+  "source_snapshot": "current-source.tar.gz; present sparse checkout files, no build caches or Git history",
+  "package_launch_check": "PASSED_MENU_START_EXIT; one28second run, no campaign replay",
+  "default_display": "windowed1280x800",
+  "prior_rc1_rc2_preserved": true,
+  "source_restore": {
+    "status": "PASSED",
+    "archive": "current-source.tar.gz",
+    "archive_sha256": "c93167462c0e3ef6321c3d1d3d89bb900436b9c8fc5ace8ca3f61877f0d99889",
+    "restored_files": 2088,
+    "bytes": 53797794,
+    "comparison": "File bytes, permissions and symlink targets; no rebuild or gameplay replay",
+    "scope": "All present tracked and nonignored untracked files in the current sparse checkout",
+    "restored_directory": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/third-playable-candidate-189/source-restored-001"
+  },
+  "local_candidate_status": "ACCEPTED_SCOPED",
+  "mac_architecture": "arm64",
+  "mac_minimum_os": "26.0",
+  "mac_build_sdk": "27.0",
+  "ios_minimum_os": "17.0",
+  "ios_build_sdk": "27.0",
+  "source_archive_sha256": "c93167462c0e3ef6321c3d1d3d89bb900436b9c8fc5ace8ca3f61877f0d99889",
+  "source_files": 2088,
+  "distribution": {
+    "mac_archive": "OpenYAMM-RC3-Mac-arm64.zip",
+    "mac_archive_includes_runtime_assets": false,
+    "ios_archive": "OpenYAMM-RC3-iPadOS-unsigned.zip",
+    "source_archive": "OpenYAMM-RC3-source.tar.gz",
+    "source_manifest": "SOURCE-MANIFEST.json",
+    "source_restore_instructions": "RESTORE-SOURCE.md",
+    "resource_base_release": "https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-resources-188-20261029",
+    "world_resource_release": "https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028"
+  }
+}

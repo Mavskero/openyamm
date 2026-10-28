@@ -1,0 +1,11 @@
+{
+  "status": "UNSIGNED",
+  "copied_executable_unchanged": true,
+  "excluded_from_new_copy": [
+    "embedded.mobileprovision",
+    "_CodeSignature"
+  ],
+  "original_build_and_rc2_untouched": true,
+  "codesign_exit": 1,
+  "codesign_message": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/releases/first-playable-20261029-rc3/iPadOS-unsigned/openyamm_ipados.app: code object is not signed at all\nIn architecture: arm64"
+}

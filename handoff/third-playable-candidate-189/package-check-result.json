@@ -1,0 +1,14 @@
+{
+  "status": "PASSED_MENU_START_EXIT",
+  "entry": "Start-Mac.command -> uniqueRC3 bundle Launcher -> current native187 binary",
+  "runtime": "complete188 copied under relative assets/",
+  "duration_seconds": 27.763455,
+  "menu_screenshot": "menu-001.jpg",
+  "reviewed": true,
+  "normal_exit_code": 0,
+  "scope": "Standalone startup/menu/quit only",
+  "new_unit_cases": 0,
+  "old_campaign_replays": 0,
+  "device_or_simulator": false,
+  "fresh_saved_game": false
+}
