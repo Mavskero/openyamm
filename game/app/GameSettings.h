@@ -185,7 +185,7 @@ struct GameSettings
     bool combatActorHealthBars = true;
     bool questMarkers = true;
     bool combatTargetPanel = false;
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(SDL_PLATFORM_IOS)
     bool contextActionPopup = true;
 #else
     bool contextActionPopup = false;
@@ -197,6 +197,7 @@ struct GameSettings
 std::optional<GameSettings> loadGameSettings(const std::filesystem::path &path, std::string &error);
 bool saveGameSettings(const std::filesystem::path &path, const GameSettings &settings, std::string &error);
 bool migrateLegacyAndroidSettings(GameSettings &settings);
+bool migrateLegacyIosSettings(GameSettings &settings);
 CharacterAttackTuning characterAttackTuningFromSettings(const GameSettings &settings);
 float resolveViewDistanceSetting(const std::string &value, float defaultDistance);
 }

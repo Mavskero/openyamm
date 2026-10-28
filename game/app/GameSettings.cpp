@@ -511,6 +511,22 @@ bool migrateLegacyAndroidSettings(GameSettings &settings)
     return true;
 }
 
+bool migrateLegacyIosSettings(GameSettings &settings)
+{
+    constexpr uint32_t CurrentIosSettingsProfileVersion = 1;
+
+    if (settings.settingsProfileName == "ios"
+        && settings.settingsProfileVersion >= CurrentIosSettingsProfileVersion)
+    {
+        return false;
+    }
+
+    settings.settingsProfileName = "ios";
+    settings.settingsProfileVersion = CurrentIosSettingsProfileVersion;
+    settings.contextActionPopup = true;
+    return true;
+}
+
 float resolveViewDistanceSetting(const std::string &value, float defaultDistance)
 {
     const std::string normalized = toLowerCopy(trimCopy(value));
