@@ -62,6 +62,7 @@ add_executable(openyamm_unit_tests
     OutdoorNavigationDataTests.cpp
     OutdoorRenderDataTests.cpp
     BillboardGeometryTests.cpp
+    KeyboardTurnRuntimeTests.cpp
     PartyRegressionTests.cpp
     PendingItemDeliveryTests.cpp
     NpcFollowerPersistenceTests.cpp

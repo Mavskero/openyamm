@@ -2749,23 +2749,6 @@ Engine::WindowMode engineWindowModeForSettings(WindowMode mode)
     return Engine::WindowMode::Windowed;
 }
 
-float mouseRotateSpeedForTurnRate(TurnRateMode turnRate)
-{
-    switch (turnRate)
-    {
-    case TurnRateMode::X16:
-        return 0.0024f;
-
-    case TurnRateMode::X32:
-        return 0.0034f;
-
-    case TurnRateMode::Smooth:
-        return 0.0045f;
-    }
-
-    return 0.0034f;
-}
-
 Character buildFreshCreatedCharacter(
     const Character &sourceCharacter,
     const ClassMultiplierTable &classMultiplierTable,
@@ -5884,7 +5867,6 @@ void GameApplication::applyCurrentSettingsToActiveRuntime()
     m_gameAudioSystem.setSoundVolume(normalizedVolumeLevel(m_settings.soundVolume));
     m_gameAudioSystem.setMusicVolume(normalizedVolumeLevel(m_settings.musicVolume));
     m_gameAudioSystem.setVoiceVolume(normalizedVolumeLevel(m_settings.voiceVolume));
-    m_outdoorGameView.setMouseRotateSpeed(mouseRotateSpeedForTurnRate(m_settings.turnRate));
     m_outdoorGameView.setWalkSoundEnabled(m_settings.walksound);
     m_outdoorGameView.setShowHitStatusMessages(m_settings.showHits);
     m_outdoorGameView.setFlipOnExitEnabled(m_settings.flipOnExit);

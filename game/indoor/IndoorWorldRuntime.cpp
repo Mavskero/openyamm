@@ -10649,7 +10649,9 @@ void IndoorWorldRuntime::updateWorldMovement(
 {
     if (m_pRenderer != nullptr)
     {
-        m_pRenderer->updateWorldMovement(input, deltaSeconds, allowWorldInput);
+        const TurnRateMode turnRate =
+            m_pGameplayView != nullptr ? m_pGameplayView->settingsSnapshot().turnRate : TurnRateMode::X32;
+        m_pRenderer->updateWorldMovement(input, deltaSeconds, allowWorldInput, turnRate);
     }
 
     if (m_pGameplayView != nullptr && m_pPartyRuntime != nullptr && !m_pPartyRuntime->movementStatusText().empty())

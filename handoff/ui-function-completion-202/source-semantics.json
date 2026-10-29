@@ -1,0 +1,24 @@
+{
+  "reference_commit": "87b3e29b51b931cc5f0e8998f238a686cafa86a4",
+  "buttons": {
+    "16": 128,
+    "32": 64,
+    "Smooth": 0
+  },
+  "full_turn_source_units": 2048,
+  "step_degrees": {
+    "16": 22.5,
+    "32": 11.25
+  },
+  "references": {
+    "buttons": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/GUI/UI/UIGame.cpp#L465-L490",
+    "indoor_consumer": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Engine/Graphics/Indoor.cpp#L1375-L1407",
+    "outdoor_consumer": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Engine/Graphics/Outdoor.cpp#L1017-L1059",
+    "trigger_mode": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Io/InputEnumFunctions.cpp#L91-L101",
+    "held_dispatch": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Io/KeyboardInputHandler.cpp#L62-L100",
+    "action_queue": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Io/KeyboardInputHandler.cpp#L159-L181"
+  },
+  "original_repeat": "Continuous held input produces one action each update; keyboard repeat timer does not apply to left/right.",
+  "local_reference": "local-data/validation/mm8-runtime-076/source-001/mm8.ini:44-57 separates smooth turn speed from mouse sensitivity",
+  "adaptation": "Retain exact source tap angles, but accumulate held time at existing project smooth1.75rad/s to avoid refresh-rate-dependent spinning. No claim of original repeat cadence. Mouse stays at base0.0045rad/pixel and existing mouseSensitivity input scale."
+}

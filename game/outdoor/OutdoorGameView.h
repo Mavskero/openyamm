@@ -23,6 +23,7 @@
 #include "game/tables/JournalHistoryTable.h"
 #include "game/tables/JournalQuestTable.h"
 #include "game/gameplay/GameplayScreenState.h"
+#include "game/gameplay/KeyboardTurnRuntime.h"
 #include "game/items/ItemEnchantTables.h"
 #include "game/tables/NpcDialogTable.h"
 #include "game/tables/ObjectTable.h"
@@ -813,6 +814,7 @@ private:
     float m_cameraTargetY;
     float m_cameraTargetZ;
     float m_cameraYawRadians;
+    KeyboardTurnState m_keyboardTurnState = {};
     float m_cameraPitchRadians;
     float m_cameraEyeHeight;
     float m_cameraDistance;

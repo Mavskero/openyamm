@@ -3779,6 +3779,7 @@ GameplayWorldUiRenderState OutdoorGameView::gameplayUiRenderState(int width, int
 
 void OutdoorGameView::shutdown()
 {
+    m_keyboardTurnState = {};
     syncGameplayMouseLookMode(SDL_GetMouseFocus(), false);
     GameplayScreenRuntime &screenRuntime = m_gameSession.gameplayScreenRuntime();
     GameplayScreenState &gameplayScreenState = m_gameSession.gameplayScreenState();
@@ -4409,6 +4410,7 @@ float OutdoorGameView::effectiveCameraPitchRadians() const
 
 void OutdoorGameView::setCameraAngles(float yawRadians, float pitchRadians)
 {
+    m_keyboardTurnState = {};
     m_cameraYawRadians = yawRadians;
     m_cameraPitchRadians = pitchRadians;
 

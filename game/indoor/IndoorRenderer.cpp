@@ -6401,6 +6401,7 @@ bool IndoorRenderer::activateGameplayWorldHit(const GameplayWorldHit &hit)
 
 void IndoorRenderer::shutdown()
 {
+    m_keyboardTurnState = {};
     m_pIndoorMapData = nullptr;
     m_indoorPortalGraph.reset();
     m_indoorLightingRuntime.clearStaticCache();
@@ -6819,6 +6820,7 @@ void IndoorRenderer::setCameraPosition(float x, float y, float z)
 
 void IndoorRenderer::setCameraAngles(float yawRadians, float pitchRadians)
 {
+    m_keyboardTurnState = {};
     m_cameraYawRadians = yawRadians;
     m_cameraPitchRadians = pitchRadians;
 
@@ -12787,9 +12789,10 @@ std::vector<IndoorRenderer::TerrainVertex> IndoorRenderer::buildPortalVertices(
 void IndoorRenderer::updateWorldMovement(
     const GameplayInputFrame &input,
     float deltaSeconds,
-    bool allowWorldInput)
+    bool allowWorldInput,
+    TurnRateMode turnRate)
 {
-    updateCameraFromInput(input, deltaSeconds, allowWorldInput);
+    updateCameraFromInput(input, deltaSeconds, allowWorldInput, turnRate);
 
     if (!allowWorldInput || input.mouseWheelDelta == 0.0f)
     {
@@ -12810,8 +12813,10 @@ void IndoorRenderer::updateWorldMovement(
 void IndoorRenderer::updateCameraFromInput(
     const GameplayInputFrame &input,
     float deltaSeconds,
-    bool allowWorldInput)
+    bool allowWorldInput,
+    TurnRateMode turnRate)
 {
+    const float keyboardTurnDeltaSeconds = deltaSeconds;
     const float displayDeltaSeconds = std::max(deltaSeconds, 0.000001f);
     const float instantaneousFramesPerSecond = 1.0f / displayDeltaSeconds;
     m_framesPerSecond = (m_framesPerSecond == 0.0f)
@@ -12861,12 +12866,6 @@ void IndoorRenderer::updateCameraFromInput(
         m_isRotatingCamera = false;
     }
 
-    const float cosPitch = std::cos(m_cameraPitchRadians);
-    const float sinPitch = std::sin(m_cameraPitchRadians);
-    const float cosYaw = std::cos(m_cameraYawRadians);
-    const float sinYaw = std::sin(m_cameraYawRadians);
-    const bx::Vec3 forward = {cosYaw * cosPitch, sinYaw * cosPitch, sinPitch};
-    const bx::Vec3 right = {sinYaw, -cosYaw, 0.0f};
     const bool runWalkModifier =
         pKeyboardState[SDL_SCANCODE_LSHIFT] || pKeyboardState[SDL_SCANCODE_RSHIFT];
     const bool turboPressed =
@@ -12879,22 +12878,23 @@ void IndoorRenderer::updateCameraFromInput(
     const bool rightPressed = input.isActionActive(KeyboardAction::Right);
     const bool strafeLeftPressed = !standardControls && leftPressed;
     const bool strafeRightPressed = !standardControls && rightPressed;
-    const float keyboardYawSpeed = 1.75f;
     float desiredVelocityX = 0.0f;
     float desiredVelocityY = 0.0f;
 
-    if (allowWorldInput && standardControls)
-    {
-        if (leftPressed)
-        {
-            m_cameraYawRadians += keyboardYawSpeed * deltaSeconds;
-        }
+    m_cameraYawRadians += keyboardTurnDelta(
+        m_keyboardTurnState,
+        turnRate,
+        input.action(KeyboardAction::Left),
+        input.action(KeyboardAction::Right),
+        keyboardTurnDeltaSeconds,
+        allowWorldInput && standardControls);
 
-        if (rightPressed)
-        {
-            m_cameraYawRadians -= keyboardYawSpeed * deltaSeconds;
-        }
-    }
+    const float cosPitch = std::cos(m_cameraPitchRadians);
+    const float sinPitch = std::sin(m_cameraPitchRadians);
+    const float cosYaw = std::cos(m_cameraYawRadians);
+    const float sinYaw = std::sin(m_cameraYawRadians);
+    const bx::Vec3 forward = {cosYaw * cosPitch, sinYaw * cosPitch, sinPitch};
+    const bx::Vec3 right = {sinYaw, -cosYaw, 0.0f};
 
     if (m_pSceneRuntime != nullptr)
     {

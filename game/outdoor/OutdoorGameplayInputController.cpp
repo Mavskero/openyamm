@@ -4,6 +4,7 @@
 #include "game/app/GameSession.h"
 #include "game/gameplay/GameplayInputFrame.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
+#include "game/gameplay/KeyboardTurnRuntime.h"
 #include "game/outdoor/OutdoorGameView.h"
 #include "game/outdoor/OutdoorWorldRuntime.h"
 #include "game/scene/OutdoorSceneRuntime.h"
@@ -26,6 +27,7 @@ void OutdoorGameplayInputController::updateCameraFromInput(
     float deltaSeconds,
     GameplayWorldMovementFrameDiagnostics *pPerformanceDiagnostics)
 {
+    const float keyboardTurnDeltaSeconds = deltaSeconds;
     const float displayDeltaSeconds = std::max(deltaSeconds, 0.000001f);
     const float instantaneousFramesPerSecond = 1.0f / displayDeltaSeconds;
     view.m_framesPerSecond = (view.m_framesPerSecond == 0.0f)
@@ -60,11 +62,13 @@ void OutdoorGameplayInputController::updateCameraFromInput(
 
     if (sharedInputFrameResult.journalInputConsumed)
     {
+        view.m_keyboardTurnState = {};
         return;
     }
 
     if (sharedInputFrameResult.worldInputBlocked)
     {
+        view.m_keyboardTurnState = {};
         return;
     }
 
@@ -96,19 +100,6 @@ void OutdoorGameplayInputController::updateCameraFromInput(
         view.m_lastMouseY = input.pointerY;
     }
 
-    const float cosYaw = std::cos(view.m_cameraYawRadians);
-    const float sinYaw = std::sin(view.m_cameraYawRadians);
-    const bx::Vec3 forward = {
-        cosYaw,
-        sinYaw,
-        0.0f
-    };
-    const bx::Vec3 right = {
-        sinYaw,
-        -cosYaw,
-        0.0f
-    };
-
     const bool moveForwardPressed = input.isActionActive(KeyboardAction::Forward);
     const bool moveBackwardPressed = input.isActionActive(KeyboardAction::Backward);
     const bool leftPressed = input.isActionActive(KeyboardAction::Left);
@@ -124,20 +115,26 @@ void OutdoorGameplayInputController::updateCameraFromInput(
 
     const bool allowWorldSimulation = !hasActiveLootView && !hasPendingSpellCast && !input.rightMouseButton.held;
     const bool allowCameraMovementInput = allowWorldSimulation && !gameplayMouseLookState.cursorModeActive;
-    const float keyboardYawSpeed = 1.75f;
+    view.m_cameraYawRadians += keyboardTurnDelta(
+        view.m_keyboardTurnState,
+        overlayContext.settingsSnapshot().turnRate,
+        input.action(KeyboardAction::Left),
+        input.action(KeyboardAction::Right),
+        keyboardTurnDeltaSeconds,
+        classicControls && allowCameraMovementInput);
 
-    if (classicControls && allowCameraMovementInput)
-    {
-        if (leftPressed)
-        {
-            view.m_cameraYawRadians += keyboardYawSpeed * deltaSeconds;
-        }
-
-        if (rightPressed)
-        {
-            view.m_cameraYawRadians -= keyboardYawSpeed * deltaSeconds;
-        }
-    }
+    const float cosYaw = std::cos(view.m_cameraYawRadians);
+    const float sinYaw = std::sin(view.m_cameraYawRadians);
+    const bx::Vec3 forward = {
+        cosYaw,
+        sinYaw,
+        0.0f
+    };
+    const bx::Vec3 right = {
+        sinYaw,
+        -cosYaw,
+        0.0f
+    };
 
     if (view.m_pOutdoorMapData)
     {

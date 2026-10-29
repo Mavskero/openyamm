@@ -1,0 +1,174 @@
+{
+  "checkpoint": 202,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-29T12:48:02.527459+00:00",
+  "production_base": "16f7d0305dc0a4fb5fb4a451f016392e14951d59",
+  "fixes": [
+    "Classic keyboard TurnRate16/32 now advances22.5/11.25degrees indoors and outdoors; Smooth retains1.75rad/s",
+    "Held discrete turning uses elapsed time at the existing smooth angular speed; exact tap angles retained",
+    "TurnRate no longer changes outdoor mouse sensitivity; existing independent sensitivity and0.0045base retained",
+    "Movement forward/right vectors now use yaw after the current keyboard turn"
+  ],
+  "source_semantics": {
+    "reference_commit": "87b3e29b51b931cc5f0e8998f238a686cafa86a4",
+    "buttons": {
+      "16": 128,
+      "32": 64,
+      "Smooth": 0
+    },
+    "full_turn_source_units": 2048,
+    "step_degrees": {
+      "16": 22.5,
+      "32": 11.25
+    },
+    "references": {
+      "buttons": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/GUI/UI/UIGame.cpp#L465-L490",
+      "indoor_consumer": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Engine/Graphics/Indoor.cpp#L1375-L1407",
+      "outdoor_consumer": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Engine/Graphics/Outdoor.cpp#L1017-L1059",
+      "trigger_mode": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Io/InputEnumFunctions.cpp#L91-L101",
+      "held_dispatch": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Io/KeyboardInputHandler.cpp#L62-L100",
+      "action_queue": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Io/KeyboardInputHandler.cpp#L159-L181"
+    },
+    "original_repeat": "Continuous held input produces one action each update; keyboard repeat timer does not apply to left/right.",
+    "local_reference": "local-data/validation/mm8-runtime-076/source-001/mm8.ini:44-57 separates smooth turn speed from mouse sensitivity",
+    "adaptation": "Retain exact source tap angles, but accumulate held time at existing project smooth1.75rad/s to avoid refresh-rate-dependent spinning. No claim of original repeat cadence. Mouse stays at base0.0045rad/pixel and existing mouseSensitivity input scale."
+  },
+  "source_files": {
+    "CMakeLists.txt": "6cd68a96e424b69191915fee9d8304a90768f0ebf4df267a020af05b7edecda4",
+    "game/app/GameApplication.cpp": "5dfc9272aa0af90cdb343a55d10f7c7156b3b6849a17d7746fae57e36258ca44",
+    "game/gameplay/KeyboardTurnRuntime.h": "8059e9ee75192650a89188ba2245d2fd3eff7120da71013f69eb2b070aa46f78",
+    "game/indoor/IndoorRenderer.cpp": "4399e476253baebeaf615f790b2f7c76ad63750d7ecda4e1fe6067c1fdfa542b",
+    "game/indoor/IndoorRenderer.h": "e6a4e4fa2325fd2e74e03f850cde439783e0a6821903f4446d57b6f55a766d68",
+    "game/indoor/IndoorWorldRuntime.cpp": "a8f08dbe11e51bbe8573d720d638314ed84915f53aa660f8aa5167692bbe5613",
+    "game/outdoor/OutdoorGameView.cpp": "77da84973fc1471de2fdc13cab69c67fc89d8d7fa28be38cae9cd120aa98933a",
+    "game/outdoor/OutdoorGameView.h": "fb5c7d1cc378ddf8dc5c6247d8a15f5dcf8e5c81f25005727194df5797733a0d",
+    "game/outdoor/OutdoorGameplayInputController.cpp": "2a0b3f53f3e96b68b001e1843063ccef8adfd8073182d0994e40e495a684c5fa",
+    "tests/CMakeLists.txt": "dd5653b1b1029a3d1b10702b00ef71276400d3f3f4f1ad200d1d2b969fbe3f93",
+    "tests/KeyboardTurnRuntimeTests.cpp": "64bf5b81497e83f13f8e043cf7079d7aa717e330a826027580e1bbe283ba8f21"
+  },
+  "commands": {
+    "build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "keyboard_turn_check",
+        "-j",
+        "3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 82016,
+      "started_at": "2026-10-29T12:39:37.010933+00:00",
+      "finished_at": "2026-10-29T12:40:19.129962+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-202/build-native-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "turn-input-001": {
+      "argv": [
+        "openyamm/build-apple/keyboard_turn_check"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 84107,
+      "started_at": "2026-10-29T12:42:09.141971+00:00",
+      "finished_at": "2026-10-29T12:42:09.162880+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 90.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-202/turn-input-001.log",
+      "executed_binary": "openyamm/build-apple/keyboard_turn_check",
+      "executed_binary_sha256": "375bee78a68f20a7a3af3b13c4907d5a61c5e8bc65dbcc2765e4db8ef41d2a0c",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "configure-ios-001": {
+      "argv": [
+        "cmake",
+        "-S",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm",
+        "-B",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm/build-ios-xcode"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 84108,
+      "started_at": "2026-10-29T12:42:09.197066+00:00",
+      "finished_at": "2026-10-29T12:42:10.187061+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 120.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-202/configure-ios-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 87103,
+      "started_at": "2026-10-29T12:46:04.261497+00:00",
+      "finished_at": "2026-10-29T12:47:25.537369+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 240.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-202/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "validation_scope": {
+    "new_unit_cases": 1,
+    "assertions": 22,
+    "test_runs": 1,
+    "app_runs": 0,
+    "campaign_replays": 0,
+    "device_or_simulator_operations": 0,
+    "images_reviewed": 0
+  },
+  "runtime": "local-data/validation/ui-function-completion-198/runtime-003",
+  "runtime_changed": false,
+  "save_schema": 104,
+  "save_schema_changed": false,
+  "limitations": [
+    "Held cadence is an explicit refresh-independent project adaptation, not original per-frame repeat parity.",
+    "No202 actual keyboard/pixel/device acceptance. Native and unsigned generic iOS compile plus focused arithmetic check only.",
+    "Full natural campaign and target iPad acceptance remain unproved; remote195 fixed."
+  ],
+  "owned_jobs_remaining": [],
+  "goal_status": "active",
+  "full_game_complete": false,
+  "next": "203 confirmed duplicate binding conflict and hardcodedM map alias interception."
+}

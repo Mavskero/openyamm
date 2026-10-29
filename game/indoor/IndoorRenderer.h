@@ -19,6 +19,7 @@
 #include "game/tables/MonsterTable.h"
 #include "game/events/EventRuntime.h"
 #include "game/gameplay/GameplayWorldInteraction.h"
+#include "game/gameplay/KeyboardTurnRuntime.h"
 #include "game/tables/HouseTable.h"
 #include "game/ui/GameplayHudCommon.h"
 
@@ -98,7 +99,8 @@ public:
     void updateWorldMovement(
         const GameplayInputFrame &input,
         float deltaSeconds,
-        bool allowWorldInput);
+        bool allowWorldInput,
+        TurnRateMode turnRate);
     void setCameraPosition(float x, float y, float z);
     void setCameraAngles(float yawRadians, float pitchRadians);
     bool hasHudRenderResources() const;
@@ -415,7 +417,11 @@ private:
     uint16_t inspectHitEventId(const InspectHit &inspectHit) const;
     std::optional<std::string> resolveEntityDecorationHoverStatusText(const InspectHit &inspectHit) const;
     std::optional<std::string> resolveEventTargetHoverStatusText(const InspectHit &inspectHit) const;
-    void updateCameraFromInput(const GameplayInputFrame &input, float deltaSeconds, bool allowWorldInput);
+    void updateCameraFromInput(
+        const GameplayInputFrame &input,
+        float deltaSeconds,
+        bool allowWorldInput,
+        TurnRateMode turnRate);
     void renderDecorationBillboards(
         uint16_t viewId,
         const float *pViewMatrix,
@@ -728,6 +734,7 @@ private:
     mutable IndoorPerformanceDiagnostics m_indoorPerformanceDiagnostics;
     bool m_gameplayMouseLookEnabled = false;
     bool m_gameplayCursorMode = false;
+    KeyboardTurnState m_keyboardTurnState = {};
     bool m_jumpHeld;
     bool m_indoorGeometryRenderingDisabled = false;
     bool m_indoorGeometryRenderingToggleHeld = false;
