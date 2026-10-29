@@ -152,6 +152,23 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.disabled", "disabled"},
     {"ui.throne_no_fine", "You do not owe a fine."},
     {"ui.throne_sentence_served", "You have served one year in prison."},
+    {"ui.finish_current_action", "Finish current action"},
+    {"ui.spell_not_learned", "Spell not learned"},
+    {"ui.spell_no_valid_target", "No valid target exists!"},
+    {"ui.spell_select_actor", "Select actor for %s"},
+    {"ui.spell_select_character", "Select character for %s"},
+    {"ui.spell_select_ground", "Select ground point for %s"},
+    {"ui.spell_select_target", "Select target for %s"},
+    {"ui.spell_target_controls_mouse", "LMB cast  Esc cancel"},
+    {"ui.spell_target_controls_touch_ground", "Drag target  Spell button cast  Pause cancel"},
+    {"ui.spell_target_controls_touch_portrait", "Tap portrait  Menu cancel"},
+    {"ui.spell_target_controls_touch_target", "Tap target  Menu cancel"},
+    {"ui.town_portal_choose_destination", "Choose Town Portal destination"},
+    {"ui.spell_cast", "Cast %s"},
+    {"ui.high_magic_presence", "You feel high magic presence here."},
+    {"ui.spell_unknown_quick", "Unknown quick spell"},
+    {"ui.town_portal_data_missing", "Town Portal data missing"},
+    {"ui.spell_not_enough_spell_points", "Not enough spell points"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -204,7 +221,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 35 with win text, the 39 with bank captions, the 45 with rest captions,
     // the 72 with mastery/calendar/save, the 103 with keyboard, the 112 with journal
     // the 115/116 with initial skill training captions and base-attribute requirements,
-    // the 119 with skill category headings, and the 122 with NPC confirmations.
+    // the 119 with skill category headings, the 122 with NPC confirmations,
+    // and the 132 with ordinary travel and fine captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -220,6 +238,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t TrainingRequirementMessageCount = size_t(Message::SkillWeapons);
     constexpr size_t SkillHeadingMessageCount = size_t(Message::Yes);
     constexpr size_t NpcConfirmationMessageCount = size_t(Message::MoreInformation);
+    constexpr size_t TravelMessageCount = size_t(Message::FinishCurrentAction);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -235,7 +254,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != TrainingMessageCount
         && schemaMessageCount != TrainingRequirementMessageCount
         && schemaMessageCount != SkillHeadingMessageCount
-        && schemaMessageCount != NpcConfirmationMessageCount)
+        && schemaMessageCount != NpcConfirmationMessageCount
+        && schemaMessageCount != TravelMessageCount)
     {
         return false;
     }
@@ -267,7 +287,12 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
                 && !hasExpectedParameters(row[1], {"%s", "%u", "%s", "%s"}))
             || ((index == size_t(Message::NpcDismissFormat)
                     || index == size_t(Message::TransitionLeaveFormat)
-                    || index == size_t(Message::TransitionEnterFormat))
+                    || index == size_t(Message::TransitionEnterFormat)
+                    || index == size_t(Message::SpellSelectActorFormat)
+                    || index == size_t(Message::SpellSelectCharacterFormat)
+                    || index == size_t(Message::SpellSelectGroundFormat)
+                    || index == size_t(Message::SpellSelectTargetFormat)
+                    || index == size_t(Message::SpellCastFormat))
                 && !hasExpectedParameters(row[1], {"%s"})))
         {
             return false;
@@ -418,6 +443,22 @@ std::string UiTextTable::formatTransitionLeave(const std::string &name) const
 std::string UiTextTable::formatTransitionEnter(const std::string &name) const
 {
     return formatStringParameter(text(Message::TransitionEnterFormat), name);
+}
+
+std::string UiTextTable::formatSpellPrompt(Message message, const std::string &spellName) const
+{
+    switch (message)
+    {
+        case Message::SpellSelectActorFormat:
+        case Message::SpellSelectCharacterFormat:
+        case Message::SpellSelectGroundFormat:
+        case Message::SpellSelectTargetFormat:
+        case Message::SpellCastFormat:
+            return formatStringParameter(text(message), spellName);
+
+        default:
+            return {};
+    }
 }
 
 const char *UiTextTable::key(Message message)

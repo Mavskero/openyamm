@@ -1,0 +1,123 @@
+{
+  "assemble-runtime-001.command.json": {
+    "argv": [
+      "python3",
+      "local-data/validation/spell-combat-ui-223/assemble_runtime.py"
+    ],
+    "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+    "pid": 42890,
+    "started_at": "2026-10-29T18:03:10.868430+00:00",
+    "finished_at": "2026-10-29T18:03:12.961476+00:00",
+    "exit_code": 0,
+    "timed_out": false,
+    "timeout_seconds": 60.0,
+    "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-combat-ui-223/assemble-runtime-001.log",
+    "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/python3",
+    "executed_binary_sha256": "30b2a6bf9706029b609327ca5db722cd458239df96efc87e1f8e37beed49db2e",
+    "environment": {
+      "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+      "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+    }
+  },
+  "build-ios-001.command.json": {
+    "argv": [
+      "xcodebuild",
+      "-project",
+      "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+      "-scheme",
+      "openyamm_ipados",
+      "-configuration",
+      "Release",
+      "-destination",
+      "generic/platform=iOS",
+      "-derivedDataPath",
+      "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+      "-jobs",
+      "3",
+      "CODE_SIGNING_ALLOWED=NO",
+      "build"
+    ],
+    "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+    "pid": 42891,
+    "started_at": "2026-10-29T18:03:10.869954+00:00",
+    "finished_at": "2026-10-29T18:04:15.156537+00:00",
+    "exit_code": 0,
+    "timed_out": false,
+    "timeout_seconds": 240.0,
+    "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-combat-ui-223/build-ios-001.log",
+    "executed_binary": "/usr/bin/xcodebuild",
+    "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+    "environment": {
+      "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+      "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+    }
+  },
+  "build-native-001.command.json": {
+    "argv": [
+      "cmake",
+      "--build",
+      "openyamm/build-apple",
+      "--target",
+      "openyamm",
+      "core_import",
+      "combat_text_check",
+      "-j",
+      "3"
+    ],
+    "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+    "pid": 40976,
+    "started_at": "2026-10-29T18:01:00.121364+00:00",
+    "finished_at": "2026-10-29T18:02:21.793197+00:00",
+    "exit_code": 0,
+    "timed_out": false,
+    "timeout_seconds": 240.0,
+    "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-combat-ui-223/build-native-001.log",
+    "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+    "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+    "environment": {
+      "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+      "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+    }
+  },
+  "core-import-001.command.json": {
+    "argv": [
+      "openyamm/build-apple/core_import",
+      "local-data/validation/mm8-runtime-076/source-001",
+      "local-data/validation/spell-combat-ui-223/core-text-001"
+    ],
+    "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+    "pid": 42569,
+    "started_at": "2026-10-29T18:02:48.294246+00:00",
+    "finished_at": "2026-10-29T18:02:48.476728+00:00",
+    "exit_code": 0,
+    "timed_out": false,
+    "timeout_seconds": 120.0,
+    "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-combat-ui-223/core-import-001.log",
+    "executed_binary": "openyamm/build-apple/core_import",
+    "executed_binary_sha256": "62dcb8f38ddad91a8d7669f64e6f2fa27b264d8db99c760eac27ceaf0f315972",
+    "environment": {
+      "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+      "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+    }
+  },
+  "legacy-combat-text-001.command.json": {
+    "argv": [
+      "openyamm/build-apple/combat_text_check",
+      "--test-case=connector enemy message*"
+    ],
+    "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+    "pid": 42570,
+    "started_at": "2026-10-29T18:02:48.312422+00:00",
+    "finished_at": "2026-10-29T18:02:48.349510+00:00",
+    "exit_code": 0,
+    "timed_out": false,
+    "timeout_seconds": 60.0,
+    "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-combat-ui-223/legacy-combat-text-001.log",
+    "executed_binary": "openyamm/build-apple/combat_text_check",
+    "executed_binary_sha256": "41a8a578b9dae44df99374cda419bbbb76d601310bd68cfac4ee4551da40b327",
+    "environment": {
+      "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+      "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+    }
+  }
+}

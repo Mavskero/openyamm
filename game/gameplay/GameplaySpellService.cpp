@@ -8,11 +8,16 @@
 #include "game/gameplay/TurnBasedCombatRuntime.h"
 #include "game/party/LloydsBeaconRuntime.h"
 #include "game/party/SpellIds.h"
+#include "game/tables/UiTextTable.h"
+
+#include <SDL3/SDL_platform.h>
 
 namespace OpenYAMM::Game
 {
 namespace
 {
+using UiMessage = UiTextTable::Message;
+
 bool isUtilitySelectionRequest(const PartySpellCastRequest &request)
 {
     return request.utilityAction != PartySpellUtilityActionKind::None
@@ -60,6 +65,7 @@ GameplaySpellService::QuickSpellStartResolution GameplaySpellService::tryStartQu
     const TargetQueries &targetQueries)
 {
     QuickSpellStartResolution resolution = {};
+    const UiTextTable &uiText = runtime.gameplayUiRuntime().uiTextTable();
 
     if (m_session.gameplayScreenState().pendingSpellTarget().active)
     {
@@ -83,7 +89,7 @@ GameplaySpellService::QuickSpellStartResolution GameplaySpellService::tryStartQu
         || runtime.activeEventDialog().isActive
         || hasActiveLootView)
     {
-        runtime.setStatusBarEvent("Finish current action");
+        runtime.setStatusBarEvent(uiText.text(UiMessage::FinishCurrentAction));
         return resolution;
     }
 
@@ -118,7 +124,7 @@ GameplaySpellService::QuickSpellStartResolution GameplaySpellService::tryStartQu
 
     if (pSpellEntry == nullptr)
     {
-        runtime.setStatusBarEvent("Unknown quick spell");
+        runtime.setStatusBarEvent(uiText.text(UiMessage::SpellUnknownQuick));
         return resolution;
     }
 
@@ -153,7 +159,7 @@ GameplaySpellService::MemberSpellCastResolution GameplaySpellService::castSpellF
 
         if (pCaster == nullptr || !pCaster->knowsSpell(spellId))
         {
-            runtime.setStatusBarEvent("Spell not learned");
+            runtime.setStatusBarEvent(runtime.gameplayUiRuntime().uiTextTable().text(UiMessage::SpellNotLearned));
             return resolution;
         }
     }
@@ -198,6 +204,7 @@ bool GameplaySpellService::tryPrepareQuickCastRequest(
     const std::string &spellName,
     const TargetQueries &targetQueries) const
 {
+    const UiTextTable &uiText = runtime.gameplayUiRuntime().uiTextTable();
     if (spellIdFromValue(request.spellId) == SpellId::Fear)
     {
         request.quickCast = true;
@@ -218,7 +225,7 @@ bool GameplaySpellService::tryPrepareQuickCastRequest(
             return true;
         }
 
-        runtime.setStatusBarEvent("No valid target exists!", 3.0f);
+        runtime.setStatusBarEvent(uiText.text(UiMessage::SpellNoValidTarget), 3.0f);
         return false;
     }
 
@@ -236,7 +243,7 @@ bool GameplaySpellService::tryPrepareQuickCastRequest(
         return true;
     }
 
-    runtime.setStatusBarEvent("No valid target exists!", 3.0f);
+    runtime.setStatusBarEvent(uiText.text(UiMessage::SpellNoValidTarget), 3.0f);
     return false;
 }
 
@@ -383,7 +390,7 @@ GameplaySpellService::SpellRequestResolution GameplaySpellService::resolveSpellR
         if (isSpellId(request.spellId, SpellId::Telekinesis)
             && !GameplayHeldItemController::tryDisplaceHeldInventoryItem(runtime))
         {
-            runtime.setStatusBarEvent("Finish current action");
+            runtime.setStatusBarEvent(runtime.gameplayUiRuntime().uiTextTable().text(UiMessage::FinishCurrentAction));
             return resolution;
         }
 
@@ -449,21 +456,24 @@ std::string GameplaySpellService::pendingTargetSelectionPromptText(bool includeC
 {
     const GameplayScreenState::PendingSpellTargetState &pendingTargetState =
         m_session.gameplayScreenState().pendingSpellTarget();
+    const UiTextTable &uiText = m_session.gameplayUiRuntime().uiTextTable();
 
-    std::string prompt =
+    const UiMessage promptMessage =
         pendingTargetState.targetKind == PartySpellCastTargetKind::Actor
-            ? "Select actor for "
+            ? UiMessage::SpellSelectActorFormat
             : pendingTargetState.targetKind == PartySpellCastTargetKind::Character
-            ? "Select character for "
+            ? UiMessage::SpellSelectCharacterFormat
             : pendingTargetState.targetKind == PartySpellCastTargetKind::GroundPoint
-            ? "Select ground point for "
-            : pendingTargetState.targetKind == PartySpellCastTargetKind::TelekinesisTarget
-            ? "Select target for "
-            : "Select target for ";
-    prompt += pendingTargetState.spellName;
+            ? UiMessage::SpellSelectGroundFormat
+            : UiMessage::SpellSelectTargetFormat;
+    std::string prompt = uiText.formatSpellPrompt(promptMessage, pendingTargetState.spellName);
 
     if (includeControls)
     {
+        UiMessage controlsMessage = UiMessage::SpellTargetControlsMouse;
+#if defined(__ANDROID__) || defined(SDL_PLATFORM_IOS)
+        controlsMessage = pendingTargetState.targetKind == PartySpellCastTargetKind::Character
+            ? UiMessage::SpellTargetControlsTouchPortrait : UiMessage::SpellTargetControlsTouchTarget;
 #if defined(__ANDROID__)
         const bool mobileGroundTargetConfirmSpell =
             isSpellId(pendingTargetState.spellId, SpellId::MeteorShower)
@@ -471,28 +481,11 @@ std::string GameplaySpellService::pendingTargetSelectionPromptText(bool includeC
 
         if (mobileGroundTargetConfirmSpell)
         {
-            prompt += "  Drag target  Spell button cast  Pause cancel";
+            controlsMessage = UiMessage::SpellTargetControlsTouchGround;
         }
-        else if (pendingTargetState.targetKind == PartySpellCastTargetKind::Character)
-        {
-            prompt += "  Tap portrait  Pause cancel";
-        }
-        else if (pendingTargetState.targetKind == PartySpellCastTargetKind::CharacterOrWorldTarget)
-        {
-            prompt += "  Tap target  Pause cancel";
-        }
-        else if (pendingTargetState.targetKind == PartySpellCastTargetKind::Actor
-            || pendingTargetState.targetKind == PartySpellCastTargetKind::ActorOrCharacter)
-        {
-            prompt += "  Tap target  Pause cancel";
-        }
-        else
-        {
-            prompt += "  Tap target  Pause cancel";
-        }
-#else
-        prompt += "  LMB cast  Esc cancel";
 #endif
+#endif
+        prompt += "  " + uiText.text(controlsMessage);
     }
 
     return prompt;
@@ -691,6 +684,7 @@ bool GameplaySpellService::tryOpenSelectionUi(
     const std::string &spellName,
     const PartySpellCastResult &result)
 {
+    const UiTextTable &uiText = runtime.gameplayUiRuntime().uiTextTable();
     if (result.status == PartySpellCastStatus::NeedInventoryItemTarget)
     {
         runtime.closeSpellbookOverlay();
@@ -705,7 +699,7 @@ bool GameplaySpellService::tryOpenSelectionUi(
             request.spellId,
             request.casterMemberIndex);
         preserveUtilitySpellCastContext(runtime, request);
-        runtime.setStatusBarEvent("Select item for " + spellName, 4.0f);
+        runtime.setStatusBarEvent(spellName + ": " + uiText.text(UiMessage::InventoryTargetHint), 4.0f);
         return true;
     }
 
@@ -733,7 +727,7 @@ bool GameplaySpellService::tryOpenSelectionUi(
             if (runtime.openDimensionDoorOverlay(
                 request.casterMemberIndex,
                 request.spellId,
-                "You feel high magic presence here."))
+                uiText.text(UiMessage::HighMagicPresence)))
             {
                 preserveUtilitySpellCastContext(runtime, request);
             }
@@ -742,7 +736,7 @@ bool GameplaySpellService::tryOpenSelectionUi(
 
         if (!runtime.ensureTownPortalDestinationsLoaded())
         {
-            runtime.setStatusBarEvent("Town Portal data missing");
+            runtime.setStatusBarEvent(uiText.text(UiMessage::TownPortalDataMissing));
             return true;
         }
 
@@ -752,7 +746,7 @@ bool GameplaySpellService::tryOpenSelectionUi(
             request.casterMemberIndex);
         preserveUtilitySpellCastContext(runtime, request);
         runtime.resetUtilitySpellOverlayInteractionState();
-        runtime.setStatusBarEvent("Choose Town Portal destination", 4.0f);
+        runtime.setStatusBarEvent(uiText.text(UiMessage::TownPortalChooseDestination), 4.0f);
         return true;
     }
 
@@ -783,7 +777,8 @@ bool GameplaySpellService::tryOpenSelectionUi(
             hasRecallableBeacon);
         preserveUtilitySpellCastContext(runtime, request);
         runtime.resetUtilitySpellOverlayInteractionState();
-        runtime.setStatusBarEvent("Set or recall beacon", 4.0f);
+        runtime.setStatusBarEvent(
+            uiText.text(UiMessage::BeaconSet) + " / " + uiText.text(UiMessage::BeaconRecall), 4.0f);
         return true;
     }
 
@@ -837,7 +832,8 @@ void GameplaySpellService::applySuccessFeedback(
 
     if (!spellName.empty() && result.effectKind != PartySpellCastEffectKind::Telekinesis)
     {
-        runtime.setStatusBarEvent("Cast " + spellName);
+        runtime.setStatusBarEvent(
+            runtime.gameplayUiRuntime().uiTextTable().formatSpellPrompt(UiMessage::SpellCastFormat, spellName));
     }
 }
 
@@ -851,6 +847,8 @@ void GameplaySpellService::applyFailureFeedback(
         runtime.closeUtilitySpellOverlayAfterSpellResolution(request.spellId);
     }
 
-    runtime.triggerSpellFailureFeedback(request.casterMemberIndex, result.statusText);
+    const std::string &statusText = result.status == PartySpellCastStatus::NotEnoughSpellPoints
+        ? runtime.gameplayUiRuntime().uiTextTable().text(UiMessage::SpellNotEnoughSpellPoints) : result.statusText;
+    runtime.triggerSpellFailureFeedback(request.casterMemberIndex, statusText);
 }
 }

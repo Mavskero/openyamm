@@ -1,5 +1,10 @@
 # Shared combat text — checkpoint 063 (2026-09-11)
 
+Checkpoint223 update: original Global637 (`%s evades damage` / `%s躲过了攻击`) is now imported into
+`combat.evades_damage` and used by both evasion display paths. Old5/6catalog compatibility passes one existing
+case; no new actual combat/GUI replay. UiText casting/target/SP messages also use current language. Historical
+encounter failures below retain their original scope. See `handoff/spell-combat-ui-223/README.md`.
+
 Follow-up 064: `PROJECTILE_TARGET_VALIDATION.md` establishes that the outdoor third projectile
 hit actor 225 before selected actor 226. A subsequent normal outdoor kill/loot/cold-reload route
 passes and actual Chinese projectile-kill rendering is accepted. The historical 063 failures

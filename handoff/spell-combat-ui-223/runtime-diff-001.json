@@ -1,0 +1,48 @@
+{
+  "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/mm8-native-boundary-222/runtime-001",
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-combat-ui-223/runtime-001",
+  "changed_members": [
+    "data_tables/ui_text.txt",
+    "data_tables/combat_text.txt"
+  ],
+  "added_members": [],
+  "catalogs": {
+    "data_tables/ui_text.txt": {
+      "old": 132,
+      "new": 149,
+      "added_keys": [
+        "ui.finish_current_action",
+        "ui.spell_not_learned",
+        "ui.spell_select_actor",
+        "ui.spell_select_character",
+        "ui.spell_select_ground",
+        "ui.spell_select_target",
+        "ui.spell_target_controls_mouse",
+        "ui.spell_target_controls_touch_ground",
+        "ui.spell_target_controls_touch_portrait",
+        "ui.spell_target_controls_touch_target",
+        "ui.town_portal_choose_destination",
+        "ui.high_magic_presence",
+        "ui.spell_unknown_quick",
+        "ui.town_portal_data_missing",
+        "ui.spell_cast",
+        "ui.spell_no_valid_target",
+        "ui.spell_not_enough_spell_points"
+      ],
+      "sha256": "23a9a43dfc7b18a40db2affac8b543095b13cc1c7fd26e2f1542d9bc2005a447"
+    },
+    "data_tables/combat_text.txt": {
+      "old": 6,
+      "new": 7,
+      "added_keys": [
+        "combat.evades_damage"
+      ],
+      "sha256": "06d0f1eed423ab355639a1146cb75fe58a3e8cb9ba7db19df1227d3ce321e120"
+    }
+  },
+  "all_old_caption_values_retained": true,
+  "all_other_archive_members_and_worlds_retained": true,
+  "navigation222_retained": true,
+  "controlled_fixtures": false,
+  "new_release": false
+}

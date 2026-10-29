@@ -1,0 +1,81 @@
+{
+  "checkpoint": 223,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-29T18:04:52.085927+00:00",
+  "source_base": "8ccbbf0c8dd99c276cb0eb642dd0d4db656ee8bb",
+  "runtime": "local-data/validation/spell-combat-ui-223/runtime-001",
+  "scope": [
+    "Ordinary spell/target/item/portal/beacon UI uses current localization; SP feedback uses original586",
+    "iPad uses real tap target/portrait and Menu cancel; Android ground drag stays Android-only; input untouched",
+    "Both evasion messages use original637 through existing current CombatTextTable"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:01:00.121364+00:00",
+      "finished_at": "2026-10-29T18:02:21.793197+00:00",
+      "elapsed_seconds": 81.671833
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:02:48.294246+00:00",
+      "finished_at": "2026-10-29T18:02:48.476728+00:00",
+      "elapsed_seconds": 0.182482
+    },
+    "legacy-combat-text-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:02:48.312422+00:00",
+      "finished_at": "2026-10-29T18:02:48.349510+00:00",
+      "elapsed_seconds": 0.037088
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:03:10.868430+00:00",
+      "finished_at": "2026-10-29T18:03:12.961476+00:00",
+      "elapsed_seconds": 2.093046
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:03:10.869954+00:00",
+      "finished_at": "2026-10-29T18:04:15.156537+00:00",
+      "elapsed_seconds": 64.286583
+    }
+  },
+  "ui_text_count": 149,
+  "ui_old132_complete_prefix_accepted": true,
+  "ui_source_count": 112,
+  "ui_project_count": 37,
+  "combat_text_count": 7,
+  "combat_old5and6accepted": true,
+  "new_source_ids": [
+    485,
+    496,
+    586,
+    637
+  ],
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt",
+    "data_tables/combat_text.txt"
+  ],
+  "all_old_caption_values_retained": true,
+  "navigation222_and_all_other_archive_members_worlds_retained": true,
+  "save_version": 105,
+  "party_combat_casting_rules_changed": false,
+  "new_cases": 0,
+  "existing_case_executed": 1,
+  "existing_assertions": 7,
+  "app_gui_runs": 0,
+  "headless_gameplay_runs": 0,
+  "campaign_replays": 0,
+  "device_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "No new pixels/touch/actual SP-failure/evasion acceptance; source/import/build and oldcatalog compatibility only",
+    "Other PartySpellCastResult failures still keep original reason text; no generic replacement hiding different causes",
+    "Full natural campaign completion remains unproved"
+  ]
+}

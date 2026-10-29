@@ -1,5 +1,11 @@
 # MMMerge TXT table integration inventory
 
+Checkpoint223 adds original Global485/496/586 to shared UiText and637 to CombatText:149UIkeys/7combatkeys.
+Complete132UIprefix and5/6combat catalogs remain accepted. Ordinary casting/selection/SP/evasion messages use
+current language;14newUItranslations are explicit project text. iPad control hints follow existing tap/Menu
+behavior. No casting/damage/input rules change; native/core/one oldcatalog case/unsignediOS pass, noApp or device.
+See `handoff/spell-combat-ui-223/README.md`; default223retains222navigation andallworlds.
+
 Checkpoint222 restores the authenticated MM8 executable's native navigation base to the shared engine table
 `map_navigation.txt`:13slots/28routes,33columns with optional named starts; current registry projects9MM8rows
 and skips4zeroMM8slots whose filenames belong to MM7. Existing Merge Outdoor travels overrides still apply

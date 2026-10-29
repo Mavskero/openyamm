@@ -4,6 +4,15 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 223 ACCEPTED_SOURCE_SCOPED: `local-data/validation/spell-combat-ui-223/scoped-result.json`.
+  Ordinaryspell/target/item/portal/beacon/SPstatus andtwo evasionmessages usecurrentlanguage; original485/496/586/637.
+  UiText149(old132prefix accepted),CombatText7(old5/6accepted),14explicitnewprojecttranslations. iPad now usesreal
+  TapTarget/Portrait/MenuCancel hints; Androidground-drag staysAndroid-only, noinput/Party/combat/rulechanges.
+  Native81.672s/core0.182s/existing1case7assert0.037s/unsignediOS64.287s pass;0newcases/App/campaign/device/release.
+  Complete default223/runtime-001 changesonlyui_text/combat_text,222navigation/allworlds retained;Save105fixed.
+  Repo smalloverlay contains3 cumulative tablemembers relative214;214/195/RCs unchanged. GoalACTIVE/~85%lowconfidence;
+  no actualspell/evasion/touch/fullcampaignclaim. Next224 knownNotSkilledEnough/fixedfailure statusUI;nooldroute replay.
+
 - 222 ACCEPTED_SCOPED: `local-data/validation/mm8-native-boundary-222/scoped-result.json`.
   Standard import now restores authenticated MM8 native base before Merge:13slots/28routes/9projected33-column rows.
   Typed named-start intent resolves original markers, missing4edges retaindepartureXY/yaw; exact native terrainD3D

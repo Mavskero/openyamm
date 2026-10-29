@@ -1669,7 +1669,11 @@ void GameplayCombatController::handlePendingCombatEvents(
                         appendMemberDefenseSummary(out, *pMember, context.pRuntime);
                         gameplayCombatTraceWrite(out.str());
                     });
-                    showHitStatus(context.pRuntime, pMember->name + " evades damage");
+                    if (context.pRuntime != nullptr && context.pRuntime->combatTextTable() != nullptr)
+                    {
+                        showHitStatus(context.pRuntime, context.pRuntime->combatTextTable()->format(
+                            CombatTextTable::Message::EvadesDamage, pMember->name, {}, 0));
+                    }
                     continue;
                 }
 
@@ -1752,7 +1756,11 @@ void GameplayCombatController::handlePendingCombatEvents(
                     }
                     gameplayCombatTraceWrite(out.str());
                 });
-                showHitStatus(context.pRuntime, pTargetMember->name + " evades damage");
+                if (context.pRuntime != nullptr && context.pRuntime->combatTextTable() != nullptr)
+                {
+                    showHitStatus(context.pRuntime, context.pRuntime->combatTextTable()->format(
+                        CombatTextTable::Message::EvadesDamage, pTargetMember->name, {}, 0));
+                }
             }
 
             if (!evaded && targetMemberIndex.has_value())

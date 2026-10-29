@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-29T18:00:59.922848+00:00",
+  "source_base": "8ccbbf0c8dd99c276cb0eb642dd0d4db656ee8bb",
+  "files": {
+    "game/gameplay/GameplayCombatController.cpp": "16334fa5af163151e8b2b7cab1ec5be3e6c53b16b3984e3681523df092caa3a7",
+    "game/gameplay/GameplaySpellService.cpp": "d7712e5b4103887e4244a66f49ac81c5f73b9456b9c72a472a7e624161f7ec19",
+    "game/tables/CombatTextTable.cpp": "374ba7a211d04c2899e04647eb2bd68c060dad84a2114467d8ec0018a07ebc7a",
+    "game/tables/CombatTextTable.h": "40d7ab26670f9892961c540803a8a3858832735ac2df3b6529ccdc437fdbe72b",
+    "game/tables/UiTextTable.cpp": "7a488f42e1642e4873594ea1f5191fddbcff1a843375b46ef8b294160fd78363",
+    "game/tables/UiTextTable.h": "0404b792203ebd847780e41925bdb06ec0529003654c7ed66fd8673f14aed89b",
+    "tools/mmerge_import/CoreResources.cpp": "32133062cdc52064d5ee17eecb48ba737d0f42408a2dff58fc96872086cb055a"
+  },
+  "agents_frozen": true,
+  "main_only_build_owner": true
+}

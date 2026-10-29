@@ -1,0 +1,56 @@
+{
+  "source_root": "local-data/validation/mm8-runtime-076/source-001",
+  "global_sources": [
+    "Data/mmmerge.T.lod/global.txt",
+    "Data/10 LocZHCN.EnglishT.lod/global.txt"
+  ],
+  "authenticated": {
+    "485": {
+      "english": "Cast %s",
+      "chinese": "施展%s",
+      "key": "ui.spell_cast"
+    },
+    "496": {
+      "english": "No valid target exists! ",
+      "chinese": "无有效目标！",
+      "key": "ui.spell_no_valid_target"
+    },
+    "586": {
+      "english": "Not enough spell points",
+      "chinese": "魔法值不够",
+      "key": "ui.spell_not_enough_spell_points"
+    },
+    "637": {
+      "english": "%s evades damage",
+      "chinese": "%s躲过了攻击",
+      "key": "combat.evades_damage"
+    }
+  },
+  "ui": {
+    "old_count": 132,
+    "new_count": 149,
+    "new_source_rows": 3,
+    "new_project_translations": 14,
+    "all_old_values_retained": true,
+    "source_rows_total": 112,
+    "project_rows_total": 37
+  },
+  "combat": {
+    "old_count": 6,
+    "new_count": 7,
+    "old5and6accepted": true,
+    "damage_probability_and_speech_unchanged": true
+  },
+  "ipad_hints": {
+    "defect": "Old target status controls branch only __ANDROID__; iOS displayed LMB/Esc instructions",
+    "menu_cancel": "HudInputController581-584; InteractionController1541-1544/1547-1549 and SpellActionController94-103 have no platform guard",
+    "cast_confirm": "HudInputController615-618; same request consumer",
+    "android_pause_only": "OutdoorMobileButtonPause is in mobile.yml, UiController14-16 only loads this onAndroid",
+    "android_ground_only": "InteractionController1551-1555/1582-1587 enables Meteor/Starburst drag thenSpell confirm only onAndroid",
+    "fix": "Use SDL_PLATFORM_IOS and real tap-target/portrait plus Menu cancel; leave Android ground/drag branch unchanged",
+    "input_behavior_changed": false
+  },
+  "pure_party_logic_changed": false,
+  "sp_feedback": "Only existing NotEnoughSpellPoints status maps to Global586 at GameplaySpellService.applyFailureFeedback; other failure statusText unchanged.",
+  "validation_scope": "One existing legacy combat-catalog case only; native/core/iOS builds; zero GUI/campaign/device runs"
+}

@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 109> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 112> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -346,10 +346,13 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::MoreInformation, 407},
         {UiMessage::NpcDismissFormat, 408},
         {UiMessage::TransitionLeaveFormat, 126},
+        {UiMessage::SpellCastFormat, 485},
+        {UiMessage::SpellNoValidTarget, 496},
+        {UiMessage::SpellNotEnoughSpellPoints, 586},
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 23> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 37> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -374,6 +377,20 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::Disabled, "不可用"},
         {UiMessage::ThroneNoFine, "你没有未缴的罚金。"},
         {UiMessage::ThroneSentenceServed, "你已经服刑一年。"},
+        {UiMessage::FinishCurrentAction, "请先完成当前动作。"},
+        {UiMessage::SpellNotLearned, "尚未学会此法术。"},
+        {UiMessage::SpellSelectActorFormat, "请选择%s的目标生物。"},
+        {UiMessage::SpellSelectCharacterFormat, "请选择%s的目标队员。"},
+        {UiMessage::SpellSelectGroundFormat, "请选择%s的施法位置。"},
+        {UiMessage::SpellSelectTargetFormat, "请选择%s的目标。"},
+        {UiMessage::SpellTargetControlsMouse, "鼠标左键施法，Esc取消"},
+        {UiMessage::SpellTargetControlsTouchGround, "拖动选择目标，法术按钮施法，暂停取消"},
+        {UiMessage::SpellTargetControlsTouchPortrait, "轻点头像，菜单取消"},
+        {UiMessage::SpellTargetControlsTouchTarget, "轻点目标，菜单取消"},
+        {UiMessage::TownPortalChooseDestination, "请选择时空之门目的地。"},
+        {UiMessage::HighMagicPresence, "你感觉到这里有强大的魔法力量。"},
+        {UiMessage::SpellUnknownQuick, "未知的快捷法术"},
+        {UiMessage::TownPortalDataMissing, "缺少时空之门数据"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;
@@ -396,9 +413,10 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     }
     const size_t uiTextCount = uiText.size();
     tables["ui_text.txt"] = std::move(uiText);
-    const std::array<std::pair<uint32_t, const char *>, 6> combatTextIds{{
+    const std::array<std::pair<uint32_t, const char *>, 7> combatTextIds{{
         {164, "combat.melee_hit"}, {189, "combat.projectile_hit"}, {175, "combat.kill"},
-        {635, "combat.stun"}, {636, "combat.paralyze"}, {480, "combat.enemy_nearby"}}};
+        {635, "combat.stun"}, {636, "combat.paralyze"}, {480, "combat.enemy_nearby"},
+        {637, "combat.evades_damage"}}};
     Rows combatText;
     for (const auto &[id, key] : combatTextIds)
     {

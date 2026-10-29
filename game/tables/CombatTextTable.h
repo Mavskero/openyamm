@@ -10,9 +10,10 @@ namespace OpenYAMM::Game
 class CombatTextTable
 {
 public:
-    enum class Message { MeleeHit, ProjectileHit, Kill, Stun, Paralyze, EnemyNearby, Count };
+    enum class Message { MeleeHit, ProjectileHit, Kill, Stun, Paralyze, EnemyNearby, EvadesDamage, Count };
 
     // Five original keys are required. EnemyNearby is optional for packages predating connector support.
+    // EvadesDamage is optional and uses its English default when absent.
     // Only the declared %s/%lu argument sequence and escaped %% are accepted.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     std::string format(Message message, const std::string &attacker, const std::string &target, int damage) const;

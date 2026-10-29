@@ -147,13 +147,30 @@ public:
         Disabled,
         ThroneNoFine,
         ThroneSentenceServed,
+        FinishCurrentAction,
+        SpellNotLearned,
+        SpellNoValidTarget,
+        SpellSelectActorFormat,
+        SpellSelectCharacterFormat,
+        SpellSelectGroundFormat,
+        SpellSelectTargetFormat,
+        SpellTargetControlsMouse,
+        SpellTargetControlsTouchGround,
+        SpellTargetControlsTouchPortrait,
+        SpellTargetControlsTouchTarget,
+        TownPortalChooseDestination,
+        SpellCastFormat,
+        HighMagicPresence,
+        SpellUnknownQuick,
+        TownPortalDataMissing,
+        SpellNotEnoughSpellPoints,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
     // Validate the current schema or migrate a complete older prefix with
-    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119 or 122 keys.
+    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122 or 132 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;
@@ -169,6 +186,7 @@ public:
     std::string formatNpcDismiss(const std::string &name) const;
     std::string formatTransitionLeave(const std::string &name) const;
     std::string formatTransitionEnter(const std::string &name) const;
+    std::string formatSpellPrompt(Message message, const std::string &spellName) const;
     static const char *key(Message message);
 
 private:
