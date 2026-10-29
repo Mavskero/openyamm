@@ -4,6 +4,14 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 230 DELIVERY_PREPARING: `handoff/ui-cumulative-delivery-230/README.md`.
+  One consolidated229 delivery closes the public214/Save104 versus current229/Save105 gap. Reuse passed229
+  unsigned generic iOS and complete227 runtime (UI214 keys,Combat223,navigation222); all six runtime files
+  included. No new build/App/case/device/campaign matrix. Production8cdae9215ef7bb52e8fe8f6e83bf16641280fd0e;
+  final source/App/runtime identities come from release VERSION/manifest, then verified publication receipt.
+  Preserve fixed214/195/RC1–3 and all saves;105 reads104,old214/RC cannot read new105. Current-host device ban
+  remains;195 short-flow is already complete. Full goalACTIVE/~85%lowconfidence,naturalcampaign unproved.
+
 - 229 ACCEPTED_SCOPED: `handoff/paperdoll-left-arm-229/scoped-result.json`.
   Original early/late left-arm model nowshared bycomposite/fallback:Down LHd/LHo,Up LHu/LHc,Out LHo/LHf;
   Sword/Dagger lategrip only,228 no-offhandWeapon2 retained. No art/table/gear/skill/rule changes.
