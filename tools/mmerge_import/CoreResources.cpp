@@ -386,7 +386,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 64> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 68> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -452,6 +452,10 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::ItemSpellDataMissing, "缺少法术数据"},
         {UiMessage::ItemUnknownScrollSpell, "未知的卷轴法术"},
         {UiMessage::ItemConnectorInvalidState, "连接石状态无效。"},
+        {UiMessage::ItemCannotEquipHere, "无法在此处装备这件物品。"},
+        {UiMessage::ItemCannotEquip, "无法装备这件物品。"},
+        {UiMessage::ItemCannotPlaceHere, "物品无法放在这里。"},
+        {UiMessage::ItemEquipTargetOccupied, "该装备位置已被占用。"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

@@ -1,0 +1,68 @@
+{
+  "checkpoint": 227,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-30T03:14:19.683693+08:00",
+  "source_base": "35071efb2d3a6a4123c8bd257cccb9785cd8544b",
+  "runtime": "local-data/validation/equipment-feedback-227/runtime-001",
+  "scope": [
+    "Fresh per-call equipment/placement failure reasons replace stale prior diagnostic in four UI consumers",
+    "Inactive/no-plan/equipment/placement errors use current language"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T19:09:26.914394+00:00",
+      "finished_at": "2026-10-29T19:11:27.143190+00:00",
+      "elapsed_seconds": 120.228796
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T19:12:12.304040+00:00",
+      "finished_at": "2026-10-29T19:12:12.449316+00:00",
+      "elapsed_seconds": 0.145276
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T19:12:12.518679+00:00",
+      "finished_at": "2026-10-29T19:12:14.647119+00:00",
+      "elapsed_seconds": 2.12844
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T19:12:12.519381+00:00",
+      "finished_at": "2026-10-29T19:14:14.036081+00:00",
+      "elapsed_seconds": 121.5167
+    }
+  },
+  "source_files_verified": 6,
+  "ui_text_count": 214,
+  "ui_old210_complete_prefix_accepted": true,
+  "ui_source_count": 146,
+  "ui_project_count": 68,
+  "new_source_rows": 0,
+  "new_project_rows": 4,
+  "all_old_caption_values_retained": true,
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "combat223_navigation222_and_all_other_archive_members_worlds_retained": true,
+  "save_version": 105,
+  "equipment_inventory_rules_and_transactions_changed": false,
+  "stale_prior_success_feedback_fixed": true,
+  "new_cases": 0,
+  "existing_cases_executed": 0,
+  "app_gui_runs": 0,
+  "headless_gameplay_runs": 0,
+  "campaign_replays": 0,
+  "device_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "Source/import/build only; no actual affected equipment/placement pixels or touch acceptance",
+    "No inventory/equipment-rule or item-loss defect confirmed",
+    "Full natural campaign completion and target-iPad conditional flows remain unproved"
+  ]
+}

@@ -5485,18 +5485,38 @@ bool Party::tryPlaceItemInMemberInventoryCell(
     const InventoryItem &item,
     uint8_t gridX,
     uint8_t gridY,
-    std::optional<InventoryItem> &replacedItem)
+    std::optional<InventoryItem> &replacedItem,
+    ItemPlacementFailure *pFailure)
 {
+    if (pFailure != nullptr)
+    {
+        *pFailure = ItemPlacementFailure::None;
+    }
+
     Character *pMember = member(memberIndex);
 
     if (pMember == nullptr)
     {
         replacedItem.reset();
+        m_lastStatus = "invalid member";
+
+        if (pFailure != nullptr)
+        {
+            *pFailure = ItemPlacementFailure::InvalidMember;
+        }
+
         return false;
     }
 
     if (!pMember->tryPlaceInventoryItemAt(item, gridX, gridY, replacedItem))
     {
+        m_lastStatus = "cannot place item";
+
+        if (pFailure != nullptr)
+        {
+            *pFailure = ItemPlacementFailure::CannotPlace;
+        }
+
         return false;
     }
 
@@ -5536,14 +5556,27 @@ bool Party::tryEquipItemOnMember(
     const InventoryItem &item,
     std::optional<EquipmentSlot> displacedSlot,
     bool autoStoreDisplacedItem,
-    std::optional<InventoryItem> &heldReplacement)
+    std::optional<InventoryItem> &heldReplacement,
+    ItemPlacementFailure *pFailure)
 {
     heldReplacement.reset();
+
+    if (pFailure != nullptr)
+    {
+        *pFailure = ItemPlacementFailure::None;
+    }
 
     Character *pMember = member(memberIndex);
 
     if (pMember == nullptr || item.objectDescriptionId == 0)
     {
+        m_lastStatus = pMember == nullptr ? "invalid member" : "invalid item";
+
+        if (pFailure != nullptr)
+        {
+            *pFailure = pMember == nullptr ? ItemPlacementFailure::InvalidMember : ItemPlacementFailure::InvalidItem;
+        }
+
         return false;
     }
 
@@ -5554,6 +5587,13 @@ bool Party::tryEquipItemOnMember(
         || !ItemRuntime::characterMeetsRaceRestriction(*pMember, *pItemDefinition))
     {
         m_lastStatus = "cannot equip";
+
+        if (pFailure != nullptr)
+        {
+            *pFailure = pItemDefinition == nullptr
+                ? ItemPlacementFailure::InvalidItem : ItemPlacementFailure::CannotEquip;
+        }
+
         return false;
     }
 
@@ -5561,6 +5601,13 @@ bool Party::tryEquipItemOnMember(
         && *displacedSlot != targetSlot
         && ::OpenYAMM::Game::equippedItemId(pMember->equipment, targetSlot) != 0)
     {
+        m_lastStatus = "target occupied";
+
+        if (pFailure != nullptr)
+        {
+            *pFailure = ItemPlacementFailure::TargetOccupied;
+        }
+
         return false;
     }
 
@@ -5577,6 +5624,12 @@ bool Party::tryEquipItemOnMember(
             displacedSlot))
     {
         m_lastStatus = "cannot equip";
+
+        if (pFailure != nullptr)
+        {
+            *pFailure = ItemPlacementFailure::CannotEquip;
+        }
+
         return false;
     }
 
@@ -5595,6 +5648,12 @@ bool Party::tryEquipItemOnMember(
         if (!pMember->addInventoryItem(displacedInventoryItem))
         {
             m_lastStatus = "inventory full";
+
+            if (pFailure != nullptr)
+            {
+                *pFailure = ItemPlacementFailure::InventoryFull;
+            }
+
             return false;
         }
     }

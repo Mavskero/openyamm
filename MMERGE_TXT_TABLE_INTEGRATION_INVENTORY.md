@@ -1,5 +1,10 @@
 # MMMerge TXT table integration inventory
 
+Checkpoint227 adds4 explicit project captions:214UI keys,146source/68project. Complete old210 andearlier
+prefixes/alloldvalues retained. Equipment/placement failures use fresh per-call output instead of previous
+lastStatus. Inventory/equipment/held-item transactions andSave105 unchanged; native/core/unsignediOS pass,
+0cases/App/device. See `handoff/equipment-feedback-227/README.md`; default227changesonlyui_text.
+
 Checkpoint226 adds18 original Global rows and13 project captions:210UI keys,146source/64project.
 Complete old179/earlier prefixes andalloldvalues retained. Condition labels/Gold/Food/Permanent areoriginal;
 stat/skill/resistance names reuseCharacterInspectTable. Consumable reward uses recorded result, no UI RNG;

@@ -1,0 +1,53 @@
+{
+  "checkpoint": 227,
+  "source_base": "35071efb2d3a6a4123c8bd257cccb9785cd8544b",
+  "confirmed_defect": "A failed explicit inventory placement could reuse a previous success diagnostic; four overlay failure paths rendered Party.lastStatus as the current failure.",
+  "producer": "Party APIs append an optional pure ItemPlacementFailure output. Each call resets None, each original false branch records current reason; previously silent rejections refresh diagnostics.",
+  "failure_mapping": {
+    "InvalidMember/InvalidItem": "ItemUnavailable",
+    "CannotEquip": "ItemCannotEquip",
+    "TargetOccupied": "ItemEquipTargetOccupied",
+    "InventoryFull": "PackFull",
+    "CannotPlace": "ItemCannotPlaceHere",
+    "None/unknown": "ItemUnavailable"
+  },
+  "consumer": "Two equip and two explicit-place failures read per-call enum only; inactive and no-plan errors use typed captions; equip speech uses enum.",
+  "preserved": [
+    "Existing success/failure bool and all eligibility guards",
+    "Inventory/equipment changes and their order",
+    "heldReplacement/replacedItem handling",
+    "Held-item ownership and clearing conditions",
+    "AutoPlace/Identify and lower Character APIs",
+    "Save105 and inventory/equipment rules"
+  ],
+  "catalog": {
+    "old_count": 210,
+    "new_count": 214,
+    "source_rows": 146,
+    "project_rows": 68,
+    "new_source_rows": 0,
+    "new_project_keys": [
+      "ui.item_cannot_equip_here",
+      "ui.item_cannot_equip",
+      "ui.item_cannot_place_here",
+      "ui.item_equip_target_occupied"
+    ],
+    "original_lookup": "No exact original GlobalTxt equivalent for four literals; explicit project translations"
+  },
+  "not_claimed": [
+    "No actual equipment/placement pixel or touch acceptance",
+    "No inventory/item-loss defect confirmed",
+    "No full natural campaign completion"
+  ],
+  "adjacent_readonly_followup": {
+    "status": "NO_NEW_CONFIRMED_DEFECT",
+    "scope": "Same controller held-item cancel/exit/character-switch only",
+    "findings": [
+      "Escape/E and ExitButton close overlays without clearing held item",
+      "Character switch keeps held item, clears old pointer target and returns",
+      "Four clearHeldItem calls occur only after successful placement/equipment and no replacement; failure returns first"
+    ],
+    "new_edits_builds_runs": 0,
+    "agent": "sol_input_gaps_216 frozen"
+  }
+}

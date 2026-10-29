@@ -32,6 +32,17 @@ struct MercenaryReleaseProfile;
 class StandardItemEnchantTable;
 class SpecialItemEnchantTable;
 
+enum class ItemPlacementFailure : uint8_t
+{
+    None,
+    InvalidMember,
+    InvalidItem,
+    CannotEquip,
+    TargetOccupied,
+    InventoryFull,
+    CannotPlace,
+};
+
 // Transient operation output; item state and legacy diagnostic text remain authoritative.
 struct ItemOperationFeedback
 {
@@ -554,7 +565,8 @@ public:
         const InventoryItem &item,
         uint8_t gridX,
         uint8_t gridY,
-        std::optional<InventoryItem> &replacedItem);
+        std::optional<InventoryItem> &replacedItem,
+        ItemPlacementFailure *pFailure = nullptr);
     bool takeEquippedItemFromMember(size_t memberIndex, EquipmentSlot slot, InventoryItem &item);
     bool tryEquipItemOnMember(
         size_t memberIndex,
@@ -562,7 +574,8 @@ public:
         const InventoryItem &item,
         std::optional<EquipmentSlot> displacedSlot,
         bool autoStoreDisplacedItem,
-        std::optional<InventoryItem> &heldReplacement);
+        std::optional<InventoryItem> &heldReplacement,
+        ItemPlacementFailure *pFailure = nullptr);
     std::optional<InventoryItem> equippedItem(size_t memberIndex, EquipmentSlot slot) const;
     const InventoryItem *memberInventoryItem(size_t memberIndex, uint8_t gridX, uint8_t gridY) const;
     InventoryItem *memberInventoryItemMutable(size_t memberIndex, uint8_t gridX, uint8_t gridY);

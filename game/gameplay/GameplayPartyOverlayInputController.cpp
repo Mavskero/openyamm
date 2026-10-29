@@ -15,6 +15,7 @@
 #include "game/party/SpellIds.h"
 #include "game/party/SkillData.h"
 #include "game/tables/MergedBaseTables.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/GameplayHudCommon.h"
 #include "game/ui/CharacterSkillsLayout.h"
 #include "game/ui/CharacterAwardsLayout.h"
@@ -42,6 +43,33 @@ namespace
 constexpr uint64_t PartyPortraitDoubleClickWindowMs = 500;
 constexpr uint64_t CharacterDismissConfirmWindowMs = 2000;
 constexpr float MaxUiScale = 8.0f;
+
+const std::string &itemPlacementFailureStatusText(const UiTextTable &uiText, ItemPlacementFailure failure)
+{
+    using Message = UiTextTable::Message;
+
+    switch (failure)
+    {
+    case ItemPlacementFailure::InventoryFull:
+        return uiText.text(Message::PackFull);
+
+    case ItemPlacementFailure::CannotEquip:
+        return uiText.text(Message::ItemCannotEquip);
+
+    case ItemPlacementFailure::TargetOccupied:
+        return uiText.text(Message::ItemEquipTargetOccupied);
+
+    case ItemPlacementFailure::CannotPlace:
+        return uiText.text(Message::ItemCannotPlaceHere);
+
+    case ItemPlacementFailure::None:
+    case ItemPlacementFailure::InvalidMember:
+    case ItemPlacementFailure::InvalidItem:
+        return uiText.text(Message::ItemUnavailable);
+    }
+
+    return uiText.text(Message::ItemUnavailable);
+}
 
 void latchGameplayMenuEscape(GameplayScreenRuntime &context)
 {
@@ -2939,7 +2967,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
                 if (!selectedPartyMemberCanAct)
                 {
-                    context.setStatusBarEvent("Can't do that");
+                    context.setStatusBarEvent(
+                        context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::ItemTargetInactive));
                     return;
                 }
 
@@ -2974,12 +3003,14 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
                 if (!plan.has_value())
                 {
-                    context.setStatusBarEvent("Can't equip that item there");
+                    context.setStatusBarEvent(
+                        context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::ItemCannotEquipHere));
                     context.playSpeechReaction(memberIndex, SpeechId::CantEquip, true);
                     return;
                 }
 
                 std::optional<InventoryItem> heldReplacement;
+                ItemPlacementFailure failure = ItemPlacementFailure::None;
 
                 if (!pParty->tryEquipItemOnMember(
                         memberIndex,
@@ -2987,14 +3018,14 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                         context.heldInventoryItem().item,
                         plan->displacedSlot,
                         plan->autoStoreDisplacedItem,
-                        heldReplacement))
+                        heldReplacement,
+                        &failure))
                 {
-                    const std::string &partyStatus = pParty->lastStatus();
                     context.setStatusBarEvent(
-                        partyStatus.empty() || partyStatus == "inventory full" ? "Pack is Full!" : partyStatus);
+                        itemPlacementFailureStatusText(context.gameplayUiRuntime().uiTextTable(), failure));
                     context.playSpeechReaction(
                         memberIndex,
-                        partyStatus == "inventory full" ? SpeechId::InventoryRoom : SpeechId::CantEquip,
+                        failure == ItemPlacementFailure::InventoryFull ? SpeechId::InventoryRoom : SpeechId::CantEquip,
                         true);
                     return;
                 }
@@ -3028,7 +3059,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
                 if (!selectedPartyMemberCanAct)
                 {
-                    context.setStatusBarEvent("Can't do that");
+                    context.setStatusBarEvent(
+                        context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::ItemTargetInactive));
                     return;
                 }
 
@@ -3064,12 +3096,14 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
                 if (!plan.has_value())
                 {
-                    context.setStatusBarEvent("Can't equip that item");
+                    context.setStatusBarEvent(
+                        context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::ItemCannotEquip));
                     context.playSpeechReaction(memberIndex, SpeechId::CantEquip, true);
                     return;
                 }
 
                 std::optional<InventoryItem> heldReplacement;
+                ItemPlacementFailure failure = ItemPlacementFailure::None;
 
                 if (!pParty->tryEquipItemOnMember(
                         memberIndex,
@@ -3077,14 +3111,14 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                         context.heldInventoryItem().item,
                         plan->displacedSlot,
                         plan->autoStoreDisplacedItem,
-                        heldReplacement))
+                        heldReplacement,
+                        &failure))
                 {
-                    const std::string &partyStatus = pParty->lastStatus();
                     context.setStatusBarEvent(
-                        partyStatus.empty() || partyStatus == "inventory full" ? "Pack is Full!" : partyStatus);
+                        itemPlacementFailureStatusText(context.gameplayUiRuntime().uiTextTable(), failure));
                     context.playSpeechReaction(
                         memberIndex,
-                        partyStatus == "inventory full" ? SpeechId::InventoryRoom : SpeechId::CantEquip,
+                        failure == ItemPlacementFailure::InventoryFull ? SpeechId::InventoryRoom : SpeechId::CantEquip,
                         true);
                     return;
                 }
@@ -3104,17 +3138,18 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             if (target.type == GameplayCharacterPointerTargetType::InventoryItem && context.heldInventoryItem().active)
             {
                 std::optional<InventoryItem> replacedItem;
+                ItemPlacementFailure failure = ItemPlacementFailure::None;
 
                 if (!pParty->tryPlaceItemInMemberInventoryCell(
                         memberIndex,
                         context.heldInventoryItem().item,
                         target.gridX,
                         target.gridY,
-                        replacedItem))
+                        replacedItem,
+                        &failure))
                 {
-                    const std::string &partyStatus = pParty->lastStatus();
                     context.setStatusBarEvent(
-                        partyStatus.empty() || partyStatus == "inventory full" ? "Pack is Full!" : partyStatus);
+                        itemPlacementFailureStatusText(context.gameplayUiRuntime().uiTextTable(), failure));
                     return;
                 }
 
@@ -3176,17 +3211,18 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                 }
 
                 std::optional<InventoryItem> replacedItem;
+                ItemPlacementFailure failure = ItemPlacementFailure::None;
 
                 if (!pParty->tryPlaceItemInMemberInventoryCell(
                         memberIndex,
                         context.heldInventoryItem().item,
                         static_cast<uint8_t>(placement->first),
                         static_cast<uint8_t>(placement->second),
-                        replacedItem))
+                        replacedItem,
+                        &failure))
                 {
-                    const std::string &partyStatus = pParty->lastStatus();
                     context.setStatusBarEvent(
-                        partyStatus.empty() || partyStatus == "inventory full" ? "Pack is Full!" : partyStatus);
+                        itemPlacementFailureStatusText(context.gameplayUiRuntime().uiTextTable(), failure));
                     return;
                 }
 

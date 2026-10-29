@@ -4,6 +4,14 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 227 ACCEPTED_SOURCE_SCOPED: `handoff/equipment-feedback-227/scoped-result.json`.
+  Equipment/placement failure now reports fresh per-call reason; four consumers no longer read prior lastStatus.
+  Inactive/no-plan andfour newcaptions usecurrentUiText214; completeold210 retained,146source/68project.
+  Original inventory/equipment/held-item transactions andSave105 preserved. Native/core/assembly/unsignediOS pass;
+  6built-source hashes match,0cases/App/campaign/device/release. Complete default227changesonlyui_text;
+  Combat223/navigation222/worlds andfixed214/195/RCs retained. FullgoalACTIVE/~85%lowconfidence;
+  actual affectedpixels/touch andfullnaturalcampaign remainunproved. No broad audit/replay matrix.
+
 - 226 ACCEPTED_SOURCE_SCOPED: `handoff/consumable-feedback-226/scoped-result.json`.
   Consumable/book/mix/reward feedback uses typed actual result and current names; no UI RNG. DimensionDoor failure
   now emits reason before original earlyreturn. Burning/drowning transient enum keeps damage/ticks/priority/Snapshot.

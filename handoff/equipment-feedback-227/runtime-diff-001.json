@@ -1,0 +1,21 @@
+{
+  "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/consumable-feedback-226/runtime-001",
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/equipment-feedback-227/runtime-001",
+  "changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "added_members": [],
+  "old_ui_count": 210,
+  "new_ui_count": 214,
+  "added_keys": [
+    "ui.item_cannot_equip_here",
+    "ui.item_cannot_equip",
+    "ui.item_cannot_place_here",
+    "ui.item_equip_target_occupied"
+  ],
+  "all_old_caption_values_retained": true,
+  "ui_text_sha256": "7215f3cb0d144472c8bc5d9f5cca507c8f7d6d593bb3ed91fed8fae5e42fee19",
+  "combat223_navigation222_and_all_other_members_worlds_retained": true,
+  "controlled_fixtures": false,
+  "new_release": false
+}

@@ -231,6 +231,10 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.condition_eradicated", "Eradicated"},
     {"ui.party_burning", "You are burning!"},
     {"ui.party_drowning", "You are drowning!"},
+    {"ui.item_cannot_equip_here", "Can't equip that item there"},
+    {"ui.item_cannot_equip", "Can't equip that item"},
+    {"ui.item_cannot_place_here", "Can't place that item here"},
+    {"ui.item_equip_target_occupied", "That equipment slot is occupied"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -287,7 +291,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 132 with ordinary travel and fine captions,
     // the 149 with spell feedback and target-selection captions,
     // the 164 with spell failure captions,
-    // and the 179 with item feedback and stealing captions.
+    // the 179 with item feedback and stealing captions,
+    // and the 210 with item use and movement captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -307,6 +312,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t SpellMessageCount = size_t(Message::SpellFailed);
     constexpr size_t SpellFailureMessageCount = size_t(Message::SpellArmageddonAlreadyActive);
     constexpr size_t ItemFeedbackMessageCount = size_t(Message::ItemMixedPotion);
+    constexpr size_t ItemUseMessageCount = size_t(Message::ItemCannotEquipHere);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -326,7 +332,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != TravelMessageCount
         && schemaMessageCount != SpellMessageCount
         && schemaMessageCount != SpellFailureMessageCount
-        && schemaMessageCount != ItemFeedbackMessageCount)
+        && schemaMessageCount != ItemFeedbackMessageCount
+        && schemaMessageCount != ItemUseMessageCount)
     {
         return false;
     }

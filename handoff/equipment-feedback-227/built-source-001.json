@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-30T03:09:26.683877+08:00",
+  "source_base": "35071efb2d3a6a4123c8bd257cccb9785cd8544b",
+  "files": {
+    "game/gameplay/GameplayPartyOverlayInputController.cpp": "5b932411db1006c74c836cea11e7db55c84d35b46ab462f538a5307f306155c7",
+    "game/party/Party.cpp": "ce6c2326f6e34bd9958ff1eccbc85f56d6ad388cf85abfe0a79da060d3ed1070",
+    "game/party/Party.h": "62b189aa580334f754711da812adbf4805fd76d53b6beea08fd9a01664488333",
+    "game/tables/UiTextTable.cpp": "b4fa1c6134241bb454d92c75bb35175d13bd8fb398bfad45f08c9d2ac90b4e36",
+    "game/tables/UiTextTable.h": "db276c62f348a3abbac1f9972079c4d9906503a4a971913c982e706e6bab352c",
+    "tools/mmerge_import/CoreResources.cpp": "969f1c00fec3a6211d7c1f1698d844e2fdba792e5ca0782f52aecebdcb454734"
+  },
+  "agents_frozen": true,
+  "main_build_owner": true
+}
