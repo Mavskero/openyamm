@@ -1,0 +1,20 @@
+{
+  "recorded_at": "2026-10-29T16:10:32.453644+00:00",
+  "failed_attempt": "actual-001",
+  "phase": 4,
+  "frame": 17,
+  "confirmed": [
+    "Original SDL Learn charged2000 and producedSword4Expert",
+    "Original Chinese approved quote observed"
+  ],
+  "diagnosis": "Frozen UI delta0 prevented High-priority load toast5s from expiring; normal success event rejected by intended priority rule",
+  "source_evidence": [
+    "game/ui/GameplayUiController.cpp:setStatusBarEvent priority gate",
+    "game/app/GameApplication.cpp:reportQuickSaveStatus High5s",
+    "game/gameplay/GameplayScreenRuntime.cpp:updateStatusBarEvent"
+  ],
+  "change": "Only capture mode: advance status timer with actual frame delta; wait original loadtoast expiration before directNPC entry. Gameplay remainsdelta0.",
+  "new_production_changes": 0,
+  "preserved": "actual-001 outputs,originalinput,complete runtime218",
+  "retry_scope": "same first teacherflow only;no regression matrix"
+}

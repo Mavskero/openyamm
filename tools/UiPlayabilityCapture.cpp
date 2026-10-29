@@ -8,6 +8,8 @@
 #include "game/maps/SaveGame.h"
 #include "game/tables/AwardTable.h"
 #include "game/tables/JournalAutonoteTable.h"
+#include "game/tables/NpcDialogTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/CharacterAwardsLayout.h"
 #include "game/ui/CharacterSkillRows.h"
 #include "game/ui/CharacterSkillsLayout.h"
@@ -366,6 +368,297 @@ struct ApplicationCaptureTestAccess
         catch (const std::exception &exception)
         {
             std::ofstream("failure.txt") << "phase=" << phase << " frame=" << frames << " " << exception.what() << '\n';
+            throw;
+        }
+    }
+    static int runSwordTeacher(
+        std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
+    {
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "Sword teacher output must be new");
+        const auto fileHash = [](const std::filesystem::path &path)
+        {
+            const uintmax_t length = std::filesystem::file_size(path);
+            require(length > 0 && length <= 64 * 1024 * 1024, "Unexpected Sword teacher save size");
+            std::vector<uint8_t> bytes(size_t(length), 0);
+            std::ifstream file(path, std::ios::binary);
+            require(bool(file.read(reinterpret_cast<char *>(bytes.data()), std::streamsize(bytes.size()))),
+                "Cannot read Sword teacher input for SHA256");
+            std::array<unsigned char, CC_SHA256_DIGEST_LENGTH> digest{};
+            CC_SHA256(bytes.data(), CC_LONG(bytes.size()), digest.data());
+            std::ostringstream hash;
+            for (unsigned char byte : digest)
+                hash << std::hex << std::setfill('0') << std::setw(2) << unsigned(byte);
+            return hash.str();
+        };
+        const std::string inputHash = fileHash(input);
+        require(inputHash == "183e0f4ba9942ccc011a07aac5c706894cf94a1410a7c6eb20c6dd7eb49b726a",
+            "Sword teacher requires the unchanged normal132 MM6 input");
+        std::string error;
+        const auto source = loadGameDataFromPath(input, error);
+        require(source && source->currentSceneKind == SceneKind::Outdoor && source->mapFileName == "oute3.odm"
+            && source->party.activeMemberIndex == 0 && source->party.gold == 9067 && !source->party.members.empty(),
+            "Original Sword teacher scene or party differs");
+        const Character &originalMember = source->party.members.front();
+        const CharacterSkill *originalSword = originalMember.findSkillByCanonicalName("Sword");
+        require(originalMember.name == "探路骑士" && originalMember.className == "Knight" && originalMember.level == 3
+            && originalSword && originalSword->level == 4 && originalSword->mastery == SkillMastery::Normal,
+            "Original Knight is not ready for Expert Sword");
+        std::filesystem::create_directories(output / "saves");
+        std::filesystem::copy_file(input, output / "input.oysav");
+        require(fileHash(output / "input.oysav") == inputHash, "Sword teacher input copy changed");
+        std::filesystem::current_path(output);
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings("settings.ini", settings, error), "Cannot write isolated Sword teacher settings");
+        std::ofstream("fixture.txt") << "219 first actual Expert Sword UI; production base b8120104. "
+            "Runtime=" << runtime.string() << ". Original normal132 MM6 oute3 input copied unchanged; "
+            "source SHA256=" << inputHash << ". The only gameplay fixture is direct original "
+            "NpcTalk context NPC805 (亚伦・斯壮姆), host house1285. Original teacher topic1515 "
+            "(长剑专家训练), text1894, Sword4/Normal and9067gold; no party, skill, gold, item, quest, map or pose edits. "
+            "Actual SDL Offer/Learn clicks must charge2000gold and produce Sword4/Expert. Actual configured "
+            "Inventory key (KeyboardAction::Quest defaults to I; GameplayInputController inventory consumer), "
+            "then actual CharacterSkillsButton click. Two screenshots: approved quote and character skills. "
+            "Gameplay frames delta0; UI status clock follows real frame delta and "
+            "original load toast expires before entry. "
+            "<=30seconds, no normal-frame continuation/game-save write/cold replay/device/"
+            "new unit cases/natural campaign claim. Dummy audio; no listening claim. Failures retained.\n";
+        std::ofstream("input.json") << "{\"path\":" << std::quoted(input.string())
+            << ",\"sha256\":" << std::quoted(inputHash) << ",\"production_base\":\"b8120104\""
+            << ",\"runtime\":" << std::quoted(runtime.string()) << ",\"npc_id\":805,\"host_house_id\":1285"
+            << ",\"topic_id\":1515,\"text_id\":1894,\"gold_before\":9067,\"cost\":2000}\n";
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM Sword Teacher219";
+        config.assetRoot = runtime.string();
+        config.activeWorldId = "mm6";
+        config.startupMapFileOverride = source->mapFileName;
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        unsigned phase = 0, frames = 0, captures = 0, ready = 6, escapePresses = 0;
+        bool complete = false;
+        std::string pending, learnedText, skillLabel;
+        const std::string expectedOffer = "成为专家，在长剑方面，花费2000个金币";
+        const std::string expectedLearned = "探路骑士已掌握专家级的长剑技能。";
+        const auto started = std::chrono::steady_clock::now();
+        std::ofstream trace("observations.jsonl");
+        const auto screen = [&]() -> GameplayScreenRuntime & { return game.m_gameSession.gameplayScreenRuntime(); };
+        const auto member = [&]() -> const Character &
+        {
+            require(screen().party() && screen().party()->activeMemberIndex() == 0 && screen().party()->member(0),
+                "Original Sword learner changed");
+            return *screen().party()->member(0);
+        };
+        const auto observe = [&](const char *stage)
+        {
+            const CharacterSkill *sword = member().findSkillByCanonicalName("Sword");
+            trace << "{\"stage\":" << std::quoted(stage) << ",\"frame\":" << frames << ",\"phase\":" << phase
+                << ",\"gold\":" << screen().party()->gold() << ",\"sword_level\":" << (sword ? sword->level : 0)
+                << ",\"sword_mastery\":" << (sword ? int(sword->mastery) : 0)
+                << ",\"dialog_active\":" << (screen().activeEventDialog().isActive ? "true" : "false")
+                << ",\"dialog_source\":" << screen().activeEventDialog().sourceId
+                << ",\"status\":" << std::quoted(screen().statusBarEventText()) << "}\n";
+            trace.flush();
+        };
+        const auto capture = [&](const char *name)
+        {
+            require(pending.empty() && captures < 2, "Sword teacher capture budget exceeded");
+            pending = name;
+            bgfx::requestScreenShot(BGFX_INVALID_HANDLE, name);
+        };
+        const auto clickTopic = [&](EventDialogActionKind kind, int width, int height)
+        {
+            const auto topics = resolveDialogueTopicLayout(screen(), width, height);
+            require(topics && topics->pageIndex < topics->pages.size() && screen().activeEventDialog().isActive
+                && screen().activeEventDialog().sourceId == 805, "Original Sword teacher dialog unavailable");
+            for (const auto &row : topics->pages[topics->pageIndex].rows)
+            {
+                const auto &action = screen().activeEventDialog().actions[row.actionIndex];
+                if (action.kind == kind && action.id == 1515 && action.enabled)
+                {
+                    trace << "{\"stage\":\"sdl_topic_click\",\"phase\":" << phase
+                        << ",\"topic_id\":" << action.id << ",\"label\":" << std::quoted(action.label) << "}\n";
+                    trace.flush();
+                    click(row.rect, width, height);
+                    return;
+                }
+            }
+            throw std::runtime_error("Original Sword teacher topic is not visible and enabled");
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(game.initializeRenderer() && game.loadSessionFromPath(output / "input.oysav"),
+                        "Sword teacher initial load failed");
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal, "Metal required");
+                    require(screen().ensureGameplayLayoutsLoaded() && screen().worldRuntime()
+                        && screen().worldRuntime()->eventRuntimeState(), "Sword teacher scene unavailable");
+                    const NpcDialogTable *npcs = screen().npcDialogTable();
+                    const NpcEntry *npc = npcs != nullptr ? npcs->getNpc(805) : nullptr;
+                    require(npc && npc->houseId == 1285
+                        && std::find(npc->topicIds.begin(), npc->topicIds.end(), 1515) != npc->topicIds.end(),
+                        "Original Sword teacher NPC/house/topic binding differs");
+                    const CharacterSkill *sword = member().findSkillByCanonicalName("Sword");
+                    require(member().className == "Knight" && member().level == 3 && sword && sword->level == 4
+                        && sword->mastery == SkillMastery::Normal && screen().party()->gold() == 9067,
+                        "Load changed original Sword training conditions");
+                    observe("original_loaded");
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float deltaSeconds)
+                {
+                    require(++frames < 1200 && std::chrono::steady_clock::now() - started < std::chrono::seconds(30),
+                        "Sword teacher capture exceeded bound");
+                    screen().updateStatusBarEvent(deltaSeconds);
+                    game.renderFrame(width, height, wheel, 0.0f);
+                    observe("frame");
+                    if (!pending.empty())
+                    {
+                        if (const auto image = Engine::BgfxContext::consumeScreenshot(pending))
+                        {
+                            SDL_Surface *surface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()),
+                                int(image->width * 4));
+                            require(surface && SDL_SaveBMP(surface, (pending + ".bmp").c_str()),
+                                "Sword teacher screenshot failed");
+                            SDL_DestroySurface(surface);
+                            pending.clear();
+                            ++captures;
+                        }
+                    }
+                    if (frames < ready || !pending.empty()) return;
+                    switch (phase)
+                    {
+                    case 0:
+                    {
+                        if (screen().statusBarEventRemainingSeconds() > 0.0f) break;
+                        EventRuntimeState::PendingDialogueContext entry;
+                        entry.kind = DialogueContextKind::NpcTalk;
+                        entry.sourceId = 805;
+                        entry.hostHouseId = 1285;
+                        screen().worldRuntime()->eventRuntimeState()->pendingDialogueContext = entry;
+                        phase = 1; ready = frames + 3; break;
+                    }
+                    case 1:
+                        clickTopic(EventDialogActionKind::MasteryTeacherOffer, width, height);
+                        phase = 2; ready = frames + 3; break;
+                    case 2:
+                    {
+                        const auto &actions = screen().activeEventDialog().actions;
+                        const auto offer = std::find_if(actions.begin(), actions.end(), [&](const auto &action)
+                        {
+                            return action.kind == EventDialogActionKind::MasteryTeacherLearn && action.id == 1515;
+                        });
+                        require(offer != actions.end() && offer->enabled && offer->label == expectedOffer,
+                            "Approved Sword quote is not the original Chinese 2000gold offer");
+                        require(screen().party()->gold() == 9067, "Sword offer charged before Learn");
+                        observe("approved_quote");
+                        capture("sword-expert-offer"); phase = 3; break;
+                    }
+                    case 3:
+                        clickTopic(EventDialogActionKind::MasteryTeacherLearn, width, height);
+                        phase = 4; ready = frames + 3; break;
+                    case 4:
+                    {
+                        const CharacterSkill *sword = member().findSkillByCanonicalName("Sword");
+                        require(screen().party()->gold() == 7067 && sword && sword->level == 4
+                            && sword->mastery == SkillMastery::Expert, "SDL Learn did not charge/train exactly once");
+                        learnedText = screen().statusBarEventText();
+                        require(learnedText == expectedLearned, "Expert Sword success status is not Chinese");
+                        observe("learned");
+                        key(SDL_SCANCODE_ESCAPE); ++escapePresses;
+                        phase = 5; ready = frames + 2; break;
+                    }
+                    case 5:
+                    {
+                        if (screen().activeEventDialog().isActive)
+                        {
+                            require(escapePresses < 4, "Sword teacher dialog did not close through SDL Escape");
+                            key(SDL_SCANCODE_ESCAPE); ++escapePresses; ready = frames + 2; break;
+                        }
+                        const SDL_Scancode inventoryKey =
+                            screen().settingsSnapshot().keyboard.keyboardBinding(KeyboardAction::Quest);
+                        require(inventoryKey != SDL_SCANCODE_UNKNOWN, "Configured Inventory key unavailable");
+                        std::ofstream("fixture.txt", std::ios::app) << "Actual Inventory SDL scancode="
+                            << int(inventoryKey) << " (" << SDL_GetScancodeName(inventoryKey) << ").\n";
+                        key(inventoryKey); phase = 6; ready = frames + 2; break;
+                    }
+                    case 6:
+                    {
+                        const auto &character = screen().characterScreenReadOnly();
+                        require(character.open
+                            && character.source == GameplayUiController::CharacterScreenSource::Party
+                            && character.sourceIndex == 0
+                            && character.page == GameplayUiController::CharacterPage::Inventory,
+                            "Actual Inventory key did not open original learner");
+                        const auto *layout = screen().findHudLayoutElement("CharacterSkillsButton");
+                        require(layout != nullptr, "Character Skills button layout unavailable");
+                        const auto rect = screen().resolveHudLayoutElement(
+                            "CharacterSkillsButton", width, height, layout->width, layout->height);
+                        require(rect.has_value(), "Character Skills button did not resolve");
+                        click(*rect, width, height); phase = 7; ready = frames + 2; break;
+                    }
+                    case 7:
+                    {
+                        require(screen().characterScreenReadOnly().open
+                            && screen().characterScreenReadOnly().page == GameplayUiController::CharacterPage::Skills,
+                            "Actual Skills button did not open skills page");
+                        const auto data = buildCharacterSkillUiData(&member(), screen().characterInspectTable(), true,
+                            &screen().gameplayUiRuntime().uiTextTable());
+                        const auto sword = std::find_if(data.weaponRows.begin(), data.weaponRows.end(),
+                            [](const auto &row) { return row.canonicalName == "Sword"; });
+                        require(sword != data.weaponRows.end() && sword->label == "长剑 专家" && sword->level == "4",
+                            "Rendered Sword skill row lacks original Chinese Expert suffix");
+                        skillLabel = sword->label;
+                        observe("skills_page");
+                        capture("sword-expert-skills"); phase = 8; break;
+                    }
+                    case 8:
+                        require(screen().party()->gold() == 7067 && member().level == originalMember.level
+                            && member().skillPoints == originalMember.skillPoints,
+                            "Sword UI navigation changed progression");
+                        complete = true; phase = 9;
+                        { SDL_Event quit{}; quit.type = SDL_EVENT_QUIT; SDL_PushEvent(&quit); }
+                        break;
+                    default: break;
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete && captures == 2, "Sword teacher capture ended early");
+            const std::string inputHashAfter = fileHash(input);
+            const std::string copyHashAfter = fileHash(output / "input.oysav");
+            require(inputHashAfter == inputHash && copyHashAfter == inputHash,
+                "Original or copied Sword teacher save changed");
+            require(std::filesystem::is_empty(output / "saves"), "Sword teacher UI wrote a game save");
+            const double elapsedSeconds =
+                std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
+            require(elapsedSeconds <= 30.0, "Sword teacher capture exceeded thirty seconds");
+            std::ofstream("result.json") << "{\"passed\":true,\"checkpoint\":219,\"production_base\":\"b8120104\""
+                << ",\"frames\":" << frames << ",\"captures\":" << captures << ",\"elapsed_seconds\":" << elapsedSeconds
+                << ",\"input_sha256\":" << std::quoted(inputHash)
+                << ",\"input_sha256_after\":" << std::quoted(inputHashAfter)
+                << ",\"copy_sha256_after\":" << std::quoted(copyHashAfter)
+                << ",\"npc_id\":805,\"host_house_id\":1285,\"topic_id\":1515,\"text_id\":1894"
+                << ",\"gold_before\":9067,\"gold_after\":7067,\"cost\":2000,\"sword_level\":4,\"sword_mastery\":2"
+                << ",\"success_status\":" << std::quoted(learnedText) << ",\"skill_label\":" << std::quoted(skillLabel)
+                << ",\"normal_frames\":0,\"game_save_writes\":0,\"new_unit_cases\":0,\"device\":false"
+                << ",\"cold_replay\":false,\"natural_campaign\":false}\n";
+            return 0;
+        }
+        catch (const std::exception &exception)
+        {
+            std::ofstream("failure.txt") << "phase=" << phase << " frame=" << frames << " "
+                << exception.what() << '\n';
             throw;
         }
     }
@@ -1965,7 +2258,12 @@ int main(int argc, char **argv)
 {
     try
     {
-        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only|--journal-party-save|--video-brightness|--monster-tint|--keyboard|--yell]");
+        if (argc != 4 && argc != 5)
+            throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT "
+                "[--remaining-only|--travel-rest|--labels-only|--creation-only|--journal-party-save|"
+                "--video-brightness|--monster-tint|--keyboard|--yell|--sword-teacher]");
+        if (argc == 5 && std::string(argv[4]) == "--sword-teacher")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::runSwordTeacher(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--yell")
             return OpenYAMM::Game::ApplicationCaptureTestAccess::runYell(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--keyboard")

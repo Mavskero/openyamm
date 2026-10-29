@@ -4,6 +4,14 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 219 ACCEPTED_SCOPED: `local-data/validation/sword-teacher-ui-219/scoped-result.json`.
+  Firstactual SDL original805/1285/topic1515 expertSword quote→learn→skills:9067→7067,Sword4Normal→4Expert,
+  Chinese quote/status/suffix in2reviewedimages.15.921s/317frames,gameplaydelta0/UIstatustimerreal. OnlyNPCcontext
+  fixture;normal132 map/party/pose/quest/qualification untouched,original/copy hashes unchanged.0Savewrite/newcases/
+  oldroutes/cold/device/newiOS;218production/runtime/iOS retained. Initial loadtoast/frozenUIclock driverfailure
+  preserved;onlycaptureclock repaired. FullgoalACTIVE/~85%. Next bounded ordinaryNPC confirmation-caption source
+  followup;no broad audit/replay/devicecheckpoint.50-stat refusals andnaturalentry/fullcampaign remainunproved.
+
 - 218 ACCEPTED_SCOPED: `local-data/validation/ui-function-completion-218/scoped-result.json`.
   ActualEnglish8skillheaders now source242/138/143,existing11/Level131. Native/core/unsignediOS pass;
   one11.097s character-page affectedrecheck/1reviewedimage showsall8Chinese,no missingglyph/overlap. Inherited184

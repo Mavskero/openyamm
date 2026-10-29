@@ -1,0 +1,7 @@
+{
+  "change": "After actual acceptance, split one125-column fixture string into two adjacent literals; concatenated bytes unchanged",
+  "scope": "Formatting only;no production/driver control flow change",
+  "rerun_required": false,
+  "current_capture_source_sha256": "64de011a7b870b482c61a3b7e2e649c6d49e7985cea109d41e547fdf4ce2cf5d",
+  "executed_source_record": "built-source-002.json"
+}

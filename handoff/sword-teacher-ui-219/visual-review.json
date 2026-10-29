@@ -1,0 +1,19 @@
+{
+  "reviewed": true,
+  "images": [
+    "sword-expert-offer.png",
+    "sword-expert-skills.png"
+  ],
+  "confirmed": [
+    "Original Chinese approved quote and2000gold visible",
+    "7067gold andSword4Expert row visible",
+    "Chinese learned status visible in same final skills image",
+    "Localized skill groups/levels remain visible"
+  ],
+  "not_proven": [
+    "Natural house entry",
+    "Other masteries or50-stat failures",
+    "Saving/travel/continuedcombat",
+    "iPad or natural campaign"
+  ]
+}
