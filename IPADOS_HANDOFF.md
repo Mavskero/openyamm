@@ -1,115 +1,105 @@
-# OpenYAMM iPadOS：195 远程测试交接
+# OpenYAMM iPadOS：214 累计交付
 
-更新：2026-10-29。仓库：[Mavskero/openyamm](https://github.com/Mavskero/openyamm)，源码分支 `codex/ipados`。
-本次按用户要求准备远程 iPad 测试包，整合183–188及190–195的修复。旧RC1、RC2、RC3保留。
+更新：2026-10-29。本次集中交付固定195之后的196–214修复，并包含接收端195真机反馈中的修复。
+仓库为 [Mavskero/openyamm](https://github.com/Mavskero/openyamm)，开发分支为 `codex/ipados`。
+本次 tag 为 `ipados-ui-cumulative-214-20261029`，见[发布页面](https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-cumulative-214-20261029)。
+附件 `VERSION.json` 的 `source_head`、`ios` 和 `runtime_payloads` 是本次源码、App及资源身份的权威记录；
+`SOURCE-MANIFEST.json` 记录源码快照，`ARTIFACT-SHA256SUMS` 校验交付附件，`delivery.json` 记录发布核对结果。
+不以继续更新的分支HEAD代替发布身份。固定195 tag和RC1/RC2/RC3均保留。
 
-发布 tag：`ipados-ui-function-195-20261029`。
-[发布页面](https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-function-195-20261029)
-的附件 `VERSION.json` 固定195源码提交、App附件名及摘要；`ARTIFACT-SHA256SUMS` 校验交付附件。
-源码文档引用该记录，避免用继续开发中的分支HEAD代替发布版本。新版目标iPad尚待接收端验收。
-权威交付字段与受影响检查表见[195远程测试记录](handoff/ipados-remote-test-195/README.md)。
+这是一次累计交付，不增加一套设备回放矩阵，也不是继续开发的停工或验收门槛。
+[接收端Codex提示词](CODEX_IPAD_DEVICE_PROMPT.md)只有在用户将其作为消息发送到接收Mac会话后才授权该会话操作设备。
+保存文档本身不构成授权；原开发主机的设备及模拟器禁令不变。
 
-[可复制的接收端Codex提示词](CODEX_IPAD_DEVICE_PROMPT.md)须由用户在接收Mac的会话中发送才构成该会话的设备授权。
-本文件或提示词存放在仓库中不构成授权，原开发主机的设备/模拟器禁令继续有效。
+## 本次包含的改动和证据
 
-## 版本和存档
+- 中文与阅读：建队标点换行、技能精通和法术学派名称、键位两页及日志类别显示；跨地图Notes继续可见。
+- 角色与保存：技能手势绑定稳定队员身份，切换队员取消旧操作；奖项内容与滚动条共用实际布局；
+  保存失败保留名字草稿，空槽依据真实占用状态初始化；100个手动槽按十行滚动，点击和IME定位使用同一可见行。
+- 设置与画面：亮度50–200%滑条、100%中点和世界预览；彩色光、怪物Tinting、音量触摸拖动与室内脚步开关接线；
+  设置页“返回游戏”完成关闭链，最终退出房屋时FlipOnExit在室内外统一生效。
+- 键位与动作：单一绑定冲突交换，显式绑定优先于M、F9/F10、KP Enter、数字及P等固定快捷键；
+  经典键盘16/32转向保留角度步长，长按按时间累计；Yell接入正常玩法，包含500毫秒延迟、67毫秒长按重复和焦点保护。
+- 接收端修复：建队及Standard角色页的可见触摸检查入口、空槽名字、保存分页和滚动后的软键盘区域。
+  195反馈提交 `dcae3d56` 对应的接收端工作已在 `14137bad` 合并；这些是历史集成标识，不是本发布源码head。
 
-本次App写入 **Save104**。194之前的RC1/RC2/RC3二进制不能读取新写的104存档。
-先备份旧App数据和全部旧存档，记录文件摘要；旧档只用副本，新保存使用未占用槽位。
-回退旧App时同时使用保留的旧格式存档，不覆盖原件。Windows/MMMerge原始存档不属于本次兼容承诺。
+195接收端已记录正常短流程、普通旅行、中文Save104新槽保存、前后台恢复和独立进程重启读档通过，
+详见[195接收端记录](handoff/ipados-device-195-20261029/README.md)。原始设备证据仍保存在接收Mac，
+仓库中的摘要索引不能替代原始截图或存档，也不能当作214新版的设备验收。
 
-194前置源码为 `47776561`；195源码以本次发布的 `VERSION.json` 中 `source_head` 为准。
-195最终提交、运行资源基线、未签名iOS附件与验收记录见195交付字段；不得以分支最新HEAD或旧RC3快照替代。
-190–194已有Mac受影响检查和通用iOS构建证据。195原生native001通过（72.058秒），core导入72键通过；
-独立启动后的主菜单读档页/建队预览首次通过（3.882秒、15帧、2图已查看）。
-已看到自动存档/快速保存/存档99、中文星期/月和四项精通；没有载入游戏会话、创建队伍或推进战役。
-195通用未签名iOS build-ios-001通过（54.982秒、exit 0），没有目标设备运行。
-这些证据不等于新版目标iPad通过，也不证明完整自然通关。
+196–214的原生及通用未签名iOS构建与有界受影响检查见对应handoff。
+213首次实际Yell检查通过：13.522秒、180个正常续玩帧及保存，2张图已查看。
+214长按重复和焦点处理已通过0.833秒输入检查，原生及通用未签名iOS构建通过。
+这些是限定范围证据；未新增设备检查或自然战役回放，完整自然通关仍未证明。
 
-## 完整资源来自本次同一发布
+## 存档和数据保留
 
-从本次195发布下载全部资源：`engine.zip`、`conversion.json`、`SHA256SUMS`，以及
-`mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip`。全部附件来自同一tag `ipados-ui-function-195-20261029`。
-195完整本地基线为 `local-data/validation/ui-function-completion-195/runtime-001`：继承194完整包，
-保留194新增的303张原版休息动画图。194→195仅把UI文字表更新为72键，Save104和四个world相对194不变。
-四个world实际继承 `local-data/validation/device-independent-completion-190/runtime-003`；与RC2相比，
-MM6/MM7/MM8已增加190脚本，三个ZIP均已改变，只有mmmerge字节相同。本次仍从195发布下载全部四个world并校验，
-不要复用RC2的MM6/MM7/MM8。不混用188、RC3或RC2旧engine；不解压运行ZIP，不把源码ZIP或零散补丁当作完整运行包。
+本次继续写入 **Save104**。195已写的104档沿用同一格式；旧RC1/RC2/RC3不能读取新写的104档。
+更新前备份当前App数据和全部存档并记录摘要，保留接收端已备份的10个旧存档原件。
+旧档只用副本，工作档同样先备份；新保存使用未占用槽位，不覆盖原件。
+回退旧程序时配合保留的旧格式存档。Windows/MMMerge原始存档兼容性不在本次已验证范围内。
 
-在接收端一个新的可写目录中执行：
+默认bundle ID为 `org.openyamm.ipados`。接收Mac使用自己的有效Team，保留数据地更新安装。
+不要通过卸载旧App、清空容器、重置设备或随意更改bundle ID解决签名问题。
+资源导入和存档导入是两件事：资源复制到App的 `Application Support/GameImports/<id>`；
+游戏槽位位于App实际的 `Library/Application Support/saves`，普通Documents共享不会自动变成槽位文件。
 
-```sh
-mkdir -p assets/worlds
-gh release download ipados-ui-function-195-20261029 --repo Mavskero/openyamm \
-  --dir assets --pattern engine.zip --pattern conversion.json --pattern SHA256SUMS
-gh release download ipados-ui-function-195-20261029 --repo Mavskero/openyamm \
-  --dir assets/worlds --pattern mm6.zip --pattern mm7.zip --pattern mm8.zip --pattern mmmerge.zip
-(cd assets && shasum -a 256 -c SHA256SUMS)
-```
+## 完整资源和附件
 
-清单使用 `worlds/mm6.zip` 等相对路径，应在 `assets/` 中校验全部资源。
-遇到同名文件先核对版本，不加覆盖下载参数。App附件按195记录中的实际名称另行下载并核对其摘要。
+本次本地资源基线为 `local-data/validation/ui-function-completion-207/runtime-001`。
+相对195，`engine.zip` 和 `conversion.json` 已更新；四个world与195基线为同一实际文件。
+新发布仍同时提供全部六文件：`engine.zip`、`conversion.json`、`mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip`。
+engine保留原有303张休息动画及后来补齐的滑条素材，共享UI文字表为112键。
+不要把“world与195相同”误读为可复用RC2：MM6/MM7/MM8在190已经改变。
 
-```text
-assets/
-  engine.zip
-  conversion.json
-  SHA256SUMS
-  worlds/
-    mm6.zip
-    mm7.zip
-    mm8.zip
-    mmmerge.zip
-```
-
-把整个新 `assets` 文件夹传到iPad“文件”可访问的位置，在App启动页选择整个资源目录，完成复制后开始游戏。
-导入到App自己的 `Application Support/GameImports/<id>`，资源导入不自动导入存档。
-旧资源目录保持原样，供定位问题和回退使用。
-
-旧OpenYAMM存档先在接收端备份，再确认App容器实际的 `Library/Application Support/saves` 路径。
-菜单使用 `save1.oysav` 等槽位文件，只把副本放入未占用槽位；普通Documents共享不会自动放到游戏读取目录。
-请使用发布记录指定的195App和195engine作为一组，不能只换文字表或只更新App。
-
-## 新Mac源码与构建
-
-未签名iOS App不能直接安装。接收Mac需用有效Team签名；可按本机签名环境重签附件，
-或从交付字段指定的同一源码提交构建设备Release。先确认旧App的数据备份及bundle ID。
-默认bundle ID为 `org.openyamm.ipados`；不要通过卸载、清空容器或随意改ID来绕过签名问题。
-
-新机器使用实际目录和全新构建缓存，不复制旧主机的CMakeCache、build、DerivedData、`_deps`、
-`external-storage/env.sh`或NVMe路径别名。旧主机路径仅是历史证据来源，不应在新Mac重建同名目录。
-完整Xcode、iPhoneOS SDK、Git、CMake、Ninja/make和Python是构建前提；首次依赖下载时间另计。
+在一个新的下载目录获取同一tag的完整交付并校验：
 
 ```sh
-git clone --filter=blob:none --sparse --branch codex/ipados \
-  https://github.com/Mavskero/openyamm.git
-cd openyamm
-git sparse-checkout set .github android cmake engine game ios packaging scripts \
-  tests tools util third_party/doctest handoff \
-  assets_dev/engine/rendering assets_dev/engine/scripts/common assets_dev/engine/ui
-git sparse-checkout reapply --no-cone
-sed 's#^#/assets_dev/engine/icons/#' assets_dev/engine/ui/gameplay/owned_images.txt \
-  | git sparse-checkout add --stdin
-git log -1 --oneline
+mkdir release-214
+gh release download ipados-ui-cumulative-214-20261029 --repo Mavskero/openyamm --dir release-214
+(cd release-214 && shasum -a 256 -c ARTIFACT-SHA256SUMS)
+mkdir -p assets-214/worlds
+cp release-214/engine.zip release-214/conversion.json release-214/SHA256SUMS assets-214/
+cp release-214/mm6.zip release-214/mm7.zip release-214/mm8.zip release-214/mmmerge.zip assets-214/worlds/
+(cd assets-214 && shasum -a 256 -c SHA256SUMS)
 ```
 
-核对195交付字段中的源码提交，再在独立调试分支工作。已有仓库或调试分支先检查未提交修改和分歧，
-保留现状后合并需要的195改动，不reset/clean。主代理独占构建目录和设备。
+使用新的空目录，遇到同名文件先核对，不加覆盖下载参数。`SHA256SUMS` 保留 `worlds/` 相对路径，
+因此在组装后的 `assets-214/` 中校验。五个运行ZIP保持压缩状态，不混入旧engine或开发夹具。
+将整个 `assets-214` 目录交给App原生资源选择器，完成六文件复制后继续；旧资源目录保留。
 
-先检查 `xcode-select -p` 与 `xcrun --sdk iphoneos --show-sdk-path`，使用接收Mac实际的Xcode和Team：
+未签名App附件为 `OpenYAMM-214-iPadOS-unsigned.zip`，它不是可直接安装的已签名IPA。
+源码附件 `source.tar.gz` 包含完整项目代码、配置、交接文档和构建所需源资源；原游戏运行素材由上述六文件提供。
+源码快照不包含Git历史、旧主机build/cache或全部原始游戏素材；依赖按固定版本联网获取。
+最终源码提交、源码文件数、App摘要及附件摘要以本次VERSION和清单为准，不沿用195的数值。
+
+## 接收Mac签名和可选源码构建
+
+可以用接收Mac有效签名重签未签名App副本，也可以从本次源码快照构建设备Release。
+两者择其适合的方式，不要求为了交付再次运行一套构建或游戏回放。
+新机器使用自己的工作目录、Team和全新build/DerivedData；不要拷贝旧CMakeCache、`_deps`、
+`external-storage/env.sh`、旧DerivedData或NVMe路径别名。
+已有调试分支先比较与本次 `VERSION.json → source_head` 的差异，保留未提交工作后合并，不reset/clean。
+
+使用源码附件时，先完成附件摘要校验，解包后在 `openyamm/` 内执行。完整Xcode、iPhoneOS SDK、Git、
+CMake、Ninja/make和Python需由本机提供；首次下载和构建时间另计。
 
 ```sh
+mkdir source-214
+tar -xzf release-214/source.tar.gz -C source-214
+cd source-214/openyamm
+xcode-select -p
+xcrun --sdk iphoneos --show-sdk-path
 cmake -S . -B build-apple -G Ninja \
   -DCMAKE_BUILD_TYPE=Release -DOPENYAMM_FETCH_DEPENDENCIES_ONLY=ON \
   -DOPENYAMM_BUILD_TESTS=OFF
 BX_DIR="$PWD/build-apple/_deps/bx-src" \
   BIMG_DIR="$PWD/build-apple/_deps/bimg-src" \
   make -C build-apple/_deps/bgfx-src shaderc -j3
-
 export OPENYAMM_DEVELOPMENT_TEAM='YOUR_ACTUAL_TEAM_ID'
 scripts/configure_ipados_xcode.sh
 export OPENYAMM_DEVICE_ID='ACTUAL_DEVICE_IDENTIFIER'
-export OPENYAMM_DEVICE_DERIVED_DATA="$PWD/build-device-deriveddata-195"
+export OPENYAMM_DEVICE_DERIVED_DATA="$PWD/build-device-deriveddata-214"
 xcodebuild -project build-ios-xcode/OpenYAMM.xcodeproj \
   -scheme openyamm_ipados -configuration Release \
   -destination "id=$OPENYAMM_DEVICE_ID" \
@@ -119,29 +109,19 @@ xcodebuild -project build-ios-xcode/OpenYAMM.xcodeproj \
   DEVELOPMENT_TEAM="$OPENYAMM_DEVELOPMENT_TEAM" build
 ```
 
-这些Team/设备标识是需替换的本机值。设备构建显式使用 `CODE_SIGNING_ALLOWED=YES`，覆盖未签名构建设置。
-从本次构建输出确认真实App路径，用Xcode Run或本机支持的devicectl保留数据地更新安装。
-签名密钥、证书、令牌、provisioning文件和用户存档不进入Git或公开交付物。
+示例中的Team和设备ID须替换为本机值。`CODE_SIGNING_ALLOWED=YES` 必须显式给出，以覆盖configure脚本的未签名设置。
+从本次构建输出确认实际App路径，用Xcode或本机支持的devicectl保留数据地安装。
+签名密钥、证书、令牌、provisioning文件及用户存档不进入公开交付物。
 
-## 受影响真机检查
+## 延续已有验收
 
-2026-10-29 接收端已完成本轮可达短流程及三项阻断修复，见
-[195 接收端结果](handoff/ipados-device-195-20261029/README.md)。该记录包含实际版本、设备、摘要、
-普通旅行和 Save104 冷启动读档证据，并保留未验条件项；不代表完整自然通关。
+195已有匹配证据的短流程不必重打。本次不自动启动45–90分钟检查矩阵，也不重跑潜艇、旧结局、
+三大陆战役或已通过的旅行/休息/冷启动全套。正常续玩遇到新版本的具体问题时保留证据并只复查受影响路径。
 
-先读[已有接收端记录](handoff/ipados-device-20261028/README.md)，跳过有匹配版本证据的已通过步骤。
-本次紧凑检查估计 **45–90分钟**；首次下载/构建、人工登录/信任/解锁及失败定位时间另计。
-详细操作按[195远程测试表](handoff/ipados-remote-test-195/README.md)执行，不重打旧核心路线或自然战役。
+长NPC分页、问题中文输入、目标卷轴、昏睡队员用药、银行金额、商店拖离取消等旧记录未验项，
+只在手头自然具备对应场景时补；无场景继续标未验，不制造物品、任务位或故障资源。
+已有角色技能详情“展开像素证据不足”的限制继续保留。195通过不推定214全部设备行为通过，跳过也不写成通过。
 
-优先确认新App/完整资源、中文触控与键盘、卷宗/问题输入、角色/商店/银行面板、休息、普通旅行，
-最后在新槽写Save104并退出App后重新读取一次。没有可达场景的项目记录未验，不为检查重打VARN、
-雷格那潜艇、结局或三大陆旅行。失败旅行回滚只在实际遇到加载失败时核对，不破坏正常资源制造故障。
-187仅改Mac Cocoa输入，186仅补Mac潜艇证据，均不增加iPad回放任务。
-
-原始设备日志、截图、真实存档与各项通过/失败/跳过理由保存在接收端新的验证目录。
-发现问题先区分产品缺陷、签名/设备环境和自动操作原因，修完只复查受影响步骤。
-普通短流程、源码检查、通用iOS构建及受控夹具均不能写成完整自然通关。
-
-历史[RC3交付](handoff/third-playable-candidate-189/README.md)、
-[188资源](handoff/loadscreen-parchment-188/README.md)及190–194各批记录继续保留，
-其中“当时未发布”的描述是历史事实，不代表本次195发布已经完成或禁止本次用户授权的远程测试。
+如用户在接收端明确启动后续设备工作，证据放入新的 `local-data/device-validation/cumulative-214-<实际日期>/`。
+记录实际源码/App/资源身份、通过/失败/未验及最小复现；原始失败与10个旧存档原件持续保留。
+主代理独占共享构建目录、集成和设备；该发布不改变原开发主机的设备限制，也不阻止持续的设备无关修复。

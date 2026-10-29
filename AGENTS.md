@@ -4,6 +4,11 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 215 prepares one cumulative196–214 complete delivery; newtag `ipados-ui-cumulative-214-20261029`.
+  See `handoff/ui-cumulative-delivery-215/README.md`. Runtime207 sixfiles all included, Save104;195andRC1–3fixed.
+  Packaging reuses final214iOSbuild andverifiedcode, no newbuild/App/device replay. VERSION pinsfinalsource/App;
+  fullgoalactive, no additional devicecheckmatrix or stopafterdelivery.
+
 - 213 actual Yell passes on an original New Sorpigal farmer;214 adds original500/67ms hold repeat and robust
   focus/modal cancellation. See `handoff/yell-actual-213/README.md` and `handoff/yell-repeat-214/README.md`.
   Native/input/iOS pass; one13.522s Mac run/2images/180normalframes/save, declaredparty/camera fixture. No oldroute,
