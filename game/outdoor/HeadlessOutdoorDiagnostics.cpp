@@ -20850,7 +20850,8 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
             OutdoorPartyRuntime *pPartyRuntime = GameApplicationTestAccess::outdoorPartyRuntime(application);
             EventRuntimeState *pEventRuntimeState = pWorld != nullptr ? pWorld->eventRuntimeState() : nullptr;
 
-            if (pWorld == nullptr || pPartyRuntime == nullptr || pEventRuntimeState == nullptr)
+            if (pWorld == nullptr || pPartyRuntime == nullptr || pEventRuntimeState == nullptr
+                || pWorld->boundGameSession() == nullptr)
             {
                 failure = "application state is incomplete";
                 return false;
@@ -20866,7 +20867,6 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
             }
 
             const int expectedTravelDays = pCurrentMap->eastTransition->travelDays;
-            const float initialGameMinutes = pWorld->gameMinutes();
             Party &party = pPartyRuntime->party();
             Character *pActiveMember = party.activeMember();
 
@@ -20876,6 +20876,34 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
                 return false;
             }
 
+            const float bodyRadius = 37.0f;
+            const OutdoorMoveState initialMoveState = pPartyRuntime->movementState();
+            pPartyRuntime->teleportTo(
+                static_cast<float>(pCurrentMap->outdoorBounds.maxX) - bodyRadius - 1.0f,
+                initialMoveState.y,
+                initialMoveState.footZ);
+
+            pEventRuntimeState->pendingDialogueContext.reset();
+            pEventRuntimeState->pendingMapMove.reset();
+            pEventRuntimeState->messages.clear();
+
+            const OutdoorMovementInput movementInput = {.forward = true, .yawRadians = 0.0f};
+            const OutdoorSceneRuntime::AdvanceFrameResult frameAdvanceResult =
+                GameApplicationTestAccess::advanceOutdoorSceneFrame(application, movementInput, 0.1f);
+            const std::optional<EventRuntimeState::PendingDialogueContext> &pendingContext =
+                pEventRuntimeState->pendingDialogueContext;
+            if (!frameAdvanceResult.shouldOpenEventDialog || !pendingContext
+                || pendingContext->kind != DialogueContextKind::MapTransition
+                || pendingContext->sourceId != static_cast<uint32_t>(MapBoundaryEdge::East)
+                || !pendingContext->transitionMapMove
+                || pendingContext->transitionMapMove->traceSourceKind != "map_boundary")
+            {
+                failure = "ordinary east boundary did not queue a positioned map_boundary confirmation";
+                return false;
+            }
+
+            // The movement frame advances normal recovery and timers before confirmation begins.
+            const float initialGameMinutes = pWorld->gameMinutes();
             party.addFood(3 - party.food());
             const int initialFood = party.food();
             party.applyPartyBuff(PartyBuffId::TorchLight, 600.0f, 1, 0, 0, SkillMastery::None, 0);
@@ -20888,21 +20916,8 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
             const int initialSpellPoints = pActiveMember->spellPoints;
             const auto initialConditions = pActiveMember->conditions;
 
-            const float bodyRadius = 37.0f;
-            const OutdoorMoveState initialMoveState = pPartyRuntime->movementState();
-            pPartyRuntime->teleportTo(
-                static_cast<float>(pCurrentMap->outdoorBounds.maxX) - bodyRadius - 1.0f,
-                initialMoveState.y,
-                initialMoveState.footZ);
-
-            EventRuntimeState::PendingDialogueContext context = {};
-            context.kind = DialogueContextKind::MapTransition;
-            context.sourceId = static_cast<uint32_t>(MapBoundaryEdge::East);
-            pEventRuntimeState->pendingDialogueContext = context;
-            pEventRuntimeState->pendingMapMove.reset();
-            pEventRuntimeState->messages.clear();
-
-            GameApplicationTestAccess::openPendingEventDialog(application, pEventRuntimeState->messages.size(), true);
+            GameApplicationTestAccess::openPendingEventDialog(
+                application, frameAdvanceResult.previousMessageCount, true);
 
             if (!GameApplicationTestAccess::hasActiveEventDialog(application))
             {
@@ -20911,6 +20926,8 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
             }
 
             const EventDialogContent &dialog = GameApplicationTestAccess::activeEventDialog(application);
+            const UiTextTable &uiText =
+                pWorld->boundGameSession()->gameplayScreenRuntime().gameplayUiRuntime().uiTextTable();
 
             if (dialog.presentation != EventDialogPresentation::Transition)
             {
@@ -20919,10 +20936,12 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
             }
 
             if (dialog.actions.size() < 2
-                || dialog.actions[0].label != "OK"
-                || dialog.actions[1].label != "Close")
+                || dialog.actions[0].kind != EventDialogActionKind::MapTransitionConfirm
+                || dialog.actions[1].kind != EventDialogActionKind::MapTransitionCancel
+                || dialog.actions[0].label != uiText.text(UiTextTable::Message::Confirm)
+                || dialog.actions[1].label != uiText.text(UiTextTable::Message::Cancel))
             {
-                failure = "map transition dialog did not expose the standard OK / Close actions";
+                failure = "map transition dialog did not expose the ordered actions with current-language captions";
                 return false;
             }
 

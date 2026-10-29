@@ -1,0 +1,81 @@
+{
+  "checkpoint": 221,
+  "status": "ACCEPTED_SOURCE_SCOPED_WITH_OPEN_RUNTIME_GAP",
+  "completed_at": "2026-10-29T17:04:40.352323+00:00",
+  "source_base": "e37a4e56a86fcd99bbdcd30130e9c780db91c8b0",
+  "runtime": "local-data/validation/ui-function-completion-221/runtime-001",
+  "scope": [
+    "Ordinary NPC profession Join/info/dismiss localization and corrected full-party NPCText namespace",
+    "Source-authenticated map_boundary travel plan time/food plus localized confirmation; positioned script movement keeps no implicit time",
+    "Fine-bearing single-resident Throne preserves sentence action rather than redirecting it away",
+    "App owner destruction closes views before owned world/party runtimes; first scoped crash retained"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T16:46:21.818879+00:00",
+      "finished_at": "2026-10-29T16:47:38.535012+00:00"
+    },
+    "build-native-002": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T16:52:49.723692+00:00",
+      "finished_at": "2026-10-29T16:53:13.078211+00:00"
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T16:48:11.500672+00:00",
+      "finished_at": "2026-10-29T16:48:11.871613+00:00"
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T16:48:11.910192+00:00",
+      "finished_at": "2026-10-29T16:48:14.078926+00:00"
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T16:57:48.038753+00:00",
+      "finished_at": "2026-10-29T16:58:48.533649+00:00"
+    },
+    "travel-effects-001": {
+      "exit_code": -11,
+      "started_at": "2026-10-29T16:48:24.293634+00:00",
+      "finished_at": "2026-10-29T16:48:32.250490+00:00"
+    },
+    "travel-effects-002": {
+      "exit_code": 1,
+      "started_at": "2026-10-29T16:53:40.447123+00:00",
+      "finished_at": "2026-10-29T16:53:50.893084+00:00"
+    }
+  },
+  "ui_text_count": 132,
+  "old_122_values_retained": true,
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "all_other_runtime_members_retained": true,
+  "save_version": 104,
+  "existing_case_updated": 1,
+  "new_unit_cases": 0,
+  "case_attempts": 2,
+  "case_passed": false,
+  "preserved_failures": [
+    "travel-effects-001 App destructor SIGSEGV; ownership cleanup repaired",
+    "travel-effects-002 missing actual runtime Out02 east navigation; next222"
+  ],
+  "app_gui_runs": 0,
+  "images_reviewed": 0,
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "device_or_simulator_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "next": "222 recover authenticated MM8 default boundary destinations/days/named starts then original affected case; no speculative1day table restore",
+  "limitations": [
+    "Travel transaction check has not passed current complete runtime",
+    "NPC/Throne/localization changes source/import/build reviewed; no new pixel/touch acceptance",
+    "Full natural completion/allUI/long-term stability remain unproved"
+  ]
+}

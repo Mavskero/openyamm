@@ -1810,7 +1810,8 @@ HouseActionResult performHouseAction(
     IGameplayWorldRuntime *pWorldRuntime,
     const NpcDialogTable *pNpcDialogTable,
     const CharacterInspectTable *pCharacterInspectTable,
-    const HouseServiceTextTable *pHouseServiceTextTable
+    const HouseServiceTextTable *pHouseServiceTextTable,
+    const UiTextTable *pUiTextTable
 )
 {
     HouseActionResult result = {};
@@ -2194,7 +2195,8 @@ HouseActionResult performHouseAction(
         {
             if (party.fineGold() <= 0)
             {
-                result.messages.push_back("You do not owe a fine.");
+                result.messages.push_back(pUiTextTable != nullptr
+                    ? pUiTextTable->text(UiTextTable::Message::ThroneNoFine) : "You do not owe a fine.");
                 return result;
             }
 
@@ -2209,7 +2211,9 @@ HouseActionResult performHouseAction(
                 party.advanceTimedStates(PrisonSentenceMinutes * 60.0f);
             }
 
-            result.messages.push_back("You have served one year in prison.");
+            result.messages.push_back(pUiTextTable != nullptr
+                ? pUiTextTable->text(UiTextTable::Message::ThroneSentenceServed)
+                : "You have served one year in prison.");
             result.succeeded = true;
             result.speechId = SpeechId::InPrison;
             return result;

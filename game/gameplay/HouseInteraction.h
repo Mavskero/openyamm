@@ -171,6 +171,7 @@ HouseActionResult performHouseAction(
     IGameplayWorldRuntime *pWorldRuntime,
     const NpcDialogTable *pNpcDialogTable = nullptr,
     const CharacterInspectTable *pCharacterInspectTable = nullptr,
-    const HouseServiceTextTable *pHouseServiceTextTable = nullptr
+    const HouseServiceTextTable *pHouseServiceTextTable = nullptr,
+    const UiTextTable *pUiTextTable = nullptr
 );
 }

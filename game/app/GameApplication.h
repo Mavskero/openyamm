@@ -46,6 +46,7 @@ class GameApplication
 {
 public:
     explicit GameApplication(const Engine::ApplicationConfig &config);
+    ~GameApplication();
 
     int run();
 

@@ -1242,27 +1242,28 @@ const std::optional<MapEdgeTransition> *currentMapTransitionForContext(
     const GameplayDialogController::Context &context,
     const EventRuntimeState::PendingDialogueContext &dialogueContext)
 {
-    if (dialogueContext.kind != DialogueContextKind::MapTransition || context.pCurrentMap == nullptr)
+    if (dialogueContext.kind != DialogueContextKind::MapTransition || context.pCurrentMap == nullptr
+        || dialogueContext.sourceId > static_cast<uint32_t>(MapBoundaryEdge::West))
     {
         return nullptr;
     }
 
-    switch (static_cast<MapBoundaryEdge>(dialogueContext.sourceId))
+    const std::optional<MapEdgeTransition> *pTransition =
+        context.pCurrentMap->edgeTransition(static_cast<MapBoundaryEdge>(dialogueContext.sourceId));
+    if (dialogueContext.transitionMapMove)
     {
-        case MapBoundaryEdge::North:
-            return &context.pCurrentMap->northTransition;
-
-        case MapBoundaryEdge::South:
-            return &context.pCurrentMap->southTransition;
-
-        case MapBoundaryEdge::East:
-            return &context.pCurrentMap->eastTransition;
-
-        case MapBoundaryEdge::West:
-            return &context.pCurrentMap->westTransition;
+        const EventRuntimeState::PendingMapMove &move = *dialogueContext.transitionMapMove;
+        if (move.traceSourceKind != "map_boundary" || move.traceSourceId != dialogueContext.sourceId
+            || !isOutdoorMapFileName(context.pCurrentMap->fileName)
+            || toLowerCopy(context.eventRuntimeState.mapFileName) != toLowerCopy(context.pCurrentMap->fileName)
+            || pTransition == nullptr || !pTransition->has_value() || !move.mapName || move.mapName->empty()
+            || toLowerCopy(*move.mapName) != toLowerCopy((*pTransition)->destinationMapFileName))
+        {
+            return nullptr;
+        }
     }
 
-    return nullptr;
+    return pTransition;
 }
 
 int boundaryTravelHeadingDegrees(MapBoundaryEdge edge)
@@ -2630,6 +2631,21 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 pendingMove.travelPlan.travelDays = std::max(0, pMm9Transition->travelDays);
                 pendingMove.travelPlan.foodRequired = std::max(0, pMm9Transition->travelDays);
             }
+            else if (pendingMove.traceSourceKind == "map_boundary")
+            {
+                const std::optional<MapEdgeTransition> *pTransition =
+                    currentMapTransitionForContext(context, *context.eventRuntimeState.pendingDialogueContext);
+                if (pTransition == nullptr || !pTransition->has_value())
+                {
+                    cancelMapTransition(context);
+                    result.shouldCloseActiveDialog = true;
+                    return result;
+                }
+                pendingMove.travelPlan = {};
+                pendingMove.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
+                pendingMove.travelPlan.travelDays = std::max(0, (*pTransition)->travelDays);
+                pendingMove.travelPlan.foodRequired = mapTransitionTravelFoodRequired(context, **pTransition);
+            }
             logMapTransitionConfirmed(
                 context.eventRuntimeState,
                 *context.eventRuntimeState.pendingDialogueContext,
@@ -2925,7 +2941,8 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 context.pWorldRuntime,
                 context.pNpcDialogTable,
                 context.pCharacterInspectTable,
-                context.pHouseServiceTextTable
+                context.pHouseServiceTextTable,
+                context.pScreenRuntime != nullptr ? &context.pScreenRuntime->gameplayUiRuntime().uiTextTable() : nullptr
             );
 
             if (houseResult.soundType.has_value())
@@ -3702,7 +3719,7 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
         {
             context.eventRuntimeState.messages.push_back(npcTextOrFallback(
                 context.pNpcDialogTable,
-                533,
+                1688,
                 "You already have enough followers."));
         }
         else if (context.pParty->gold() < static_cast<int>(pProfession->weeklyCost))

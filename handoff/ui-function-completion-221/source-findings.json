@@ -1,0 +1,81 @@
+{
+  "checkpoint": 221,
+  "source_findings": [
+    {
+      "defect": "ordinary profession NPC captions remain English",
+      "file": "game/events/EventDialogContent.cpp",
+      "lines_before": [
+        1718,
+        1729,
+        1762,
+        1771
+      ],
+      "sources": {
+        "Join": "Global122",
+        "MoreInformation": "Global407",
+        "NpcDismissFormat": "Global408 with name parameter"
+      }
+    },
+    {
+      "defect": "full-follower rejection uses wrong text namespace",
+      "files": [
+        "game/events/EventDialogContent.cpp",
+        "game/gameplay/GameplayDialogController.cpp"
+      ],
+      "wrong": "NPCText533 is Dragon Hunter quest text",
+      "replacement": "existing NPCText1688, Your party is too full. / 你的队伍已经满了。",
+      "conditions_unchanged": true
+    },
+    {
+      "defect": "ordinary outdoor boundary positioned move skips time/food plan",
+      "files": [
+        "game/scene/OutdoorSceneRuntime.cpp",
+        "game/events/EventDialogContent.cpp",
+        "game/gameplay/GameplayDialogController.cpp"
+      ],
+      "production_marker": "map_boundary",
+      "downstream": "GameApplication only applies queued travelPlan; defaultNone produces no cost",
+      "retained": "script-positioned moves have no implicit days; current outdoor food policy and deferred transaction retained"
+    },
+    {
+      "defect": "single-resident Throne auto-redirect hides fine sentence action",
+      "file": "game/events/EventDialogContent.cpp",
+      "current_data_examples": [
+        {
+          "house": 223,
+          "resident": 790
+        },
+        {
+          "house": 214,
+          "resident": 33
+        }
+      ],
+      "fix": "exclude fine-bearing Throne from automatic single-resident redirect; retain resident and sentence entries",
+      "rules_unchanged": "fine clear, prison counter/award, heal, one-year time and speech"
+    }
+  ],
+  "presentation_sources": {
+    "TransitionLeaveFormat": "Global126",
+    "TransitionEnterFormat": "project translation",
+    "TransitionLeaveArea": "project translation",
+    "Confirm": "project translation",
+    "ThroneServeSentence": "project translation",
+    "ThroneNoFine": "project translation",
+    "ThroneSentenceServed": "project translation",
+    "Disabled": "project translation",
+    "travel_day_description": "existing HouseServiceText TransportSuccessSingle/Plural"
+  },
+  "closed_without_edits": [
+    {
+      "candidate": "News source0 fallback header",
+      "reason": "ordinary news callers supply actor titleOverride; visible English News not established"
+    },
+    {
+      "candidate": "historical167 Council automatic entry",
+      "reason": "current FreeHavenTempleResources already has authenticated Council overlay from190; no new defect"
+    }
+  ],
+  "new_unit_cases": 0,
+  "device_operations": 0,
+  "broader_npc_or_campaign_audit": false
+}

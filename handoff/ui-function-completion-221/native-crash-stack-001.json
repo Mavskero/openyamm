@@ -1,0 +1,71 @@
+{
+  "exception": {
+    "codes": "0x0000000000000001, 0x00000000002438c2",
+    "rawCodes": [
+      1,
+      2373826
+    ],
+    "type": "EXC_BAD_ACCESS",
+    "signal": "SIGSEGV",
+    "subtype": "KERN_INVALID_ADDRESS at 0x00000000002438c2"
+  },
+  "termination": {
+    "flags": 0,
+    "code": 11,
+    "namespace": "SIGNAL",
+    "indicator": "Segmentation fault: 11",
+    "byProc": "exc handler",
+    "byPid": 81255
+  },
+  "faultingThread": 0,
+  "frames": [
+    {
+      "imageOffset": 7806108,
+      "symbol": "OpenYAMM::Game::GameplayScreenRuntime::clearUiControllerRuntimeState()",
+      "symbolLocation": 120,
+      "imageIndex": 0
+    },
+    {
+      "imageOffset": 7545680,
+      "symbol": "OpenYAMM::Game::OutdoorGameView::shutdown()",
+      "symbolLocation": 212,
+      "imageIndex": 0
+    },
+    {
+      "imageOffset": 7543324,
+      "symbol": "OpenYAMM::Game::OutdoorGameView::~OutdoorGameView()",
+      "symbolLocation": 44,
+      "imageIndex": 0
+    },
+    {
+      "imageOffset": 3900536,
+      "symbol": "OpenYAMM::Game::GameApplication::~GameApplication()",
+      "symbolLocation": 456,
+      "imageIndex": 0
+    },
+    {
+      "imageOffset": 3317460,
+      "symbol": "OpenYAMM::Game::HeadlessGameplayDiagnostics::runRegressionSuite(std::__1::__fs::filesystem::path const&, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&) const",
+      "symbolLocation": 14076,
+      "imageIndex": 0
+    },
+    {
+      "imageOffset": 8431804,
+      "symbol": "OpenYAMM::Game::runApplication(int, char**)",
+      "symbolLocation": 7832,
+      "imageIndex": 0
+    },
+    {
+      "imageOffset": 28948,
+      "symbol": "main",
+      "symbolLocation": 20,
+      "imageIndex": 0
+    },
+    {
+      "imageOffset": 132324,
+      "symbol": "start",
+      "symbolLocation": 6992,
+      "imageIndex": 1
+    }
+  ]
+}

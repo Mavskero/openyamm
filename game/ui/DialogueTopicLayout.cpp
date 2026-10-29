@@ -1,6 +1,7 @@
 #include "game/ui/DialogueTopicLayout.h"
 
 #include "game/gameplay/GameplayScreenRuntime.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/GameplayHudCommon.h"
 #include "game/ui/Utf8Text.h"
 
@@ -234,7 +235,7 @@ std::optional<DialogueTopicLayout> resolveDialogueTopicLayout(GameplayScreenRunt
         std::string label = dialog.actions[index].label;
         if (!dialog.actions[index].enabled && !dialog.actions[index].disabledReason.empty())
         {
-            label += " [disabled]";
+            label += " [" + context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::Disabled) + "]";
         }
         GameplayResolvedHudLayoutElement textRect = *rowTemplate;
         textRect.width = std::min(textRect.width, 140.0f * scale) - 4.0f * scale;

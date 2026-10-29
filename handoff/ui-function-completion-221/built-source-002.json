@@ -1,0 +1,25 @@
+{
+  "recorded_at": "2026-10-29T16:52:49.647420+00:00",
+  "files": {
+    "game/events/EventDialogContent.cpp": "8c718a58a5a1364d3a38f6cdfdc8ea65ab806b3398f86661afcb19cf6eb35f5a",
+    "game/gameplay/GameplayDialogController.cpp": "24a4f38412ffba5959a3cbf4e196b583addf71fcbd6a9a461e4a051851c971cd",
+    "game/gameplay/HouseInteraction.h": "cba488f0fef159631fce6ff09b3e9f2f0efb0a55e436b36ccb8cebf016ed9c57",
+    "game/gameplay/HouseInteraction.cpp": "07713603596b52376da3d2cdfd3bda53b543abd996085538d45790df5b35a872",
+    "game/outdoor/HeadlessOutdoorDiagnostics.cpp": "a079c26342c54b4856fabcaaf0866b80b5858306a570bfc162ea4ebfe08a2d3b",
+    "game/tables/UiTextTable.h": "85cf5ab4352c4114d57b1874a6c9280649dc7664eade8f995e020e4801a323bc",
+    "game/tables/UiTextTable.cpp": "3da623527ac85f2f19af0a6701c31499c50839b8c6cfa417c363fed675417803",
+    "game/ui/DialogueTopicLayout.cpp": "a99950cb10e1f31498b1f5f743c5763a6cf8e0c5a3c5137f49b26137b997df6a",
+    "tools/mmerge_import/CoreResources.cpp": "0fc4842081889427e98c9ee6bd9ede34a0a6f7f39064aa1a8a043e0dfa991ac0",
+    "game/app/GameApplication.h": "4f4168ef6fa3bd1b147576d1fbc777b9cff91e31796c9ee0013182c17a1f264d",
+    "game/app/GameApplication.cpp": "acfa91b796b7f5272fcd90b1e2426930cab0c54b632b46a4b04652182f68f0e8"
+  },
+  "ownership_returned": true,
+  "main_build_owner": true,
+  "new_ui_text_count": 132,
+  "old_122_prefix_accepted": true,
+  "save_version": 104,
+  "changed_since_build001": [
+    "game/app/GameApplication.h",
+    "game/app/GameApplication.cpp"
+  ]
+}

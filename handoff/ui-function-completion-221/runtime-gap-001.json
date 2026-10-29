@@ -1,0 +1,14 @@
+{
+  "status": "OPEN_PRODUCTION_RESOURCE_GAP",
+  "case": "app_map_transition_confirm_applies_oe_travel_side_effects",
+  "attempt": "travel-effects-002",
+  "exit_code": 1,
+  "elapsed_seconds": 10.445961,
+  "failure": "missing Out02 east transition",
+  "scope": "current complete runtime221 has no map_navigation.txt and no Merge MM8Out02 row",
+  "original_project_resource": "Git HEAD/db142fb3 assets_dev/engine/data_tables/map_navigation.txt has the old case route; not restored or treated as authenticated original by this check",
+  "next": "recover source-authenticated MM8 native base navigation, then rerun original case once; no route switching or test-only navigation overlay",
+  "app_destructor_crash_recurred": false,
+  "check_passed": false,
+  "full_goal_complete": false
+}

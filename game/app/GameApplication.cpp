@@ -2879,6 +2879,12 @@ GameApplication::GameApplication(const Engine::ApplicationConfig &config)
         });
 }
 
+GameApplication::~GameApplication()
+{
+    // Views hold non-owning runtime references and must close before the world and party members are destroyed.
+    shutdownRenderer();
+}
+
 int GameApplication::run()
 {
     return m_engineApplication.run();

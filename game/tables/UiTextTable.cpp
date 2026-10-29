@@ -142,6 +142,16 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.yes", "Yes"},
     {"ui.no", "No"},
     {"ui.join", "Join"},
+    {"ui.more_information", "More Information"},
+    {"ui.npc_dismiss", "Dismiss %s"},
+    {"ui.confirm", "OK"},
+    {"ui.transition_leave", "Do you wish to leave %s?"},
+    {"ui.transition_enter", "Do you wish to enter %s?"},
+    {"ui.transition_leave_area", "Do you wish to leave this area?"},
+    {"ui.throne_serve_sentence", "Serve Sentence"},
+    {"ui.disabled", "disabled"},
+    {"ui.throne_no_fine", "You do not owe a fine."},
+    {"ui.throne_sentence_served", "You have served one year in prison."},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -157,6 +167,16 @@ bool hasExpectedParameters(const std::string &format, std::initializer_list<std:
         nextOffset = offset + parameter.size();
     }
     return format.find('%', nextOffset) == std::string::npos;
+}
+
+std::string formatStringParameter(std::string format, const std::string &value)
+{
+    if (!hasExpectedParameters(format, {"%s"}))
+    {
+        return {};
+    }
+    format.replace(format.find("%s"), 2, value);
+    return format;
 }
 
 size_t itemTypeParameterOffset(const std::string &format)
@@ -184,7 +204,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 35 with win text, the 39 with bank captions, the 45 with rest captions,
     // the 72 with mastery/calendar/save, the 103 with keyboard, the 112 with journal
     // the 115/116 with initial skill training captions and base-attribute requirements,
-    // and the 119 with skill category headings.
+    // the 119 with skill category headings, and the 122 with NPC confirmations.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -199,6 +219,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t TrainingMessageCount = size_t(Message::SkillTrainingRequirement);
     constexpr size_t TrainingRequirementMessageCount = size_t(Message::SkillWeapons);
     constexpr size_t SkillHeadingMessageCount = size_t(Message::Yes);
+    constexpr size_t NpcConfirmationMessageCount = size_t(Message::MoreInformation);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -213,7 +234,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != JournalMessageCount
         && schemaMessageCount != TrainingMessageCount
         && schemaMessageCount != TrainingRequirementMessageCount
-        && schemaMessageCount != SkillHeadingMessageCount)
+        && schemaMessageCount != SkillHeadingMessageCount
+        && schemaMessageCount != NpcConfirmationMessageCount)
     {
         return false;
     }
@@ -242,7 +264,11 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
             || (index == size_t(Message::SkillTrainingOffer) && !hasExpectedParameters(row[1], {"%s", "%s", "%lu"}))
             || (index == size_t(Message::SkillTrainingLearned) && !hasExpectedParameters(row[1], {"%s", "%s", "%s"}))
             || (index == size_t(Message::SkillTrainingRequirement)
-                && !hasExpectedParameters(row[1], {"%s", "%u", "%s", "%s"})))
+                && !hasExpectedParameters(row[1], {"%s", "%u", "%s", "%s"}))
+            || ((index == size_t(Message::NpcDismissFormat)
+                    || index == size_t(Message::TransitionLeaveFormat)
+                    || index == size_t(Message::TransitionEnterFormat))
+                && !hasExpectedParameters(row[1], {"%s"})))
         {
             return false;
         }
@@ -377,6 +403,21 @@ std::string UiTextTable::formatSkillTrainingRequirement(
     result.replace(valueOffset, 2, std::to_string(value));
     result.replace(attributeOffset, 2, attribute);
     return result;
+}
+
+std::string UiTextTable::formatNpcDismiss(const std::string &name) const
+{
+    return formatStringParameter(text(Message::NpcDismissFormat), name);
+}
+
+std::string UiTextTable::formatTransitionLeave(const std::string &name) const
+{
+    return formatStringParameter(text(Message::TransitionLeaveFormat), name);
+}
+
+std::string UiTextTable::formatTransitionEnter(const std::string &name) const
+{
+    return formatStringParameter(text(Message::TransitionEnterFormat), name);
 }
 
 const char *UiTextTable::key(Message message)

@@ -137,13 +137,23 @@ public:
         Yes,
         No,
         Join,
+        MoreInformation,
+        NpcDismissFormat,
+        Confirm,
+        TransitionLeaveFormat,
+        TransitionEnterFormat,
+        TransitionLeaveArea,
+        ThroneServeSentence,
+        Disabled,
+        ThroneNoFine,
+        ThroneSentenceServed,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
     // Validate the current schema or migrate a complete older prefix with
-    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116 or 119 keys.
+    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119 or 122 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;
@@ -156,6 +166,9 @@ public:
         const std::string &name, const std::string &mastery, const std::string &skill) const;
     std::string formatSkillTrainingRequirement(
         const std::string &attribute, uint32_t value, const std::string &mastery, const std::string &skill) const;
+    std::string formatNpcDismiss(const std::string &name) const;
+    std::string formatTransitionLeave(const std::string &name) const;
+    std::string formatTransitionEnter(const std::string &name) const;
     static const char *key(Message message);
 
 private:

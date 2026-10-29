@@ -1,0 +1,15 @@
+{
+  "status": "CLEAN_EXIT_WITH_CASE_RESOURCE_FAILURE",
+  "failure": "travel-effects-001 SIGSEGV during implicit GameApplication destruction; no case pass/fail output retained",
+  "stack": "native-crash-stack-001.json",
+  "cause": "GameApplication member destruction frees scene/world/party before initialized OutdoorGameView destructor; cleanup dereferences session non-owning world pointer",
+  "repair": "explicit GameApplication destructor invokes existing shutdownRenderer before member destruction; views shutdown, session unbinds, then owned runtimes reset",
+  "normal_path": "EngineApplication already uses shutdown callback on render teardown; existing repeated cleanup guards retained",
+  "harness_only_mask": false,
+  "production_travel_and_UI_changes_unchanged": true,
+  "next": "incremental native build and rerun same single case; no new cases or matrix",
+  "rerun": "travel-effects-002",
+  "rerun_exit_code": 1,
+  "crash_recurred": false,
+  "travel_acceptance": "notpassed; missing current runtime navigation"
+}

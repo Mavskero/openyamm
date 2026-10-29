@@ -1,0 +1,22 @@
+{
+  "row_count": 132,
+  "source_ids": [
+    407,
+    408,
+    126
+  ],
+  "captions": {
+    "ui.more_information": "更多信息",
+    "ui.npc_dismiss": "解雇%s",
+    "ui.confirm": "确定",
+    "ui.transition_leave": "你想离开%s吗？",
+    "ui.transition_enter": "你想进入%s吗？",
+    "ui.transition_leave_area": "你想离开这个区域吗？",
+    "ui.throne_serve_sentence": "服刑",
+    "ui.disabled": "不可用",
+    "ui.throne_no_fine": "你没有未缴的罚金。",
+    "ui.throne_sentence_served": "你已经服刑一年。"
+  },
+  "old_122_caption_values_retained": true,
+  "save_version": 104
+}

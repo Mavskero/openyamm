@@ -9,6 +9,7 @@
 #include "game/gameplay/ReputationRuntime.h"
 #include "game/StringUtils.h"
 #include "game/tables/CharacterInspectTable.h"
+#include "game/tables/HouseServiceTextTable.h"
 #include "game/tables/MergedBaseTables.h"
 #include "game/tables/UiTextTable.h"
 
@@ -584,29 +585,31 @@ const MapStatsEntry *findMapEntryByFileName(
 
 const std::optional<MapEdgeTransition> *currentMapTransitionForContext(
     const EventRuntimeState::PendingDialogueContext &context,
-    const MapStatsEntry *pCurrentMap)
+    const MapStatsEntry *pCurrentMap,
+    const std::string &currentMapFileName)
 {
-    if (context.kind != DialogueContextKind::MapTransition || pCurrentMap == nullptr)
+    if (context.kind != DialogueContextKind::MapTransition || pCurrentMap == nullptr
+        || context.sourceId > static_cast<uint32_t>(MapBoundaryEdge::West))
     {
         return nullptr;
     }
 
-    switch (static_cast<MapBoundaryEdge>(context.sourceId))
+    const std::optional<MapEdgeTransition> *pTransition =
+        pCurrentMap->edgeTransition(static_cast<MapBoundaryEdge>(context.sourceId));
+    if (context.transitionMapMove)
     {
-        case MapBoundaryEdge::North:
-            return &pCurrentMap->northTransition;
-
-        case MapBoundaryEdge::South:
-            return &pCurrentMap->southTransition;
-
-        case MapBoundaryEdge::East:
-            return &pCurrentMap->eastTransition;
-
-        case MapBoundaryEdge::West:
-            return &pCurrentMap->westTransition;
+        const EventRuntimeState::PendingMapMove &move = *context.transitionMapMove;
+        if (move.traceSourceKind != "map_boundary" || move.traceSourceId != context.sourceId
+            || !lowerMapFileName(pCurrentMap->fileName).ends_with(".odm")
+            || lowerMapFileName(currentMapFileName) != lowerMapFileName(pCurrentMap->fileName)
+            || pTransition == nullptr || !pTransition->has_value() || !move.mapName || move.mapName->empty()
+            || lowerMapFileName(*move.mapName) != lowerMapFileName((*pTransition)->destinationMapFileName))
+        {
+            return nullptr;
+        }
     }
 
-    return nullptr;
+    return pTransition;
 }
 
 std::vector<std::string> wrapDialogText(const std::string &text, size_t width)
@@ -976,7 +979,9 @@ EventDialogContent buildEventDialogContent(
                 npcRuntimeState
             );
 
-            if (residentNpcId && houseActions.empty())
+            const bool hasPrisonSentenceAction = pParty != nullptr && pParty->fineGold() > 0
+                && pHouseEntry->type == "Throne";
+            if (residentNpcId && houseActions.empty() && !hasPrisonSentenceAction)
             {
                 EventRuntimeState::PendingDialogueContext context = {};
                 context.kind = DialogueContextKind::NpcTalk;
@@ -1078,9 +1083,8 @@ EventDialogContent buildEventDialogContent(
         dialog.participantVisual = EventDialogParticipantVisual::MapIcon;
         dialog.presentation = EventDialogPresentation::Transition;
         dialog.participantPictureId = 0;
-        const std::optional<MapEdgeTransition> *pTransition = context.transitionMapMove.has_value()
-            ? nullptr
-            : currentMapTransitionForContext(context, pCurrentMap);
+        const std::optional<MapEdgeTransition> *pTransition =
+            currentMapTransitionForContext(context, pCurrentMap, eventRuntimeState.mapFileName);
         const std::string transitionMapName =
             context.transitionMapMove.has_value() && context.transitionMapMove->mapName.has_value()
                 ? *context.transitionMapMove->mapName
@@ -1159,18 +1163,32 @@ EventDialogContent buildEventDialogContent(
 
         // A positioned script move has no implicit journey duration. Only an explicit edge route
         // supplies days here; two outdoor filenames alone do not describe a walking journey.
-        const int travelDays = !context.transitionMapMove.has_value()
-            && pTransition != nullptr && pTransition->has_value() ? (*pTransition)->travelDays : 0;
+        const int travelDays = pTransition != nullptr && pTransition->has_value() ? (*pTransition)->travelDays : 0;
         if (travelDays > 0)
         {
-            dialog.lines.push_back(
+            std::string duration =
                 "It will take "
                 + std::to_string(travelDays)
                 + " day"
                 + (travelDays == 1 ? "" : "s")
                 + " to travel to "
                 + dialog.title
-                + ".");
+                + ".";
+            if (pHouseServiceTextTable != nullptr)
+            {
+                HouseServiceTextTable::Arguments arguments;
+                arguments.days = std::to_string(travelDays);
+                arguments.destination = dialog.title;
+                const std::string translated = pHouseServiceTextTable->format(
+                    travelDays == 1 ? HouseServiceTextTable::Message::TransportSuccessSingle
+                                    : HouseServiceTextTable::Message::TransportSuccessPlural,
+                    arguments);
+                if (!translated.empty())
+                {
+                    duration = translated;
+                }
+            }
+            dialog.lines.push_back(std::move(duration));
         }
 
         if (pTransitionText != nullptr && !pTransitionText->description.empty())
@@ -1179,29 +1197,37 @@ EventDialogContent buildEventDialogContent(
         }
         else if (leavingCurrentDungeon)
         {
-            dialog.lines.push_back("Do you wish to leave " + dialog.title + "?");
+            dialog.lines.push_back(pUiTextTable != nullptr
+                ? pUiTextTable->formatTransitionLeave(dialog.title)
+                : "Do you wish to leave " + dialog.title + "?");
         }
         else if (context.transitionMapMove.has_value())
         {
-            dialog.lines.push_back("Do you wish to enter " + dialog.title + "?");
+            dialog.lines.push_back(pUiTextTable != nullptr
+                ? pUiTextTable->formatTransitionEnter(dialog.title)
+                : "Do you wish to enter " + dialog.title + "?");
         }
         else if (pCurrentMap != nullptr && !pCurrentMap->name.empty())
         {
-            dialog.lines.push_back("Do you wish to leave " + pCurrentMap->name + "?");
+            dialog.lines.push_back(pUiTextTable != nullptr
+                ? pUiTextTable->formatTransitionLeave(pCurrentMap->name)
+                : "Do you wish to leave " + pCurrentMap->name + "?");
         }
         else
         {
-            dialog.lines.push_back("Do you wish to leave this area?");
+            dialog.lines.push_back(pUiTextTable != nullptr
+                ? pUiTextTable->text(UiTextTable::Message::TransitionLeaveArea)
+                : "Do you wish to leave this area?");
         }
 
         EventDialogAction confirmAction = {};
         confirmAction.kind = EventDialogActionKind::MapTransitionConfirm;
-        confirmAction.label = "OK";
+        confirmAction.label = pUiTextTable != nullptr ? pUiTextTable->text(UiTextTable::Message::Confirm) : "OK";
         dialog.actions.push_back(std::move(confirmAction));
 
         EventDialogAction cancelAction = {};
         cancelAction.kind = EventDialogActionKind::MapTransitionCancel;
-        cancelAction.label = "Close";
+        cancelAction.label = pUiTextTable != nullptr ? pUiTextTable->text(UiTextTable::Message::Cancel) : "Close";
         dialog.actions.push_back(std::move(cancelAction));
     }
     else if (context.kind == DialogueContextKind::HouseService)
@@ -1318,7 +1344,8 @@ EventDialogContent buildEventDialogContent(
                 EventDialogAction action = {};
                 action.kind = EventDialogActionKind::HouseService;
                 action.id = static_cast<uint32_t>(HouseActionId::ThroneServeSentence);
-                action.label = "Serve Sentence";
+                action.label = pUiTextTable != nullptr
+                    ? pUiTextTable->text(UiTextTable::Message::ThroneServeSentence) : "Serve Sentence";
                 dialog.actions.push_back(std::move(action));
             }
 
@@ -1715,9 +1742,18 @@ EventDialogContent buildEventDialogContent(
                         EventDialogAction action = {};
                         action.kind = EventDialogActionKind::NpcHireOffer;
                         action.id = pNpc->professionId;
-                        action.label = "Join";
+                        action.label = pUiTextTable != nullptr
+                            ? pUiTextTable->text(UiTextTable::Message::Join) : "Join";
                         action.enabled = npcRuntimeState.hiredNpcFollowers.size() < MaxNpcFollowerCount;
                         action.disabledReason = action.enabled ? std::string() : "You already have enough followers.";
+                        if (!action.enabled)
+                        {
+                            const std::optional<std::string> fullText = pNpcDialogTable->getText(1688);
+                            if (fullText && !fullText->empty())
+                            {
+                                action.disabledReason = *fullText;
+                            }
+                        }
                         dialog.actions.push_back(std::move(action));
 
                         if (pProfession->descriptionTextId != 0)
@@ -1726,7 +1762,8 @@ EventDialogContent buildEventDialogContent(
                             infoAction.kind = EventDialogActionKind::NpcProfessionDescription;
                             infoAction.id = pNpc->professionId;
                             infoAction.secondaryId = pProfession->descriptionTextId;
-                            infoAction.label = "More Info";
+                            infoAction.label = pUiTextTable != nullptr
+                                ? pUiTextTable->text(UiTextTable::Message::MoreInformation) : "More Info";
                             dialog.actions.push_back(std::move(infoAction));
                         }
                     }
@@ -1759,7 +1796,8 @@ EventDialogContent buildEventDialogContent(
                             action.kind = EventDialogActionKind::NpcProfessionDescription;
                             action.id = pNpc->professionId;
                             action.secondaryId = pProfession->descriptionTextId;
-                            action.label = "More Info";
+                            action.label = pUiTextTable != nullptr
+                                ? pUiTextTable->text(UiTextTable::Message::MoreInformation) : "More Info";
                             dialog.actions.push_back(std::move(action));
                         }
 
@@ -1768,7 +1806,8 @@ EventDialogContent buildEventDialogContent(
                             EventDialogAction action = {};
                             action.kind = EventDialogActionKind::NpcDismiss;
                             action.id = pNpc->professionId;
-                            action.label = "Dismiss";
+                            action.label = pUiTextTable != nullptr
+                                ? pUiTextTable->formatNpcDismiss(pNpc->name) : "Dismiss";
                             dialog.actions.push_back(std::move(action));
                         }
                     }

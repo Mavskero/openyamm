@@ -4,6 +4,15 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 221 ACCEPTED_SOURCE_SCOPED_WITH_OPEN_RUNTIME_GAP: `local-data/validation/ui-function-completion-221/scoped-result.json`.
+  Fixed map_boundary deferred travel plan, fine-bearing single-resident Throne routing, ordinaryNPC captions/full
+  message1688(namespace533 wrong), localized travel/fine/disabled UI132keys and App destructor owner cleanup.
+  Native001/002,core, unsignediOS pass. Originaltravelcase now usesproduction movement; attempt001 owner-destruction
+  SIGSEGV fixed/preserved, attempt002 exitsnormally butFAIL missingOut02east navigation.0newcases/GUI/device/release.
+  Defaultcomplete221/runtime-001 changesonlyui_text;Save104/214/195/RCs fixed. Next222 source-authenticated MM8
+  default navigation+named destination starts; originalexe provesOut02east→out06/5days/WestStart, oldGit1daytable
+  mustnot be blindly restored. GoalACTIVE/~85%lowconfidence; travel integration andnaturalcampaign unproved.
+
 - 220 ACCEPTED_SOURCE_SCOPED: `local-data/validation/ui-function-completion-220/scoped-result.json`.
   Five ordinary roster/hire/generatedJoin captions now use original GlobalTxt704/705/122 via sharedUI122keys.
   Existing119values retained; completeold119prefix migration added, actionkind/id/offer/sourceJoin identity unchanged.

@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 106> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 109> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -343,10 +343,13 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::Yes, 704},
         {UiMessage::No, 705},
         {UiMessage::Join, 122},
+        {UiMessage::MoreInformation, 407},
+        {UiMessage::NpcDismissFormat, 408},
+        {UiMessage::TransitionLeaveFormat, 126},
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 16> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 23> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -364,6 +367,13 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::InventoryTargetHint, "选择物品施法；退出取消。"},
         {UiMessage::SkillTrainingLearned, "%s已掌握%s级的%s技能。"},
         {UiMessage::SkillTrainingRequirement, "基础%s至少达到%u点，才能学习%s级%s。"},
+        {UiMessage::Confirm, "确定"},
+        {UiMessage::TransitionEnterFormat, "你想进入%s吗？"},
+        {UiMessage::TransitionLeaveArea, "你想离开这个区域吗？"},
+        {UiMessage::ThroneServeSentence, "服刑"},
+        {UiMessage::Disabled, "不可用"},
+        {UiMessage::ThroneNoFine, "你没有未缴的罚金。"},
+        {UiMessage::ThroneSentenceServed, "你已经服刑一年。"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;
