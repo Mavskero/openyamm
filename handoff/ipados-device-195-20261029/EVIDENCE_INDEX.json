@@ -1,0 +1,2594 @@
+{
+  "generated_at": "2026-10-29T21:31:40.888774+08:00",
+  "evidence_root": "local-data/device-validation/remote-195-20261029",
+  "local_absolute_root": "/Users/mavskero/Documents/Codex/2026-10-28/openyamm-ipados-https-github-com-mavskero/work/openyamm/local-data/device-validation/remote-195-20261029",
+  "scope": "Selected original metadata, screenshots and logs, including failures. Hash index only; no raw evidence, game resources, user save files or signing credentials are uploaded. Live console is represented by a frozen snapshot.",
+  "file_count": 517,
+  "files": [
+    {
+      "path": "after-fixed-install-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "after-fixed-install-195/logs/gameplay_trace.log",
+      "bytes": 2098572,
+      "sha256": "d3e4f6518c4dfa85c96abe7e6bc8450444d04bf1efedd3942b87e9338d86e231"
+    },
+    {
+      "path": "after-fixed-install-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "after-fixed-install-195/saves-summary.json",
+      "bytes": 2429,
+      "sha256": "1727bbf7dc81030a3ca20ae60c83c88dfb4c5d43b4281e6af134ae41110ac690"
+    },
+    {
+      "path": "after-fixed-install-snapshot.log",
+      "bytes": 2484,
+      "sha256": "4725f2d92be29982aa26835ec815af8849f5abd9576d53fbd1f7b4b403c1f404"
+    },
+    {
+      "path": "after-fixed-save10-load-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "after-fixed-save10-load-195/logs/gameplay_trace.log",
+      "bytes": 309493,
+      "sha256": "419299d88feeaff4f60ee37a65104eadb2dd994e1c25f681ef3cd6f959635bb7"
+    },
+    {
+      "path": "after-fixed-save10-load-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "after-fixed-save10-load-195/saves-summary.json",
+      "bytes": 2429,
+      "sha256": "1727bbf7dc81030a3ca20ae60c83c88dfb4c5d43b4281e6af134ae41110ac690"
+    },
+    {
+      "path": "after-fixed-save10-load.log",
+      "bytes": 2488,
+      "sha256": "eca21eb35facc9d5ebc633689a030f8a192df7f78c9ee2cbe90977141d25e1a9"
+    },
+    {
+      "path": "after-ime-cancel-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "after-ime-cancel-195/logs/gameplay_trace.log",
+      "bytes": 316168,
+      "sha256": "0e8e716a8e6889fba48d30c2336a1383cd209698f87be1b2fd002ad27405a0c4"
+    },
+    {
+      "path": "after-ime-cancel-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "after-ime-cancel-195/saves-summary.json",
+      "bytes": 2207,
+      "sha256": "7abe672858bb182c9d9300ad0a2177098a4dbbfdc16b1bc1608c5ece07090693"
+    },
+    {
+      "path": "after-ime-cancel-195.log",
+      "bytes": 2259,
+      "sha256": "e180ff0ed1c0285456975edaae615ec15229a801d76b53cd16843e64dd1125ba"
+    },
+    {
+      "path": "after-import-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "after-import-195/logs/gameplay_trace.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "after-import-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "after-import-195/saves-summary.json",
+      "bytes": 2207,
+      "sha256": "7abe672858bb182c9d9300ad0a2177098a4dbbfdc16b1bc1608c5ece07090693"
+    },
+    {
+      "path": "after-install-before-import/GameImports/active.json",
+      "bytes": 445,
+      "sha256": "b8f366d6d089982dc1d4c1e1594f1d33c7a41ee042dbf62a4ff1d3a5acc00aac"
+    },
+    {
+      "path": "after-install-before-import/logs/gameplay_trace.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "after-install-before-import/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "after-install-before-import/saves-summary.json",
+      "bytes": 2207,
+      "sha256": "7abe672858bb182c9d9300ad0a2177098a4dbbfdc16b1bc1608c5ece07090693"
+    },
+    {
+      "path": "after-install-before-import.log",
+      "bytes": 2266,
+      "sha256": "d3261e688935d89e35f4f7f4c5c79ca6758d8d38adcd1de863a5d545f0a7c700"
+    },
+    {
+      "path": "after-pagination-install-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "after-pagination-install-195/logs/gameplay_trace.log",
+      "bytes": 64254,
+      "sha256": "b10c9459c3faa07c1a799d97350aedbbebaa07ed75715054deed8d825483576e"
+    },
+    {
+      "path": "after-pagination-install-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "after-pagination-install-195/saves-summary.json",
+      "bytes": 2429,
+      "sha256": "73edf68ea714c06c0bf5c19654d4319ec3b53ed176e68bd6c6d9a467977728e2"
+    },
+    {
+      "path": "after-pagination-install-195.log",
+      "bytes": 2489,
+      "sha256": "e0a528a75d973f33d444a9474ae1d1fe31a2929e2a1f38a4d88b81c9965e224f"
+    },
+    {
+      "path": "after-save10-checkpoint-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "after-save10-checkpoint-195/logs/gameplay_trace.log",
+      "bytes": 840705,
+      "sha256": "0ef7717266b16643ad184a7c725cf0422abde964608430afa2647e92dabfea1d"
+    },
+    {
+      "path": "after-save10-checkpoint-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "after-save10-checkpoint-195/saves-summary.json",
+      "bytes": 2429,
+      "sha256": "1727bbf7dc81030a3ca20ae60c83c88dfb4c5d43b4281e6af134ae41110ac690"
+    },
+    {
+      "path": "after-save10-checkpoint-195.log",
+      "bytes": 2488,
+      "sha256": "7e0961d1fce021ef6796b9a30526b834d12cae9eab1f8c89b49eaee973ec9ee6"
+    },
+    {
+      "path": "after-save11-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "after-save11-195/logs/gameplay_trace.log",
+      "bytes": 38913,
+      "sha256": "46317e974e8f99d3877527c4a431a14e59909e160dcb02a343116da3e94f8c80"
+    },
+    {
+      "path": "after-save11-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "after-save11-195/save11-verification.json",
+      "bytes": 463,
+      "sha256": "c7315b4445f419b7d290e0ad7dfbd4d91384e31a528f8dbaf8ba602930eb7b86"
+    },
+    {
+      "path": "after-save11-195/saves-summary.json",
+      "bytes": 2651,
+      "sha256": "c5a7d9ddc0e6a5a0b47ae6d8a03ffda5052aae9c2da15c99e62b42093c50b454"
+    },
+    {
+      "path": "after-save11-195.log",
+      "bytes": 2699,
+      "sha256": "6c097f91d739869317b4d5842854970ea6f18920bf32a267cc81db71ee301e0c"
+    },
+    {
+      "path": "after-travel-before-save11-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "after-travel-before-save11-195/logs/gameplay_trace.log",
+      "bytes": 59112,
+      "sha256": "5a66fc3a10d2c5c17a6c408a4f30e50933d10ae566b671099e15c9d7eb5ad891"
+    },
+    {
+      "path": "after-travel-before-save11-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "after-travel-before-save11-195/saves-summary.json",
+      "bytes": 2429,
+      "sha256": "73edf68ea714c06c0bf5c19654d4319ec3b53ed176e68bd6c6d9a467977728e2"
+    },
+    {
+      "path": "app-binary-hashes.json",
+      "bytes": 476,
+      "sha256": "74d2c394e7a37c59b99bcb292529471beda20bdb57224292461ee81b3fc45311"
+    },
+    {
+      "path": "app-console-cold-final-snapshot-195.log",
+      "bytes": 74969,
+      "sha256": "db244cfbe627184976683adea217dbc0f1e989cbf9912b3edf08759f26608164"
+    },
+    {
+      "path": "arcomage-after-open.png",
+      "bytes": 3024478,
+      "sha256": "e1028b4f7655eebd8d1b145d1a474d7fb9c3820d781eff25c6e8ec7c9be9ed49"
+    },
+    {
+      "path": "arcomage-play-195-attachments/arcomage-natural-hand.png",
+      "bytes": 3400302,
+      "sha256": "4444b225bf0e778e4e4f011b75243b859a2f636881f343d25008d3e9fb865db2"
+    },
+    {
+      "path": "arcomage-play-195-attachments/manifest.json",
+      "bytes": 1069,
+      "sha256": "c16a2a21166ff4999e9fa83b0ce4123bc119fe46db4bbf04dacd5f93cd4021a2"
+    },
+    {
+      "path": "arcomage-play-195.log",
+      "bytes": 4243,
+      "sha256": "49801e1477afdaaedf77d314edb61553b2344dd08f47f2d6bf42e00097443619"
+    },
+    {
+      "path": "arcomage-resign-195-attachments/after-discard-no-card-effect.png",
+      "bytes": 3154832,
+      "sha256": "e180d62e57755c1f54276b88e70c9d603b34b14eaf3a943be6478a9d95415979"
+    },
+    {
+      "path": "arcomage-resign-195-attachments/arcomage-resign.png",
+      "bytes": 3405148,
+      "sha256": "1982bfcd9679713a940500b9a7e7b9bf86af4b94a64ffea9a3be9d55185ccbd3"
+    },
+    {
+      "path": "arcomage-resign-195-attachments/leave-card-options.png",
+      "bytes": 3398135,
+      "sha256": "fb267921aa57a847e0299c1c1bc7b5b7fe3aedceb4301ac4890b010a833370fc"
+    },
+    {
+      "path": "arcomage-resign-195-attachments/leave-owner.png",
+      "bytes": 3400975,
+      "sha256": "5dabf15e977ef3c39e590eed2509cc3f78b292f99174b02ccca9b540007f1ec7"
+    },
+    {
+      "path": "arcomage-resign-195-attachments/leave-tavern.png",
+      "bytes": 3051517,
+      "sha256": "c00fb09e56b929d7233e4567d7ba1ca2968832ee05f5018283aee6df075acba9"
+    },
+    {
+      "path": "arcomage-resign-195-attachments/manifest.json",
+      "bytes": 3557,
+      "sha256": "fa95539b3eeb3c66a7c49b0c6232a0ef91153cbf4fe5ffe39e7bbc8533d06d26"
+    },
+    {
+      "path": "arcomage-resign-195-attachments/return-to-tavern.png",
+      "bytes": 3393262,
+      "sha256": "4dec693aaad9cdab39d0696e2ae37b1789987c5242ab625014285cf236151bf2"
+    },
+    {
+      "path": "arcomage-resign-195.log",
+      "bytes": 6837,
+      "sha256": "97c2773a724aa6be872e81ed249a0972ebf857256524004b75b582893f7e4d31"
+    },
+    {
+      "path": "arcomage-start-195-attachments/manifest.json",
+      "bytes": 1070,
+      "sha256": "e1763e8b1300d95b82287f9d1f2d9ab8c8f003be70e81cdd0ef3c2312a2cc172"
+    },
+    {
+      "path": "arcomage-start-195-attachments/start-natural-arcomage.png",
+      "bytes": 3403866,
+      "sha256": "7133a329adf77de73f77398c43ea0b0fee5142e788407f9db72e8802bbfb5425"
+    },
+    {
+      "path": "arcomage-start-195.log",
+      "bytes": 4248,
+      "sha256": "9a9162b5806fd886ebca229840cf215a71152d63345092f4f9a3caf11f30f1ef"
+    },
+    {
+      "path": "arcomage-swipe-195-attachments/before-swipe-hand.png",
+      "bytes": 3139493,
+      "sha256": "b2226cb808f65500892d6ea153c5a6417b27f29b7435aeb41df00064c8f799bc"
+    },
+    {
+      "path": "arcomage-swipe-195-attachments/manifest.json",
+      "bytes": 1491,
+      "sha256": "be6d9ae1fccd5235dbaa925c7d475d33d5f5a0174abb4261dffb9217f8f1e6fd"
+    },
+    {
+      "path": "arcomage-swipe-195-attachments/swipe-up-discard-first-card.png",
+      "bytes": 2938517,
+      "sha256": "bfbb2093046f881f47c53a4666fd0ef0f27b76c27f83d2265fb8f1558237b02c"
+    },
+    {
+      "path": "arcomage-swipe-195.log",
+      "bytes": 4660,
+      "sha256": "05264681cf522c1f5029f0b89e0cc3615ee200c92daa08495788797dc371ea67"
+    },
+    {
+      "path": "arcomage-tap-195-attachments/manifest.json",
+      "bytes": 1071,
+      "sha256": "fb1b97dc5740e308db4ffd3103dd58dd250b12e2c358ccd52d4bd98eb43f779f"
+    },
+    {
+      "path": "arcomage-tap-195-attachments/tap-affordable-red-card.png",
+      "bytes": 2969680,
+      "sha256": "cb67b8ac30078b3ae53741201392348f42c0fce58035cd4ca04df1e822e3f8be"
+    },
+    {
+      "path": "arcomage-tap-195.log",
+      "bytes": 4244,
+      "sha256": "d119e63af5660a24eb40f86707166b1cd430b3c3da2025004967c04a96dd822a"
+    },
+    {
+      "path": "audio-user-confirmation.json",
+      "bytes": 332,
+      "sha256": "e27337906550da9be686a407cbea90c9bb290ef42667710c742b615c1d88bb38"
+    },
+    {
+      "path": "automation-auth-reprompt.png",
+      "bytes": 268302,
+      "sha256": "f079f6d2a75ed3d45f323cc866c23095d5bf7780031bb138bb92831c0a3578d0"
+    },
+    {
+      "path": "automation-init-dvt.png",
+      "bytes": 445178,
+      "sha256": "32b13297f55080cc898bfa25880e38acd21f8d1e5ec891190151c1a9a2f2065b"
+    },
+    {
+      "path": "backup-device.log",
+      "bytes": 5395,
+      "sha256": "55c7c250b5cb1a451808ca8abce3ed45077cda4b3600a543d178e48102c63a6d"
+    },
+    {
+      "path": "before-fixed-install-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "before-fixed-install-195/logs/gameplay_trace.log",
+      "bytes": 1945854,
+      "sha256": "fe2896da0a8f82db9d4e1636f1363dcc46014de08be845c824d5f39ef03e1bed"
+    },
+    {
+      "path": "before-fixed-install-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "before-fixed-install-195/saves-summary.json",
+      "bytes": 2429,
+      "sha256": "1727bbf7dc81030a3ca20ae60c83c88dfb4c5d43b4281e6af134ae41110ac690"
+    },
+    {
+      "path": "before-fixed-install-snapshot.log",
+      "bytes": 2485,
+      "sha256": "7457d21fd7a69e24c791e33fa3018bfa3abbe88f8df7899e0f8307433afae896"
+    },
+    {
+      "path": "before-update-launcher.png",
+      "bytes": 217041,
+      "sha256": "5891621ae6cbe9a82388c42410e147ac6d188aae7491e5302078a4b341c8712b"
+    },
+    {
+      "path": "build-fix-195.log",
+      "bytes": 3366631,
+      "sha256": "09483d6b359b9969e33f4df05a05c276c1bb56c5bfe699442619b426c7fe7271"
+    },
+    {
+      "path": "build-input-check-195.log",
+      "bytes": 123184,
+      "sha256": "fc89fda6ef2063e9453eb8e7942b2cd65882a5b6a0a7c0368175445461ee2c93"
+    },
+    {
+      "path": "build-input-pagination-195.log",
+      "bytes": 1034,
+      "sha256": "a3be88115579ee7cc4a049fca3bee37b7fc7e819da199bbf7559e3d10bd9ab6b"
+    },
+    {
+      "path": "build-input-touch-final-195.log",
+      "bytes": 335,
+      "sha256": "ad7e63ca2021930bd43c092819e9d8be27479b131e9f1767e42f379d11174fe7"
+    },
+    {
+      "path": "build-input-touch-fixes-195.log",
+      "bytes": 8859,
+      "sha256": "3ad0b1eb5512724d816e9c9113ad9fba08178725284aebcacc0d9e2301493fef"
+    },
+    {
+      "path": "build-pagination-195.log",
+      "bytes": 206190,
+      "sha256": "bc7fb20c878b032da7b54818d664f06beed2b87981cbfb9d17695e67784cb2fb"
+    },
+    {
+      "path": "build-touch-final-195.log",
+      "bytes": 188937,
+      "sha256": "1118b394ec8d5889a4b9259fb70778baaa87150e8f5b59e42af672bae6600d4d"
+    },
+    {
+      "path": "build-touch-fixes-195.log",
+      "bytes": 372152,
+      "sha256": "3e3fe6a84a90ac72db3572ef4ec9b81bc4ab555f40519780113d1937b38ba5d1"
+    },
+    {
+      "path": "carriage-approach-195-attachments/approach-carriage.png",
+      "bytes": 4192378,
+      "sha256": "42e3e3d719321505e16960571742529cab171962961e139a94535879d3678278"
+    },
+    {
+      "path": "carriage-approach-195-attachments/carriage-door.png",
+      "bytes": 4185932,
+      "sha256": "ed0d4c0c647eaee30c26b09729bbab425f4739e3438cc7624abc3f0eb1b423c4"
+    },
+    {
+      "path": "carriage-approach-195-attachments/face-carriage.png",
+      "bytes": 4954521,
+      "sha256": "af1b30a0382316b521116235aa3110cf48220a6d4400a2e280a59872daa9a3a5"
+    },
+    {
+      "path": "carriage-approach-195-attachments/manifest.json",
+      "bytes": 2306,
+      "sha256": "e50fb28e174cb94abbb7dbfcc500c31941fd4a414333837175b232a2cc5bf985"
+    },
+    {
+      "path": "carriage-approach-195-attachments/walk-north-carriage.png",
+      "bytes": 5301325,
+      "sha256": "d7e687e403d7fb57610a0f2c1fb8fa3572a7417c9f5e0141ad1189ed698164af"
+    },
+    {
+      "path": "carriage-approach-195.log",
+      "bytes": 6787,
+      "sha256": "2a5762c5272a0d662bce9f5152092dab10de06dc3c660670eb834e9e3bffc6b2"
+    },
+    {
+      "path": "carriage-cancel-confirm-195-attachments/manifest.json",
+      "bytes": 610,
+      "sha256": "fc1c73e9e960cd505b3d8ce2375c7ffa085bb06e6c81e25086fa43b37e287dc4"
+    },
+    {
+      "path": "carriage-cancel-confirm-195.log",
+      "bytes": 3504,
+      "sha256": "63ed36a72d482dba4d8b09f707fce920fc68bb7db7340d802011369de6a6fe5d"
+    },
+    {
+      "path": "carriage-open-195-attachments/carriage-service.png",
+      "bytes": 4395692,
+      "sha256": "1866bca299daf6fbcecc9e7efff9ce955bb1d601e66f72ee50808f17a6dde86a"
+    },
+    {
+      "path": "carriage-open-195-attachments/enter-carriage.png",
+      "bytes": 4393651,
+      "sha256": "123aa3de5027261e1101062e27f5a34773fdd0ed6ae393f2dc5e87120e74c756"
+    },
+    {
+      "path": "carriage-open-195-attachments/manifest.json",
+      "bytes": 1477,
+      "sha256": "93edabbafddfebbf2e62811c772cfcbd0ad6ca07add7b58e2e91fc2427ae7685"
+    },
+    {
+      "path": "carriage-open-195.log",
+      "bytes": 4330,
+      "sha256": "ab9ecc470af99824e561ecee7fe5f1c6b60d45c399bd3983209ef4c9a1ff6e15"
+    },
+    {
+      "path": "carriage-travel-195-attachments/arrived-world.png",
+      "bytes": 4454538,
+      "sha256": "3568b1f11a62b8ca20542b264f2e2a2581b2996e7a96fc6d38779ba9953325fd"
+    },
+    {
+      "path": "carriage-travel-195-attachments/cancel-carriage.png",
+      "bytes": 4136064,
+      "sha256": "e57d5f4c4dc29c2a4e26043f4e0a963d2a3f484ad5009b51f552a16b57bca0b5"
+    },
+    {
+      "path": "carriage-travel-195-attachments/cancel-return-same-town.png",
+      "bytes": 4135627,
+      "sha256": "2cf62681fa23218c1ed9ee3aae652ee294ad6fa75f16bb3a54c9e5385ced623d"
+    },
+    {
+      "path": "carriage-travel-195-attachments/confirm-ironfist-once.png",
+      "bytes": 4402953,
+      "sha256": "215505e67fb60deaedda7c143763e7798f9a96323159b40e67ce933454d83d39"
+    },
+    {
+      "path": "carriage-travel-195-attachments/fare-before-confirm.png",
+      "bytes": 4395692,
+      "sha256": "1866bca299daf6fbcecc9e7efff9ce955bb1d601e66f72ee50808f17a6dde86a"
+    },
+    {
+      "path": "carriage-travel-195-attachments/manifest.json",
+      "bytes": 3972,
+      "sha256": "42833ecb558f0ccc5c7e2d8b0de5e3626e3c5cf817b60e7a49dd8d6be8091e04"
+    },
+    {
+      "path": "carriage-travel-195-attachments/reenter-carriage.png",
+      "bytes": 4393651,
+      "sha256": "123aa3de5027261e1101062e27f5a34773fdd0ed6ae393f2dc5e87120e74c756"
+    },
+    {
+      "path": "carriage-travel-195-attachments/travel-arrived.png",
+      "bytes": 4449767,
+      "sha256": "1413153f4c6eba61b2d82de6b1ffab31671de5d9e138fd5d61bc1fcd6a4bd2c3"
+    },
+    {
+      "path": "carriage-travel-195.log",
+      "bytes": 6269,
+      "sha256": "9474d8b84e0b53205498f64b5c78d33bc17625dae7d1dd603663f284b1bd9a08"
+    },
+    {
+      "path": "character-inspect-manual-check.png",
+      "bytes": 4457821,
+      "sha256": "e0cd7b1c91999b481d1027d3515bbced3a713772432bbfe20f0d274a4007ed36"
+    },
+    {
+      "path": "character-inspect-manual-expanded.png",
+      "bytes": 4457821,
+      "sha256": "e0cd7b1c91999b481d1027d3515bbced3a713772432bbfe20f0d274a4007ed36"
+    },
+    {
+      "path": "checkpoint-character-inspect-195-attachments/character-skills-inspect-visible.png",
+      "bytes": 4544355,
+      "sha256": "20a4f3ac47b60aab1cba9200968bd6cf4685d666f26e609906e647d01ece3531"
+    },
+    {
+      "path": "checkpoint-character-inspect-195-attachments/close-spell-detail.png",
+      "bytes": 4105344,
+      "sha256": "4134c67807f66ae650376a124169b10290bb84cbe8d5134a2f64878105ed2ea2"
+    },
+    {
+      "path": "checkpoint-character-inspect-195-attachments/manifest.json",
+      "bytes": 2715,
+      "sha256": "d645fda2817e5eac388df3018d7f3f53d6c1ad027cedf870b959f96f1d1bf19d"
+    },
+    {
+      "path": "checkpoint-character-inspect-195.log",
+      "bytes": 6690,
+      "sha256": "0745556ce5b33e902f0fa00ec0d5c21ea31f9b6e9594176369d4444bc37f5b53"
+    },
+    {
+      "path": "checkpoint-return-current.png",
+      "bytes": 5138430,
+      "sha256": "75aff56c23bd8d58ddcdd093f99370c9c58fa0d8e348f30b7793b689e503f43f"
+    },
+    {
+      "path": "checkpoint-spell-detail-195-attachments/manifest.json",
+      "bytes": 2305,
+      "sha256": "ee4a8bff8fb7531bef9800bf3da6680fc8396eab38905610c29fad29fd249a72"
+    },
+    {
+      "path": "checkpoint-spell-detail-195-attachments/select-cure-weakness.png",
+      "bytes": 4105344,
+      "sha256": "4134c67807f66ae650376a124169b10290bb84cbe8d5134a2f64878105ed2ea2"
+    },
+    {
+      "path": "checkpoint-spell-detail-195-attachments/spell-description.png",
+      "bytes": 4404632,
+      "sha256": "967eeeb97a7f82141faee654498bf5c7671ba5e425dd7223b209af76fa515a4a"
+    },
+    {
+      "path": "checkpoint-spell-detail-195-attachments/spell-detail-chinese.png",
+      "bytes": 4404632,
+      "sha256": "967eeeb97a7f82141faee654498bf5c7671ba5e425dd7223b209af76fa515a4a"
+    },
+    {
+      "path": "checkpoint-spell-detail-195.log",
+      "bytes": 5908,
+      "sha256": "e9c4a24365fd71ce4eef52e4c6d5a21e5256c1ad29846848d60ae740672c2d4a"
+    },
+    {
+      "path": "checkpoint-spell-repro-195-attachments/checkpoint-spellbook.png",
+      "bytes": 4103133,
+      "sha256": "0891da49b7c9c654725377e318b31c2ab170433782a5a639b6515c8029a0768a"
+    },
+    {
+      "path": "checkpoint-spell-repro-195-attachments/checkpoint-world.png",
+      "bytes": 5628721,
+      "sha256": "18ace58884fe6493ea6d3f96057a62467e5c7140f06dafed4b061ac37d5cdc2f"
+    },
+    {
+      "path": "checkpoint-spell-repro-195-attachments/manifest.json",
+      "bytes": 1886,
+      "sha256": "619e679e4fc1b40cf7f60680acd133bc3cd67c9cd0f0a0af5aa43374c82a9c32"
+    },
+    {
+      "path": "checkpoint-spell-repro-195.log",
+      "bytes": 4448,
+      "sha256": "e5392a83b40d17efd32575df5d86981adbe06b8947a9aa9deeaff8889f4ebe50"
+    },
+    {
+      "path": "checkpoint-spell-return-195-attachments/after-visible-return.png",
+      "bytes": 5641941,
+      "sha256": "9469df3ed73eb63a07c4db5f8c867a13152295e260cb7d6d058eb7b81a3744e2"
+    },
+    {
+      "path": "checkpoint-spell-return-195-attachments/manifest.json",
+      "bytes": 1485,
+      "sha256": "52eb51bdb64c3311927f14ddb7400094db3f829fdf9069fd0636b5e2eacca4d4"
+    },
+    {
+      "path": "checkpoint-spell-return-195-attachments/tap-visible-return.png",
+      "bytes": 5641230,
+      "sha256": "71fbc323f8b81e21af4f885752ba52a010d2ce039f8ea8a007fc4d092a395d78"
+    },
+    {
+      "path": "checkpoint-spell-return-195.log",
+      "bytes": 4376,
+      "sha256": "38ea69200e1c539cb84e50c0c3927a4d6cfefb5ed536d9bce3982c72816071db"
+    },
+    {
+      "path": "choose-class-195-attachments/class-next1.png",
+      "bytes": 3679693,
+      "sha256": "2e22b38418c81daed749e5dc4e3362facb2d8c70f1a7b96f90426779780f5df4"
+    },
+    {
+      "path": "choose-class-195-attachments/class-next2.png",
+      "bytes": 3698907,
+      "sha256": "ae836fc4100360120a2c090c51b9fcc5d0923c0b8056f2d5c0f23ab2550532e8"
+    },
+    {
+      "path": "choose-class-195-attachments/class-next3.png",
+      "bytes": 3641300,
+      "sha256": "32476887844c9c14bce330035800941f2668037874da418dcc8dfbefe8e7859b"
+    },
+    {
+      "path": "choose-class-195-attachments/class-next4.png",
+      "bytes": 3690791,
+      "sha256": "9b848573e7fee2e696b89ec54cd99f2b6f8d38f6767712317f1ab5b73b294b5c"
+    },
+    {
+      "path": "choose-class-195-attachments/class-next5.png",
+      "bytes": 3686232,
+      "sha256": "865b47240816be1e00131807668b51bfe3cdbf1d0d03a22049138717f1775d71"
+    },
+    {
+      "path": "choose-class-195-attachments/manifest.json",
+      "bytes": 2698,
+      "sha256": "889a5d52f9eccd9d6a9cd6961c94d3952e9450a9769e85dbaf32df05f1077ea5"
+    },
+    {
+      "path": "choose-class-195.log",
+      "bytes": 7276,
+      "sha256": "ee0dac01018890dcb2297b885140579721cb0ebfa46809a6acf48f21553f26c9"
+    },
+    {
+      "path": "codesign.log",
+      "bytes": 241,
+      "sha256": "f9673dd9a0db3fb75ceb3b26847afa840228024e0c3856b2aea3cf1bb7a6c67c"
+    },
+    {
+      "path": "cold-load11-195-attachments/cold-save11-loaded.png",
+      "bytes": 4411573,
+      "sha256": "6a245e807f7022d178fda151a0c812606eeb2feaf118a788e31e55e402e5046c"
+    },
+    {
+      "path": "cold-load11-195-attachments/control-after-cold-load.png",
+      "bytes": 4321012,
+      "sha256": "3f77609a264f9977d058630955e3beb057f02eeed607e1baea2ea6f182080682"
+    },
+    {
+      "path": "cold-load11-195-attachments/final-normal-launcher.png",
+      "bytes": 245007,
+      "sha256": "d5d7196ca2625979241e6220c9be8890b2b002ffa97987c02754c9d297a9df60"
+    },
+    {
+      "path": "cold-load11-195-attachments/manifest.json",
+      "bytes": 5171,
+      "sha256": "efb2dc720d3d32f2ff4b5a0553024c4327936b512d744553cc530a2f51008528"
+    },
+    {
+      "path": "cold-load11-195-attachments/selected-chinese-travel-save.png",
+      "bytes": 3978473,
+      "sha256": "1984d340ac4eaa9e4a6f1b002220b72e3201f4377c13c0f94f02dfd486bb7687"
+    },
+    {
+      "path": "cold-load11-195.log",
+      "bytes": 8793,
+      "sha256": "08aadba30514c2a8c768809801c4a1f42a5b4c6e3827c68f2d8e2ef5f04f1c6f"
+    },
+    {
+      "path": "cold-new-process-list-195-attachments/cold-new-save-list.png",
+      "bytes": 3992178,
+      "sha256": "6c5ea0f50cac9eb96e3d1de05957f6863f7641ed16f63eb97e518cbdc4a49721"
+    },
+    {
+      "path": "cold-new-process-list-195-attachments/manifest.json",
+      "bytes": 2709,
+      "sha256": "f7daf9a5b3c71fd9adfc27c58c598e30a884f98b8c24387b6c061d2c6815cba8"
+    },
+    {
+      "path": "cold-new-process-list-195.log",
+      "bytes": 5312,
+      "sha256": "bb323392c99adcbf3736cea218b6cd1456569ddbfb8700244cccc110bba87b4e"
+    },
+    {
+      "path": "cold-start-load11-list-195-attachments/manifest.json",
+      "bytes": 6321,
+      "sha256": "64ca177f0d15461a28d235b2a4b7168f70f314b58f7a2f04c27c692187c4e468"
+    },
+    {
+      "path": "cold-start-load11-list-195.log",
+      "bytes": 6793,
+      "sha256": "db667305fb7ccb1b5ade7bc85ec79ae4829f895e1422e47f03e2b970630405f0"
+    },
+    {
+      "path": "configure-host-195.log",
+      "bytes": 21184,
+      "sha256": "af329ca7aed7f447e72316cff2ec2e8254c3311e0bc9caca10ab32165ae75751"
+    },
+    {
+      "path": "configure-input-check-195.log",
+      "bytes": 7966,
+      "sha256": "a6333aa54f52f701a0c87d09e3bffe8d06ff531f63835334c41cc447167fec36"
+    },
+    {
+      "path": "configure-ios-195.log",
+      "bytes": 21718,
+      "sha256": "1413eced30a9e4e45e0c6f3cea21695989147477933dc49289d63c77a6f32cfa"
+    },
+    {
+      "path": "container-inventory-before.json",
+      "bytes": 337732,
+      "sha256": "f2836b7238341d6abfb2848a4fc6958aa4cb5077ce7576ae67e8ea7bae7034fb"
+    },
+    {
+      "path": "creation-195-attachments/Missing-expected-text-Enroth.png",
+      "bytes": 4064610,
+      "sha256": "628214fbe72cdfc90bc9e0ab23fc59cdab2b652a90145a25720abae306c9aa8b"
+    },
+    {
+      "path": "creation-195-attachments/manifest.json",
+      "bytes": 2681,
+      "sha256": "931ce74a9b4ec16cd6266aaba9ddc2eafbdd53327067f46af8b3a9f05c2c4a37"
+    },
+    {
+      "path": "creation-195-attachments/new-game.png",
+      "bytes": 4064610,
+      "sha256": "628214fbe72cdfc90bc9e0ab23fc59cdab2b652a90145a25720abae306c9aa8b"
+    },
+    {
+      "path": "creation-195.log",
+      "bytes": 4870,
+      "sha256": "584f1d46343c396ec5b487b28e6ded9c9135eeb714ad60a0883a66401899a810"
+    },
+    {
+      "path": "creation-confirm-195-attachments/choose-leather.png",
+      "bytes": 3687395,
+      "sha256": "a9fc6ae799b97ec661607a549a1cf11c7996373d52fb564c81d70e63d9de0e4b"
+    },
+    {
+      "path": "creation-confirm-195-attachments/choose-meditation.png",
+      "bytes": 3692348,
+      "sha256": "2e7cc67015007208ed450d4180a3eab5d448b79f2a723a46452255d59b61dc9f"
+    },
+    {
+      "path": "creation-confirm-195-attachments/confirm-new-enroth.png",
+      "bytes": 3538660,
+      "sha256": "d06c40f98421a29c505a7b3d6b2516e4ea9d90de0068c862ba254c522897456e"
+    },
+    {
+      "path": "creation-confirm-195-attachments/endurance-plus-0.png",
+      "bytes": 3686453,
+      "sha256": "188306a35a1c4035f799c9d6e720fc87d869724cb57636cba4e7e3c2b281d261"
+    },
+    {
+      "path": "creation-confirm-195-attachments/endurance-plus-1.png",
+      "bytes": 3686670,
+      "sha256": "5bb81d59f16606b324faa84f5ff4767e3e9d549a6fd262e83405f3fdbeafba89"
+    },
+    {
+      "path": "creation-confirm-195-attachments/endurance-plus-2.png",
+      "bytes": 3686461,
+      "sha256": "b118cc5870c425550265434a18892914cf9e1da0f4985d724af6ff5fe12d9303"
+    },
+    {
+      "path": "creation-confirm-195-attachments/endurance-plus-3.png",
+      "bytes": 3686423,
+      "sha256": "2eb14b48c5e56e98b2a8ff4b1e59fceece05d9757bbdcce1b351cc31c1a1f28f"
+    },
+    {
+      "path": "creation-confirm-195-attachments/endurance-plus-4.png",
+      "bytes": 3686672,
+      "sha256": "d63df5a2af45ec648a6e2117f39310d5345b49f89f05dbe6156a879b48106ff4"
+    },
+    {
+      "path": "creation-confirm-195-attachments/endurance-plus-5.png",
+      "bytes": 3686399,
+      "sha256": "97324dc4a00bf17e90927a80fa571e12813e802d0fde9d852d0bea65d665c74e"
+    },
+    {
+      "path": "creation-confirm-195-attachments/endurance-plus-6.png",
+      "bytes": 3686572,
+      "sha256": "9774e87c847d416cf860ef47d0a277e6c5f6dc3b1726f5eb5512f2cae98d3df2"
+    },
+    {
+      "path": "creation-confirm-195-attachments/intro-begins.png",
+      "bytes": 3536883,
+      "sha256": "12c8e7f5cc731ad583c463170dacd41d44b26b61362244cfc479e507bdfcf9cf"
+    },
+    {
+      "path": "creation-confirm-195-attachments/manifest.json",
+      "bytes": 8961,
+      "sha256": "b6df9d680932a12de4889b7079d46913fd4fca54431ad06f4f98319a55c8ffa3"
+    },
+    {
+      "path": "creation-confirm-195-attachments/personality-plus-0.png",
+      "bytes": 3686442,
+      "sha256": "076c514be7b175a1278f07af422c3a991c033b18f146487772fb59d4af5bf541"
+    },
+    {
+      "path": "creation-confirm-195-attachments/personality-plus-1.png",
+      "bytes": 3686666,
+      "sha256": "6286d99693d35475bd9447702d44df9c8f405185e674a66c3b10b21d31851141"
+    },
+    {
+      "path": "creation-confirm-195-attachments/personality-plus-2.png",
+      "bytes": 3686537,
+      "sha256": "4d22529436b99473bf61d657c71bacda8107df3a05df24a90eb2ddfbd452547a"
+    },
+    {
+      "path": "creation-confirm-195-attachments/personality-plus-3.png",
+      "bytes": 3686509,
+      "sha256": "8487b02af3aa60e17c0126f1616dccb2d08f2039663f2c684ba5731936fd7f33"
+    },
+    {
+      "path": "creation-confirm-195-attachments/personality-plus-4.png",
+      "bytes": 3686189,
+      "sha256": "c37f961ec89d8e7b0fe55baa34e56a43eeaef5a5a70e02cae9f5e80eb3095908"
+    },
+    {
+      "path": "creation-confirm-195-attachments/personality-plus-5.png",
+      "bytes": 3686631,
+      "sha256": "097995e5025af6ef93b67ebbd309750f4091e9568c6eb0f627f8217e60352fff"
+    },
+    {
+      "path": "creation-confirm-195-attachments/personality-plus-6.png",
+      "bytes": 3686446,
+      "sha256": "337166673bc90f616ce71544ba40dd5a1be9a303c83fd7f17b8da29cec9380d2"
+    },
+    {
+      "path": "creation-confirm-195-attachments/personality-plus-7.png",
+      "bytes": 3686573,
+      "sha256": "b4889d15308cb6b632f29daf18fbe011eb2620e2f8678aa67aed75bbe6dedaf2"
+    },
+    {
+      "path": "creation-confirm-195-attachments/valid-new-party.png",
+      "bytes": 3692348,
+      "sha256": "2e7cc67015007208ed450d4180a3eab5d448b79f2a723a46452255d59b61dc9f"
+    },
+    {
+      "path": "creation-confirm-195.log",
+      "bytes": 17636,
+      "sha256": "d8b1269bb0d2622169ad4c884559b7b609c08b2782bfe9e14090b9ef161ef3cf"
+    },
+    {
+      "path": "creation-detail-cancel-195-attachments/cancel-creation.png",
+      "bytes": 1950025,
+      "sha256": "d78b2e6fec81757c148318a2a8f2bab3593084d628ee2dddc031bbce7f6a5aaa"
+    },
+    {
+      "path": "creation-detail-cancel-195-attachments/cancel-return.png",
+      "bytes": 1950025,
+      "sha256": "d78b2e6fec81757c148318a2a8f2bab3593084d628ee2dddc031bbce7f6a5aaa"
+    },
+    {
+      "path": "creation-detail-cancel-195-attachments/creation-skill-detail.png",
+      "bytes": 3673689,
+      "sha256": "35d656b35ecb82778eb954a4d60d60dcfd6647f060a88b0d832c5bda52ce7db0"
+    },
+    {
+      "path": "creation-detail-cancel-195-attachments/manifest.json",
+      "bytes": 2319,
+      "sha256": "ab71dd0201bacf5c09ed60ccf379b2f6d8cce9a8d080c3367b1a7d399efcbcc3"
+    },
+    {
+      "path": "creation-detail-cancel-195-attachments/skill-detail-after-release.png",
+      "bytes": 3673689,
+      "sha256": "35d656b35ecb82778eb954a4d60d60dcfd6647f060a88b0d832c5bda52ce7db0"
+    },
+    {
+      "path": "creation-detail-cancel-195.log",
+      "bytes": 5557,
+      "sha256": "4b3b8b5a840c7ecfd499c920a88241b2e13edfa0411838d8033844560338c175"
+    },
+    {
+      "path": "creation-enroth-195-attachments/creation-background-and-chinese.png",
+      "bytes": 3673689,
+      "sha256": "35d656b35ecb82778eb954a4d60d60dcfd6647f060a88b0d832c5bda52ce7db0"
+    },
+    {
+      "path": "creation-enroth-195-attachments/manifest.json",
+      "bytes": 1900,
+      "sha256": "e5bc63d3d4c267a9664188e38c734f1a52f7f5ad013481080b100794be36b621"
+    },
+    {
+      "path": "creation-enroth-195-attachments/select-enroth.png",
+      "bytes": 3673689,
+      "sha256": "35d656b35ecb82778eb954a4d60d60dcfd6647f060a88b0d832c5bda52ce7db0"
+    },
+    {
+      "path": "creation-enroth-195.log",
+      "bytes": 4424,
+      "sha256": "5965910eacc0f757d53621547c478549c9eec6b605c3db2a315ce5511f387331"
+    },
+    {
+      "path": "creation-inspect-manual-check.png",
+      "bytes": 3750297,
+      "sha256": "7bf654e1f625764d04f099457e2f7e73ccb16a6219ae1059ef69e2b79d141304"
+    },
+    {
+      "path": "creation-inspect-manual-expanded.png",
+      "bytes": 4004186,
+      "sha256": "c7d1c3782c1601ebbd09e8829e5036e3efdbc9f312f193fc37fb125ba321f191"
+    },
+    {
+      "path": "creation-mage-195-attachments/class-list.png",
+      "bytes": 3673689,
+      "sha256": "35d656b35ecb82778eb954a4d60d60dcfd6647f060a88b0d832c5bda52ce7db0"
+    },
+    {
+      "path": "creation-mage-195-attachments/class-menu.png",
+      "bytes": 3673689,
+      "sha256": "35d656b35ecb82778eb954a4d60d60dcfd6647f060a88b0d832c5bda52ce7db0"
+    },
+    {
+      "path": "creation-mage-195-attachments/manifest.json",
+      "bytes": 3914,
+      "sha256": "a7df299dba81364819618483ef13886184d9eba2ad5a99193e3e49f8b32a237a"
+    },
+    {
+      "path": "creation-mage-195.log",
+      "bytes": 6115,
+      "sha256": "920bfd3049cfa685c9f3af37019d3e4df015b4fbc0cab5d1728c6640c754cc5d"
+    },
+    {
+      "path": "device-details.json",
+      "bytes": 9536,
+      "sha256": "df657444ff468beda72d96cd500e5a825edfeb9b418b1f54aa00fa57aed4a6cf"
+    },
+    {
+      "path": "device-staging-sha256.json",
+      "bytes": 960,
+      "sha256": "b4a29af2ef50bf4096cba0f8497385e5c5275145a6f4c41da1608fc5d9e28f82"
+    },
+    {
+      "path": "download-engine.zip.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "download-mm6.zip.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "download-mm7.zip.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "download-mm8.zip.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "empty-name-repro-195-attachments/edit-empty-slot10.png",
+      "bytes": 3264726,
+      "sha256": "f95f6ac2bfdb3ee9fe3cabaabd32250d486b7f23495b5e1d338d91a15fedbb67"
+    },
+    {
+      "path": "empty-name-repro-195-attachments/empty-slot-prefill-keyboard.png",
+      "bytes": 1736478,
+      "sha256": "7de54f469b9aca40809bb0e81ee7a061d7259535c21e7ee47fc44e3101d30263"
+    },
+    {
+      "path": "empty-name-repro-195-attachments/manifest.json",
+      "bytes": 1491,
+      "sha256": "611052197f11308f740be5f478d95ccde1f64ac74ee5b9adfced6b62767dac99"
+    },
+    {
+      "path": "empty-name-repro-195.log",
+      "bytes": 4374,
+      "sha256": "7a009e742d950f2f26cc8d102d3ba3778a2d262091ca173799a23a1d26409415"
+    },
+    {
+      "path": "final-after-cold-load11-195/GameImports/active.json",
+      "bytes": 429,
+      "sha256": "3a2714f92b87cac61be0f29478a98093b41457b48c3e4b1b2e20ac6cf7bde497"
+    },
+    {
+      "path": "final-after-cold-load11-195/logs/gameplay_trace.log",
+      "bytes": 12546,
+      "sha256": "b3d700351c96a7b581a05722a9fc465473a9a940578b823293d0b8b2de6197b7"
+    },
+    {
+      "path": "final-after-cold-load11-195/preserved-saves-check.json",
+      "bytes": 1405,
+      "sha256": "7822f4b7d3423c922e5cf9561f8241e87247e3158c73fa246fe670f07ddf1b53"
+    },
+    {
+      "path": "final-after-cold-load11-195/saves-summary.json",
+      "bytes": 2651,
+      "sha256": "c5a7d9ddc0e6a5a0b47ae6d8a03ffda5052aae9c2da15c99e62b42093c50b454"
+    },
+    {
+      "path": "final-after-cold-load11-195.log",
+      "bytes": 2710,
+      "sha256": "935b126fb52dd7e2b0a7a2005c14267d003c23b7a0ffb1a359633b161902276a"
+    },
+    {
+      "path": "final-validation.json",
+      "bytes": 4984,
+      "sha256": "c4fd8e9642eac1bdd0142e667cd0e4d8876aeb19345fae12f71550262a612486"
+    },
+    {
+      "path": "fixed-app.json",
+      "bytes": 550,
+      "sha256": "d5774009ea36eee1351d20ce92ef49b577ab4cd7dc2946ffe8e67e014a67af00"
+    },
+    {
+      "path": "fixed-creation-cancel-load-195-attachments/creation-cancel-fixed.png",
+      "bytes": 1950025,
+      "sha256": "d78b2e6fec81757c148318a2a8f2bab3593084d628ee2dddc031bbce7f6a5aaa"
+    },
+    {
+      "path": "fixed-creation-cancel-load-195-attachments/load-list-fixed.png",
+      "bytes": 1950025,
+      "sha256": "d78b2e6fec81757c148318a2a8f2bab3593084d628ee2dddc031bbce7f6a5aaa"
+    },
+    {
+      "path": "fixed-creation-cancel-load-195-attachments/load-menu.png",
+      "bytes": 1950025,
+      "sha256": "d78b2e6fec81757c148318a2a8f2bab3593084d628ee2dddc031bbce7f6a5aaa"
+    },
+    {
+      "path": "fixed-creation-cancel-load-195-attachments/manifest.json",
+      "bytes": 2308,
+      "sha256": "c38e9a27eaf7fd22e432fe9d561cbf55045bc9519bc3d4a50915368ebb62691c"
+    },
+    {
+      "path": "fixed-creation-cancel-load-195-attachments/returned-main-menu.png",
+      "bytes": 1950025,
+      "sha256": "d78b2e6fec81757c148318a2a8f2bab3593084d628ee2dddc031bbce7f6a5aaa"
+    },
+    {
+      "path": "fixed-creation-cancel-load-195.log",
+      "bytes": 5246,
+      "sha256": "7da2eabe08de9dfded12c1e108719428a592839ed7faf3deb249a281f3f8e5ef"
+    },
+    {
+      "path": "fixed-creation-entry-195-attachments/creation-inspect-button-visible.png",
+      "bytes": 3680901,
+      "sha256": "c31ed012fd1d6f51810778659badb2af3420af3a0ba2ce7601030c5c61c5c5f0"
+    },
+    {
+      "path": "fixed-creation-entry-195-attachments/fixed-enroth-preview.png",
+      "bytes": 3680901,
+      "sha256": "c31ed012fd1d6f51810778659badb2af3420af3a0ba2ce7601030c5c61c5c5f0"
+    },
+    {
+      "path": "fixed-creation-entry-195-attachments/fixed-new-game-preview.png",
+      "bytes": 4064610,
+      "sha256": "628214fbe72cdfc90bc9e0ab23fc59cdab2b652a90145a25720abae306c9aa8b"
+    },
+    {
+      "path": "fixed-creation-entry-195-attachments/manifest.json",
+      "bytes": 2328,
+      "sha256": "26fc6ddb63fa1ed7f3b8394b50e720e78ce8e566a5658108c102733673554b8a"
+    },
+    {
+      "path": "fixed-creation-entry-195.log",
+      "bytes": 5239,
+      "sha256": "47f9c4dd1ca210b5e8b142702854fd4f0ff488ba28d2be89336c25510caabd1d"
+    },
+    {
+      "path": "fixed-load-checkpoint-correct-195-attachments/Missing-expected-text.png",
+      "bytes": 4409181,
+      "sha256": "7c0f2efe42255f4235fcf41fd1f97fa82b54d04cd732b447aa12567de0f220e4"
+    },
+    {
+      "path": "fixed-load-checkpoint-correct-195-attachments/load-checkpoint-name.png",
+      "bytes": 2951263,
+      "sha256": "9d0264811ba50804dd29356b464f72f2afbb427c88c9681df777c41ec7978a65"
+    },
+    {
+      "path": "fixed-load-checkpoint-correct-195-attachments/manifest.json",
+      "bytes": 6690,
+      "sha256": "2c03d477078a5619d6b49923df41545453c900707f24f6f19e0a05b067284210"
+    },
+    {
+      "path": "fixed-load-checkpoint-correct-195.log",
+      "bytes": 7307,
+      "sha256": "5191a817a12438eb27d6ee8a8c4964ae057e14c6ac00b1198df16e2afafcab6a"
+    },
+    {
+      "path": "fixed-load-new-save-195-attachments/Missing-expected-text.png",
+      "bytes": 5626980,
+      "sha256": "195a9049ff1caf013e6065b81cb27e462c4452ea7f59ff5f2b6faabd24faee74"
+    },
+    {
+      "path": "fixed-load-new-save-195-attachments/load-list-corrected.png",
+      "bytes": 4066180,
+      "sha256": "cd2d0357fca1bf478c898d538a132b16b52d670afc41beb53d99b1607fa7c253"
+    },
+    {
+      "path": "fixed-load-new-save-195-attachments/manifest.json",
+      "bytes": 5489,
+      "sha256": "33257c6f0a04cbd1185980c1296b47deccfb08a8313958d718cb66c017bac01c"
+    },
+    {
+      "path": "fixed-load-new-save-195.log",
+      "bytes": 6488,
+      "sha256": "e6550f98c444cd91dc1cc85a022c6ddd6ab1c9447d88f88fdb4989ec9ddecde0"
+    },
+    {
+      "path": "fixed-load10-195-attachments/load-list.png",
+      "bytes": 4066440,
+      "sha256": "b937957e5720385310c3fc61189f06fa14d0981062a482602f74b013c420611e"
+    },
+    {
+      "path": "fixed-load10-195-attachments/loaded-save10.png",
+      "bytes": 4071541,
+      "sha256": "d87afeed3443df03948d689b8cd924b2dec5df1015776c9e53e2e89ab305b685"
+    },
+    {
+      "path": "fixed-load10-195-attachments/manifest.json",
+      "bytes": 2283,
+      "sha256": "2380aae4573dcf7f2dd1e1c34603a72f74b98da9a02cae4f216a2c8d86afb171"
+    },
+    {
+      "path": "fixed-load10-195.log",
+      "bytes": 5161,
+      "sha256": "6939660a5b64c848061e73b0857c165166092e6ecb2a8ff7925715273a8a117a"
+    },
+    {
+      "path": "fixed-signature-verify.log",
+      "bytes": 175,
+      "sha256": "736472e49f64ab1f7178480878f776fd27e4771398d6f91a4925277200331b77"
+    },
+    {
+      "path": "fixed-source.patch",
+      "bytes": 39919,
+      "sha256": "0913b6bb74e863a1c8391bfb1d9a98c5733493357b00342527df32725221c410"
+    },
+    {
+      "path": "fixed-spellbook-195-attachments/manifest.json",
+      "bytes": 2721,
+      "sha256": "4b130591d504e507778115b77d046e36d82a39ba4904e425713669c39987f9d3"
+    },
+    {
+      "path": "fixed-spellbook-195-attachments/save10-loaded-world.png",
+      "bytes": 4456209,
+      "sha256": "93fd396208bc8cd703065cf530317e40e73651716703c2982831a3eba6a2f1cc"
+    },
+    {
+      "path": "fixed-spellbook-195-attachments/spellbook-open.png",
+      "bytes": 2942478,
+      "sha256": "c6b712091d412ee9d797913f175d91ff7776d6c35e1d04ae8fd36c8f0910fb4d"
+    },
+    {
+      "path": "fixed-spellbook-195-attachments/visible-spellbook-button.png",
+      "bytes": 2942478,
+      "sha256": "c6b712091d412ee9d797913f175d91ff7776d6c35e1d04ae8fd36c8f0910fb4d"
+    },
+    {
+      "path": "fixed-spellbook-195.log",
+      "bytes": 4608,
+      "sha256": "caebf9740470311965ebcb17e2a6180a37e0e15672aa0f0d2a4aa101aa29ea7e"
+    },
+    {
+      "path": "fixed-start-195-attachments/fixed-main-menu.png",
+      "bytes": 1950025,
+      "sha256": "d78b2e6fec81757c148318a2a8f2bab3593084d628ee2dddc031bbce7f6a5aaa"
+    },
+    {
+      "path": "fixed-start-195-attachments/fixed-start-engine.png",
+      "bytes": 1949422,
+      "sha256": "4cec7da28a32ce0c263689b70ad06075019eac4d7938e6f96b4275bfc8482718"
+    },
+    {
+      "path": "fixed-start-195-attachments/manifest.json",
+      "bytes": 1892,
+      "sha256": "6089c51307a444fc78fea4e5068c0aab73ac56e3d5883c46f0e3d62392b990fc"
+    },
+    {
+      "path": "fixed-start-195.log",
+      "bytes": 4440,
+      "sha256": "6e2e54c8a5e98ffac6bce6630856723d5cb7937bb0fd41c54c514f11e6f7f884"
+    },
+    {
+      "path": "git-integrate-195.log",
+      "bytes": 22203,
+      "sha256": "227f64967b1abbf75c5951c5838a5a311f9c3a9627241aa5d8fa41611cdb7124"
+    },
+    {
+      "path": "ime-edit-cancel-195-attachments/after-backspace.png",
+      "bytes": 1616846,
+      "sha256": "0609444abc757ff152714f92f6e726a05f1094c4c369b65e28ab2fae93e3c335"
+    },
+    {
+      "path": "ime-edit-cancel-195-attachments/cancel-edit.png",
+      "bytes": 4112142,
+      "sha256": "cf2b7cdcf2d0e7c41057083b2dcab8533a79307404af47f341eab6c9b5f3768d"
+    },
+    {
+      "path": "ime-edit-cancel-195-attachments/cancelled-without-save.png",
+      "bytes": 4112142,
+      "sha256": "cf2b7cdcf2d0e7c41057083b2dcab8533a79307404af47f341eab6c9b5f3768d"
+    },
+    {
+      "path": "ime-edit-cancel-195-attachments/delete-one-chinese-character.png",
+      "bytes": 1616846,
+      "sha256": "0609444abc757ff152714f92f6e726a05f1094c4c369b65e28ab2fae93e3c335"
+    },
+    {
+      "path": "ime-edit-cancel-195-attachments/long-name-clipped-buttons-visible.png",
+      "bytes": 1617991,
+      "sha256": "144d15af1879c2018decd661079f944fca0971fc94bd7530df0922d16d54e0b9"
+    },
+    {
+      "path": "ime-edit-cancel-195-attachments/manifest.json",
+      "bytes": 11736,
+      "sha256": "19cbfc3f228b49dc32eb3ace342159192af8186e0f509d8b895bb67531a55706"
+    },
+    {
+      "path": "ime-edit-cancel-195.log",
+      "bytes": 20289,
+      "sha256": "ce0b1a98cac7a23c50a1852d291783a03ed8a25ba325f81066bc7eb584c4e95e"
+    },
+    {
+      "path": "ime-long-name-195-attachments/commit-baocun.png",
+      "bytes": 1607799,
+      "sha256": "2808db2e0cf0b74dd439bf5060e41f49bc0a605921125c47245be76d1a6f45d9"
+    },
+    {
+      "path": "ime-long-name-195-attachments/commit-ceshi.png",
+      "bytes": 1611126,
+      "sha256": "fa7378003f4d4bae1eba6022dc9b9465b1192a68f71947551b17f12251b93030"
+    },
+    {
+      "path": "ime-long-name-195-attachments/commit-chang.png",
+      "bytes": 1611000,
+      "sha256": "4c7d66d7205f7145a93351594522f23dc71a5b7d1569808e2640f9c04c1d6b39"
+    },
+    {
+      "path": "ime-long-name-195-attachments/commit-chinese.png",
+      "bytes": 1611740,
+      "sha256": "1ed056321ec13bd011afcbd939086514342d52524648f02b772ec1b92cf8ff0e"
+    },
+    {
+      "path": "ime-long-name-195-attachments/commit-mingcheng.png",
+      "bytes": 1618713,
+      "sha256": "062b45fd9e37683e0a47a9dd8c4c5e78e08e1140f8940ffe092dfbaff47078bd"
+    },
+    {
+      "path": "ime-long-name-195-attachments/long-chinese-name-visible.png",
+      "bytes": 1618713,
+      "sha256": "062b45fd9e37683e0a47a9dd8c4c5e78e08e1140f8940ffe092dfbaff47078bd"
+    },
+    {
+      "path": "ime-long-name-195-attachments/manifest.json",
+      "bytes": 13325,
+      "sha256": "e91b42fd1a510ab8e11160bd104399962f52762b8a52e1756c302ac4cbecc20b"
+    },
+    {
+      "path": "ime-long-name-195.log",
+      "bytes": 23935,
+      "sha256": "98e2304d8a00a7ddb11489102f9bfd35a4e2f24b5669818a16839401addd69a8"
+    },
+    {
+      "path": "import-picker-195-attachments/manifest.json",
+      "bytes": 1070,
+      "sha256": "30aa7f716db9851375a43fd5b6a7a8c9dc5ccb3c00c7312f9194b657ee137958"
+    },
+    {
+      "path": "import-picker-195.log",
+      "bytes": 4340,
+      "sha256": "eda2e5b3dce36ca7883d7cc6608b3d8ab79cfed52aab088fe7207f720c6ce5f4"
+    },
+    {
+      "path": "input-check-195.log",
+      "bytes": 186,
+      "sha256": "571736a6a131f6b2f715e92de0f159617d01b312ab42ebf52d84c686530a637d"
+    },
+    {
+      "path": "input-pagination-195.log",
+      "bytes": 197,
+      "sha256": "44aa10e98330e77f66ce921fdd5a46974f014b85bb0d1176d3f362cbdf7954dc"
+    },
+    {
+      "path": "input-touch-final-195.log",
+      "bytes": 186,
+      "sha256": "571736a6a131f6b2f715e92de0f159617d01b312ab42ebf52d84c686530a637d"
+    },
+    {
+      "path": "install-195.json",
+      "bytes": 1066,
+      "sha256": "a6c8ba41db1a5929f15248f9adf8a6eca49bf4de59ade86ee8f7ace06c19233a"
+    },
+    {
+      "path": "install-195.log",
+      "bytes": 452,
+      "sha256": "aa156265e1c5b1ca738a22caddc4dd10fda61427cec17ace300ae533047e38f6"
+    },
+    {
+      "path": "install-fixed-195.json",
+      "bytes": 1053,
+      "sha256": "b6dfbe974a9071225ee0dde76f035fd644765f4ea8a3a8bde9de8d869c9c3d75"
+    },
+    {
+      "path": "install-fixed-195.log",
+      "bytes": 452,
+      "sha256": "117f2352631730d5d50befdf9c2227f54cdf4000bc82563dc1c82ed1e8126980"
+    },
+    {
+      "path": "install-pagination-195.json",
+      "bytes": 1058,
+      "sha256": "19d69d4307d838ef3776b4d3d19dd276c700325bc23d60d13d407f6cd6f0fd6a"
+    },
+    {
+      "path": "install-pagination-195.log",
+      "bytes": 404,
+      "sha256": "062eaa6378d004dccfc4523852725165f7c6a091bee38e4a81657520430b0574"
+    },
+    {
+      "path": "installation-proxy-before.json",
+      "bytes": 2239,
+      "sha256": "843506748dcf07d9874be41b792ba24b3901ed0e602ca2b2a3bfbf13e7a04ca3"
+    },
+    {
+      "path": "installed-app-before.json",
+      "bytes": 813,
+      "sha256": "a6da8668a7df1575c34479a865cc8f7b415957ec841102fe0dec4ec6a2a10538"
+    },
+    {
+      "path": "intro-current-195.png",
+      "bytes": 1453172,
+      "sha256": "f83a1fed6992c366f2c4efead4122410f07e52aff2ec2bf3d716b59af9e8df09"
+    },
+    {
+      "path": "intro-finish-195-attachments/Missing-expected-text-Menu.png",
+      "bytes": 5577346,
+      "sha256": "b8ab21f6a1d2ad87f08e12618f21a743c9cc5c7131ed6f7d2828003a7bdebe13"
+    },
+    {
+      "path": "intro-finish-195-attachments/manifest.json",
+      "bytes": 1479,
+      "sha256": "ca55e363fd8303e09525c1afc27753ccd4ebf12566d62474e69118d927c1a931"
+    },
+    {
+      "path": "intro-finish-195.log",
+      "bytes": 4092,
+      "sha256": "4b4147cf1e68fa087e524e8460078f9f06a41099332a86c85741db967a12f926"
+    },
+    {
+      "path": "intro-fourth-195.png",
+      "bytes": 53697,
+      "sha256": "34ecf7bf1855e84a382185c9206827577a94b929fb8c3b8ff3dfc4cfe40d7a90"
+    },
+    {
+      "path": "intro-second-195.png",
+      "bytes": 2290920,
+      "sha256": "c7e7462e75b1b12bde9da9f232659aa6b86bb9cdda62d8d051b67ffc28d10d14"
+    },
+    {
+      "path": "intro-third-195.png",
+      "bytes": 2127276,
+      "sha256": "855700b6eb03da256108b531dc97edbaaf6dbd3128592a400f381d37736fbc6f"
+    },
+    {
+      "path": "inventory-double-195-attachments/inventory-double-open.png",
+      "bytes": 4293487,
+      "sha256": "a8c223f517602d521f98b82fb76bee35debfba7616d75aec7dc8c1a640f9cdb0"
+    },
+    {
+      "path": "inventory-double-195-attachments/manifest.json",
+      "bytes": 1069,
+      "sha256": "4f209469ad2fbf808bb3c074d5b1b5410820cc26d663f438b454b56210375c21"
+    },
+    {
+      "path": "inventory-double-195.log",
+      "bytes": 4256,
+      "sha256": "2e6319bcb3fd365d6f63a0ed6c0013b3494de083b7ded87a1b605cf1eda884e0"
+    },
+    {
+      "path": "inventory-icon-195-attachments/inventory-icon.png",
+      "bytes": 5596620,
+      "sha256": "77af9f565d11933db799e09d51d312e1960bbdace0d7d2a37bc82822a2195714"
+    },
+    {
+      "path": "inventory-icon-195-attachments/manifest.json",
+      "bytes": 1062,
+      "sha256": "df93e4592b55ef31a5375af62c43467ba55128ed7d8dd12c424f93f59d4baf9e"
+    },
+    {
+      "path": "inventory-icon-195.log",
+      "bytes": 4229,
+      "sha256": "3426f73c0f13b9b4383ab62d9cb08f2722eb9e48d2de4e6ff509d81088f9f0ca"
+    },
+    {
+      "path": "inventory-single-195-attachments/inventory-open.png",
+      "bytes": 5600620,
+      "sha256": "a396d61889a2d722dfc74f7b6e69254f3cff6a274c3330944c40c40a7ad3978a"
+    },
+    {
+      "path": "inventory-single-195-attachments/manifest.json",
+      "bytes": 1061,
+      "sha256": "aa87884fe0ef7089da04899cafb517c160060f34d97ce2f19a41c23bc578a196"
+    },
+    {
+      "path": "inventory-single-195.log",
+      "bytes": 4235,
+      "sha256": "b05381e71ba270d60f958b08b85e46273de0efb64ea1c80195664f441f802146"
+    },
+    {
+      "path": "key-settings-195-attachments/key-settings-first.png",
+      "bytes": 3920814,
+      "sha256": "283967daf1c4f43fac885684d6b35195966b8f786406dd810478f42e4bc7b623"
+    },
+    {
+      "path": "key-settings-195-attachments/manifest.json",
+      "bytes": 1470,
+      "sha256": "0a33a63890524d61e1a32034dd6bf37dd2aa0b5d33677d62e439c9d587a434e5"
+    },
+    {
+      "path": "key-settings-195.log",
+      "bytes": 4313,
+      "sha256": "cfcf29830e2fe25471ab87777418b898caad7f44c8ebb5272c9617f0c940fc69"
+    },
+    {
+      "path": "keyboard-delete-195-attachments/delete-prefill-char1.png",
+      "bytes": 1609259,
+      "sha256": "dced665b992c31558bc6a0794914bad0eec3654580325f07991425b3fe3fcc2e"
+    },
+    {
+      "path": "keyboard-delete-195-attachments/delete-prefill-char2.png",
+      "bytes": 1608108,
+      "sha256": "f152a3a169c469c86af83502cf0c6558d1dcb0d421a8174209100fff99c8ed2a"
+    },
+    {
+      "path": "keyboard-delete-195-attachments/manifest.json",
+      "bytes": 5154,
+      "sha256": "427afde692515c9d96dfefb3d97cf97b0b65f1c234cfc78129f02993c917a3ac"
+    },
+    {
+      "path": "keyboard-delete-195-attachments/zhongwen-ime.png",
+      "bytes": 1608896,
+      "sha256": "1122eb798089d62770b4148cfcda2f273ede3c04321d2743081432fc79be69bc"
+    },
+    {
+      "path": "keyboard-delete-195.log",
+      "bytes": 10484,
+      "sha256": "67ea8ecef877d6e01f887106eec76e7a3c09cd46cbfaf32259a11202700359fd"
+    },
+    {
+      "path": "keys-pages-save11-open-195-attachments/keys-page-one-restored.png",
+      "bytes": 3920814,
+      "sha256": "283967daf1c4f43fac885684d6b35195966b8f786406dd810478f42e4bc7b623"
+    },
+    {
+      "path": "keys-pages-save11-open-195-attachments/keys-page-two.png",
+      "bytes": 3918771,
+      "sha256": "bd46ae39dc5a48d446f825c40ca2cca066e96a8e557e4237482a5198d18a9386"
+    },
+    {
+      "path": "keys-pages-save11-open-195-attachments/keys-return-controls.png",
+      "bytes": 3763048,
+      "sha256": "9196c4e988d5ac2695e24419bca89edba9c553fa2ee57f438697b8857631a588"
+    },
+    {
+      "path": "keys-pages-save11-open-195-attachments/manifest.json",
+      "bytes": 5570,
+      "sha256": "26fa5bc8ee616c1edd785c50741d85aa7739d35e6e2b4b0d2d669068455dc20e"
+    },
+    {
+      "path": "keys-pages-save11-open-195-attachments/save-slot11-visible.png",
+      "bytes": 3912198,
+      "sha256": "8f578fa39819dc53336faeaa82e35326f6d32a1a76dae947f56b97a0d1ba2cae"
+    },
+    {
+      "path": "keys-pages-save11-open-195-attachments/save-slots-before-scroll.png",
+      "bytes": 3912198,
+      "sha256": "8f578fa39819dc53336faeaa82e35326f6d32a1a76dae947f56b97a0d1ba2cae"
+    },
+    {
+      "path": "keys-pages-save11-open-195.log",
+      "bytes": 9293,
+      "sha256": "1b8f2d69a8d795b2f73a868744ab9a46a3ea8a54ab431c55ee328ee528d00a9d"
+    },
+    {
+      "path": "launch-195.json",
+      "bytes": 1378,
+      "sha256": "6654809ccffe9e999599b6a24e066658d495ea09ff8a0b84b1905043cc94f00f"
+    },
+    {
+      "path": "launch-cold-final-195.json",
+      "bytes": 1508,
+      "sha256": "81dfd4e3d178d2393fbaaecf66412e496a1b5b768d6dcda902d1d1687d0e72a6"
+    },
+    {
+      "path": "launcher-195-attachments/manifest.json",
+      "bytes": 4,
+      "sha256": "ace810d7e2cbb4f8c40ce09dc8e191ae466adb4e1a7d49c59f2215b411d38b05"
+    },
+    {
+      "path": "launcher-195-v2-attachments/manifest.json",
+      "bytes": 4,
+      "sha256": "ace810d7e2cbb4f8c40ce09dc8e191ae466adb4e1a7d49c59f2215b411d38b05"
+    },
+    {
+      "path": "launcher-195-v2.log",
+      "bytes": 2963,
+      "sha256": "99a4609ef97192a8f2ae587bcb74dcf9ce08bef98811ec2c74922b901ab1dc5a"
+    },
+    {
+      "path": "launcher-195-v3-attachments/manifest.json",
+      "bytes": 4,
+      "sha256": "ace810d7e2cbb4f8c40ce09dc8e191ae466adb4e1a7d49c59f2215b411d38b05"
+    },
+    {
+      "path": "launcher-195-v3.log",
+      "bytes": 2963,
+      "sha256": "f62639f457d13e074449582bca921cbdb06c177ecef50376f22e63ec11a3a452"
+    },
+    {
+      "path": "launcher-195-v4-attachments/manifest.json",
+      "bytes": 1071,
+      "sha256": "10344a65d91468be6da5ff62b8459952cd9cc7c1ad7294c2119756575796422f"
+    },
+    {
+      "path": "launcher-195-v4.log",
+      "bytes": 3568,
+      "sha256": "3b28dd4e9f9f0faeea6d5f2ce95a12c6fb2f78feeaaa83bfb26e4edd60af175f"
+    },
+    {
+      "path": "launcher-195.log",
+      "bytes": 1012,
+      "sha256": "36fbf54d74557c1975c5a7d8541d332c15809e5ec38d5660cebdaf8aa8dbb294"
+    },
+    {
+      "path": "letter-inventory-195-attachments/inventory-held-letter.png",
+      "bytes": 5594630,
+      "sha256": "3a3a113762c4a8012783e07b1df68b8aab8a0b311323ae3dbda601792d79bdab"
+    },
+    {
+      "path": "letter-inventory-195-attachments/manifest.json",
+      "bytes": 1478,
+      "sha256": "32bb8b07069125b6bee414df806e9ad0bd27724b26fd5ab150a7bfcbef0632ef"
+    },
+    {
+      "path": "letter-inventory-195-attachments/resume-game.png",
+      "bytes": 5599904,
+      "sha256": "844a1590175786e3e26dd6818f8c80c4f3e460ed42922cdcd2af1bcd04359218"
+    },
+    {
+      "path": "letter-inventory-195.log",
+      "bytes": 5020,
+      "sha256": "8dea4aa8254e6cdd9332cb61928d00faf3e2cf5806090bab29959acb550ad903"
+    },
+    {
+      "path": "letter-open-195-attachments/inventory-held-letter.png",
+      "bytes": 4112142,
+      "sha256": "cf2b7cdcf2d0e7c41057083b2dcab8533a79307404af47f341eab6c9b5f3768d"
+    },
+    {
+      "path": "letter-open-195-attachments/manifest.json",
+      "bytes": 1887,
+      "sha256": "87ece56c59b0db4311954dbe15df8e6c20a7f09e270471ccb41e24be175cde63"
+    },
+    {
+      "path": "letter-open-195-attachments/open-inventory.png",
+      "bytes": 4112142,
+      "sha256": "cf2b7cdcf2d0e7c41057083b2dcab8533a79307404af47f341eab6c9b5f3768d"
+    },
+    {
+      "path": "letter-open-195-attachments/resume.png",
+      "bytes": 4112142,
+      "sha256": "cf2b7cdcf2d0e7c41057083b2dcab8533a79307404af47f341eab6c9b5f3768d"
+    },
+    {
+      "path": "letter-open-195.log",
+      "bytes": 5092,
+      "sha256": "fd0b257112845605e7293c010633d71d004417711323cfc431ddebb71b8aaecf"
+    },
+    {
+      "path": "letter-pages-195-attachments/character-second-tab.png",
+      "bytes": 4536955,
+      "sha256": "6b39cdc715d2b165c11b5bbc181fa23df47a494c9b8ce56432c034d39bc2280f"
+    },
+    {
+      "path": "letter-pages-195-attachments/letter-back-page-two.png",
+      "bytes": 4156462,
+      "sha256": "b5c748c6513ef62182e35329641f4c87be7b06daed13247a73c340d5a577505f"
+    },
+    {
+      "path": "letter-pages-195-attachments/letter-close.png",
+      "bytes": 4290848,
+      "sha256": "c9550f32f7d68495c0f40a8e010044c9fdff71c374b14588ab4c1b4d7c40368a"
+    },
+    {
+      "path": "letter-pages-195-attachments/letter-page-three.png",
+      "bytes": 4152174,
+      "sha256": "b085d9a2455db86e5244fa7a0a61cb5a9c03964582613abd253f35e9967b2b29"
+    },
+    {
+      "path": "letter-pages-195-attachments/letter-page-two.png",
+      "bytes": 4156462,
+      "sha256": "b5c748c6513ef62182e35329641f4c87be7b06daed13247a73c340d5a577505f"
+    },
+    {
+      "path": "letter-pages-195-attachments/manifest.json",
+      "bytes": 3147,
+      "sha256": "59b838f923b9cd198f22895f2b230a366a3aebee8b56442655b77123a251cd69"
+    },
+    {
+      "path": "letter-pages-195-attachments/return-letter-to-bag.png",
+      "bytes": 4293487,
+      "sha256": "a8c223f517602d521f98b82fb76bee35debfba7616d75aec7dc8c1a640f9cdb0"
+    },
+    {
+      "path": "letter-pages-195.log",
+      "bytes": 8113,
+      "sha256": "a8c9a283e7f156a35e2e7b44fa59abb89b210231dd401f643416dae1c25d2e8e"
+    },
+    {
+      "path": "letter-read-195-attachments/letter-page-one.png",
+      "bytes": 4117460,
+      "sha256": "ff769cf992b998539d1931aa34c50f5fab91ec7ad3b52a7c7a3c83af6eda1ada"
+    },
+    {
+      "path": "letter-read-195-attachments/manifest.json",
+      "bytes": 1896,
+      "sha256": "28474e5bc63b2cf3713a685911f059185629a9b324e9e1764a81a5772b237dfe"
+    },
+    {
+      "path": "letter-read-195-attachments/read-letter-on-paperdoll.png",
+      "bytes": 4117352,
+      "sha256": "dff858e3d3e24a8a7d03f3899081b2646f58b0877912ec53983d9f0e173e384b"
+    },
+    {
+      "path": "letter-read-195-attachments/take-letter.png",
+      "bytes": 4290848,
+      "sha256": "c9550f32f7d68495c0f40a8e010044c9fdff71c374b14588ab4c1b4d7c40368a"
+    },
+    {
+      "path": "letter-read-195.log",
+      "bytes": 5103,
+      "sha256": "040a447d5d1d58593022a413bae113a1de9e47195e18b278fe403146febbaaa8"
+    },
+    {
+      "path": "load-correction-current.png",
+      "bytes": 4342463,
+      "sha256": "128ba3fd4f49f6e46ec263c7ce3f4a0825e6b7805a97ba15b16c730f01bfe40d"
+    },
+    {
+      "path": "load-page-195-attachments/manifest.json",
+      "bytes": 1468,
+      "sha256": "8f8afbaa3a0ec9297ae7004f78d7650d48b4084bebc2306ce2e1efdf78576a8b"
+    },
+    {
+      "path": "load-page-195-attachments/menu-chinese.png",
+      "bytes": 4112142,
+      "sha256": "cf2b7cdcf2d0e7c41057083b2dcab8533a79307404af47f341eab6c9b5f3768d"
+    },
+    {
+      "path": "load-page-195-attachments/open-menu.png",
+      "bytes": 4112142,
+      "sha256": "cf2b7cdcf2d0e7c41057083b2dcab8533a79307404af47f341eab6c9b5f3768d"
+    },
+    {
+      "path": "load-page-195.log",
+      "bytes": 4300,
+      "sha256": "0921e3c251329a2f3ba884f878e1202525b5b1340bb87368fa8dc465ba207568"
+    },
+    {
+      "path": "pagination-app.json",
+      "bytes": 338,
+      "sha256": "ecd9e54efbe8183f15f12a539cd29cfc3455bdb7248d2473245b5257fbcc34de"
+    },
+    {
+      "path": "pagination-launch-autosave-195-attachments/manifest.json",
+      "bytes": 610,
+      "sha256": "20ba8c1b4c8f267cdd21b90d42c479075ad9e4a63559ed63fad71ac861c394f7"
+    },
+    {
+      "path": "pagination-launch-autosave-195.log",
+      "bytes": 3502,
+      "sha256": "8776c62bf4439566bb73dfa9b09547d6b66aef51c825478045453c5e12e77c15"
+    },
+    {
+      "path": "pagination-open-load-list-195-attachments/manifest.json",
+      "bytes": 1476,
+      "sha256": "1a64adf095cfa1902173ba431ec75f4650f82772b25352435bcc92c336905586"
+    },
+    {
+      "path": "pagination-open-load-list-195-attachments/post-travel-autosave-list.png",
+      "bytes": 3990564,
+      "sha256": "bba3fa15a7aa7313f24a9e65787b6fc97d28967e5ad402fc1a6adfdb4bfa418a"
+    },
+    {
+      "path": "pagination-open-load-list-195.log",
+      "bytes": 4366,
+      "sha256": "c6272a001f78ba497067b6f814a4ebaf0012bdd0220c38ea6bf02f10c6ae8a72"
+    },
+    {
+      "path": "pagination-slot11-195-attachments/manifest.json",
+      "bytes": 4337,
+      "sha256": "43c2231bd9c122b121642cfcd769d18ebf602a4102128492ff00d8f7bcb5f85e"
+    },
+    {
+      "path": "pagination-slot11-195-attachments/slot11-blank-edit-keyboard.png",
+      "bytes": 1564794,
+      "sha256": "55d8763edf80e6cd3fee40d8613ce07f9db0bdf3810bf2e802c2baeb1b3a167f"
+    },
+    {
+      "path": "pagination-slot11-195-attachments/slot11-empty-visible.png",
+      "bytes": 3908660,
+      "sha256": "fa8d76792bbf883752be14aa216153da7b90c95ce9e842e690f71841872a9891"
+    },
+    {
+      "path": "pagination-slot11-195.log",
+      "bytes": 7632,
+      "sha256": "791612e88811c63d88d02560e012af52336d90bcc13f49f80614de579748571c"
+    },
+    {
+      "path": "pagination-source.patch",
+      "bytes": 52545,
+      "sha256": "c188498792c80d7160729026712ce06c16a0f8865bda39487603870b7475aa9f"
+    },
+    {
+      "path": "pagination-start-load-195-attachments/Missing-expected-text.png",
+      "bytes": 1950025,
+      "sha256": "d78b2e6fec81757c148318a2a8f2bab3593084d628ee2dddc031bbce7f6a5aaa"
+    },
+    {
+      "path": "pagination-start-load-195-attachments/manifest.json",
+      "bytes": 2689,
+      "sha256": "4a44d63ac9a259d5a460772cb57f81b115d6e13d0cc087aac929493bf3a6fb87"
+    },
+    {
+      "path": "pagination-start-load-195.log",
+      "bytes": 5015,
+      "sha256": "6bdfe2b36453c5157b3cacdbc932e886587298f3b236d68100b513b6e2af131b"
+    },
+    {
+      "path": "picker-assets-195-attachments/import-started.png",
+      "bytes": 212130,
+      "sha256": "72d503d3a6dea33d2527e3a375eb3a8896b7fc448859aef57bdec439078efb57"
+    },
+    {
+      "path": "picker-assets-195-attachments/import-whole-assets.png",
+      "bytes": 313512,
+      "sha256": "91961834c52ad01d8fbe8853ef0315582ae849eaf299231a4d674057f7effea0"
+    },
+    {
+      "path": "picker-assets-195-attachments/manifest.json",
+      "bytes": 3955,
+      "sha256": "5826f38ee815f291b7b18134945d529de89117a5149019f73c4649ebef0116d1"
+    },
+    {
+      "path": "picker-assets-195-attachments/open-195-folder.png",
+      "bytes": 350095,
+      "sha256": "7c12ea1793e7cac4ae2ed11c8c1dff8fa4dc76d02b4ff74d0d95ecddced72e30"
+    },
+    {
+      "path": "picker-assets-195-attachments/open-complete-assets-folder.png",
+      "bytes": 378357,
+      "sha256": "5ad33c9d3c3c9d0e1a9e82eabd9733d7386814b06ba59f41d364e62c3b3db209"
+    },
+    {
+      "path": "picker-assets-195.log",
+      "bytes": 6345,
+      "sha256": "2137562a658601732930fc6eb5de7db84fba366b9c222298c7dd838c0c07e187"
+    },
+    {
+      "path": "picker-local-195-attachments/Missing-expected-text-OpenYAMM.png",
+      "bytes": 796725,
+      "sha256": "4a08675c88778b8d30d2b2706e0bdf336f0ec1cc44e594072865053a08c5aa6b"
+    },
+    {
+      "path": "picker-local-195-attachments/manifest.json",
+      "bytes": 3032,
+      "sha256": "b4b4de56560add37437dbbe414f74d572ce9675b419d3df8e62a8db766a77096"
+    },
+    {
+      "path": "picker-local-195-attachments/on-my-ipad.png",
+      "bytes": 796736,
+      "sha256": "728841f888e0e0be56a7b06ebf7f6d990df168473c9b7a0e76db6d6682c6cb35"
+    },
+    {
+      "path": "picker-local-195.log",
+      "bytes": 5660,
+      "sha256": "f40448c73623169383b0c8b3a730c7b830fbe602e881441cfe3f38440eea106d"
+    },
+    {
+      "path": "picker-openyamm-195-attachments/Missing-expected-text-Remote195.png",
+      "bytes": 871251,
+      "sha256": "092af254c23300794251b5c34facabf9c071d9b9d08fd1417b2373bafc29cbd0"
+    },
+    {
+      "path": "picker-openyamm-195-attachments/manifest.json",
+      "bytes": 3039,
+      "sha256": "0168eb76db0caaff5859ff0e4c189f7867cbb905de32cc31340485b463bd58cc"
+    },
+    {
+      "path": "picker-openyamm-195-attachments/open-app-documents.png",
+      "bytes": 871251,
+      "sha256": "092af254c23300794251b5c34facabf9c071d9b9d08fd1417b2373bafc29cbd0"
+    },
+    {
+      "path": "picker-openyamm-195.log",
+      "bytes": 5621,
+      "sha256": "ddcc08b3556f06b8eee03dd5d32fcd58c771169c75d4191c4d42fbd7aafea43e"
+    },
+    {
+      "path": "picker-openyamm-v2-195-attachments/manifest.json",
+      "bytes": 1888,
+      "sha256": "b20de597ab579541cdf69cc9485f7f773ef07519c77ccba1d2a9b761b280a613"
+    },
+    {
+      "path": "picker-openyamm-v2-195-attachments/open-app-folder.png",
+      "bytes": 490426,
+      "sha256": "abd74d1592bed805351f58461015e82e0bb7bad8f1fdbbc908fcca10db2ed770"
+    },
+    {
+      "path": "picker-openyamm-v2-195-attachments/staging-visible.png",
+      "bytes": 452746,
+      "sha256": "5de08ef33e940b756fb7c03be36c9b98fef19a7d3f0dc1b523fe13b4bd61e479"
+    },
+    {
+      "path": "picker-openyamm-v2-195.log",
+      "bytes": 4452,
+      "sha256": "3fb0c154d114b7ab5a32040ca7bd68f542245461621e8a161d2e3fc3bd66b225"
+    },
+    {
+      "path": "picker-scroll-195-attachments/manifest.json",
+      "bytes": 1068,
+      "sha256": "094f077b1c5b779ed9d7246de6e494bde368b2fdd395af7450ad54680e4d8d86"
+    },
+    {
+      "path": "picker-scroll-195-attachments/scroll-local-folders.png",
+      "bytes": 917455,
+      "sha256": "f8bb27d622fb4264ef1b67fa785208037f83149aac62073c5e5d8c7ecc023c68"
+    },
+    {
+      "path": "picker-scroll-195.log",
+      "bytes": 4540,
+      "sha256": "9f21fe73dafa1afd036a32c98e816ac469c30aa3af06d5a28a16ebe98a26c3b9"
+    },
+    {
+      "path": "picker-state-195-attachments/manifest.json",
+      "bytes": 1071,
+      "sha256": "319c2f1a9b995cf97c4d99cbfc1676ab0d0d9060973a397369f6afeb2dfa01aa"
+    },
+    {
+      "path": "picker-state-195-attachments/picker-current-location.png",
+      "bytes": 345141,
+      "sha256": "7cd7ba36c3c06db59b794a5baf6d7aa6082a3d90d70d2a0e2104133153e01915"
+    },
+    {
+      "path": "picker-state-195.log",
+      "bytes": 3571,
+      "sha256": "1bc0374259163767ade0f82157fbb3e7026a6e88e97ea04e3682adc775954f20"
+    },
+    {
+      "path": "preparation.json",
+      "bytes": 3250,
+      "sha256": "44b5a0f0daf379f58d36eb3879ccd3bf5bcad6be110e7724d08b664030195bb3"
+    },
+    {
+      "path": "preupdate-confirm-quit-195-attachments/confirm-normal-quit.png",
+      "bytes": 53792,
+      "sha256": "77ad20e7a84c5fa2c876449607a646ba499d9d92fc1f3d48b7212f836ba4aa86"
+    },
+    {
+      "path": "preupdate-confirm-quit-195-attachments/manifest.json",
+      "bytes": 1066,
+      "sha256": "78b67250e62a312370bdc51abb2697519308880c761221a6f3cf7bbabd98c78f"
+    },
+    {
+      "path": "preupdate-confirm-quit-195.log",
+      "bytes": 4266,
+      "sha256": "fb33bb2bc84f61c0b809450440af910e225f964623435fd209d2e242c40396db"
+    },
+    {
+      "path": "preupdate-quit-195-attachments/manifest.json",
+      "bytes": 1489,
+      "sha256": "12dc4069548c7765e82af99673c456e352e5db05e9452bce0806a02ef4e6e6cb"
+    },
+    {
+      "path": "preupdate-quit-195-attachments/menu-before-update.png",
+      "bytes": 4095439,
+      "sha256": "b1d403887c007cbcba86b6ef5cb4264a772998b25f1baa4295bd376555212873"
+    },
+    {
+      "path": "preupdate-quit-195-attachments/normal-quit-before-update.png",
+      "bytes": 4092002,
+      "sha256": "a7ca3fdde3cad4f9f1ea188204752b86b959f92a192d1ca78d41ac43e8324fc5"
+    },
+    {
+      "path": "preupdate-quit-195.log",
+      "bytes": 5032,
+      "sha256": "f9235c3a3e3c1cc2f2db7a922e7a545668df666b8cce90ee9d28f5249d0249e3"
+    },
+    {
+      "path": "process-before-cold-195.json",
+      "bytes": 140279,
+      "sha256": "7075d95747d08f52765ee44fbc29a5d114fc0e70bfac948651b4ca0257127a03"
+    },
+    {
+      "path": "process-before-cold-195.log",
+      "bytes": 169591,
+      "sha256": "43b5342fddb0c13ef5345c1653818011e39adf4f1461523f2001d1a37a514f0f"
+    },
+    {
+      "path": "process-cold-absent.json",
+      "bytes": 139952,
+      "sha256": "ad6b18c6fe419199d24b918cd9492b5717a79d20b9779b3324c2b2c7459af60d"
+    },
+    {
+      "path": "process-cold-absent.log",
+      "bytes": 169233,
+      "sha256": "5b95f2d73e8fb5adc452e16416409de68e2e6033499fee674669724f5f7b6fd6"
+    },
+    {
+      "path": "process-cold-final.json",
+      "bytes": 140373,
+      "sha256": "e9b0648274ac78367edd85511de53adf75a159e780662ccd5e4f4323b457882e"
+    },
+    {
+      "path": "process-cold-final.log",
+      "bytes": 169591,
+      "sha256": "1849af5cb61a87fe5d90eac7b0ebc5b35c5b35cb0b34b75b2eab6dd2b138704e"
+    },
+    {
+      "path": "process-cold-new.json",
+      "bytes": 140151,
+      "sha256": "f0b2375a2e9303e2f4ef9b4ab6e174241e3436513504583d553f0f1698b092de"
+    },
+    {
+      "path": "process-cold-new.log",
+      "bytes": 169388,
+      "sha256": "dde6165e3df66b824185d9f35d6a573529c9578cb2475fd33fdf875a237c95a7"
+    },
+    {
+      "path": "process-pagination-before-cold.json",
+      "bytes": 140233,
+      "sha256": "305f5d558ef46914ed76528aa66f41158870b1b0714ab287e6402c6e39b0db91"
+    },
+    {
+      "path": "process-pagination-before-cold.log",
+      "bytes": 169388,
+      "sha256": "802a59011f8d643b600bfa485ab02daf90103c9663aa441f1565de15635ede0e"
+    },
+    {
+      "path": "processes-before.json",
+      "bytes": 139317,
+      "sha256": "6c2ec3728aa443178e9285d8a06c07aac75d5954134a84fec2bda1c52cdbe0da"
+    },
+    {
+      "path": "processes-before.log",
+      "bytes": 168624,
+      "sha256": "3c72ed24bc41f8c35f1e5380b83bb74adc39b934a898564fa063dc8e8cf9b0b3"
+    },
+    {
+      "path": "processes-driver-failure.json",
+      "bytes": 139310,
+      "sha256": "c15a085b39d19bcd0b78a95a6b579ca2239d7dcd2b759ae7f308d52d9cf7a653"
+    },
+    {
+      "path": "recover-copy-touch-195-attachments/after-inventory-close.png",
+      "bytes": 4463459,
+      "sha256": "0cf6655e7a41707d75bc423806f248c467e02e7c474dee2f28c932d2952a64d2"
+    },
+    {
+      "path": "recover-copy-touch-195-attachments/manifest.json",
+      "bytes": 1473,
+      "sha256": "2a834d9b09c046ba93e796313ab2965592dffac678bea1359854546f4010d467"
+    },
+    {
+      "path": "recover-copy-touch-195.log",
+      "bytes": 4337,
+      "sha256": "1e608d076ca6da7ce692be2c47135ecc7fd4dc3e6b34aaf3941394eedbb03e90"
+    },
+    {
+      "path": "recover-unintended-copy-195-attachments/cancel-unintended-target.png",
+      "bytes": 4409181,
+      "sha256": "7c0f2efe42255f4235fcf41fd1f97fa82b54d04cd732b447aa12567de0f220e4"
+    },
+    {
+      "path": "recover-unintended-copy-195-attachments/close-overlay.png",
+      "bytes": 4409181,
+      "sha256": "7c0f2efe42255f4235fcf41fd1f97fa82b54d04cd732b447aa12567de0f220e4"
+    },
+    {
+      "path": "recover-unintended-copy-195-attachments/manifest.json",
+      "bytes": 1897,
+      "sha256": "f63f0f82d04e6a460e865fc8ada771dba21a78e682fca521cc8f93d0f1a94830"
+    },
+    {
+      "path": "recover-unintended-copy-195-attachments/recovery-state.png",
+      "bytes": 4409181,
+      "sha256": "7c0f2efe42255f4235fcf41fd1f97fa82b54d04cd732b447aa12567de0f220e4"
+    },
+    {
+      "path": "recover-unintended-copy-195.log",
+      "bytes": 4747,
+      "sha256": "15149523545394b94fa509de1e0938223f6004d10dfa509aed396fb18964cbd4"
+    },
+    {
+      "path": "release/ARTIFACT-SHA256SUMS",
+      "bytes": 1144,
+      "sha256": "36d703b765e0642b2ee70e0aefa97ba91daf9b4b0ef80e20e77defd4e64723b3"
+    },
+    {
+      "path": "release/SHA256SUMS",
+      "bytes": 487,
+      "sha256": "3d4565069e34098104f783259d6d0ebc6ed247ed7865263167a11f748a9b9dec"
+    },
+    {
+      "path": "release/SOURCE-MANIFEST.json",
+      "bytes": 593460,
+      "sha256": "9e69dfac00bf29fb3f77b55f2b328def930d757d3e9f8e84fc58b865e7add0c6"
+    },
+    {
+      "path": "release/VERSION.json",
+      "bytes": 3331,
+      "sha256": "f3c29ea0806bbb3a389d76c0eb350e313e807aca70db59b3a93399d6fbb7edee"
+    },
+    {
+      "path": "release/downloaded-checks.json",
+      "bytes": 1799,
+      "sha256": "7a912aaaae41bf6f823c4a461ebe96f0eeb0b8e07131471af42829d1b1e6eafd"
+    },
+    {
+      "path": "release/source-archive-verified.json",
+      "bytes": 103,
+      "sha256": "697d3bf93f845c5d3bffde0df12eee8011169e35dd7c2b7c8410a4fc69538727"
+    },
+    {
+      "path": "rest-five-save-open-195-attachments/Missing-expected-text-1131.png",
+      "bytes": 3802380,
+      "sha256": "404d21bf580e5d6ce4a8975b2adbdcd5773974d6b02cbd36c498cef53d5bcb50"
+    },
+    {
+      "path": "rest-five-save-open-195-attachments/manifest.json",
+      "bytes": 2688,
+      "sha256": "e4dca34dd38d91d7818724bbbf4bd32bbdc2b9e0a05edae928ad695682848b90"
+    },
+    {
+      "path": "rest-five-save-open-195-attachments/wait-five-minutes.png",
+      "bytes": 3809330,
+      "sha256": "f7bdb852f6c1f933998b00fa541ee42022d59266d7b466c0e0309f8193bc7ee8"
+    },
+    {
+      "path": "rest-five-save-open-195.log",
+      "bytes": 4994,
+      "sha256": "c3040047d15b3d1cded731e01d608d81a2ccbf8dffcec28d8a5cc6f3ea0b5592"
+    },
+    {
+      "path": "rest-open-195-attachments/close-character.png",
+      "bytes": 5630841,
+      "sha256": "7f0fbc0618f420b9059ed4bbbc1458e8bd6b7cc8d71451cf13aadc0fa11ffb67"
+    },
+    {
+      "path": "rest-open-195-attachments/manifest.json",
+      "bytes": 1482,
+      "sha256": "390b01f6b5fc44f079be1d2856769a645d8cbc316a67e96424f9af6d9a6be9d4"
+    },
+    {
+      "path": "rest-open-195-attachments/standard-rest-button.png",
+      "bytes": 3809017,
+      "sha256": "b51e661f3dd847721a516513ec98f5957b57cffdeca3ca7bb509ba283de2584c"
+    },
+    {
+      "path": "rest-open-195.log",
+      "bytes": 5001,
+      "sha256": "53f2a7c784053d613294d26446891655945e93c6f75c7c24c2831758701891bc"
+    },
+    {
+      "path": "rollback/container-manifest.json",
+      "bytes": 247676,
+      "sha256": "8289a7971728bddbbb0540d0d9ebddcbe21483b10b5cafbdcffb79851b2eba42"
+    },
+    {
+      "path": "rollback/device-save-preservation.json",
+      "bytes": 230,
+      "sha256": "5cf24d388d3b6e4605511e6d9b268b41655e04d555703caf8b30b11c7384dae1"
+    },
+    {
+      "path": "rollback/saves-before.json",
+      "bytes": 1745,
+      "sha256": "7e0bc69392c65da91680f1c753f229a9670103d73f160f645413dac2e85100c7"
+    },
+    {
+      "path": "runtime-sha256-check.log",
+      "bytes": 115,
+      "sha256": "b12422e5ce5dba8e351bc6f02ad7343e5d9a59942fce016172150529df780935"
+    },
+    {
+      "path": "save-capacity-blocker-quit-195-attachments/before-pagination-update-launcher.png",
+      "bytes": 244636,
+      "sha256": "6f120a7f03214d54fdb70c259d3da53da0418f3b79a68290c5d0e40222c1c248"
+    },
+    {
+      "path": "save-capacity-blocker-quit-195-attachments/manifest.json",
+      "bytes": 2716,
+      "sha256": "e62c0170bf08d047be214b24bf2da152ee81c257cde04077d2e012028228b9f2"
+    },
+    {
+      "path": "save-capacity-blocker-quit-195-attachments/ten-slots-scroll-blocked.png",
+      "bytes": 3912198,
+      "sha256": "8f578fa39819dc53336faeaa82e35326f6d32a1a76dae947f56b97a0d1ba2cae"
+    },
+    {
+      "path": "save-capacity-blocker-quit-195.log",
+      "bytes": 6006,
+      "sha256": "1ed683ed3b9831e9ff012bddacef0410b12d2e656fd8264e387382a18a40034c"
+    },
+    {
+      "path": "save-checkpoint-open-195-attachments/empty-slot-10-edit.png",
+      "bytes": 1561292,
+      "sha256": "6faeba22e942bae4bc3302b13cd58ce127f2b7e0656d0f81f0fbf6c849e47a18"
+    },
+    {
+      "path": "save-checkpoint-open-195-attachments/exit-rest.png",
+      "bytes": 5624420,
+      "sha256": "6b7ebce0ecd4842d98f6f60eb8e54ec44a53c49f2292fb4906d35062740878ae"
+    },
+    {
+      "path": "save-checkpoint-open-195-attachments/manifest.json",
+      "bytes": 3511,
+      "sha256": "7b949a2a6df8ec44a4a36c38fe2cc26c2d17c7fd8730a2f95792b4a66856e226"
+    },
+    {
+      "path": "save-checkpoint-open-195-attachments/menu.png",
+      "bytes": 4095439,
+      "sha256": "b1d403887c007cbcba86b6ef5cb4264a772998b25f1baa4295bd376555212873"
+    },
+    {
+      "path": "save-checkpoint-open-195-attachments/rest-finished-clock.png",
+      "bytes": 3800032,
+      "sha256": "80201780ebf3d320bd8857e785b137a56025a85d15ae338c808076284f9a42bb"
+    },
+    {
+      "path": "save-checkpoint-open-195-attachments/save-page.png",
+      "bytes": 4093172,
+      "sha256": "9cd0f14401004b7bf630d9fb00b8c2297a8dfbcde6da34b5d3df0d5a1c11c315"
+    },
+    {
+      "path": "save-checkpoint-open-195.log",
+      "bytes": 8146,
+      "sha256": "00a97774bbd7f5964534af763ceb68ea09c3ce26e4843d5501f1fa36360a3c41"
+    },
+    {
+      "path": "save-chinese-checkpoint-195-attachments/checkpoint-name.png",
+      "bytes": 1565416,
+      "sha256": "698a77331aea400598d91ab6b40aadc54bcdea878cb800c0f50a09777e3b4f34"
+    },
+    {
+      "path": "save-chinese-checkpoint-195-attachments/checkpoint-saved.png",
+      "bytes": 5656627,
+      "sha256": "29103b051105c2d4d70fff68393ceb1894984a61208b1e8d2f9924c3e802fbf6"
+    },
+    {
+      "path": "save-chinese-checkpoint-195-attachments/manifest.json",
+      "bytes": 11685,
+      "sha256": "ec9b2f9ad0936aaf42a2b62c14bc9736bbe97b3f646ae23cc0e66046ade792e6"
+    },
+    {
+      "path": "save-chinese-checkpoint-195-attachments/save-new-slot-10.png",
+      "bytes": 5658121,
+      "sha256": "b0d4552fa924cc5e44d2cbb5859c314ed5861ebad7d48e329fe6c829b0cc58c6"
+    },
+    {
+      "path": "save-chinese-checkpoint-195.log",
+      "bytes": 20885,
+      "sha256": "0bfc9271873d266469af0e39516ecc023e78af700fe92bc8fd7796bd3510d99e"
+    },
+    {
+      "path": "save-empty10-195-attachments/cancel-load.png",
+      "bytes": 4112142,
+      "sha256": "cf2b7cdcf2d0e7c41057083b2dcab8533a79307404af47f341eab6c9b5f3768d"
+    },
+    {
+      "path": "save-empty10-195-attachments/manifest.json",
+      "bytes": 1880,
+      "sha256": "ed5235fb18c2ba57e387a4af0bc90a77f6d1adb3a3d67da16ce5b9f413654ce3"
+    },
+    {
+      "path": "save-empty10-195-attachments/open-save-page.png",
+      "bytes": 3937264,
+      "sha256": "01d2ff8ff51e2154dc2f34766bc2d3083461605e12739efad6e6473faacd5459"
+    },
+    {
+      "path": "save-empty10-195-attachments/save-slots.png",
+      "bytes": 3924753,
+      "sha256": "c1302f40fd47167583c9ac9507b4a5f034f9b5a5b25b0501a357933cc8b7fc91"
+    },
+    {
+      "path": "save-empty10-195.log",
+      "bytes": 5079,
+      "sha256": "7157e03ab2c9716a55760df9bd9c335001210f2b601a5bda1896af73e97af194"
+    },
+    {
+      "path": "save-ui-195-attachments/load-chinese-dates.png",
+      "bytes": 4059429,
+      "sha256": "d5eae4ddf2ef4fc89d0e8428f14a9c0f4a3a4f1dc0ee75bd12d9b2bbaa7467ec"
+    },
+    {
+      "path": "save-ui-195-attachments/manifest.json",
+      "bytes": 1476,
+      "sha256": "8d8e501ef78f6048889dbf96c78bbdb77596fc3f75a2469b8ed7ab862ff18bea"
+    },
+    {
+      "path": "save-ui-195-attachments/open-load-page.png",
+      "bytes": 4059429,
+      "sha256": "d5eae4ddf2ef4fc89d0e8428f14a9c0f4a3a4f1dc0ee75bd12d9b2bbaa7467ec"
+    },
+    {
+      "path": "save-ui-195.log",
+      "bytes": 4316,
+      "sha256": "a22d12017dbc6123d3e08857606057ebcb6b82ced92cdc99a7b2491c17908025"
+    },
+    {
+      "path": "save11-chinese-195-attachments/manifest.json",
+      "bytes": 8427,
+      "sha256": "59bce89b30ba8089749a8d7a9805b761836c28c4f4e83e0fd021135c16e70d56"
+    },
+    {
+      "path": "save11-chinese-195-attachments/save-slot11-once.png",
+      "bytes": 4413270,
+      "sha256": "995c4f0565e7927ffcf120cd0a2e3a5b452f9b493a1e683e7a81774b06105849"
+    },
+    {
+      "path": "save11-chinese-195-attachments/slot11-chinese-name.png",
+      "bytes": 1566570,
+      "sha256": "2da93ae94b04c41838fae1fbf315d3956409d022a38bff09f5676c3ae1963f63"
+    },
+    {
+      "path": "save11-chinese-195-attachments/slot11-save-return.png",
+      "bytes": 4413270,
+      "sha256": "995c4f0565e7927ffcf120cd0a2e3a5b452f9b493a1e683e7a81774b06105849"
+    },
+    {
+      "path": "save11-chinese-195.log",
+      "bytes": 15282,
+      "sha256": "6b5fc513fcfbbb9a258e13d3c24e5e379797320b9a91bfba25bca6560da9d6a7"
+    },
+    {
+      "path": "save11-current.png",
+      "bytes": 3848609,
+      "sha256": "224f084d335b9cef602f38865bc375e89c43e3b12d2ba402018ae227d390c157"
+    },
+    {
+      "path": "save11-home-quit-195-attachments/home-five-seconds-return-background.png",
+      "bytes": 4080162,
+      "sha256": "2c52986b3cb1b587c1f40a59b7830039aabf0137eb6c0acb26931f4813b482e4"
+    },
+    {
+      "path": "save11-home-quit-195-attachments/home-five-seconds-return.png",
+      "bytes": 4887679,
+      "sha256": "739c9cde3b43b777a3a76c7bbbe7bd6d9ec86f3a0559e5a394a2845f30df3623"
+    },
+    {
+      "path": "save11-home-quit-195-attachments/manifest.json",
+      "bytes": 4791,
+      "sha256": "0e88d6efc32c1e2ced999743e3539cecf480bd7e4ac3beb4a00c1ddb22a66fba"
+    },
+    {
+      "path": "save11-home-quit-195-attachments/normal-quit-launcher.png",
+      "bytes": 245242,
+      "sha256": "c0265d16a034a0233d5d70d6c9c60ff3c2f7031cd2c5b90a40a9810ef549a73e"
+    },
+    {
+      "path": "save11-home-quit-195-attachments/resumed-world-control.png",
+      "bytes": 4288329,
+      "sha256": "f0c35b214d04a25ecf1da1a7988797b8a1451d0705e3bd69189990d1191a2d4b"
+    },
+    {
+      "path": "save11-home-quit-195-attachments/turn-after-resume.png",
+      "bytes": 4288329,
+      "sha256": "f0c35b214d04a25ecf1da1a7988797b8a1451d0705e3bd69189990d1191a2d4b"
+    },
+    {
+      "path": "save11-home-quit-195.log",
+      "bytes": 7878,
+      "sha256": "8af3d9ea783195ce5b6fa98247e1be6bdf4d4b3aa9fba5ffebe79827e19d987f"
+    },
+    {
+      "path": "shaderc-host-195.log",
+      "bytes": 89284,
+      "sha256": "3d6ac923ca610d1c14f5098b2ff3e3c5f3a5c9740e47e24e1f0094f686e0354a"
+    },
+    {
+      "path": "staging-upload-sizes.json",
+      "bytes": 372,
+      "sha256": "443e0bfbc3677dfd54097c322208fdac9f64929e64bae4d0c2be39b60ef610ed"
+    },
+    {
+      "path": "start-game-195-attachments/import-complete.png",
+      "bytes": 249483,
+      "sha256": "d5e4287fc5c0e070cd3d8c029baf2d35234cde40f6b1f8ce12b3c5d8b17aab87"
+    },
+    {
+      "path": "start-game-195-attachments/main-menu195.png",
+      "bytes": 1950025,
+      "sha256": "d78b2e6fec81757c148318a2a8f2bab3593084d628ee2dddc031bbce7f6a5aaa"
+    },
+    {
+      "path": "start-game-195-attachments/manifest.json",
+      "bytes": 2293,
+      "sha256": "b389960dfe8bc6714ad947aefcf61f6f0193de86178df8697b7dacf8e219d743"
+    },
+    {
+      "path": "start-game-195-attachments/start195.png",
+      "bytes": 53792,
+      "sha256": "77ad20e7a84c5fa2c876449607a646ba499d9d92fc1f3d48b7212f836ba4aa86"
+    },
+    {
+      "path": "start-game-195.log",
+      "bytes": 4510,
+      "sha256": "7c0eb7ac2353456ebee6647b42758f6d63cb0f6ee3584a1d3cdfbb9ed0dc625f"
+    },
+    {
+      "path": "status-2035.json",
+      "bytes": 1454,
+      "sha256": "377d2dd1582712f1af87cdc7a36c9e0d794b75dbe40e814feb61c6f336d50221"
+    },
+    {
+      "path": "status-2051.json",
+      "bytes": 2148,
+      "sha256": "dfb19168fa0f2660e323a931dc8fe1089433016497e431133c3b4c9b0ae54654"
+    },
+    {
+      "path": "tavern-align-195-attachments/approach-tavern-door.png",
+      "bytes": 2916879,
+      "sha256": "6bcf183c6575ebf55cde89e4176a88329bfc9c4cd8e4a7258815c7c4e6f902af"
+    },
+    {
+      "path": "tavern-align-195-attachments/look-at-tavern-door.png",
+      "bytes": 4834826,
+      "sha256": "a583f5cafb5cf20b249916ba9073a59d642fafe658e3d069edd3065291d98219"
+    },
+    {
+      "path": "tavern-align-195-attachments/manifest.json",
+      "bytes": 1486,
+      "sha256": "8c0844a9ef7b1fa5d42d46a9b05ffded88b518af2400c62b9cbe80d550945a01"
+    },
+    {
+      "path": "tavern-align-195.log",
+      "bytes": 5616,
+      "sha256": "b1f4f23a706900341228276979a048f5cc302cd7963abca650666bfc553892bf"
+    },
+    {
+      "path": "tavern-door-195-attachments/manifest.json",
+      "bytes": 1065,
+      "sha256": "9f8ce207019e82a09df62bfd51f3282973a52f6d36af73c07db60ca2ac6172ff"
+    },
+    {
+      "path": "tavern-door-195-attachments/turn-toward-tavern.png",
+      "bytes": 5452375,
+      "sha256": "e6368b4fe0de0ac70a81a22fad4762963cdca57a4d6347cb79389747079a772f"
+    },
+    {
+      "path": "tavern-door-195.log",
+      "bytes": 4530,
+      "sha256": "92e06b76cd209cdad55cc7a83280d60d28faaeeea17768880251ebed9f11b74e"
+    },
+    {
+      "path": "tavern-enter-195-attachments/manifest.json",
+      "bytes": 1062,
+      "sha256": "0f4a3ec397189d7b6c83cb4768a46dd797cceb2210374fe902a32c30895277ca"
+    },
+    {
+      "path": "tavern-enter-195-attachments/tap-tavern-door.png",
+      "bytes": 4872886,
+      "sha256": "7cc4d4d0855a1834da6ae9ff9ac603163907b192615a5faef07aac856e073b13"
+    },
+    {
+      "path": "tavern-enter-195.log",
+      "bytes": 4228,
+      "sha256": "3d7afab3f40d0d19e3edac746fe3436c6ffae905c7694f24bd3a679ca2dc6495"
+    },
+    {
+      "path": "tavern-face-east-195-attachments/manifest.json",
+      "bytes": 1065,
+      "sha256": "59263ee05ae61669a5538df204ebe2cca18d701e26070bc9eca8875804303526"
+    },
+    {
+      "path": "tavern-face-east-195-attachments/turn-east-to-door.png",
+      "bytes": 4884802,
+      "sha256": "bf18fb551da4aedc8107ef821f6f5486e918b84fe5dda6b262fdf8e4136c1861"
+    },
+    {
+      "path": "tavern-face-east-195.log",
+      "bytes": 4543,
+      "sha256": "ca976fded02915f38c481b65117b50e47cd2dcd91aa4b0de3c5dcc5aa587cd53"
+    },
+    {
+      "path": "tavern-owner-195-attachments/manifest.json",
+      "bytes": 1067,
+      "sha256": "90163841cc807ae9ae04c1c80f446cd82f54b71b997a886298b2b120a76bba02"
+    },
+    {
+      "path": "tavern-owner-195-attachments/tavern-owner-options.png",
+      "bytes": 3393570,
+      "sha256": "581fc502bf68d855eac3267926d868538413ba767c3f25dd23e7f5a208ba0e6c"
+    },
+    {
+      "path": "tavern-owner-195.log",
+      "bytes": 4238,
+      "sha256": "0384f9323a30dc0e98dd8ca8910c0a0f7f98b7f1b105606dfb9f5ca021143131"
+    },
+    {
+      "path": "tavern-service-195-attachments/enter-lonely-knight.png",
+      "bytes": 3359420,
+      "sha256": "5a675f3e0b6a07a87793d9f1b81bcb167d1ce6fcfde3b66c3a80dbcb286f5623"
+    },
+    {
+      "path": "tavern-service-195-attachments/manifest.json",
+      "bytes": 1067,
+      "sha256": "1bf1535b50b541daf1bda2921666ffcbba92d2b067a2e06eba3195aebbd0d973"
+    },
+    {
+      "path": "tavern-service-195.log",
+      "bytes": 4242,
+      "sha256": "5fe7de25e964faa6f9c0f44643b16008df0f868ff2b2f77e33f47a696dc3846a"
+    },
+    {
+      "path": "terminate-cold-sigkill-195.json",
+      "bytes": 937,
+      "sha256": "3034b5fba6a7903dea1469107dfe148575a993fce59bfdddd935c59d4372e890"
+    },
+    {
+      "path": "terminate-cold-sigkill-195.log",
+      "bytes": 185,
+      "sha256": "36015070c12fe2d19ea38509ae827d8d9c7cdc37f40a13339f887a4c73a72848"
+    },
+    {
+      "path": "terminate-for-cold-195.json",
+      "bytes": 918,
+      "sha256": "14850e82b18c7f936b56a4ef4b6325c90ee7a0092b59326478c31fd116e3a7ea"
+    },
+    {
+      "path": "terminate-for-cold-195.log",
+      "bytes": 137,
+      "sha256": "6b03011685d9ecc3479b79a4563348bf065d418af75afc297d7e4623201dbfa3"
+    },
+    {
+      "path": "town-east-195-attachments/manifest.json",
+      "bytes": 1062,
+      "sha256": "5f9cd2a20581bcb2e06a66a59d45cef26e42063f7560c05b20e28c4b031ee695"
+    },
+    {
+      "path": "town-east-195-attachments/walk-east-town.png",
+      "bytes": 5469354,
+      "sha256": "c8c5c6dff79cdcc9060f44d938484247c1a1cbb499d50bc467377ac980036b33"
+    },
+    {
+      "path": "town-east-195.log",
+      "bytes": 4516,
+      "sha256": "3fb52f893a1eaf4613cf30c56ee21491fe6ee914c3572dbc18f11c0dbf3bbd8a"
+    },
+    {
+      "path": "travel-approach-west-195-attachments/close-character.png",
+      "bytes": 5659217,
+      "sha256": "b4b004c33e2273d0fdf2822a38fd27892e7f69a53b2cf0a4977edf33958ce998"
+    },
+    {
+      "path": "travel-approach-west-195-attachments/manifest.json",
+      "bytes": 2723,
+      "sha256": "e17c6548d5fae0fe9f6c55825e530111172b2e04b16bfc902cb2a65874fa7a69"
+    },
+    {
+      "path": "travel-approach-west-195-attachments/turn-west.png",
+      "bytes": 5250685,
+      "sha256": "6c2661f7381353b1aaa0d0548c3ff2b1dc5526d8c84c7e7d4a63dc9368a58e74"
+    },
+    {
+      "path": "travel-approach-west-195-attachments/walk-west-road.png",
+      "bytes": 4382783,
+      "sha256": "15913218fac6f619412016a7168ce84fc77f680a11093cba48e96a8c18a32178"
+    },
+    {
+      "path": "travel-approach-west-195-attachments/west-road-after-walk.png",
+      "bytes": 4331610,
+      "sha256": "7fed208ba10fddc40453c41b874e8d330dc5426619d1755e22cd374a5d589203"
+    },
+    {
+      "path": "travel-approach-west-195-attachments/west-road-before-walk.png",
+      "bytes": 5251377,
+      "sha256": "b69a56856275f6c6762042b176313b283b4a97c4f08052684c4ba76e4b509eab"
+    },
+    {
+      "path": "travel-approach-west-195.log",
+      "bytes": 6611,
+      "sha256": "0fbc9e38470978c0bd10b9d4d98de42915a19b0fbf70b784f179023178ca9e24"
+    },
+    {
+      "path": "travel-controls-save-195-attachments/controls-page.png",
+      "bytes": 3763048,
+      "sha256": "9196c4e988d5ac2695e24419bca89edba9c553fa2ee57f438697b8857631a588"
+    },
+    {
+      "path": "travel-controls-save-195-attachments/manifest.json",
+      "bytes": 1869,
+      "sha256": "cc88d58ef351619dd75f47b970ecc832c3288afec4a1d19e1a5fdfa79518382a"
+    },
+    {
+      "path": "travel-controls-save-195.log",
+      "bytes": 5079,
+      "sha256": "0e30848f08acfd4cad6baaed04b80891b87a0b0d2d3429a6e5c87f6da6cf83a8"
+    },
+    {
+      "path": "travel-return-checkpoint-195-attachments/checkpoint-before-carriage.png",
+      "bytes": 5629918,
+      "sha256": "f23912ed6288be4800c1968ab058af5489858efdf12ab79a9871a344ccc40825"
+    },
+    {
+      "path": "travel-return-checkpoint-195-attachments/manifest.json",
+      "bytes": 3110,
+      "sha256": "3debb2de74230559dfad3b33812dffe7f2ac46dbcc58813f05859fade64ce3f6"
+    },
+    {
+      "path": "travel-return-checkpoint-195.log",
+      "bytes": 6037,
+      "sha256": "a55d72f9385cca2cc4f3382f36d7eaea79bb93d250445d73cedde6e06b47bb62"
+    },
+    {
+      "path": "travel-verification.json",
+      "bytes": 1649,
+      "sha256": "af9a1e2b51ebfa2936f44a5d63d06cd08d3a29adfb4c308be84dac200e691c15"
+    },
+    {
+      "path": "ui-runner-build.log",
+      "bytes": 117894,
+      "sha256": "c99b058388fd8a83ca4ca7de00c8602959af23ff604864ac6fc13dd13debd61c"
+    },
+    {
+      "path": "ui-runner-hold-build.log",
+      "bytes": 49815,
+      "sha256": "410737cefa02822e818e71fe0ca4fbe6aa01a842076df19df7ef42cd31cb37ce"
+    },
+    {
+      "path": "walk-town-195-attachments/manifest.json",
+      "bytes": 1067,
+      "sha256": "0d56344f86406f30419c81cc5968e174146ef56ab7a22af94453c89f9801e6dd"
+    },
+    {
+      "path": "walk-town-195-attachments/walk-north-naturally.png",
+      "bytes": 5197661,
+      "sha256": "c9d4984b32d055c86e26e90ce085aaedbd7097df8dee7e249fd9f82034251cbe"
+    },
+    {
+      "path": "walk-town-195.log",
+      "bytes": 4528,
+      "sha256": "4e871a750f0efe48daba89f460b78744bd6b3f470d7f498a1e82ab5c729a0258"
+    }
+  ]
+}

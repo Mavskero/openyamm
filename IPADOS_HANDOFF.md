@@ -125,6 +125,10 @@ xcodebuild -project build-ios-xcode/OpenYAMM.xcodeproj \
 
 ## 受影响真机检查
 
+2026-10-29 接收端已完成本轮可达短流程及三项阻断修复，见
+[195 接收端结果](handoff/ipados-device-195-20261029/README.md)。该记录包含实际版本、设备、摘要、
+普通旅行和 Save104 冷启动读档证据，并保留未验条件项；不代表完整自然通关。
+
 先读[已有接收端记录](handoff/ipados-device-20261028/README.md)，跳过有匹配版本证据的已通过步骤。
 本次紧凑检查估计 **45–90分钟**；首次下载/构建、人工登录/信任/解锁及失败定位时间另计。
 详细操作按[195远程测试表](handoff/ipados-remote-test-195/README.md)执行，不重打旧核心路线或自然战役。
