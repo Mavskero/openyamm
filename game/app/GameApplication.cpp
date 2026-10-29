@@ -7,6 +7,7 @@
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/GameMechanics.h"
 #include "game/gameplay/GameplayHeldItemController.h"
+#include "game/gameplay/GameplaySaveLoadUiSupport.h"
 #include "game/gameplay/ReputationRuntime.h"
 #include "game/gameplay/TravelRuntime.h"
 #include "game/scene/IndoorSceneRuntime.h"
@@ -5190,6 +5191,13 @@ bool GameApplication::processPendingDebugMapJump()
 
 void GameApplication::handleSdlEvent(const SDL_Event &event)
 {
+#if defined(SDL_PLATFORM_IOS)
+    if (event.type == SDL_EVENT_FINGER_DOWN)
+    {
+        m_gameSession.gameplayScreenRuntime().enableStandardTouchControls();
+    }
+#endif
+
     if (m_debugConsoleRendererInitialized)
     {
         ImGui_ImplSDL3_ProcessEvent(&event);
@@ -5379,8 +5387,15 @@ SDL_Rect GameApplication::applicationTextInputArea(int windowWidth, int windowHe
         return {};
     }
 
+    if (saveGame.editSlotIndex < saveGame.scrollOffset
+        || saveGame.editSlotIndex - saveGame.scrollOffset >= GameplaySaveLoadVisibleSlotCount)
+    {
+        return {};
+    }
+
+    const size_t visibleRow = saveGame.editSlotIndex - saveGame.scrollOffset;
     const std::optional<GameplayResolvedHudLayoutElement> row = view.resolveHudLayoutElement(
-        "SaveGameSlotRow" + std::to_string(saveGame.editSlotIndex), windowWidth, windowHeight, 205.0f, 22.0f);
+        "SaveGameSlotRow" + std::to_string(visibleRow), windowWidth, windowHeight, 205.0f, 22.0f);
     if (!row)
     {
         return {};
@@ -9322,9 +9337,19 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
     const bool mobileFlightControlsEnabled =
         mobileGameplayTouchControlsEnabled
         && m_gameSession.gameplayScreenRuntime().mobileFlightControlsAvailable();
-    const bool mobileInspectControlEnabled =
-        pActiveScreenForInput == nullptr
-        && m_gameSession.gameplayScreenRuntime().mobileInspectControlAvailable();
+    const NewGameScreen *pNewGameScreenForInput = dynamic_cast<const NewGameScreen *>(pActiveScreenForInput);
+    std::optional<SDL_FRect> mobileInspectButtonRect = pNewGameScreenForInput != nullptr
+        ? pNewGameScreenForInput->mobileInspectButtonRect(width, height) : std::nullopt;
+    if (pActiveScreenForInput == nullptr)
+    {
+        const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolved =
+            m_gameSession.gameplayScreenRuntime().mobileInspectButtonRect(width, height);
+        if (resolved)
+        {
+            mobileInspectButtonRect = SDL_FRect{resolved->x, resolved->y, resolved->width, resolved->height};
+        }
+    }
+    const bool mobileInspectControlEnabled = mobileInspectButtonRect.has_value();
 
     m_gameInputSystem.updateFromEngineInput(
         width,
@@ -9335,7 +9360,8 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
         mobileGameplayTouchControlsEnabled,
         mobileJumpGestureEnabled,
         mobileFlightControlsEnabled,
-        mobileInspectControlEnabled);
+        mobileInspectControlEnabled,
+        mobileInspectButtonRect);
     m_gameSession.bindCurrentGameplayInputFrame(&m_gameInputSystem.frame());
     recordFrameDiagnostics(m_framePerformanceDiagnostics.inputNanoseconds, inputBeginTickCount);
 

@@ -1,0 +1,211 @@
+{
+  "recorded_at": "2026-10-29T21:28:11.256491+08:00",
+  "release_source": "18cd05fddcbbd0ca35b27c9cbecbeb7ca02b1bf1",
+  "fix_commit": "7aba6c0cc4bdf36e63e75c9f75da6733d9877c0c",
+  "current_app": {
+    "baseline": "18cd05fddcbbd0ca35b27c9cbecbeb7ca02b1bf1",
+    "bytes": 20783264,
+    "sha256": "1965057da4b003c2738c80dd1a66e88ee460f43ced77aae4c4c7c7e81bd783db",
+    "source_patch_sha256": "c188498792c80d7160729026712ce06c16a0f8865bda39487603870b7475aa9f",
+    "bundle": "org.openyamm.ipados",
+    "team": "LB4Y94KCR7",
+    "sdk": "iphoneos26.2"
+  },
+  "reachable_short_flow": "COMPLETE_WITH_UNVERIFIED_CONDITIONAL_ITEMS",
+  "old_originals_unchanged": 10,
+  "working_saves_unchanged_after_cold_load": 12,
+  "new_save": {
+    "version": 104,
+    "map": "outd3.odm",
+    "party_count": 1,
+    "slot": 11,
+    "name": "中文旅行",
+    "bytes": 2071311,
+    "sha256": "0755f609ca4377f0c6dfab2b444005d60fc4ccb64ce04f48952d801cbba6a3d2",
+    "unique_length_prefixed_name_offset": 1656238,
+    "all_11_previous_active_files_unchanged": true,
+    "all_10_preserved_originals_unchanged": true,
+    "scope": "header and name candidate with complete file hash; actual restart/load evidence recorded separately"
+  },
+  "home_resume": "PASS; 5 seconds and subsequent turn",
+  "audio": {
+    "recorded_at": "2026-10-29T21:16:18.265592+08:00",
+    "app_sha256": "1965057da4b003c2738c80dd1a66e88ee460f43ced77aae4c4c7c7e81bd783db",
+    "source": "direct user response in receiving session",
+    "answer": "音乐和音效都能听到",
+    "scope": "short physical speaker confirmation on 195 patched app; not a full audio audit"
+  },
+  "natural_full_campaign": "NOT_PROVEN",
+  "release_tag": "ipados-ui-function-195-20261029",
+  "release_app": {
+    "archive": "OpenYAMM-195-iPadOS-unsigned.zip",
+    "archive_bytes": 12907142,
+    "archive_sha256": "54f1cdde25ddcbf47c1fb9fdec7aaa56a690a7043bf4d2bb85ab5a96bbe3cb3c",
+    "unsigned_executable_sha256": "f8bb56aa6f7a88d3b9131a4a297d5244ee78c394a88c65ab15d48b255f095731"
+  },
+  "resources": [
+    {
+      "path": "engine.zip",
+      "bytes": 714312907,
+      "sha256": "4cbb07767987d880740c14e7f41b010dd65db0a2a2f5e941d88ed59673679a2c",
+      "included_in_release": true,
+      "release_asset_name": "engine.zip"
+    },
+    {
+      "path": "conversion.json",
+      "bytes": 79647,
+      "sha256": "c3c5a9a20d3902eb26c0cf2b67c8f1b29b60f68adc9ef6d2968595fffe90a642",
+      "included_in_release": true,
+      "release_asset_name": "conversion.json"
+    },
+    {
+      "path": "worlds/mm6.zip",
+      "bytes": 641050692,
+      "sha256": "154aa325d69eedd9c0b3cd3e96c730db4cec581e23ebe975eaaf93903ffbf676",
+      "included_in_release": true,
+      "release_asset_name": "mm6.zip"
+    },
+    {
+      "path": "worlds/mm7.zip",
+      "bytes": 1019781051,
+      "sha256": "ef24f9591ac7ee0d431a4cc943ee276d687c6a7a2e5b27a53464d8ab806d9c5d",
+      "included_in_release": true,
+      "release_asset_name": "mm7.zip"
+    },
+    {
+      "path": "worlds/mm8.zip",
+      "bytes": 978282137,
+      "sha256": "0def37a4ebb5b302462e310325f75f3fb7f339852cd9111bfbb938787fe1e126",
+      "included_in_release": true,
+      "release_asset_name": "mm8.zip"
+    },
+    {
+      "path": "worlds/mmmerge.zip",
+      "bytes": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e",
+      "included_in_release": true,
+      "release_asset_name": "mmmerge.zip"
+    }
+  ],
+  "resources_total_bytes": 3504948309,
+  "source_archive_verification": {
+    "source_head": "18cd05fddcbbd0ca35b27c9cbecbeb7ca02b1bf1",
+    "files_verified": 2250,
+    "ok": true
+  },
+  "downloaded_attachment_checks": [
+    {
+      "file": "SHA256SUMS",
+      "sha256": "3d4565069e34098104f783259d6d0ebc6ed247ed7865263167a11f748a9b9dec",
+      "expected": "3d4565069e34098104f783259d6d0ebc6ed247ed7865263167a11f748a9b9dec",
+      "ok": true
+    },
+    {
+      "file": "OpenYAMM-195-iPadOS-unsigned.zip",
+      "sha256": "54f1cdde25ddcbf47c1fb9fdec7aaa56a690a7043bf4d2bb85ab5a96bbe3cb3c",
+      "expected": "54f1cdde25ddcbf47c1fb9fdec7aaa56a690a7043bf4d2bb85ab5a96bbe3cb3c",
+      "ok": true
+    },
+    {
+      "file": "source.tar.gz",
+      "sha256": "9f69741dbd4020105f8c4bde964d72c5e6cc763ea7e46eb57feaac79248ab9bd",
+      "expected": "9f69741dbd4020105f8c4bde964d72c5e6cc763ea7e46eb57feaac79248ab9bd",
+      "ok": true
+    },
+    {
+      "file": "SOURCE-MANIFEST.json",
+      "sha256": "9e69dfac00bf29fb3f77b55f2b328def930d757d3e9f8e84fc58b865e7add0c6",
+      "expected": "9e69dfac00bf29fb3f77b55f2b328def930d757d3e9f8e84fc58b865e7add0c6",
+      "ok": true
+    },
+    {
+      "file": "VERSION.json",
+      "sha256": "f3c29ea0806bbb3a389d76c0eb350e313e807aca70db59b3a93399d6fbb7edee",
+      "expected": "f3c29ea0806bbb3a389d76c0eb350e313e807aca70db59b3a93399d6fbb7edee",
+      "ok": true
+    },
+    {
+      "file": "README-IPAD-195.md",
+      "sha256": "a6b2f8dd96f9b02431b7dbe4f70a8e759bf5ae0abb8df5673348d56e618cc7d0",
+      "expected": "a6b2f8dd96f9b02431b7dbe4f70a8e759bf5ae0abb8df5673348d56e618cc7d0",
+      "ok": true
+    },
+    {
+      "file": "IPADOS_HANDOFF.md",
+      "sha256": "a8766993bb1a41fdc3d9a14d1c8736d992b77de8bcc02d420bdaa5b5f56e2921",
+      "expected": "a8766993bb1a41fdc3d9a14d1c8736d992b77de8bcc02d420bdaa5b5f56e2921",
+      "ok": true
+    },
+    {
+      "file": "CODEX_IPAD_DEVICE_PROMPT.md",
+      "sha256": "c138f34aa9d9cefbbb7faf12b94f964208838c85092a78dd3120662fd00efff4",
+      "expected": "c138f34aa9d9cefbbb7faf12b94f964208838c85092a78dd3120662fd00efff4",
+      "ok": true
+    }
+  ],
+  "device": {
+    "model": "iPad17,2 (iPad Pro 11-inch M5)",
+    "system": "27.0 / 24A5408d"
+  },
+  "signing": {
+    "bundle_id": "org.openyamm.ipados",
+    "team": "LB4Y94KCR7",
+    "app_id": "LB4Y94KCR7.org.openyamm.ipados"
+  },
+  "backup": {
+    "backup_files": 1223,
+    "backup_bytes": 12054854313,
+    "backup_scope": "Documents, Library, tmp; OS-managed metadata and SystemData inaccessible via AFC"
+  },
+  "cold_restart": {
+    "previous_pid": 57305,
+    "sigterm_did_not_end_process": true,
+    "normal_menu_exit_before_sigkill": true,
+    "absence_confirmed": true,
+    "new_pid": 57379,
+    "real_app_load": "PASS"
+  },
+  "ordinary_travel": {
+    "method": "normal on-device carriage selection; no injected resources or game state",
+    "source_house": 470,
+    "from": "oute3.odm",
+    "to": "outd3.odm",
+    "cancel_returned_to_source": true,
+    "gold_before": 200,
+    "gold_after": 175,
+    "food_before": 5,
+    "food_after": 5,
+    "quoted_fare": 25,
+    "quoted_days": 2,
+    "before_game_minutes": 847.145444,
+    "after_game_minutes": 3727.145508,
+    "difference_game_minutes": 2880.000064,
+    "request_count": 1,
+    "trace": [
+      "[GameplayTrace] map_transition_requested source_kind=\"horse_route\" source_id=470 action_id=22 route_index=1 confirmation_required=false destination_map=\"Outd3.odm\" destination_name=\"铁拳城堡\" travel_days=2 deferred=true before_game_minutes=847.145444 game_minutes=847.145444 use_start_position=false pos=(14317,2696,96) direction_degrees=180",
+      "[GameplayTrace] map_loaded map=\"outd3.odm\" scene_kind=outdoor game_minutes=3727.145508 initialize_view=true party=(16112.000000,11520.000000,2033.000000) yaw=1.570796 pitch=-0.150000",
+      "[GameplayTrace] map_arrived previous_map=\"oute3.odm\" map=\"Outd3.odm\" game_minutes=3727.145508 same_map=false use_start_position=false source_kind=\"horse_route\" source_id=470 action_id=22 event_id=0 destination_name=\"铁拳城堡\" pos=(14317,2696,96) direction_degrees=180"
+    ],
+    "evidence": [
+      "carriage-open-195-attachments/carriage-service.png",
+      "carriage-travel-195-attachments/cancel-return-same-town.png",
+      "carriage-travel-195-attachments/fare-before-confirm.png",
+      "carriage-travel-195-attachments/travel-arrived.png"
+    ],
+    "load_failure_rollback": "not exercised; no natural failure occurred"
+  },
+  "conditional_unverified": [
+    "long NPC paging and question Chinese IME",
+    "targeted scroll selection/cancellation",
+    "sleeping character potion",
+    "shop drag-out cancellation",
+    "bank amount submission/cancellation",
+    "expanded inventory item tooltip",
+    "key rebinding",
+    "natural failed travel rollback"
+  ],
+  "manual_character_inspect": "User confirmed expansion; captured screenshot was already closed, so expanded pixels are not proven.",
+  "raw_evidence_uploaded": false,
+  "local_evidence_root": "/Users/mavskero/Documents/Codex/2026-10-28/openyamm-ipados-https-github-com-mavskero/work/openyamm/local-data/device-validation/remote-195-20261029",
+  "scope": "Reachable affected short flow only. No complete natural campaign, full UI/content audit, Windows/MMMerge save compatibility, or long-duration stability claim."
+}

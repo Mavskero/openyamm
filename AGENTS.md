@@ -4,6 +4,12 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 210 merges receiving195 fix7aba6c0c and reportdcae3d56; see `handoff/device-feedback-210/README.md`.
+  Touchinspect/emptyname/100save slots coexist with196–209 UI fixes. Native/existinginputcheck/genericunsignediOS pass;
+  no localdevice/App/campaign replay. Receiving ordinarytravel/ChineseSave104/Home/independentload/audio pass reported;
+  raw evidence stays receivingMac andconditionalitems/fullcampaign remainunproved. Runtime207/Save104/remote195fixed.
+  Fullgoalactive,engineeringestimate~85%; next211missingYellconsumer. Do not wait for alreadycompleted receiving work.
+
 - 207–209 integrate Journal localization, Settings Return to game, and explicit-binding precedence for legacy
   KPEnter/numeric/Inn P shortcuts. See `handoff/ui-function-completion-207/README.md` and208/209 notes.
   Native/import/unsigned generic iOS pass; source/build acceptance only,0App/newcases/campaign/device.

@@ -12,6 +12,7 @@ namespace OpenYAMM::Game
 class UiTextTable;
 
 constexpr size_t GameplaySaveLoadVisibleSlotCount = 10;
+constexpr size_t GameplaySaveGameSlotCount = 100;
 constexpr std::array<int, 3> GameplayJournalMapZoomLevels = {384, 768, 1536};
 constexpr float GameplayJournalMapWorldHalfExtent = 32768.0f;
 

@@ -1,0 +1,150 @@
+{
+  "checkpoint": 210,
+  "status": "ACCEPTED_INTEGRATION_SCOPED",
+  "accepted_at": "2026-10-29T13:45:45.836843+00:00",
+  "plan": {
+    "checkpoint": 210,
+    "status": "integrated_pending_build",
+    "main_base": "a7113116c6801aaf7e6cca8ed22160c3fa09a786",
+    "device_tip": "dcae3d5608060cf7dc4e359f77f11f8a098ad28e",
+    "device_fix": "7aba6c0cc4bdf36e63e75c9f75da6733d9877c0c",
+    "merge": "no-ff; one comment-only conflict resolved retaining main draft/failure explanation",
+    "scope": [
+      "visible touch inspection in creation/Standard HUD",
+      "empty save slot names depend on occupancy",
+      "100 manual save slots with viewport/IME/absolute selection support"
+    ],
+    "validation": "One combined native/input target and unsigned generic iOS; no device/App/campaign replay",
+    "runtime": "local-data/validation/ui-function-completion-207/runtime-001",
+    "save_schema": 104,
+    "release195_fixed": true,
+    "evidence_boundary": "Receiving README/RESULTS and source read; raw pixels remain receiving Mac; no independent device reproduction",
+    "user_reported_estimate_percent": 85,
+    "estimate_is_measured": false,
+    "remaining_device_conditions": [
+      "long NPC/questions",
+      "targeted scroll",
+      "sleeping potion",
+      "shop drag-out",
+      "bank",
+      "inventory tooltip",
+      "key rebinding",
+      "failed travel rollback"
+    ]
+  },
+  "checks": {
+    "build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "openyamm_input_check",
+        "-j",
+        "3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 32452,
+      "started_at": "2026-10-29T13:42:36.220210+00:00",
+      "finished_at": "2026-10-29T13:43:46.351607+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-feedback-210/build-native-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "input-check-001": {
+      "argv": [
+        "openyamm/build-apple/openyamm_input_check"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 33894,
+      "started_at": "2026-10-29T13:44:10.292614+00:00",
+      "finished_at": "2026-10-29T13:44:10.415960+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 60.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-feedback-210/input-check-001.log",
+      "executed_binary": "openyamm/build-apple/openyamm_input_check",
+      "executed_binary_sha256": "477c2c1e68fc33089bc70ecabfcca08c7d8304ceffb991fe254fde83f3d89ba9",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 33993,
+      "started_at": "2026-10-29T13:44:16.419452+00:00",
+      "finished_at": "2026-10-29T13:45:12.675546+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-feedback-210/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "merge_review": {
+    "reviewer": "sol_party_ui_193",
+    "scope": "incoming save diff vs current197 behavior",
+    "only_conflict": "Equivalent comments at commitSaveGameEditAndSave",
+    "preserved": [
+      "current Return/Escape scancodePressCount bypasses stale latch",
+      "100slots but10visible rows",
+      "populated controls empty-name initialization",
+      "draft retained after failed asynchronous save",
+      "scroll only cancels editing on actual movement; absolute slot index used",
+      "IME uses visible row with lower/upper range guards"
+    ],
+    "device_operations": 0
+  },
+  "remote_evidence": "handoff/ipados-device-195-20261029/README.md and RESULTS.json; raw pixels stay receiving Mac",
+  "remote_passes": [
+    "ordinary carriage travel",
+    "Chinese Save104",
+    "Home resume",
+    "independent process load",
+    "current music and effects"
+  ],
+  "validation_scope": {
+    "local_new_unit_cases": 0,
+    "existing_input_check_runs": 1,
+    "app_runs": 0,
+    "campaign_replays": 0,
+    "device_or_simulator_operations": 0
+  },
+  "runtime": "local-data/validation/ui-function-completion-207/runtime-001",
+  "save_version": 104,
+  "release195_unchanged": true,
+  "full_goal_complete": false,
+  "estimate_percent": 85,
+  "estimate_confidence": "low; engineering estimate, not measured quest coverage"
+}

@@ -106,6 +106,9 @@ public:
     bool allowSourceGameplayAction(uint32_t actionId, uint32_t menuId = 0);
     bool mobileFlightControlsAvailable() const;
     bool mobileInspectControlAvailable() const;
+    void enableStandardTouchControls();
+    std::optional<ResolvedHudLayoutElement> standardTouchButtonRect(int width, int height) const;
+    std::optional<ResolvedHudLayoutElement> mobileInspectButtonRect(int width, int height) const;
     float partyX() const;
     float partyY() const;
     float partyFootZ() const;
@@ -524,6 +527,7 @@ private:
     void playPortraitExpression(size_t memberIndex, PortraitId portraitId, std::optional<uint32_t> durationTicks);
     GameplayDialogController::Context buildDialogContext(EventRuntimeState &eventRuntimeState);
     void returnToHouseBankMainDialogShared();
+    const char *standardTouchButtonLayoutId() const;
 
     GameSession &m_session;
     TownPortalContactState m_townPortalContactState;
@@ -531,6 +535,7 @@ private:
     GameAudioSystem *m_pAudioSystem = nullptr;
     GameSettings *m_pSettings = nullptr;
     IGameplayOverlaySceneAdapter *m_pSceneAdapter = nullptr;
+    bool m_standardTouchControlsEnabled = false;
     std::optional<DelayedSpeechReaction> m_delayedSpeechReaction;
     uint64_t m_lastSpellFailSoundTicks = 0;
     mutable std::optional<std::string> m_resolvedInteractiveAssetName;

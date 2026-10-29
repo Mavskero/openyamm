@@ -16,6 +16,7 @@ final class OpenYammUITests: XCTestCase {
         let text: String?
         let timeout: Double?
         let duration: Double?
+        let hold: Double?
     }
 
     private enum PlanError: Error {
@@ -45,7 +46,8 @@ final class OpenYammUITests: XCTestCase {
             }
             let maximumDuration = step.op == "background" ? 60.0 : 5.0
             guard (0...30).contains(step.timeout ?? 10),
-                  (0...maximumDuration).contains(step.duration ?? 0.1) else {
+                  (0...maximumDuration).contains(step.duration ?? 0.1),
+                  (0...30).contains(step.hold ?? 0) else {
                 throw PlanError.invalid("Timeout or gesture duration is out of range")
             }
         }
@@ -168,7 +170,8 @@ final class OpenYammUITests: XCTestCase {
                         start.doubleTap()
                     } else {
                         let end = window.coordinate(withNormalizedOffset: CGVector(dx: step.toX!, dy: step.toY!))
-                        start.press(forDuration: step.duration ?? 0.1, thenDragTo: end)
+                        start.press(forDuration: step.duration ?? 0.1, thenDragTo: end,
+                                    withVelocity: .default, thenHoldForDuration: step.hold ?? 0)
                     }
                 case "text":
                     app.typeText(step.text!)

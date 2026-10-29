@@ -636,17 +636,21 @@ bool GameplayScreenRuntime::mobileFlightControlsAvailable() const
 
 bool GameplayScreenRuntime::mobileInspectControlAvailable() const
 {
+    const GameplayHudScreenState hudScreenState = currentHudScreenState();
+
+    if (hudScreenState == GameplayHudScreenState::Character && standardTouchButtonLayoutId() != nullptr)
+    {
+        return true;
+    }
+
     const HudLayoutElement *pButton = findHudLayoutElement("OutdoorMobileInspectButton");
     const HudLayoutElement *pIcon = findHudLayoutElement("OutdoorMobileInspectButtonIcon");
     if (pButton == nullptr || !pButton->visible || !pButton->interactive
         || pIcon == nullptr || !pIcon->visible || pIcon->primaryAsset.empty())
     {
-        // Classic layouts have no inspect modifier. Its mobile touch region
-        // must not intercept unrelated controls such as the character tabs.
+        // Without a visible inspect modifier, never capture unrelated controls such as the character tabs.
         return false;
     }
-
-    const GameplayHudScreenState hudScreenState = currentHudScreenState();
 
     if (hudScreenState == GameplayHudScreenState::Gameplay || hudScreenState == GameplayHudScreenState::Chest)
     {
@@ -679,6 +683,86 @@ bool GameplayScreenRuntime::mobileInspectControlAvailable() const
             || inventoryOverlay.mode == GameplayUiController::InventoryNestedOverlayMode::ShopSell
             || inventoryOverlay.mode == GameplayUiController::InventoryNestedOverlayMode::ShopIdentify
             || inventoryOverlay.mode == GameplayUiController::InventoryNestedOverlayMode::ShopRepair);
+}
+
+void GameplayScreenRuntime::enableStandardTouchControls()
+{
+    m_standardTouchControlsEnabled = true;
+}
+
+const char *GameplayScreenRuntime::standardTouchButtonLayoutId() const
+{
+    if (!m_standardTouchControlsEnabled || settingsSnapshot().gameplayUiLayout != GameplayUiLayout::Standard)
+    {
+        return nullptr;
+    }
+
+    const GameplayHudScreenState hudScreenState = currentHudScreenState();
+    const char *pLayoutId = nullptr;
+
+    if (hudScreenState == GameplayHudScreenState::Gameplay && !pendingSpellTargetActive())
+    {
+        pLayoutId = "OutdoorStandardTopBar";
+    }
+    else if (hudScreenState == GameplayHudScreenState::Character && !isAdventurersInnScreenActive())
+    {
+        const GameplayUiController::CharacterScreenState &screen = characterScreenReadOnly();
+        if (screen.open && (screen.page == GameplayUiController::CharacterPage::Stats
+            || screen.page == GameplayUiController::CharacterPage::Skills
+            || screen.page == GameplayUiController::CharacterPage::Inventory))
+        {
+            pLayoutId = "CharacterTopBar";
+        }
+    }
+
+    const HudLayoutElement *pLayout = pLayoutId != nullptr ? findHudLayoutElement(pLayoutId) : nullptr;
+    return pLayout != nullptr && pLayout->visible ? pLayoutId : nullptr;
+}
+
+std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> GameplayScreenRuntime::standardTouchButtonRect(
+    int width,
+    int height) const
+{
+    const char *pLayoutId = standardTouchButtonLayoutId();
+    if (pLayoutId == nullptr || width <= 0 || height <= 0)
+    {
+        return std::nullopt;
+    }
+
+    const std::optional<ResolvedHudLayoutElement> topBar =
+        resolveHudLayoutElement(pLayoutId, width, height, 640.0f, 29.0f);
+    if (!topBar || topBar->width < 64.0f * topBar->scale || topBar->height < 24.0f * topBar->scale)
+    {
+        return std::nullopt;
+    }
+
+    // The authored top bars leave their last 75 logical pixels unused; character content starts at y=24.
+    // Keep one resolved rectangle for the visible button, HUD clicks and the inspect modifier.
+    ResolvedHudLayoutElement button = *topBar;
+    button.x += topBar->width - 64.0f * topBar->scale;
+    button.width = 60.0f * topBar->scale;
+    button.height = 24.0f * topBar->scale;
+    return button;
+}
+
+std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> GameplayScreenRuntime::mobileInspectButtonRect(
+    int width,
+    int height) const
+{
+    if (!mobileInspectControlAvailable() || width <= 0 || height <= 0)
+    {
+        return std::nullopt;
+    }
+
+    if (currentHudScreenState() == GameplayHudScreenState::Character && standardTouchButtonLayoutId() != nullptr)
+    {
+        return standardTouchButtonRect(width, height);
+    }
+
+    const HudLayoutElement *pButton = findHudLayoutElement("OutdoorMobileInspectButton");
+    return pButton != nullptr
+        ? resolveHudLayoutElement(pButton->id, width, height, pButton->width, pButton->height)
+        : std::nullopt;
 }
 
 float GameplayScreenRuntime::partyX() const

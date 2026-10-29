@@ -370,7 +370,8 @@ void GameInputSystem::updateFromEngineInput(
     bool mobileGameplayTouchControlsEnabled,
     bool mobileJumpGestureEnabled,
     bool mobileFlightControlsEnabled,
-    bool mobileInspectControlEnabled)
+    bool mobileInspectControlEnabled,
+    std::optional<SDL_FRect> mobileInspectButtonRect)
 {
     m_frame = {};
     ++m_inputFrameId;
@@ -616,8 +617,19 @@ void GameInputSystem::updateFromEngineInput(
                 || pointInsideRect(startLogicalX, startLogicalY, 320.0f, 360.0f, 420.0f, 120.0f);
         };
     const auto mobileInspectButtonAt =
-        [](float logicalX, float logicalY) -> bool
+        [mobileInspectButtonRect, touchScale](float logicalX, float logicalY) -> bool
         {
+            if (mobileInspectButtonRect)
+            {
+                return pointInsideRect(
+                    logicalX * touchScale,
+                    logicalY * touchScale,
+                    mobileInspectButtonRect->x,
+                    mobileInspectButtonRect->y,
+                    mobileInspectButtonRect->w,
+                    mobileInspectButtonRect->h);
+            }
+
             return pointInsideRect(
                 logicalX,
                 logicalY,

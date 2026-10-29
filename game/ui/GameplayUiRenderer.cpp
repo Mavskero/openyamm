@@ -1711,6 +1711,54 @@ void GameplayUiRenderer::renderMobileInspectButton(GameplayScreenRuntime &contex
         return;
     }
 
+    const std::optional<GameplayResolvedHudLayoutElement> touchButton = context.standardTouchButtonRect(width, height);
+    if (touchButton)
+    {
+        const bool inspectButton = context.currentHudScreenState() == GameplayHudScreenState::Character;
+        const GameplayInputFrame *pInput = context.currentGameplayInputFrame();
+        const bool pressed = pInput != nullptr && (inspectButton
+            ? pInput->rightMouseButton.held
+            : pInput->leftMouseButton.held
+                && context.isPointerInsideResolvedElement(*touchButton, pInput->pointerX, pInput->pointerY));
+        const std::optional<GameplayHudTextureHandle> background =
+            context.gameplayUiRuntime().ensureHudTextureLoaded(pressed ? "butn4d" : "butn4u");
+        if (!background)
+        {
+            return;
+        }
+
+        context.prepareHudView(width, height);
+        context.submitHudTexturedQuad(
+            *background, touchButton->x, touchButton->y, touchButton->width, touchButton->height);
+        GameplayResolvedHudLayoutElement labelRect = *touchButton;
+        if (inspectButton)
+        {
+            const std::optional<GameplayHudTextureHandle> icon =
+                context.gameplayUiRuntime().ensureHudTextureLoaded(pressed ? "magnif-a" : "magnif-b");
+            if (icon)
+            {
+                context.submitHudTexturedQuad(*icon,
+                    touchButton->x + 3.0f * touchButton->scale,
+                    touchButton->y + 1.5f * touchButton->scale,
+                    14.0f * touchButton->scale,
+                    21.0f * touchButton->scale);
+                labelRect.x += 18.0f * touchButton->scale;
+                labelRect.width -= 18.0f * touchButton->scale;
+            }
+        }
+
+        UiLayoutManager::LayoutElement label = {};
+        label.id = inspectButton ? "StandardTouchInspectButton" : "StandardTouchSpellbookButton";
+        label.fontName = "Lucida";
+        label.textAlignX = UiLayoutManager::TextAlignX::Center;
+        label.textAlignY = UiLayoutManager::TextAlignY::Middle;
+        label.textFitHeight = true;
+        label.textPadX = 2.0f;
+        label.textPadY = 1.0f;
+        context.renderLayoutLabel(label, labelRect, inspectButton ? "检查" : "法术");
+        return;
+    }
+
     if (!context.mobileInspectControlAvailable())
     {
         return;

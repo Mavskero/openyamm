@@ -4,6 +4,7 @@
 #include "game/gameplay/GameMechanics.h"
 #include "game/gameplay/AwardRuntime.h"
 #include "game/gameplay/GameplayInputFrame.h"
+#include "game/gameplay/GameplaySaveLoadUiSupport.h"
 #include "game/gameplay/JournalQuestRuntime.h"
 #include "game/events/EvtEnums.h"
 #include "game/gameplay/StoryTextFormatter.h"
@@ -3525,8 +3526,6 @@ void GameplayPartyOverlayRenderer::renderVideoOptionsOverlay(GameplayScreenRunti
         settings.tinting);
 }
 
-constexpr size_t SaveLoadVisibleSlotCount = 10;
-
 void GameplayPartyOverlayRenderer::renderSaveLoadOverlay(
     GameplayScreenRuntime &context,
     int width,
@@ -3733,7 +3732,7 @@ void GameplayPartyOverlayRenderer::renderSaveLoadOverlay(
         }
     }
 
-    for (size_t row = 0; row < SaveLoadVisibleSlotCount; ++row)
+    for (size_t row = 0; row < GameplaySaveLoadVisibleSlotCount; ++row)
     {
         const size_t slotIndex = scrollOffset + row;
         const std::string layoutId = std::string(pRowPrefix) + std::to_string(row);
@@ -3830,12 +3829,12 @@ void GameplayPartyOverlayRenderer::renderSaveLoadOverlay(
         {
             float thumbY = baseThumbRect->y;
 
-            if (slots.size() > SaveLoadVisibleSlotCount)
+            if (slots.size() > GameplaySaveLoadVisibleSlotCount)
             {
                 const float trackTop = upButtonRect->y + upButtonRect->height;
                 const float trackBottom = downButtonRect->y;
                 const float travel = std::max(0.0f, trackBottom - trackTop - baseThumbRect->height);
-                const float maxOffset = static_cast<float>(slots.size() - SaveLoadVisibleSlotCount);
+                const float maxOffset = static_cast<float>(slots.size() - GameplaySaveLoadVisibleSlotCount);
                 const float t = maxOffset > 0.0f ? static_cast<float>(scrollOffset) / maxOffset : 0.0f;
                 thumbY = std::round(trackTop + travel * t);
             }

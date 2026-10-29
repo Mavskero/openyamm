@@ -26,7 +26,8 @@ public:
         bool mobileGameplayTouchControlsEnabled = true,
         bool mobileJumpGestureEnabled = true,
         bool mobileFlightControlsEnabled = false,
-        bool mobileInspectControlEnabled = true);
+        bool mobileInspectControlEnabled = true,
+        std::optional<SDL_FRect> mobileInspectButtonRect = std::nullopt);
 
     const GameplayInputFrame &frame() const;
     bool consumeMobileDebugConsoleToggleRequested();

@@ -315,6 +315,14 @@ GameplayHudPointerTarget GameplayHudInputController::resolveGameplayHudButtonTar
 
     const float pointerX = config.pointerX;
     const float pointerY = config.pointerY;
+    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> touchButton =
+        context.standardTouchButtonRect(config.screenWidth, config.screenHeight);
+    if (context.currentHudScreenState() == GameplayHudScreenState::Gameplay
+        && touchButton && context.isPointerInsideResolvedElement(*touchButton, pointerX, pointerY))
+    {
+        return {GameplayHudPointerTargetType::CastButton};
+    }
+
     const GameplayContextActionState &contextActionState = context.contextActionStateReadOnly();
     const bool hasDropHeldItemAction =
         contextActionState.visible
