@@ -1,0 +1,119 @@
+{
+  "checked_at": "2026-10-29T15:06:41.476893+00:00",
+  "release_tag": "ipados-ui-cumulative-214-20261029",
+  "release_url": "https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-cumulative-214-20261029",
+  "source_head": "3aee33974a7cb1d90e26e4fb8257e341e8256a8b",
+  "published": true,
+  "artifact_count": 15,
+  "artifacts": [
+    {
+      "name": "engine.zip",
+      "sha256": "8698629b56973916a844af1594af028db48355bfc2a1b492979ce9b6872f230d",
+      "bytes": 714319667,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/engine.zip",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "conversion.json",
+      "sha256": "10bb2d799412e39d85cd928fc15d4b1f1cc4e8c7120972a01f5cc08e038da9b7",
+      "bytes": 82197,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/conversion.json",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "mm6.zip",
+      "sha256": "154aa325d69eedd9c0b3cd3e96c730db4cec581e23ebe975eaaf93903ffbf676",
+      "bytes": 641050692,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/mm6.zip",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "mm7.zip",
+      "sha256": "ef24f9591ac7ee0d431a4cc943ee276d687c6a7a2e5b27a53464d8ab806d9c5d",
+      "bytes": 1019781051,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/mm7.zip",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "mm8.zip",
+      "sha256": "0def37a4ebb5b302462e310325f75f3fb7f339852cd9111bfbb938787fe1e126",
+      "bytes": 978282137,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/mm8.zip",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "mmmerge.zip",
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e",
+      "bytes": 151441875,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/mmmerge.zip",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "SHA256SUMS",
+      "sha256": "ff5be6189bd36a9d62cbde35f9d2122c5066b5d9f75eb8cf2919c1df4124e2e5",
+      "bytes": 487,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/SHA256SUMS",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "OpenYAMM-214-iPadOS-unsigned.zip",
+      "sha256": "25a7247016eeaedd9616071c8a93ef7bed557d1ef68d9bb0ccb80bcb731f6dcd",
+      "bytes": 12941895,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/OpenYAMM-214-iPadOS-unsigned.zip",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "source.tar.gz",
+      "sha256": "ac14f836b03b6cb2f345c0bd29e2bc1817e40352a41d11dd25adf70e6d0e46e6",
+      "bytes": 63616684,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/source.tar.gz",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "SOURCE-MANIFEST.json",
+      "sha256": "0673a38796e9674c9a496c624ae505a70c4403f4d15511b6cdbc3d270b3ba8db",
+      "bytes": 611924,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/SOURCE-MANIFEST.json",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "VERSION.json",
+      "sha256": "920db9b20f2da16a7e86b30bf413a84e899e32791fb88b51b8b4e8e8edd06944",
+      "bytes": 5923,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/VERSION.json",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "IPADOS_HANDOFF.md",
+      "sha256": "f8e3a05254dd28c7eec3b4449daabcceadc857f8b1a55920be7664569e4a20fa",
+      "bytes": 9279,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/IPADOS_HANDOFF.md",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "CODEX_IPAD_DEVICE_PROMPT.md",
+      "sha256": "8c5c9fbc6988121f407d110605e3d0ae93b9621bbe807eb995545efa464214d6",
+      "bytes": 5591,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/CODEX_IPAD_DEVICE_PROMPT.md",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "README-IPAD-214.md",
+      "sha256": "f435311e43b247c64563494896370d6563872c3068793e0a3d9621fb6266f827",
+      "bytes": 6073,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/README-IPAD-214.md",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    },
+    {
+      "name": "ARTIFACT-SHA256SUMS",
+      "sha256": "fd1b4f17138d91d4201447df22019ba49efd5e61628b37178e3b1759b7d5edaf",
+      "bytes": 1144,
+      "url": "https://github.com/Mavskero/openyamm/releases/download/ipados-ui-cumulative-214-20261029/ARTIFACT-SHA256SUMS",
+      "status": "REMOTE_SHA256_AND_SIZE_MATCH"
+    }
+  ],
+  "runtime_files_all_included": true,
+  "device_test": false,
+  "natural_campaign_proven": false,
+  "tag_commit_verified": true
+}

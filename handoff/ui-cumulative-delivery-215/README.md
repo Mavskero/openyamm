@@ -1,5 +1,11 @@
 # OpenYAMM iPadOS 214：累计代码和完整资源交付
 
+发布已完成：固定源码 `3aee33974a7cb1d90e26e4fb8257e341e8256a8b`，
+[tag及16个附件](https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-cumulative-214-20261029)
+均已核对远端SHA256与大小。15个主体附件的记录见 [delivery.json](delivery.json)，
+包含该记录自身的最终16项确认见 [remote-final-verification.json](remote-final-verification.json)。
+后续分支中的交付回执提交不改变上述固定源码或App。仅交付完成，完整可玩可通关目标仍在进行。
+
 本次整合固定195发布之后196–214的修复，并纳入接收端195真机反馈的修复。
 这是一次集中交付；固定195 tag和历史RC保持原样，不增加新的设备检查矩阵或开发停工门槛。
 

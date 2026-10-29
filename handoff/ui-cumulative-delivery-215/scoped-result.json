@@ -1,0 +1,49 @@
+{
+  "checkpoint": 215,
+  "status": "ACCEPTED_PUBLISHED_DELIVERY_SCOPED",
+  "completed_at": "2026-10-29T15:08:32.721942+00:00",
+  "release_url": "https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-cumulative-214-20261029",
+  "release_tag": "ipados-ui-cumulative-214-20261029",
+  "source_head": "3aee33974a7cb1d90e26e4fb8257e341e8256a8b",
+  "production_commit": "3089f6be0941830accccf371a53a6abd6e0da811",
+  "runtime_checkpoint": 207,
+  "runtime": "local-data/validation/ui-function-completion-207/runtime-001",
+  "runtime_payload_count": 6,
+  "runtime_bytes": 3504957619,
+  "core_payloads_verified": 15,
+  "receipt_verified": 1,
+  "total_attachments_verified": 16,
+  "source_files": 2319,
+  "source_archive_sha256": "ac14f836b03b6cb2f345c0bd29e2bc1817e40352a41d11dd25adf70e6d0e46e6",
+  "ios_archive": "OpenYAMM-214-iPadOS-unsigned.zip",
+  "ios_archive_sha256": "25a7247016eeaedd9616071c8a93ef7bed557d1ef68d9bb0ccb80bcb731f6dcd",
+  "save_version": 104,
+  "tag_commit_verified": true,
+  "original_inputs_unchanged": true,
+  "new_builds": 0,
+  "app_runs": 0,
+  "campaign_replays": 0,
+  "device_or_simulator_operations": 0,
+  "preserved": [
+    "Fixed195 release",
+    "RC1/RC2/RC3",
+    "Original runtime and App",
+    "Old save inputs"
+  ],
+  "notification_status": "PENDING_AFTER_DOCUMENT_PUSH",
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "natural_campaign_proven": false,
+  "notes": [
+    "One cumulative196–214 delivery. No new device matrix is dispatched.",
+    "Source archive and release tag remain fixed even when receipt-only branch commits advance.",
+    "HUD bounds suspicion was closed by source/image geometry; no clipping defect confirmed."
+  ],
+  "evidence": {
+    "published": "remote-published-verification.json",
+    "final": "remote-final-verification.json",
+    "receipt": "delivery.json"
+  }
+}
