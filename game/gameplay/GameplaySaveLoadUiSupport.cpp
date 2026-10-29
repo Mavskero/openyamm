@@ -79,7 +79,7 @@ void refreshSaveGameSlots(
         saveGameScreen.errorText = "无法访问存档目录";
     }
 
-    for (size_t index = 0; index < GameplaySaveLoadVisibleSlotCount; ++index)
+    for (size_t index = 0; index < GameplaySaveGameSlotCount; ++index)
     {
         GameplayUiController::SaveSlotSummary slot = {};
         slot.path = std::filesystem::path("saves") / ("save" + std::to_string(index + 1) + ".oysav");

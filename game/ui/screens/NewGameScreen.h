@@ -69,6 +69,7 @@ public:
     void handleSdlEvent(const SDL_Event &event) override;
     bool textInputActive() const;
     SDL_Rect textInputArea(int windowWidth, int windowHeight) const;
+    std::optional<SDL_FRect> mobileInspectButtonRect(int windowWidth, int windowHeight) const;
 
 private:
     friend struct NewGameScreenTestAccess;
@@ -152,6 +153,7 @@ private:
     void cancelCreation();
     bool ensureLayoutLoaded();
     bool ensureContinentLayoutLoaded();
+    MenuScreenBase::Rect characterCreationRootRect(int windowWidth, int windowHeight) const;
     std::optional<MenuScreenBase::Rect> resolveLayoutRect(
         const std::string &layoutId,
         float fallbackWidth = 0.0f,
@@ -222,6 +224,7 @@ private:
     bool m_layoutLoaded = false;
     bool m_continentLayoutLoaded = false;
     bool m_characterCreationInitialized = false;
+    bool m_mobileTouchInputSeen = false;
     bool m_escapePressed = false;
     bool m_returnPressed = false;
 };

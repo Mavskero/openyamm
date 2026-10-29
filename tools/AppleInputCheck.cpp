@@ -1,6 +1,7 @@
 #include "game/app/GameInputSystem.h"
 #include "game/app/GameSession.h"
 #include "game/gameplay/GameplayOverlayInputController.h"
+#include "game/gameplay/GameplayHudInputController.h"
 #include "game/gameplay/GameplayInteractionController.h"
 #include "game/gameplay/GameplayScreenController.h"
 #include "game/ui/Utf8Text.h"
@@ -195,7 +196,9 @@ int main()
             skillsSession.bindActiveWorldRuntime(&skillWorld);
             GameDataRepository skillData;
             skillsSession.bindDataRepository(&skillData);
-            skillsRuntime.bindSettings(&settings);
+            GameSettings touchSettings = settings;
+            touchSettings.gameplayUiLayout = GameplayUiLayout::Standard;
+            skillsRuntime.bindSettings(&touchSettings);
             skillsRuntime.characterScreen().open = true;
             skillsRuntime.characterScreen().page = GameplayUiController::CharacterPage::Skills;
             GameplayInputFrame scroll = {};
@@ -248,6 +251,144 @@ int main()
             require(skillsRuntime.characterScreen().skillScrollOffset == 0
                 && !skillsRuntime.characterScreen().skillDragActive && skillParty.activeMember()->skillPoints == 98,
                 "Touch scrolling must return to the top without spending skill points");
+
+            require(!skillsRuntime.standardTouchButtonRect(1210, 834),
+                "Desktop input unexpectedly enables the Standard touch button");
+            skillsRuntime.enableStandardTouchControls();
+            for (const GameplayUiController::CharacterPage characterPage : {
+                GameplayUiController::CharacterPage::Stats,
+                GameplayUiController::CharacterPage::Skills,
+                GameplayUiController::CharacterPage::Inventory})
+            {
+                skillsRuntime.characterScreen().page = characterPage;
+                const std::optional<GameplayResolvedHudLayoutElement> button =
+                    skillsRuntime.standardTouchButtonRect(1210, 834);
+                const std::optional<GameplayResolvedHudLayoutElement> inspect =
+                    skillsRuntime.mobileInspectButtonRect(1210, 834);
+                require(button && inspect && button->x == inspect->x && button->y == inspect->y
+                    && button->width == inspect->width && button->height == inspect->height,
+                    "Character touch inspection must use its visible button rectangle on every supported page");
+                for (const auto &[id, element] : skillsSession.gameplayUiRuntime().layoutManager().elements())
+                {
+                    if (!element.visible || !element.interactive)
+                    {
+                        continue;
+                    }
+                    const std::optional<GameplayResolvedHudLayoutElement> other =
+                        skillsRuntime.resolveHudLayoutElement(id, 1210, 834, element.width, element.height);
+                    require(!other || button->x + button->width <= other->x || other->x + other->width <= button->x
+                        || button->y + button->height <= other->y || other->y + other->height <= button->y,
+                        "Standard inspect button overlaps authored control " + id);
+                }
+            }
+            skillsRuntime.characterScreen().page = GameplayUiController::CharacterPage::Skills;
+            skillsRuntime.characterScreen().skillScrollOffset = page.maximumScroll;
+            const auto inspectTarget = [&](float targetX, float targetY, bool releaseModifierFirst)
+            {
+                const std::optional<GameplayResolvedHudLayoutElement> button =
+                    skillsRuntime.mobileInspectButtonRect(1210, 834);
+                require(button.has_value(), "Cannot resolve the visible character inspect modifier");
+                const SDL_FRect inputRect = {button->x, button->y, button->width, button->height};
+                const float modifierX = (button->x + button->width / 2) / 1210;
+                const float modifierY = (button->y + button->height / 2) / 834;
+                const auto inspectFrame = [&]()
+                {
+                    input.updateFromEngineInput(1210, 834, 0, touchSettings, false, false,
+                        false, false, true, inputRect);
+                    require(!input.frame().leftMouseButton.held && !input.frame().leftMouseButton.pressed
+                        && !input.frame().leftMouseButton.released,
+                        "Inspection replayed a target finger as a left click");
+                    GameplayPartyOverlayInputController::handleCharacterOverlayInput(skillsRuntime, input.frame());
+                };
+                finger(SDL_EVENT_FINGER_DOWN, 701, modifierX, modifierY);
+                inspectFrame();
+                finger(SDL_EVENT_FINGER_DOWN, 702, targetX / 1210, targetY / 834);
+                inspectFrame();
+                require(input.frame().rightMouseButton.held
+                    && std::abs(input.frame().pointerX - targetX) < 0.01f
+                    && std::abs(input.frame().pointerY - targetY) < 0.01f,
+                    "The visible inspect modifier did not inspect the second finger target");
+                if (releaseModifierFirst)
+                {
+                    finger(SDL_EVENT_FINGER_UP, 701, modifierX, modifierY);
+                    inspectFrame();
+                    finger(SDL_EVENT_FINGER_UP, 702, targetX / 1210, targetY / 834);
+                }
+                else
+                {
+                    finger(SDL_EVENT_FINGER_UP, 702, targetX / 1210, targetY / 834);
+                    inspectFrame();
+                    require(input.frame().rightMouseButton.held,
+                        "Releasing the target finger discarded inspection while the modifier remained held");
+                    finger(SDL_EVENT_FINGER_UP, 701, modifierX, modifierY);
+                }
+                inspectFrame();
+                inspectFrame();
+                require(!input.frame().rightMouseButton.held, "Inspect release left the right button held");
+            };
+            inspectTarget(last.x + 10, last.y + last.height / 2, false);
+            require(skillParty.activeMember()->skillPoints == 98
+                && skillParty.activeMember()->findSkill("VampireAbility")->level == 2,
+                "Touch skill inspection or target release spent skill points");
+            skillsRuntime.characterScreen().page = GameplayUiController::CharacterPage::Inventory;
+            const auto inventoryGrid = skillsRuntime.resolveHudLayoutElement("CharacterInventoryGrid", 1210, 834, 0, 0);
+            require(inventoryGrid && !skillParty.activeMember()->inventory.empty(),
+                "Default party must provide a real occupied inventory target");
+            const InventoryItem inventoryItem = skillParty.activeMember()->inventory.front();
+            const size_t inventoryCount = skillParty.activeMember()->inventory.size();
+            const float inventoryX = inventoryGrid->x
+                + (inventoryItem.gridX + 0.5f) * inventoryGrid->width / Character::InventoryWidth;
+            const float inventoryY = inventoryGrid->y
+                + (inventoryItem.gridY + 0.5f) * inventoryGrid->height / Character::InventoryHeight;
+            inspectTarget(inventoryX, inventoryY, true);
+            require(!skillsRuntime.heldInventoryItem().active
+                && skillParty.activeMember()->inventory.size() == inventoryCount,
+                "Touch inventory inspection or release picked up an item");
+
+            const std::filesystem::path gameplayPath = layoutPath.parent_path() / "gameplay.yml";
+            std::ifstream gameplayFile(gameplayPath);
+            require(gameplayFile.good(), "Cannot open authored Standard HUD layout");
+            const std::string gameplayText{std::istreambuf_iterator<char>(gameplayFile),
+                std::istreambuf_iterator<char>()};
+            require(skillsSession.gameplayUiRuntime().layoutManager().loadLayoutText("standard-touch", gameplayText),
+                "Cannot load authored Standard HUD layout");
+            skillsRuntime.characterScreen().open = false;
+            const auto spellButton = skillsRuntime.standardTouchButtonRect(1210, 834);
+            require(spellButton && !skillsRuntime.mobileInspectButtonRect(1210, 834),
+                "Gameplay spell entry must not become an inspect modifier");
+            for (const char *pId : {"OutdoorStandardButtonOptions", "OutdoorStandardButtonQuickReference",
+                "OutdoorStandardButtonRest", "OutdoorStandardButtonBooks"})
+            {
+                const auto other = skillsRuntime.resolveHudLayoutElement(pId, 1210, 834, 0, 0);
+                require(other && other->x + other->width <= spellButton->x,
+                    std::string("Standard spell entry overlaps authored top bar control ") + pId);
+            }
+            GameplayHudButtonInputConfig spellClick = {};
+            spellClick.screenWidth = 1210;
+            spellClick.screenHeight = 834;
+            spellClick.pointerX = spellButton->x + spellButton->width / 2;
+            spellClick.pointerY = spellButton->y + spellButton->height / 2;
+            spellClick.allowInput = true;
+            require(GameplayHudInputController::resolveGameplayHudButtonTarget(skillsRuntime, spellClick).type
+                == GameplayHudPointerTargetType::CastButton,
+                "Visible Standard spell button has no matching HUD target");
+            const auto spellFrame = [&]()
+            {
+                input.updateFromEngineInput(1210, 834, 0, touchSettings, false, true, false, false, false);
+                spellClick.pointerX = input.frame().pointerX;
+                spellClick.pointerY = input.frame().pointerY;
+                spellClick.leftButtonPressed = input.frame().leftMouseButton.held;
+                GameplayHudInputController::handleGameplayHudButtonInput(skillsRuntime, spellClick);
+            };
+            const float spellX = spellClick.pointerX / 1210;
+            const float spellY = spellClick.pointerY / 834;
+            finger(SDL_EVENT_FINGER_DOWN, 703, spellX, spellY);
+            spellFrame();
+            require(!skillsRuntime.spellbook().active, "Standard spell entry activated before release");
+            finger(SDL_EVENT_FINGER_UP, 703, spellX, spellY);
+            spellFrame();
+            require(skillsRuntime.spellbook().active && !skillsRuntime.standardTouchButtonRect(1210, 834),
+                "Standard spell entry did not open the real spellbook or remained visible above it");
         }
         require(!runtime.mobileInspectControlAvailable(),
             "An absent mobile inspect button still captures the classic character tabs");
@@ -662,7 +803,25 @@ elements:
         GameplayUiController::SaveGameScreenState &saveScreen = runtime.saveGameScreenState();
         saveScreen.active = true;
         saveScreen.slots.resize(1);
+        saveScreen.slots[0].fileLabel = "空槽";
+        // Enable request preparation only. The scene adapter below captures requests without writing files.
+        session.setSaveGameToPathCallback(
+            [](const std::filesystem::path &, const std::string &, const std::vector<uint8_t> &, std::string &)
+            {
+                return false;
+            });
+        const std::optional<GameplayScreenRuntime::PreparedSaveGameRequest> emptySlotRequest =
+            runtime.prepareSelectedSaveGameRequest();
+        require(emptySlotRequest.has_value() && emptySlotRequest->saveName == "Save Game",
+            "Localized empty slot label became the saved name");
         saveScreen.slots[0].fileLabel = "Empty";
+        saveScreen.slots[0].populated = true;
+        const std::optional<GameplayScreenRuntime::PreparedSaveGameRequest> populatedSlotRequest =
+            runtime.prepareSelectedSaveGameRequest();
+        require(populatedSlotRequest.has_value() && populatedSlotRequest->saveName == "Empty",
+            "A populated save named Empty lost its name");
+        saveScreen.slots[0].fileLabel = "空槽";
+        saveScreen.slots[0].populated = false;
         require(session.gameplayUiRuntime().layoutManager().loadLayoutText("save-touch", R"(
 screen: SaveGame
 elements:
@@ -690,7 +849,7 @@ elements:
             require(saveScreen.editActive == (frameIndex == 3),
                 "Real save controller did not enter editing on the second completed touch tap");
         }
-        saveScreen.editBuffer.clear();
+        require(saveScreen.editBuffer.empty(), "Localized empty slot label was copied into the edit buffer");
         const auto textInput = [&](const char *pText)
         {
             SDL_Event event = {};
@@ -734,10 +893,11 @@ elements:
         }
         struct SaveInputAdapter final : IGameplayOverlaySceneAdapter
         {
-            GameplayUiController::SaveGameScreenState &state;
-            std::string committedName;
+            GameplayScreenRuntime &m_runtime;
+            std::string m_committedName;
+            bool m_acceptSave = false;
 
-            explicit SaveInputAdapter(GameplayUiController::SaveGameScreenState &saveState) : state(saveState)
+            explicit SaveInputAdapter(GameplayScreenRuntime &screenRuntime) : m_runtime(screenRuntime)
             {
             }
             float gameplayCameraYawRadians() const override
@@ -753,10 +913,14 @@ elements:
             }
             bool trySaveToSelectedGameSlot() override
             {
-                committedName = state.slots[state.selectedIndex].fileLabel;
-                return true;
+                return m_runtime.trySaveToSelectedGameSlot(
+                    [this](const GameplayScreenRuntime::PreparedSaveGameRequest &request)
+                    {
+                        m_committedName = request.saveName;
+                        return m_acceptSave;
+                    });
             }
-        } saveAdapter(saveScreen);
+        } saveAdapter(runtime);
         runtime.bindSceneAdapter(&saveAdapter);
         saveScreen.editBuffer = "连";
         SDL_Event committedText = {};
@@ -766,7 +930,16 @@ elements:
         keyTap(SDL_SCANCODE_RETURN);
         update();
         GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
-        require(saveAdapter.committedName == "连续", "Return saved before the same-frame IME text was applied");
+        require(saveAdapter.m_committedName == "连续", "Return saved before the same-frame IME text was applied");
+        require(saveScreen.editActive && saveScreen.editBuffer == "连续" && saveScreen.slots[0].fileLabel == "空槽",
+            "Rejected save discarded the editable name or changed the slot label");
+        textInput("修正");
+        saveAdapter.m_acceptSave = true;
+        keyTap(SDL_SCANCODE_RETURN);
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        require(saveAdapter.m_committedName == "连续修正" && saveScreen.editActive
+            && saveScreen.editBuffer == "连续修正", "Corrected Chinese name was lost while the save was pending");
         runtime.clearSceneAdapter(&saveAdapter);
         update();
         GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
@@ -774,8 +947,80 @@ elements:
         update();
         GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
         require(!saveScreen.active, "Short Escape did not close the save overlay");
+        saveScreen.active = true;
+        saveScreen.editActive = false;
+        saveScreen.scrollOffset = 0;
+        saveScreen.selectedIndex = 0;
+        saveScreen.slots.resize(11);
+        for (size_t index = 0; index < saveScreen.slots.size(); ++index)
+        {
+            saveScreen.slots[index].path = std::filesystem::path("saves")
+                / ("save" + std::to_string(index + 1) + ".oysav");
+            saveScreen.slots[index].populated = index < 10;
+            saveScreen.slots[index].fileLabel = index < 10 ? "Existing" : "空槽";
+        }
+        require(session.gameplayUiRuntime().layoutManager().loadLayoutText("save-touch-paging", R"(
+screen: SaveGame
+elements:
+  - id: SaveGameSlotRow9
+    anchor: top_left
+    offset_x: 100
+    offset_y: 500
+    width: 200
+    height: 40
+    interactive: true
+  - id: SaveGameScrollDownButton
+    anchor: top_left
+    offset_x: 320
+    offset_y: 500
+    width: 40
+    height: 40
+    interactive: true
+  - id: SaveGameScrollUpButton
+    anchor: top_left
+    offset_x: 320
+    offset_y: 100
+    width: 40
+    height: 40
+    interactive: true
+)"), "Cannot prepare save pagination input layout");
+        const auto tapSaveElement = [&](const char *pId, SDL_FingerID id)
+        {
+            const auto element = runtime.resolveHudLayoutElement(pId, 1440, 1000, 40, 40);
+            require(element.has_value(), "Cannot resolve save pagination target");
+            const float x = (element->x + element->width / 2.0f) / 1440.0f;
+            const float y = (element->y + element->height / 2.0f) / 1000.0f;
+            finger(SDL_EVENT_FINGER_DOWN, id, x, y);
+            finger(SDL_EVENT_FINGER_UP, id, x, y);
+            for (int frame = 0; frame < 2; ++frame)
+            {
+                update(false, false);
+                GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+            }
+        };
+        tapSaveElement("SaveGameScrollDownButton", 70);
+        require(saveScreen.scrollOffset == 1, "Full save page cannot reach the next empty slot");
+        tapSaveElement("SaveGameScrollDownButton", 71);
+        require(saveScreen.scrollOffset == 1, "Save scrolling exceeded the last visible page");
+        tapSaveElement("SaveGameSlotRow9", 72);
+        tapSaveElement("SaveGameSlotRow9", 73);
+        require(saveScreen.selectedIndex == 10 && saveScreen.editSlotIndex == 10
+            && saveScreen.editActive && saveScreen.editBuffer.empty(),
+            "Scrolled save row edited an occupied slot or copied the empty label");
+        textInput("中文旅行");
+        const auto scrolledSave = runtime.prepareSelectedSaveGameRequest();
+        require(scrolledSave.has_value() && scrolledSave->path.filename() == "save11.oysav"
+            && scrolledSave->saveName == "中文旅行" && saveScreen.slots[9].fileLabel == "Existing",
+            "Scrolled save request lost its absolute slot or changed the previous save");
+        tapSaveElement("SaveGameScrollUpButton", 74);
+        require(saveScreen.scrollOffset == 0, "Save scroll up did not return to the first page");
+        tapSaveElement("SaveGameScrollUpButton", 75);
+        require(saveScreen.scrollOffset == 0, "Save scrolling underflowed the first page");
+        escapeTap();
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
         std::cout << "Touch, short movement/rest/combat input, focus, real menu clicks "
-            "and Chinese save editing passed\n";
+            "and Chinese save editing/pagination passed\n";
         SDL_Quit();
         return 0;
     }

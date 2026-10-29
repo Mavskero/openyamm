@@ -80,7 +80,6 @@ constexpr float HudFontIntegerSnapThreshold = 0.1f;
 constexpr uint64_t SaveGameDoubleClickWindowMs = 500;
 constexpr uint64_t SaveGameEraseInitialRepeatDelayMs = 350;
 constexpr uint64_t SaveGameEraseRepeatIntervalMs = 65;
-constexpr size_t SaveLoadVisibleSlotCount = 10;
 constexpr const char *pDuplicateSaveGameNameError = "Save name already exists.";
 
 struct SaveGameKeyBinding
@@ -210,12 +209,7 @@ bool commitSaveGameEditAndSave(
         }
 
         saveGameScreen.selectedIndex = saveGameScreen.editSlotIndex;
-        saveGameScreen.slots[saveGameScreen.editSlotIndex].fileLabel =
-            saveGameScreen.editBuffer.empty()
-                ? "Empty"
-                : saveGameScreen.editBuffer;
-        saveGameScreen.editActive = false;
-        saveGameScreen.editBuffer.clear();
+        // The request reads editBuffer. A successful save refreshes the slots; failure keeps the name editable.
         saveGameScreen.errorText.clear();
     }
 
@@ -2030,13 +2024,52 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
         resetSaveGameEditInputState(view.interactionState());
     }
 
+    const size_t maximumScrollOffset = saveGameScreen.slots.size() > GameplaySaveLoadVisibleSlotCount
+        ? saveGameScreen.slots.size() - GameplaySaveLoadVisibleSlotCount : 0;
+    saveGameScreen.scrollOffset = std::min(saveGameScreen.scrollOffset, maximumScrollOffset);
+    const auto scrollSlots = [&view, &saveGameScreen, maximumScrollOffset](bool down)
+    {
+        const size_t previousOffset = saveGameScreen.scrollOffset;
+        if (down && saveGameScreen.scrollOffset < maximumScrollOffset)
+        {
+            ++saveGameScreen.scrollOffset;
+        }
+        else if (!down && saveGameScreen.scrollOffset > 0)
+        {
+            --saveGameScreen.scrollOffset;
+        }
+
+        if (saveGameScreen.scrollOffset != previousOffset)
+        {
+            // Scrolling leaves name editing without submitting it, just as selecting another slot does.
+            saveGameScreen.editActive = false;
+            saveGameScreen.editSlotIndex = 0;
+            saveGameScreen.editBuffer.clear();
+            saveGameScreen.errorText.clear();
+            resetSaveGameEditInputState(view.interactionState());
+            view.interactionState().lastSaveGameClickedSlotIndex = std::numeric_limits<size_t>::max();
+            view.interactionState().lastSaveGameSlotClickTicks = 0;
+        }
+    };
+    if (input.mouseWheelDelta != 0.0f)
+    {
+        scrollSlots(input.mouseWheelDelta < 0.0f);
+    }
+
     const HudPointerState savePointerState = pointerStateFromInput(input);
     const GameplaySaveLoadPointerTarget noneSaveTarget = {};
     const auto findSavePointerTarget =
-        [&view, screenWidth, screenHeight](float pointerX, float pointerY) -> GameplaySaveLoadPointerTarget
+        [&view, &saveGameScreen, screenWidth, screenHeight](float pointerX, float pointerY)
+            -> GameplaySaveLoadPointerTarget
         {
-            for (size_t row = 0; row < SaveLoadVisibleSlotCount; ++row)
+            for (size_t row = 0; row < GameplaySaveLoadVisibleSlotCount; ++row)
             {
+                const size_t slotIndex = saveGameScreen.scrollOffset + row;
+                if (slotIndex >= saveGameScreen.slots.size())
+                {
+                    break;
+                }
+
                 const std::string layoutId = "SaveGameSlotRow" + std::to_string(row);
                 GameplaySaveLoadPointerTarget target = resolveSaveLoadPointerTarget(
                     view,
@@ -2049,7 +2082,7 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
 
                 if (target.type != GameplaySaveLoadPointerTargetType::None)
                 {
-                    target.slotIndex = row;
+                    target.slotIndex = slotIndex;
                     return target;
                 }
             }
@@ -2112,7 +2145,7 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
         view.interactionState().saveGamePressedTarget,
         noneSaveTarget,
         findSavePointerTarget,
-        [&view, &saveGameScreen](const GameplaySaveLoadPointerTarget &target)
+        [&view, &saveGameScreen, &scrollSlots](const GameplaySaveLoadPointerTarget &target)
         {
             switch (target.type)
             {
@@ -2139,9 +2172,9 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
                         saveGameScreen.editActive = true;
                         saveGameScreen.editSlotIndex = slotIndex;
                         saveGameScreen.editBuffer =
-                            saveGameScreen.slots[slotIndex].fileLabel == "Empty"
-                                ? std::string()
-                                : saveGameScreen.slots[slotIndex].fileLabel;
+                            saveGameScreen.slots[slotIndex].populated
+                                ? saveGameScreen.slots[slotIndex].fileLabel
+                                : std::string();
                         saveGameScreen.errorText.clear();
                         resetSaveGameEditInputState(view.interactionState());
                     }
@@ -2152,7 +2185,11 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
                 break;
 
             case GameplaySaveLoadPointerTargetType::ScrollUpButton:
+                scrollSlots(false);
+                break;
+
             case GameplaySaveLoadPointerTargetType::ScrollDownButton:
+                scrollSlots(true);
                 break;
 
             case GameplaySaveLoadPointerTargetType::ConfirmButton:

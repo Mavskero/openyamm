@@ -49,6 +49,9 @@ constexpr int MaximumStatValue = 25;
 constexpr int BoostedMaximumStatValue = 34;
 constexpr float InspectPopupWidth = 425.0f;
 constexpr float InspectPopupGap = 12.0f;
+constexpr float MobileInspectButtonInset = 8.0f;
+constexpr float MobileInspectButtonWidth = 42.0f;
+constexpr float MobileInspectButtonHeight = 64.0f;
 constexpr float NameBackspaceInitialRepeatDelaySeconds = 0.35f;
 constexpr float NameBackspaceRepeatIntervalSeconds = 0.065f;
 constexpr float CreationCompletionErrorDurationSeconds = 4.0f;
@@ -1026,6 +1029,11 @@ void NewGameScreen::onExit()
 
 void NewGameScreen::handleSdlEvent(const SDL_Event &event)
 {
+    if (event.type == SDL_EVENT_FINGER_DOWN)
+    {
+        m_mobileTouchInputSeen = true;
+    }
+
     if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
     {
         resetNameBackspaceRepeat();
@@ -1507,6 +1515,24 @@ SDL_Rect NewGameScreen::textInputArea(int windowWidth, int windowHeight) const
         static_cast<int>(std::round(field->y)),
         static_cast<int>(std::round(field->width)),
         static_cast<int>(std::round(field->height))
+    };
+}
+
+std::optional<SDL_FRect> NewGameScreen::mobileInspectButtonRect(int windowWidth, int windowHeight) const
+{
+    if (m_stage != FlowStage::CharacterCreation || !m_mobileTouchInputSeen || m_state.nameEditing
+        || m_creationCompletionErrorSeconds > 0.0f || windowWidth <= 0 || windowHeight <= 0)
+    {
+        return std::nullopt;
+    }
+
+    const MenuScreenBase::Rect root = characterCreationRootRect(windowWidth, windowHeight);
+    const float scale = root.width / RootWidth;
+    return SDL_FRect{
+        root.x + root.width - (MobileInspectButtonInset + MobileInspectButtonWidth) * scale,
+        root.y + MobileInspectButtonInset * scale,
+        MobileInspectButtonWidth * scale,
+        MobileInspectButtonHeight * scale
     };
 }
 
@@ -2886,6 +2912,27 @@ bool NewGameScreen::ensureContinentLayoutLoaded()
     return m_continentLayoutLoaded;
 }
 
+MenuScreenBase::Rect NewGameScreen::characterCreationRootRect(int windowWidth, int windowHeight) const
+{
+    if (m_layoutLoaded)
+    {
+        std::unordered_set<std::string> visited;
+        const std::optional<ResolvedLayoutElement> root = resolveLayoutElementRecursive(
+            m_layoutManager, "CharacterCreationRoot", windowWidth, windowHeight, RootWidth, RootHeight, visited);
+        if (root)
+        {
+            return {root->x, root->y, root->width, root->height};
+        }
+    }
+
+    const float scale = std::min(
+        std::min(static_cast<float>(windowWidth) / RootWidth, static_cast<float>(windowHeight) / RootHeight),
+        MaxUiScale);
+    const float rootX = (static_cast<float>(windowWidth) - RootWidth * scale) * 0.5f;
+    const float rootY = (static_cast<float>(windowHeight) - RootHeight * scale) * 0.5f;
+    return scaledRect(rootX, rootY, scale, 0.0f, 0.0f, RootWidth, RootHeight);
+}
+
 std::optional<MenuScreenBase::Rect> NewGameScreen::resolveLayoutRect(
     const std::string &layoutId,
     float fallbackWidth,
@@ -3191,16 +3238,8 @@ void NewGameScreen::drawScreen(float deltaSeconds)
         m_creationCompletionErrorSeconds = std::max(0.0f, m_creationCompletionErrorSeconds - deltaSeconds);
     }
 
-    const float fallbackScale = std::min(
-        std::min(
-            static_cast<float>(frameWidth()) / RootWidth,
-            static_cast<float>(frameHeight()) / RootHeight),
-        MaxUiScale);
-    const float fallbackRootX = (static_cast<float>(frameWidth()) - RootWidth * fallbackScale) * 0.5f;
-    const float fallbackRootY = (static_cast<float>(frameHeight()) - RootHeight * fallbackScale) * 0.5f;
-    const MenuScreenBase::Rect rootRect = resolveLayoutRect("CharacterCreationRoot", RootWidth, RootHeight).value_or(
-        scaledRect(fallbackRootX, fallbackRootY, fallbackScale, 0.0f, 0.0f, RootWidth, RootHeight));
-    const float scale = rootRect.width > 0.0f ? rootRect.width / RootWidth : fallbackScale;
+    const MenuScreenBase::Rect rootRect = characterCreationRootRect(frameWidth(), frameHeight());
+    const float scale = rootRect.width / RootWidth;
     const float rootX = rootRect.x;
     const float rootY = rootRect.y;
     const auto resolveRect =
@@ -3826,6 +3865,13 @@ void NewGameScreen::drawScreen(float deltaSeconds)
         const MenuScreenBase::Rect statusMessageRect =
             resolveRect("CharacterCreationStatusMessage", 210.0f, 446.0f, 0.0f, 0.0f);
         drawText(fontName, m_state.statusMessage, statusMessageRect.x, statusMessageRect.y, RedColor, scale);
+    }
+
+    if (const std::optional<SDL_FRect> inspectRect = mobileInspectButtonRect(frameWidth(), frameHeight()))
+    {
+        drawTexture(
+            rightMouseDown() ? "magnif-a" : "magnif-b",
+            {inspectRect->x, inspectRect->y, inspectRect->w, inspectRect->h});
     }
 
     renderCreationCompletionErrorMessageBox(rootRect, scale);
