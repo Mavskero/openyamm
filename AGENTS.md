@@ -4,13 +4,12 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
-- 230 DELIVERY_PREPARING: `handoff/ui-cumulative-delivery-230/README.md`.
-  One consolidated229 delivery closes the public214/Save104 versus current229/Save105 gap. Reuse passed229
-  unsigned generic iOS and complete227 runtime (UI214 keys,Combat223,navigation222); all six runtime files
-  included. No new build/App/case/device/campaign matrix. Production8cdae9215ef7bb52e8fe8f6e83bf16641280fd0e;
-  final source/App/runtime identities come from release VERSION/manifest, then verified publication receipt.
-  Preserve fixed214/195/RC1–3 and all saves;105 reads104,old214/RC cannot read new105. Current-host device ban
-  remains;195 short-flow is already complete. Full goalACTIVE/~85%lowconfidence,naturalcampaign unproved.
+- 230 PUBLISHED_VERIFIED: `ipados-ui-cumulative-229-20261030`, source6f2c6216471d709bdf4cb136cfc6f1fdfebd6a6b.
+  See `handoff/ui-cumulative-delivery-230/README.md` and delivery/final-verification JSON. All16 remote
+  attachments match SHA256/size; complete227 sixfile runtime,2455 committed-source files,unsigned229iOS,
+  Save105(reads104). Production8cdae9215; UI214/Combat223/navigation222. Fixed214/195/RC1–3 retained.
+  No newbuild/App/case/device/campaign replay or device matrix. Later receipt-only commits do not retarget
+  release source. FullgoalACTIVE/~85%lowconfidence; natural campaign andnewtarget-iPad acceptance unproved.
 
 - 229 ACCEPTED_SCOPED: `handoff/paperdoll-left-arm-229/scoped-result.json`.
   Original early/late left-arm model nowshared bycomposite/fallback:Down LHd/LHo,Up LHu/LHc,Out LHo/LHf;

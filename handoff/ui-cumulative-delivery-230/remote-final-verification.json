@@ -1,0 +1,17 @@
+{
+  "checked_at": "2026-10-29T20:12:19.866344+00:00",
+  "status": "ALL_16_REMOTE_ASSETS_SHA256_AND_SIZE_MATCH",
+  "release_tag": "ipados-ui-cumulative-229-20261030",
+  "release_url": "https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-cumulative-229-20261030",
+  "published_at": "2026-10-29T20:11:54Z",
+  "source_head": "6f2c6216471d709bdf4cb136cfc6f1fdfebd6a6b",
+  "tag_commit_verified": true,
+  "payload_count": 15,
+  "receipt_count": 1,
+  "total_asset_count": 16,
+  "receipt_sha256": "da4736d4c9221b8abb9e0061cfa499deed4ba47574dbb7e27935f3454177b71b",
+  "receipt_bytes": 5707,
+  "runtime_files_all_included": true,
+  "device_or_simulator_operations": 0,
+  "full_goal_complete": false
+}

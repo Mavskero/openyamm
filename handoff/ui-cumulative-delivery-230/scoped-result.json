@@ -1,0 +1,52 @@
+{
+  "checkpoint": 230,
+  "status": "ACCEPTED_PUBLISHED_DELIVERY_SCOPED",
+  "completed_at": "2026-10-30T04:12:25.770903+08:00",
+  "release_tag": "ipados-ui-cumulative-229-20261030",
+  "release_url": "https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-cumulative-229-20261030",
+  "source_head": "6f2c6216471d709bdf4cb136cfc6f1fdfebd6a6b",
+  "production_commit": "8cdae9215ef7bb52e8fe8f6e83bf16641280fd0e",
+  "production_checkpoint": 229,
+  "runtime_checkpoint": 227,
+  "runtime": "local-data/validation/equipment-feedback-227/runtime-001",
+  "runtime_payload_count": 6,
+  "runtime_bytes": 3504971848,
+  "source_files": 2455,
+  "source_archive_sha256": "5cf4ee4a5dfa142b3257a3e10e418216aac3f931853645c90a242260167e3804",
+  "ios_archive": "OpenYAMM-229-iPadOS-unsigned.zip",
+  "ios_archive_sha256": "e9d934bde8f67c5cf396a045d7de4a7aebaae0abdd2167837c8c196043708792",
+  "save_version": 105,
+  "core_payloads_verified": 15,
+  "receipt_verified": 1,
+  "total_attachments_verified": 16,
+  "tag_commit_verified": true,
+  "original_inputs_unchanged": true,
+  "new_builds": 0,
+  "app_runs": 0,
+  "new_cases": 0,
+  "campaign_replays": 0,
+  "device_or_simulator_operations": 0,
+  "new_device_matrix": false,
+  "preserved": [
+    "Fixed214/195 releases",
+    "RC1/RC2/RC3",
+    "Original App/runtime",
+    "All original saves"
+  ],
+  "notification_status": "NOT_YET_ATTEMPTED",
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "natural_campaign_proven": false,
+  "notes": [
+    "One consolidated216-229 delivery; no new device task is dispatched.",
+    "Release source/tag/attachments remain fixed when receipt-only branch commits advance.",
+    "Source snapshot matches committed files; no fresh build from extracted snapshot is claimed."
+  ],
+  "evidence": {
+    "published": "remote-published-verification.json",
+    "final": "remote-final-verification.json",
+    "receipt": "delivery.json"
+  }
+}
