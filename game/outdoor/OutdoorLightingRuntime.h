@@ -35,8 +35,8 @@ class OutdoorLightingRuntime
 {
 public:
     void reset();
-    void build(const WorldFxSystem &worldFxSystem);
-    void build(const std::vector<WorldFxLightEmitter> &lightEmitters);
+    void build(const WorldFxSystem &worldFxSystem, bool coloredLights = true);
+    void build(const std::vector<WorldFxLightEmitter> &lightEmitters, bool coloredLights = true);
 
     OutdoorSelectedFxLights selectForBounds(
         const bx::Vec3 &fallbackReferencePosition,
@@ -46,6 +46,7 @@ public:
     uint32_t sourceLightCount() const;
     uint32_t clusteredInputLightCount() const;
     uint32_t outputClusterLightCount() const;
+    bool coloredLightsEnabled() const;
 
     static float emitterUniformIntensity(const WorldFxLightEmitter &light);
 
@@ -58,5 +59,6 @@ private:
     uint32_t m_sourceLightCount = 0;
     uint32_t m_clusteredInputLightCount = 0;
     uint32_t m_outputClusterLightCount = 0;
+    bool m_coloredLights = true;
 };
 }

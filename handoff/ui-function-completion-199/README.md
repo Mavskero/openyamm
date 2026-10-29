@@ -1,0 +1,7 @@
+# Colored-light settings 199
+
+Turning off ColoredLights previously left indoor FX and outdoor lighting colored. The existing indoor luminance rule now also handles dynamic FX/Torch entries, outdoor selected and sampled lights, authored BModel lightmap/vertex lighting, and global object ambient. Mode changes invalidate caches even while the game clock is paused behind settings. Enabled lighting and original light positions, intensity, alpha and emitter data are retained.
+
+Native and unsigned generic iOS Release builds passed. One existing outdoor-lighting case passed16 assertions covering on/off/on output, unchanged inputs/intensity/positions, and the static shader mode when no dynamic lights exist. The configured build excludes the full unit target; an initial unknown-target failure is retained, then a narrow target reused the existing test file. Zero new unit cases, App runs, campaign replays or device/simulator operations.
+
+Runtime198/runtime-003 and Save104 are unchanged. Existing198 preview refresh lets affected checkbox changes request a new world-only image. No199 actual indoor FX/outdoor/MM9 lightmap/global-ambient pixels were inspected; these changes are source/build accepted only. The published remote195 package remains fixed. Full natural campaign and iPad acceptance remain unproved. Tinting is unchanged; its meaning is being checked against a bounded first-party reference.

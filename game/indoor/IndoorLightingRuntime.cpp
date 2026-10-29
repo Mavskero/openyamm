@@ -1226,7 +1226,10 @@ IndoorLightingFrame IndoorLightingRuntime::buildFrame(const IndoorLightingFrameI
             IndoorRenderLight torch = {};
             torch.position = input.cameraPosition;
             torch.radius = torchLight->radius;
-            torch.colorAbgr = torchLight->colorAbgr;
+            const uint32_t torchColor = torchLight->colorAbgr;
+            torch.colorAbgr = lightColorAbgr(
+                static_cast<uint8_t>(torchColor), static_cast<uint8_t>(torchColor >> 8),
+                static_cast<uint8_t>(torchColor >> 16), static_cast<uint8_t>(torchColor >> 24), input.coloredLights);
             torch.intensity = torchLight->intensity * IndoorTorchLightIntensityScale;
             torch.kind = IndoorRenderLightKind::Torch;
             torch.stableId = 0x746f7263u;
@@ -1257,10 +1260,13 @@ IndoorLightingFrame IndoorLightingRuntime::buildFrame(const IndoorLightingFrameI
             RenderLight light = {};
             light.position = lightPosition;
             light.radius = emitter.radius;
-            light.colorAbgr =
+            const uint32_t sourceColor =
                 emitter.colorAbgr != 0
                     ? emitter.colorAbgr
                     : makeAbgr(255, 255, 255, FxLightAlphaFallback);
+            light.colorAbgr = lightColorAbgr(
+                static_cast<uint8_t>(sourceColor), static_cast<uint8_t>(sourceColor >> 8),
+                static_cast<uint8_t>(sourceColor >> 16), static_cast<uint8_t>(sourceColor >> 24), input.coloredLights);
             light.intensity = emitter.intensity;
             light.sectorId = emitter.sectorId;
             light.kind = emitter.kind;

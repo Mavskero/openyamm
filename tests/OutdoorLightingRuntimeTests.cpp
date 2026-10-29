@@ -55,6 +55,28 @@ TEST_CASE("outdoor lighting runtime selects local lights for draw bounds")
     REQUIRE_EQ(selected.lightCount, 1u);
     CHECK(selected.colors[0] > 0.95f);
     CHECK(selected.colors[2] < 0.10f);
+
+    const uint32_t sourceColor = lights.front().colorAbgr;
+    runtime.build(lights, false);
+    const OutdoorSelectedFxLights neutral = runtime.selectForBounds({0.0f, 0.0f, 0.0f}, bounds);
+    REQUIRE_EQ(neutral.lightCount, selected.lightCount);
+    CHECK(neutral.colors[0] == doctest::Approx(neutral.colors[1]));
+    CHECK(neutral.colors[1] == doctest::Approx(neutral.colors[2]));
+    CHECK(neutral.colors[0] > 0.0f);
+    CHECK(neutral.colors[3] == doctest::Approx(selected.colors[3]));
+    CHECK(neutral.positions == selected.positions);
+    CHECK(neutral.params[3] == doctest::Approx(1.0f));
+    const std::array<float, 3> neutralSample = runtime.sampleLightingRgb({0.0f, 0.0f, 0.0f});
+    CHECK(neutralSample[0] == doctest::Approx(neutralSample[1]));
+    CHECK(neutralSample[1] == doctest::Approx(neutralSample[2]));
+    CHECK_EQ(lights.front().colorAbgr, sourceColor);
+
+    runtime.build(lights, true);
+    const OutdoorSelectedFxLights restored = runtime.selectForBounds({0.0f, 0.0f, 0.0f}, bounds);
+    CHECK(restored.colors == selected.colors);
+    CHECK(restored.params[3] == doctest::Approx(0.0f));
+    runtime.build(std::vector<WorldFxLightEmitter>{}, false);
+    CHECK(runtime.selectForBounds({0.0f, 0.0f, 0.0f}, bounds).params[3] == doctest::Approx(1.0f));
 }
 
 TEST_CASE("outdoor lighting runtime point sampling falls off with distance")

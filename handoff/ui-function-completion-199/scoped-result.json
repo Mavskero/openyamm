@@ -1,0 +1,123 @@
+{
+  "checkpoint": 199,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-29T12:01:24.677212+00:00",
+  "production_base": "d02894adf3365007097d4759bb9fa1e23a1eb123",
+  "fixes": [
+    "Indoor Torch/FX entries follow existing coloredLights grayscale policy",
+    "Outdoor runtime carries mode; selected and point-sampled lights honor it without altering original emitters",
+    "Mode changes invalidate runtime and global uniform caches even at paused time",
+    "Authored BModel lightmap/vertex lighting and object global ambient honor the same off mode"
+  ],
+  "source_files": {
+    "CMakeLists.txt": "3be66e9731bd5d60055d03cbc69aad6010b7e22232715fc1fa63fdb105baeae3",
+    "game/indoor/IndoorLightingRuntime.cpp": "5c84786f31372873117c13f378003444737fa3faae494a6ce15f65ee5734e928",
+    "game/outdoor/OutdoorBillboardRenderer.cpp": "718bf8da2a8f0a4fb9b80e505bc6e4e683e294117c18f8aa8bb57226562f69ae",
+    "game/outdoor/OutdoorLightingRuntime.cpp": "1024a5b100ea8c76c4062f4f26e4a05e615d0f912861930f230eb49955f0d2ca",
+    "game/outdoor/OutdoorLightingRuntime.h": "02c0e0ae518fdb729eaef51df472c395d701dccda14665f42daa94318a16a558",
+    "game/outdoor/OutdoorRenderer.cpp": "5f075701a04f93e2edccc8db13c3db3a25eb49fb96a0b03be006b2a66b99951f",
+    "game/shaders/fs_outdoor_bmodel_lightmap.sc": "495b385dbf5a10686fc9222a1ac781a7fa84653b89da1f5038f5780854fb7867",
+    "tests/OutdoorLightingRuntimeTests.cpp": "d01cc2f07f7a24b29764bcd63022e4e11bfe1373b7e35f212f721372b615f4e2"
+  },
+  "validation_scope": {
+    "existing_unit_cases": 1,
+    "assertions": 16,
+    "new_unit_cases": 0,
+    "app_runs": 0,
+    "campaign_replays": 0,
+    "device_or_simulator_operations": 0,
+    "images_reviewed": 0
+  },
+  "test": "Existing outdoor lighting runtime selects local lights for draw bounds: color→gray→color, same intensity/positions/source inputs; selected/sample RGB equal when disabled; static shader mode sent even when no dynamic lights.",
+  "runtime": "local-data/validation/ui-function-completion-198/runtime-003",
+  "runtime_changed": false,
+  "save_schema": 104,
+  "save_schema_changed": false,
+  "preserved_failure": {
+    "record": "build-native-001.command.json",
+    "reason": "Full unit target absent because existing build has OPENYAMM_BUILD_TESTS=OFF. Added a narrow target for the existing lighting test file; ran only one existing case. No full suite was enabled."
+  },
+  "limitations": [
+    "No actual199 indoor FX/outdoor/MM9 lightmap/global-ambient images; those consumers are source/build reviewed.",
+    "Default enabled lighting remains unchanged; original textures, fog, sky and FX particle colors are not desaturated.",
+    "Tinting remains unchanged pending bounded first-party source interpretation; no invented effect.",
+    "Full natural campaign and target-iPad acceptance remain unproved; fixed remote195 unaffected."
+  ],
+  "owned_jobs_remaining": [],
+  "goal_status": "active",
+  "full_game_complete": false,
+  "next": "Continue concrete independent UI/function work; one bounded primary-source lookup is checking the existing Tinting control semantics.",
+  "command_summary": {
+    "build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "exit_code": 0,
+      "started_at": "2026-10-29T12:00:05.688642+00:00",
+      "finished_at": "2026-10-29T12:00:41.288048+00:00"
+    },
+    "build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "openyamm_unit_tests",
+        "-j3"
+      ],
+      "exit_code": 1,
+      "started_at": "2026-10-29T11:57:50.477619+00:00",
+      "finished_at": "2026-10-29T11:57:50.762912+00:00"
+    },
+    "build-native-002": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "lighting_settings_check",
+        "-j3"
+      ],
+      "exit_code": 0,
+      "started_at": "2026-10-29T11:58:48.257996+00:00",
+      "finished_at": "2026-10-29T11:59:33.622485+00:00"
+    },
+    "configure-ios-001": {
+      "argv": [
+        "cmake",
+        "-S",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm",
+        "-B",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm/build-ios-xcode"
+      ],
+      "exit_code": 0,
+      "started_at": "2026-10-29T11:59:52.472303+00:00",
+      "finished_at": "2026-10-29T11:59:53.237545+00:00"
+    },
+    "lighting-mode-001": {
+      "argv": [
+        "openyamm/build-apple/lighting_settings_check",
+        "--test-case=outdoor lighting runtime selects local lights for draw bounds"
+      ],
+      "exit_code": 0,
+      "started_at": "2026-10-29T11:59:52.472899+00:00",
+      "finished_at": "2026-10-29T11:59:52.510439+00:00"
+    }
+  }
+}

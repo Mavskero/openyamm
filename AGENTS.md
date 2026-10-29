@@ -4,6 +4,10 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 199 closes confirmed coloredLights rendering/cache omissions; see `handoff/ui-function-completion-199/README.md`.
+  Native/iOS and1existingcase16assertions pass; no new App/device/campaign run. Runtime198/Save104 unchanged.
+  Fullgoal active; remote195 fixed. Tinting remains unchanged pending source clarification.
+
 - 198 adds real video brightness/neutral world preview and10 missing original slider images.
   See `handoff/ui-function-completion-198/README.md`; native/iOS/import and13.340s affected Mac flow pass.
   Runtime198/runtime-003,Save104 unchanged; remote195 stays fixed. Next confirmed coloredLights consumers.

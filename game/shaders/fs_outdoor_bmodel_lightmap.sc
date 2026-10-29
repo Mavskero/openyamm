@@ -89,6 +89,10 @@ void main()
     }
 
     vec3 staticLighting = texture2D(s_texLightmap, v_lightmapUv).rgb * v_color0.rgb;
+    if (u_fxLightParams.w > 0.5)
+    {
+        staticLighting = vec3_splat(dot(staticLighting, vec3(0.299, 0.587, 0.114)));
+    }
     textureColor.rgb = mix(textureColor.rgb, u_fogColor.rgb, u_fogDensities.z);
     vec4 litTextureColor = vec4(
         textureColor.rgb * staticLighting * getFxLighting(v_worldPosition),

@@ -3590,15 +3590,20 @@ void OutdoorRenderer::renderWorldPasses(OutdoorGameView &view, uint16_t viewWidt
                                                    ? &*view.m_pOutdoorMapData->lightingData
                                                    : nullptr;
     const std::vector<WorldFxLightEmitter> &dynamicLightEmitters = view.m_worldFxSystem.lightEmitters();
+    const bool coloredLights = view.m_gameSettings.coloredLights;
+    const bool lightingColorModeChanged =
+        view.m_outdoorLightingRuntime.coloredLightsEnabled() != coloredLights
+        || view.m_outdoorBModelLightingRuntime.coloredLightsEnabled() != coloredLights;
     const bool lightingInputsChanged =
         !view.m_outdoorLightingRuntimesInitialized || view.m_pCachedOutdoorLightingData != pLightingData ||
+        lightingColorModeChanged ||
         !sameWorldFxLightEmitters(view.m_cachedOutdoorDynamicLightEmitters, dynamicLightEmitters);
 
     if (lightingInputsChanged)
     {
         view.m_cachedOutdoorDynamicLightEmitters = dynamicLightEmitters;
         view.m_pCachedOutdoorLightingData = pLightingData;
-        view.m_outdoorBModelLightingRuntime.build(dynamicLightEmitters);
+        view.m_outdoorBModelLightingRuntime.build(dynamicLightEmitters, coloredLights);
 
         if (pLightingData != nullptr)
         {
@@ -3623,13 +3628,18 @@ void OutdoorRenderer::renderWorldPasses(OutdoorGameView &view, uint16_t viewWidt
                 objectLightEmitters.push_back(emitter);
             }
 
-            view.m_outdoorLightingRuntime.build(objectLightEmitters);
+            view.m_outdoorLightingRuntime.build(objectLightEmitters, coloredLights);
         }
         else
         {
-            view.m_outdoorLightingRuntime.build(dynamicLightEmitters);
+            view.m_outdoorLightingRuntime.build(dynamicLightEmitters, coloredLights);
         }
 
+        if (lightingColorModeChanged)
+        {
+            // Settings can change while the world clock is paused behind an overlay.
+            view.m_lastOutdoorFxLightUniformUpdateElapsedTime = -1.0f;
+        }
         view.m_outdoorLightingRuntimesInitialized = true;
     }
     const bool useLocalFxLighting =

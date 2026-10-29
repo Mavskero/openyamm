@@ -40,6 +40,15 @@ float alphaChannel(uint32_t colorAbgr)
     return static_cast<float>((colorAbgr >> 24) & 0xffu) / 255.0f;
 }
 
+uint32_t monochromeLightColor(uint32_t colorAbgr)
+{
+    const uint32_t brightness = static_cast<uint32_t>(std::clamp(std::lround(
+        static_cast<float>(colorAbgr & 0xffu) * 0.299f
+            + static_cast<float>((colorAbgr >> 8) & 0xffu) * 0.587f
+            + static_cast<float>((colorAbgr >> 16) & 0xffu) * 0.114f), 0l, 255l));
+    return (colorAbgr & 0xff000000u) | brightness | (brightness << 8) | (brightness << 16);
+}
+
 bx::Vec3 outdoorBoundsCenter(const OutdoorLightSelectionBounds &bounds)
 {
     return {
@@ -217,22 +226,33 @@ void OutdoorLightingRuntime::reset()
     m_sourceLightCount = 0;
     m_clusteredInputLightCount = 0;
     m_outputClusterLightCount = 0;
+    m_coloredLights = true;
 }
 
-void OutdoorLightingRuntime::build(const WorldFxSystem &worldFxSystem)
+void OutdoorLightingRuntime::build(const WorldFxSystem &worldFxSystem, bool coloredLights)
 {
-    build(worldFxSystem.lightEmitters());
+    build(worldFxSystem.lightEmitters(), coloredLights);
 }
 
-void OutdoorLightingRuntime::build(const std::vector<WorldFxLightEmitter> &lightEmitters)
+void OutdoorLightingRuntime::build(const std::vector<WorldFxLightEmitter> &lightEmitters, bool coloredLights)
 {
     reset();
+    m_coloredLights = coloredLights;
 
     m_sourceLightCount = static_cast<uint32_t>(lightEmitters.size());
     m_lights = buildClusteredOutdoorFxLights(
         lightEmitters,
         m_clusteredInputLightCount,
         m_outputClusterLightCount);
+
+    if (!m_coloredLights)
+    {
+        // Retain cluster geometry, alpha and intensity while changing only its RGB output.
+        for (WorldFxLightEmitter &light : m_lights)
+        {
+            light.colorAbgr = monochromeLightColor(light.colorAbgr);
+        }
+    }
 
     for (size_t lightIndex = 0; lightIndex < m_lights.size(); ++lightIndex)
     {
@@ -343,7 +363,7 @@ OutdoorSelectedFxLights OutdoorLightingRuntime::selectForBounds(
         static_cast<float>(result.lightCount),
         OutdoorFxLightingAmbient,
         OutdoorFxLightingScale,
-        0.0f
+        m_coloredLights ? 0.0f : 1.0f
     }};
     return result;
 }
@@ -421,6 +441,11 @@ uint32_t OutdoorLightingRuntime::clusteredInputLightCount() const
 uint32_t OutdoorLightingRuntime::outputClusterLightCount() const
 {
     return m_outputClusterLightCount;
+}
+
+bool OutdoorLightingRuntime::coloredLightsEnabled() const
+{
+    return m_coloredLights;
 }
 
 float OutdoorLightingRuntime::emitterUniformIntensity(const WorldFxLightEmitter &light)

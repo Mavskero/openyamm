@@ -833,6 +833,11 @@ void OutdoorBillboardRenderer::applyBillboardAmbientUniform(OutdoorGameView &vie
         }
     }
 
+    if (!view.m_gameSettings.coloredLights)
+    {
+        const float brightness = ambient[0] * 0.299f + ambient[1] * 0.587f + ambient[2] * 0.114f;
+        ambient[0] = ambient[1] = ambient[2] = brightness;
+    }
     bgfx::setUniform(view.m_outdoorBillboardAmbientUniformHandle, ambient);
 }
 
