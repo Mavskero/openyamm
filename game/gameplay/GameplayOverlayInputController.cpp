@@ -1744,6 +1744,7 @@ bool GameplayOverlayInputController::handleControlsOverlayInput(
 
             case GameplayControlsPointerTargetType::ReturnButton:
                 view.closeControlsOverlay();
+                view.closeMenuOverlay();
                 break;
 
             case GameplayControlsPointerTargetType::SoundTrack:
@@ -1957,6 +1958,7 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
 
             case GameplayKeyboardPointerTargetType::ReturnButton:
                 view.closeKeyboardOverlayToMenu();
+                view.closeMenuOverlay();
                 break;
 
             case GameplayKeyboardPointerTargetType::None:
@@ -2161,6 +2163,8 @@ bool GameplayOverlayInputController::handleVideoOptionsOverlayInput(
 
             case GameplayVideoOptionsPointerTargetType::ReturnButton:
                 view.closeVideoOptionsOverlay();
+                view.closeControlsOverlay();
+                view.closeMenuOverlay();
                 break;
 
             case GameplayVideoOptionsPointerTargetType::BrightnessLeftButton:

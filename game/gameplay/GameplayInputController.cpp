@@ -557,7 +557,8 @@ void GameplayInputController::handleSharedGameplayHotkeys(
 
     const bool combatKeyHeld =
         isActionActive(context, KeyboardAction::Combat, config.pInputFrame, config.pKeyboardState)
-        || isScancodeActive(SDL_SCANCODE_KP_ENTER, config.pInputFrame, config.pKeyboardState);
+        || (!context.settingsSnapshot().keyboard.usesScancode(SDL_SCANCODE_KP_ENTER)
+            && isScancodeActive(SDL_SCANCODE_KP_ENTER, config.pInputFrame, config.pKeyboardState));
     const bool combatPressed =
         config.canToggleAlwaysRun
         && combatKeyHeld;
@@ -592,7 +593,9 @@ void GameplayInputController::handleSharedGameplayHotkeys(
         context.interactionState().turnBasedToggleLatch = false;
     }
 
-    if (config.canToggleAdventurersInn && config.pKeyboardState[SDL_SCANCODE_P])
+    if (config.canToggleAdventurersInn
+        && !context.settingsSnapshot().keyboard.usesScancode(SDL_SCANCODE_P)
+        && config.pKeyboardState[SDL_SCANCODE_P])
     {
         if (!context.interactionState().adventurersInnToggleLatch)
         {

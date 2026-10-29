@@ -30,7 +30,7 @@ const std::array<KeyboardBindingDefinition, KeyboardActionCount> KeyboardBinding
     {KeyboardAction::Jump, "jump", "Jump", KeyboardBindingPage::Page1, KeyboardBindingColumn::Left, 5,
         {InputBindingKind::Keyboard, SDL_SCANCODE_X, 0}, true},
     {KeyboardAction::Combat, "combat", "Combat", KeyboardBindingPage::Page1, KeyboardBindingColumn::Left, 6,
-        {InputBindingKind::Keyboard, SDL_SCANCODE_RETURN, 0}, false},
+        {InputBindingKind::Keyboard, SDL_SCANCODE_RETURN, 0}, true},
     {KeyboardAction::CastReady, "cast_ready", "Cast Ready", KeyboardBindingPage::Page1, KeyboardBindingColumn::Right, 0,
         {InputBindingKind::Keyboard, SDL_SCANCODE_Q, 0}, true},
     {KeyboardAction::Attack, "attack", "Attack", KeyboardBindingPage::Page1, KeyboardBindingColumn::Right, 1,

@@ -1,0 +1,191 @@
+{
+  "checkpoint": 208,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "accepted_at": "2026-10-29T13:38:33.645255+00:00",
+  "production_base": "c099b707859b9be623270dbc7436d1104235f648",
+  "scope": {
+    "checkpoint": 208,
+    "status": "integrated",
+    "production_base": "c099b707859b9be623270dbc7436d1104235f648",
+    "defect": "Controls/Keyboard/Video all display originalreturntogame image but handlers remain inMenu/Controls",
+    "evidence": [
+      "204actual002keyboard-page2.png reviewed",
+      "bv_rtrnU/H/D originalChinese returntogame images;198/204samebytes"
+    ],
+    "fix": "Reuse existing closechains thencloseMenu in3Returnhandlers; Back/Escapeunchanged",
+    "files": [
+      "game/gameplay/GameplayOverlayInputController.cpp"
+    ],
+    "validation": "Source/combined207native/iOS only; no newtests/App/campaign/device",
+    "runtime": "207changesui_textonly;208noresourcechange",
+    "release195_unchanged": true
+  },
+  "checks": {
+    "207/build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "core_import",
+        "-j",
+        "3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 22018,
+      "started_at": "2026-10-29T13:30:12.109297+00:00",
+      "finished_at": "2026-10-29T13:31:22.474249+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-207/build-native-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "207/core-import-001": {
+      "argv": [
+        "openyamm/build-apple/core_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "local-data/validation/ui-function-completion-207/core-ui-text-001"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 24917,
+      "started_at": "2026-10-29T13:33:38.115475+00:00",
+      "finished_at": "2026-10-29T13:33:38.290254+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 120.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-207/core-import-001.log",
+      "executed_binary": "openyamm/build-apple/core_import",
+      "executed_binary_sha256": "1f6daa47c7435d6067fbf2c282807851a26bb9dbd71216476cb27e75332747bf",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "207/assemble-runtime-001": {
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-207/assemble_runtime.py"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 25034,
+      "started_at": "2026-10-29T13:33:44.772992+00:00",
+      "finished_at": "2026-10-29T13:33:46.917844+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 120.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-207/assemble-runtime-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/python3",
+      "executed_binary_sha256": "30b2a6bf9706029b609327ca5db722cd458239df96efc87e1f8e37beed49db2e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "209/build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "-j",
+        "3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 26323,
+      "started_at": "2026-10-29T13:35:23.937380+00:00",
+      "finished_at": "2026-10-29T13:35:26.939038+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 300.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-209/build-native-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "209/build-native-002": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "-j",
+        "3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 27458,
+      "started_at": "2026-10-29T13:36:48.168052+00:00",
+      "finished_at": "2026-10-29T13:36:51.350702+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 300.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-209/build-native-002.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "209/build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 27689,
+      "started_at": "2026-10-29T13:37:03.141668+00:00",
+      "finished_at": "2026-10-29T13:38:01.263109+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-209/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "runtime": "local-data/validation/ui-function-completion-207/runtime-001",
+  "save_schema": 104,
+  "validation_scope": {
+    "new_unit_cases": 0,
+    "app_runs": 0,
+    "campaign_replays": 0,
+    "cold_runs": 0,
+    "device_or_simulator_operations": 0
+  },
+  "limitations": [
+    "Source/build acceptance only; no new interactive or target-iPad confirmation.",
+    "Full natural campaign completion remains unproved."
+  ],
+  "remote_release_195_unchanged": true,
+  "full_goal_complete": false,
+  "visual_evidence": "Previously reviewed 204actual002 keyboard-page2.png and original bv_rtrnU/H/D artwork, no new screenshots"
+}

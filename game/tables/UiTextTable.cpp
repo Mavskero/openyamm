@@ -122,6 +122,15 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.keyboard_double_speed", "Double Speed"},
     {"ui.keyboard_press_input", "Choose key"},
     {"ui.keyboard_binding_conflict", "Conflict"},
+    {"ui.journal_potion_notes", "Potion Notes"},
+    {"ui.journal_fountains", "Fountains"},
+    {"ui.journal_obelisk_notes", "Obelisk Notes"},
+    {"ui.journal_seer_notes", "Seer Notes"},
+    {"ui.journal_miscellaneous", "Miscellaneous"},
+    {"ui.journal_teacher_locations", "Teacher Locations"},
+    {"ui.journal_current_quests", "Current Quests"},
+    {"ui.journal_history", "History"},
+    {"ui.journal_notes", "Notes"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -162,7 +171,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // Migrate only complete older prefixes: the original 13 captions, the 16 with
     // Arcomage, the 19 with initial inspect labels, the 26 with item details,
     // the 35 with win text, the 39 with bank captions, the 45 with rest captions,
-    // and the 72 with mastery, calendar and save captions.
+    // the 72 with mastery, calendar and save captions, and the 103 with keyboard captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -172,6 +181,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t BankMessageCount = size_t(Message::RestHealEightHours);
     constexpr size_t RestMessageCount = size_t(Message::SkillNormal);
     constexpr size_t SaveMessageCount = size_t(Message::KeyboardForward);
+    constexpr size_t KeyboardMessageCount = size_t(Message::JournalPotionNotes);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -181,7 +191,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != WinMessageCount
         && schemaMessageCount != BankMessageCount
         && schemaMessageCount != RestMessageCount
-        && schemaMessageCount != SaveMessageCount)
+        && schemaMessageCount != SaveMessageCount
+        && schemaMessageCount != KeyboardMessageCount)
     {
         return false;
     }

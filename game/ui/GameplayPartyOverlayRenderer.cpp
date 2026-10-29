@@ -856,25 +856,26 @@ std::string journalMainIconTextureName(
     return buffer;
 }
 
-std::string journalNotesCategoryTitle(GameplayUiController::JournalNotesCategory category)
+std::string journalNotesCategoryTitle(
+    GameplayUiController::JournalNotesCategory category, const UiTextTable &uiText)
 {
     switch (category)
     {
         case GameplayUiController::JournalNotesCategory::Potion:
-            return "Potion Notes";
+            return uiText.text(UiTextTable::Message::JournalPotionNotes);
         case GameplayUiController::JournalNotesCategory::Fountain:
-            return "Fountains";
+            return uiText.text(UiTextTable::Message::JournalFountains);
         case GameplayUiController::JournalNotesCategory::Obelisk:
-            return "Obelisk Notes";
+            return uiText.text(UiTextTable::Message::JournalObeliskNotes);
         case GameplayUiController::JournalNotesCategory::Seer:
-            return "Seer Notes";
+            return uiText.text(UiTextTable::Message::JournalSeerNotes);
         case GameplayUiController::JournalNotesCategory::Misc:
-            return "Miscellaneous";
+            return uiText.text(UiTextTable::Message::JournalMiscellaneous);
         case GameplayUiController::JournalNotesCategory::Trainer:
-            return "Teacher Locations";
+            return uiText.text(UiTextTable::Message::JournalTeacherLocations);
     }
 
-    return "Notes";
+    return uiText.text(UiTextTable::Message::JournalNotes);
 }
 
 float journalLineAdvance(
@@ -4358,6 +4359,7 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
     }
     else if (pTitleLayout != nullptr && titleResolved && pTextLayout != nullptr && textResolved && bodyFont)
     {
+        const UiTextTable &uiText = context.gameplayUiRuntime().uiTextTable();
         const float bodyFontScale = textResolved->scale >= 1.0f
             ? snappedHudFontScale(textResolved->scale)
             : std::max(0.5f, textResolved->scale);
@@ -4404,7 +4406,7 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
 
         if (journalScreen.view == GameplayUiController::JournalView::Quests)
         {
-            titleText = "Current Quests";
+            titleText = uiText.text(UiTextTable::Message::JournalCurrentQuests);
             renderInteractiveTextureLayout("JournalPrevPageButton");
             renderInteractiveTextureLayout("JournalNextPageButton");
 
@@ -4449,12 +4451,12 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
             }
             else
             {
-                titleText = "Story";
+                titleText = uiText.text(UiTextTable::Message::JournalHistory);
             }
         }
         else
         {
-            titleText = journalNotesCategoryTitle(journalScreen.notesCategory);
+            titleText = journalNotesCategoryTitle(journalScreen.notesCategory, uiText);
             renderInteractiveTextureLayout("JournalPrevPageButton");
             renderInteractiveTextureLayout("JournalNextPageButton");
             renderInteractiveTextureLayout("JournalNotesPotionButton");
@@ -9706,7 +9708,10 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             const float nameWidth =
                 std::max(0.0f, resolvedLevelHeader->x - resolvedRegion->x - 6.0f * resolvedRegion->scale);
             const std::vector<CharacterSkillUiRow> displayRows =
-                rows.empty() ? std::vector<CharacterSkillUiRow>{{"", "None", "", false}} : rows;
+                rows.empty()
+                    ? std::vector<CharacterSkillUiRow>{{"",
+                        context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::None), "", false}}
+                    : rows;
 
             for (size_t rowIndex = 0; rowIndex < displayRows.size(); ++rowIndex)
             {
@@ -10576,7 +10581,9 @@ void GameplayPartyOverlayRenderer::renderActorInspectOverlay(GameplayScreenRunti
         }
     }
 
-    const std::string effectsText = activeEffects.empty() ? "None" : joinNonEmptyTexts(activeEffects);
+    const std::string effectsText = activeEffects.empty()
+        ? context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::None)
+        : joinNonEmptyTexts(activeEffects);
     const float dynamicStatLineAdvance = compactStatLineAdvance * popupScale;
     const auto renderTextForLayout =
         [&context, &resolveLayout](const char *pLayoutId, const std::string &text, float yOffset = 0.0f)

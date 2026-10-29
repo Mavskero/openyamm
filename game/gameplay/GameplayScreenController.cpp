@@ -80,6 +80,7 @@ bool isScancodeNewlyPressed(
 bool isNumberHotkeyNewlyPressed(
     const GameplayInputFrame &input,
     const std::array<uint8_t, SDL_SCANCODE_COUNT> &previousKeyboardState,
+    const GameSettings::KeyboardSettings &keyboard,
     size_t numberIndex)
 {
     if (numberIndex >= NumberHotkeyScancodes.size())
@@ -87,8 +88,12 @@ bool isNumberHotkeyNewlyPressed(
         return false;
     }
 
-    return isScancodeNewlyPressed(input, previousKeyboardState, NumberHotkeyScancodes[numberIndex])
-        || isScancodeNewlyPressed(input, previousKeyboardState, KeypadNumberHotkeyScancodes[numberIndex]);
+    const SDL_Scancode numberScancode = NumberHotkeyScancodes[numberIndex];
+    const SDL_Scancode keypadScancode = KeypadNumberHotkeyScancodes[numberIndex];
+    return (!keyboard.usesScancode(numberScancode)
+            && isScancodeNewlyPressed(input, previousKeyboardState, numberScancode))
+        || (!keyboard.usesScancode(keypadScancode)
+            && isScancodeNewlyPressed(input, previousKeyboardState, keypadScancode));
 }
 
 bool isHouseOccupantSelectionMode(const EventDialogContent &dialog)
@@ -787,7 +792,8 @@ GameplayUiOverlayInputResult GameplayScreenController::handleStandardUiInput(
 
         for (size_t memberIndex = 0; memberIndex < 5; ++memberIndex)
         {
-            if (isNumberHotkeyNewlyPressed(input, context.previousKeyboardState(), memberIndex))
+            if (isNumberHotkeyNewlyPressed(
+                input, context.previousKeyboardState(), context.settingsSnapshot().keyboard, memberIndex))
             {
                 GameplayHudInputController::activatePartyPortrait(context, memberIndex, portraitHotkeyConfig);
             }
@@ -861,7 +867,8 @@ GameplayUiOverlayInputResult GameplayScreenController::handleStandardUiInput(
     {
         for (size_t followerIndex = 0; followerIndex < 4; ++followerIndex)
         {
-            if (isNumberHotkeyNewlyPressed(input, context.previousKeyboardState(), followerIndex + 5))
+            if (isNumberHotkeyNewlyPressed(
+                input, context.previousKeyboardState(), context.settingsSnapshot().keyboard, followerIndex + 5))
             {
                 context.openFollowerNpcDialogueByIndex(followerIndex);
             }

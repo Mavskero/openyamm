@@ -4,6 +4,11 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 207–209 integrate Journal localization, Settings Return to game, and explicit-binding precedence for legacy
+  KPEnter/numeric/Inn P shortcuts. See `handoff/ui-function-completion-207/README.md` and208/209 notes.
+  Native/import/unsigned generic iOS pass; source/build acceptance only,0App/newcases/campaign/device.
+  Default complete207/runtime-001 changesonlyui_text;Save104/remote195fixed;fullgoalactive. Next210 actualYell gap.
+
 - 203–206 integrated Keyboard rebinding/localization/fit, shared FlipOnExit and global shortcut guards.
   See `handoff/ui-function-completion-204/README.md`; native/import/iOS pass, two bounded Keyboard runs/fourimages.
   Initialdriver timingfailure and visualoverflow preserved/repaired; no newunitcases/campaign/device;205/206sourceonly.

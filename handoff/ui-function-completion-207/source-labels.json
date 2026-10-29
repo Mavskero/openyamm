@@ -1,0 +1,46 @@
+{
+  "source": "local-data/validation/mm8-runtime-076/source-001/Data/10 LocZHCN.EnglishT.lod::Global.txt",
+  "labels": {
+    "PotionNotes": [
+      85,
+      "药剂记录"
+    ],
+    "Fountains": [
+      742,
+      "喷泉"
+    ],
+    "ObeliskNotes": [
+      8,
+      "方尖塔记录"
+    ],
+    "SeerNotes": [
+      141,
+      "先知记录"
+    ],
+    "Miscellaneous": [
+      745,
+      "杂项"
+    ],
+    "TeacherLocations": [
+      746,
+      "教师位置"
+    ],
+    "CurrentQuests": [
+      174,
+      "当前任务"
+    ],
+    "EmptyHistory": [
+      602,
+      "历史"
+    ]
+  },
+  "semantic_change": "Empty-history Story becomes History to match its page, not an exactStory translation",
+  "project_translations": {
+    "Notes": "笔记"
+  },
+  "schema": {
+    "old": 103,
+    "new": 112
+  },
+  "status": "readonly_mapping_complete"
+}
