@@ -1989,6 +1989,7 @@ bool GameplayOverlayInputController::handleVideoOptionsOverlayInput(
 
             case GameplayVideoOptionsPointerTargetType::TintingButton:
                 settings.tinting = !settings.tinting;
+                view.gameplayUiRuntime().setWorldPreviewCaptureRequested(true);
                 videoOptionsScreen.brightnessDirty = false;
                 view.commitSettingsChange();
                 break;

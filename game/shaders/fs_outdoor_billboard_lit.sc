@@ -1,4 +1,4 @@
-$input v_texcoord0, v_color0, v_depth
+$input v_texcoord0, v_color0, v_billboardTint, v_depth
 
 #include "common.sh"
 
@@ -51,7 +51,7 @@ void main()
         (v_texcoord0.x < 0.0 || v_texcoord0.x > 1.0 || v_texcoord0.y < 0.0 || v_texcoord0.y > 1.0)
             ? vec4(0.0, 0.0, 0.0, 0.0)
             : texture2D(s_texColor, v_texcoord0);
-    vec3 litColor = textureColor.rgb * (u_billboardAmbient.rgb + v_color0.rgb);
+    vec3 litColor = textureColor.rgb * (u_billboardAmbient.rgb + v_color0.rgb) * v_billboardTint;
     litColor = mix(litColor, u_fogColor.rgb, u_fogDensities.z);
     vec4 shadedColor = vec4(litColor, textureColor.a * v_color0.a);
     float baseAlpha = shadedColor.a;

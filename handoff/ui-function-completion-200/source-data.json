@@ -1,0 +1,18 @@
+{
+  "source_runtime": "local-data/validation/ui-function-completion-198/runtime-003",
+  "member": "data_tables/monster_descriptors.txt",
+  "rows": 0,
+  "nonzero_rgb": 0,
+  "nonzero_alpha": 0,
+  "sha256": "02903c41a5b39577ec5f25b332af18cf4161a36454e5f8bd4e724876f066e27d",
+  "format": "0xAARRGGBB from original MonList TintB/G/R/A bytes",
+  "agent_source_audit": "All652 rows match source076 normal CoreResources conversion; byte-identical with190 and195; preview_monster_descriptors zero is a separate legacy diagnostic.",
+  "reference_commit": "87b3e29b51b931cc5f0e8998f238a686cafa86a4",
+  "primary_references": {
+    "setting": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Application/GameConfig.h#L460-L462",
+    "actor_source": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Engine/Graphics/Outdoor.cpp#L767-L771",
+    "consumer": "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Engine/Graphics/Renderer/BaseRenderer.cpp#L282-L285"
+  },
+  "implementation_choice": "Use source RGB as actor-only lighting multiplier; preserve sprite opacity. Indoor same control semantics is project consistency, not proven original indoor parity.",
+  "runtime_edits": 0
+}

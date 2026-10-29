@@ -180,6 +180,7 @@ private:
         float u;
         float v;
         uint32_t abgr;
+        std::array<float, 3> tintRgb = {1.0f, 1.0f, 1.0f};
 
         static void init();
 

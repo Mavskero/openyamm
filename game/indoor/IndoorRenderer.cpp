@@ -16,6 +16,7 @@
 #include "game/indoor/IndoorPortalVisibility.h"
 #include "game/indoor/IndoorRenderRevision.h"
 #include "game/render/CombatActorHealthBarPolicy.h"
+#include "game/render/MonsterTint.h"
 #include "game/render/QuestMarkerGeometry.h"
 #include "game/render/TextureFiltering.h"
 #include "game/scene/IndoorSceneRuntime.h"
@@ -6755,6 +6756,7 @@ void IndoorRenderer::LitBillboardVertex::init()
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+        .add(bgfx::Attrib::TexCoord5, 3, bgfx::AttribType::Float)
         .end();
 }
 
@@ -7716,6 +7718,7 @@ void IndoorRenderer::renderActorPreviewBillboards(
         bool mirrored = false;
         bool hovered = false;
         uint32_t hoveredOutlineColorAbgr = 0;
+        uint32_t tintArgb = 0;
         float heightScale = 1.0f;
         float distanceSquared = 0.0f;
         bool hasHealthBar = false;
@@ -7826,6 +7829,10 @@ void IndoorRenderer::renderActorPreviewBillboards(
 
             BillboardDrawItem drawItem = {};
             drawItem.actorIndex = billboard.actorIndex;
+            const MonsterEntry *pMonsterEntry = m_monsterTable && billboard.actorIndex < mapDeltaData->actors.size()
+                ? resolveRuntimeMonsterEntry(*m_monsterTable, mapDeltaData->actors[billboard.actorIndex])
+                : nullptr;
+            drawItem.tintArgb = pMonsterEntry != nullptr ? pMonsterEntry->tintColor : 0;
             drawItem.x = billboard.x;
             drawItem.y = billboard.y;
             drawItem.z = billboard.z;
@@ -7919,6 +7926,8 @@ void IndoorRenderer::renderActorPreviewBillboards(
             const float deltaZ = static_cast<float>(billboard.z) - cameraPosition.z;
 
             BillboardDrawItem drawItem = {};
+            const MonsterEntry *pMonsterEntry = m_monsterTable ? m_monsterTable->findById(billboard.monsterId) : nullptr;
+            drawItem.tintArgb = pMonsterEntry != nullptr ? pMonsterEntry->tintColor : 0;
             drawItem.x = billboard.x;
             drawItem.y = billboard.y;
             drawItem.z = billboard.z;
@@ -8005,7 +8014,7 @@ void IndoorRenderer::renderActorPreviewBillboards(
         const float u0 = drawItem.mirrored ? 1.0f : 0.0f;
         const float u1 = drawItem.mirrored ? 0.0f : 1.0f;
         const uint32_t vertexColorAbgr = makeAbgr(0, 0, 0);
-        const std::array<float, 4> ambient =
+        std::array<float, 4> ambient =
             billboardLightingUniform(
                 lightingFrame,
                 frame,
@@ -8013,6 +8022,10 @@ void IndoorRenderer::renderActorPreviewBillboards(
                 drawItem.sectorId,
                 drawItem.lightingCacheKey,
                 pLightingStats);
+        const std::array<float, 3> tint = monsterTintRgb(drawItem.tintArgb, pSettings != nullptr && pSettings->tinting);
+        ambient[0] *= tint[0];
+        ambient[1] *= tint[1];
+        ambient[2] *= tint[2];
         const float clearOverrideColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         const float clearOutlineParams[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         const float fogColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};

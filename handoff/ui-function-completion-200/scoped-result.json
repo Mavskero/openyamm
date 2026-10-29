@@ -1,0 +1,157 @@
+{
+  "checkpoint": 200,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-29T12:21:55.209780+00:00",
+  "production_base": "998782f92076091870a522970a97f9fc045905c7",
+  "fixes": [
+    "Consume original MonsterEntry tintColor as RGB multiplier on actor lighting only",
+    "Outdoor per-vertex factor multiplies ambient+dynamic lighting without changing texture batches; preserve fog/outline/alpha",
+    "Indoor actor diffuse uses same factor after lighting cache; shared shader consumers provide default-white attribute",
+    "Video Tinting checkbox refreshes neutral world preview immediately"
+  ],
+  "source_files": {
+    "game/gameplay/GameplayOverlayInputController.cpp": "cf696078923b1416a4376ae0cb98cd2ccdd85da21058253f89e2bb8494e2a9cb",
+    "game/indoor/IndoorRenderer.cpp": "47ad0200969381508deb17832fcdf2f16969223d61cf6d4912a2bb205c19505a",
+    "game/indoor/IndoorRenderer.h": "7deb0401bd63ae4b3444885f8cc9aaae9ccbe44257f5492f2146141e3d89350f",
+    "game/outdoor/OutdoorBillboardRenderer.cpp": "c336e986e687423753a5fed0a3459590d08ed971d47456dc9db82599d73523f8",
+    "game/outdoor/OutdoorGameView.cpp": "c64c1acf6a7558d3ee9df3bf135d56a36a79ac1684a75feaf57d565e8c669f9b",
+    "game/outdoor/OutdoorGameView.h": "ca48aaf6561fc8222c9c2a07d09d1864c2a0b193c4aeff6e9c8cdaa7df7c10ba",
+    "game/shaders/fs_outdoor_billboard_lit.sc": "dcab03f75e3c1938ee55595e9395c3e7da9172f98eb2822de64b1757b5cb9cdb",
+    "game/shaders/varying.def.sc": "c64ad07c71aaf589e0d32d0c4357976958e9bc547fd2c595cfe6bf4bfa404584",
+    "game/shaders/vs_outdoor_billboard_lit.sc": "90901dd448a6779c0c2aa72c21937800aaba99cccc798300b0c9b7efc42b4752",
+    "tools/UiPlayabilityCapture.cpp": "962b5b0fc11ef31ed02da5c7335c81eb148e4076ac8f39464fad33a065306b34",
+    "game/render/MonsterTint.h": "0d23a8aa3e37d782067cffaf0c4e1bd28ab791a06e37043c2cfc248e2c132ffc"
+  },
+  "source_data": "source-data.json",
+  "validation_scope": {
+    "new_unit_cases": 0,
+    "existing_unit_cases": 0,
+    "app_runs": 2,
+    "completed_affected_app_runs": 1,
+    "campaign_replays": 0,
+    "save_replays": 0,
+    "device_or_simulator_operations": 0,
+    "images_reviewed": 3
+  },
+  "actual": {
+    "passed": true,
+    "checkpoint": 200,
+    "frames": 20,
+    "captures": 3,
+    "new_unit_cases": 0,
+    "device": false,
+    "natural_campaign": false
+  },
+  "actor_fixture": {
+    "actor_index": 46,
+    "monster_id": 228,
+    "tint_argb": 16742580,
+    "actor_pose": [
+      228.451,
+      19124.5,
+      8.99963
+    ],
+    "source_name": "Dragonfly C"
+  },
+  "runtime": "local-data/validation/ui-function-completion-198/runtime-003",
+  "runtime_changed": false,
+  "save_schema": 104,
+  "save_schema_changed": false,
+  "preserved_failure": {
+    "record": "actual-001.command.json",
+    "reason": "Capture-only predicate required a friendly colored actor; none existed in this selected original map. No rendered frame or click occurred. Removed friendly-only filter; no product patch."
+  },
+  "limitations": [
+    "Actual002 is one controlled original Emerald Island actor/map/party-pose/UI-delta0 flow, not natural travel or combat.",
+    "Indoor color and non-Metal backends are source/build reviewed, not a new actual visual matrix.",
+    "Official confirmed tint assignment was outdoor; indoor shared setting behavior is an explicit project consistency choice, not original parity.",
+    "Source A=0 is intentionally not sprite opacity; no new alpha-tint semantics invented.",
+    "Full natural campaign and target-iPad acceptance remain unproved; fixed remote195 unchanged."
+  ],
+  "owned_jobs_remaining": [],
+  "goal_status": "active",
+  "full_game_complete": false,
+  "next": "201 confirmed indoor WalkSound consumer and same-frame touch volume drag completion; no guessed TurnRate expansion.",
+  "command_summary": {
+    "build-capture-002": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "ui_playability_capture",
+        "-j",
+        "3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T12:17:31.261720+00:00",
+      "finished_at": "2026-10-29T12:17:38.538264+00:00"
+    },
+    "actual-002": {
+      "argv": [
+        "openyamm/build-apple/ui_playability_capture",
+        "local-data/validation/ui-function-completion-198/runtime-003",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-200/actual-002",
+        "--monster-tint"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T12:18:10.609319+00:00",
+      "finished_at": "2026-10-29T12:18:24.293043+00:00"
+    },
+    "actual-001": {
+      "argv": [
+        "openyamm/build-apple/ui_playability_capture",
+        "local-data/validation/ui-function-completion-198/runtime-003",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-200/actual-001",
+        "--monster-tint"
+      ],
+      "exit_code": 1,
+      "timed_out": false,
+      "started_at": "2026-10-29T12:16:08.222677+00:00",
+      "finished_at": "2026-10-29T12:16:21.529945+00:00"
+    },
+    "build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "ui_playability_capture",
+        "-j",
+        "3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T12:14:36.071978+00:00",
+      "finished_at": "2026-10-29T12:15:24.496043+00:00"
+    },
+    "build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T12:19:23.336431+00:00",
+      "finished_at": "2026-10-29T12:19:58.254864+00:00"
+    }
+  }
+}

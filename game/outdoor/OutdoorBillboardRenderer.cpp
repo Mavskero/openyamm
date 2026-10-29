@@ -12,6 +12,7 @@
 #include "game/outdoor/OutdoorInteractionController.h"
 #include "game/render/BillboardGeometry.h"
 #include "game/render/CombatActorHealthBarPolicy.h"
+#include "game/render/MonsterTint.h"
 #include "game/render/QuestMarkerGeometry.h"
 #include "game/render/TextureFiltering.h"
 #include "game/StringUtils.h"
@@ -2375,6 +2376,7 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
         float healthBarZ = 0.0f;
         float healthBarScale = 1.0f;
         float questMarkerZ = 0.0f;
+        std::array<float, 3> tintRgb = {1.0f, 1.0f, 1.0f};
     };
 
     thread_local std::vector<BillboardDrawItem> drawItems;
@@ -2504,6 +2506,7 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
     auto appendActorDrawItem =
         [&](const OutdoorWorldRuntime::MapActorState *pRuntimeActor,
             std::optional<size_t> runtimeActorIndex,
+            int16_t monsterId,
             int actorX,
             int actorY,
             int actorZ,
@@ -2612,6 +2615,20 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
             drawItem.mirrored = resolvedTexture.mirrored;
             drawItem.actor = true;
             drawItem.actorIndex = runtimeActorIndex.value_or(static_cast<size_t>(-1));
+            if (view.settingsSnapshot().tinting)
+            {
+                const MonsterTable &monsterTable = view.m_gameSession.data().monsterTable();
+                const MonsterTable::MonsterDisplayNameEntry *pDisplayEntry =
+                    monsterTable.findDisplayEntryById(monsterId);
+                const MonsterEntry *pMonsterEntry = pDisplayEntry != nullptr
+                    ? monsterTable.findByInternalName(pDisplayEntry->pictureName)
+                    : nullptr;
+                if (pMonsterEntry == nullptr)
+                {
+                    pMonsterEntry = monsterTable.findById(monsterId);
+                }
+                drawItem.tintRgb = monsterTintRgb(pMonsterEntry != nullptr ? pMonsterEntry->tintColor : 0, true);
+            }
             const bool contextHighlighted =
                 runtimeActorIndex.has_value()
                 && contextActionHighlightsActor(pContextActionHit, *runtimeActorIndex);
@@ -2795,6 +2812,7 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
             appendActorDrawItem(
                 pRuntimeActor,
                 pRuntimeActor != nullptr ? std::optional<size_t>(billboard.runtimeActorIndex) : std::nullopt,
+                pRuntimeActor != nullptr ? pRuntimeActor->monsterId : billboard.monsterId,
                 actorX,
                 actorY,
                 actorZ,
@@ -2826,6 +2844,7 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
             appendActorDrawItem(
                 pRuntimeActor,
                 actorIndex,
+                pRuntimeActor->monsterId,
                 pRuntimeActor->x,
                 pRuntimeActor->y,
                 pRuntimeActor->z,
@@ -3110,7 +3129,12 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
             const float u0 = drawItem.mirrored ? 1.0f : 0.0f;
             const float u1 = drawItem.mirrored ? 0.0f : 1.0f;
 
+            const size_t firstVertexIndex = vertices.size();
             appendLitBillboardVertices(vertices, center, right, up, u0, u1, drawItem.lightContributionAbgr);
+            for (size_t vertexIndex = firstVertexIndex; vertexIndex < vertices.size(); ++vertexIndex)
+            {
+                vertices[vertexIndex].tintRgb = drawItem.tintRgb;
+            }
             return true;
         };
 
@@ -3224,6 +3248,10 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
                 outlineU1,
                 outlineVBottom,
                 drawItem.lightContributionAbgr};
+            for (OutdoorGameView::LitBillboardVertex &vertex : outlineVertices)
+            {
+                vertex.tintRgb = drawItem.tintRgb;
+            }
 
             if (bgfx::getAvailTransientVertexBuffer(vertexCount, OutdoorGameView::LitBillboardVertex::ms_layout)
                 >= vertexCount)
@@ -3286,6 +3314,10 @@ void OutdoorBillboardRenderer::renderActorPreviewBillboards(
                 u0,
                 u1,
                 drawItem.lightContributionAbgr);
+            for (OutdoorGameView::LitBillboardVertex &vertex : vertices)
+            {
+                vertex.tintRgb = drawItem.tintRgb;
+            }
 
             if (bgfx::getAvailTransientVertexBuffer(vertexCount, OutdoorGameView::LitBillboardVertex::ms_layout)
                 < vertexCount)

@@ -4,6 +4,11 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 200 connects original monster Tinting RGB to actor rendering and preview; see `handoff/ui-function-completion-200/README.md`.
+  Native/iOS and one13.684second controlled Metal off/on/preview pass;3images reviewed,0newunitcases/device/campaign.
+  Runtime198/Save104 and fixedremote195 unchanged; fullgoalactive. Next indoorWalkSound and volume touch drag.
+
+
 - 199 closes confirmed coloredLights rendering/cache omissions; see `handoff/ui-function-completion-199/README.md`.
   Native/iOS and1existingcase16assertions pass; no new App/device/campaign run. Runtime198/Save104 unchanged.
   Fullgoal active; remote195 fixed. Tinting remains unchanged pending source clarification.
