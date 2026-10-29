@@ -1,0 +1,58 @@
+{
+  "reviewed": [
+    {
+      "path": "actual-001/creation-localized-labels.png",
+      "sha256": "211b24f756b2b14fc2970fd3a084680dd9bcf6b7713948824a67ae0c575250ab",
+      "scope": "Previously visually inspected in this ongoing task",
+      "accepted": true
+    },
+    {
+      "path": "actual-001/creation-skill-description.png",
+      "sha256": "211b24f756b2b14fc2970fd3a084680dd9bcf6b7713948824a67ae0c575250ab",
+      "scope": "Previously visually inspected in this ongoing task",
+      "accepted": false
+    },
+    {
+      "path": "actual-001/load-calendar-long-number.png",
+      "sha256": "1de38aa9f2afda771f9e127181b190e3ead27f12c0b78345c7f18709e95cb15e",
+      "scope": "Previously visually inspected in this ongoing task",
+      "accepted": true
+    },
+    {
+      "path": "actual-001/scroll-target-visible.png",
+      "sha256": "523b7d7e28be1df7ad81280c04f34ef61cd80cae2e325e74f1efb9f27466c23c",
+      "scope": "Previously visually inspected in this ongoing task",
+      "accepted": true
+    },
+    {
+      "path": "actual-002/continued-indoor-play.png",
+      "sha256": "f875b9b95b4d31b056d42c8465f4fa06deb90014f9f3749da65a8e837f61be0b",
+      "scope": "Previously visually inspected in this ongoing task",
+      "accepted": true
+    },
+    {
+      "path": "actual-002/creation-skill-description.png",
+      "sha256": "5630ecb729738cfc13efad5d6d61e8473c77cbd9d81ed2b962f7c1a1045ded85",
+      "scope": "Previously visually inspected in this ongoing task",
+      "accepted": true
+    },
+    {
+      "path": "actual-002/indoor-inn-rest.png",
+      "sha256": "b8370ae02600c9b09bb49cfadf77d3f62a87bda113efcdab0d1c79c766a96aa4",
+      "scope": "Previously visually inspected in this ongoing task",
+      "accepted": true
+    },
+    {
+      "path": "actual-002/sleeping-companion-doll.png",
+      "sha256": "34cd0ea89a8614b370dc936468dba2b654b87008f67d351896820a9221a9c349",
+      "scope": "Previously visually inspected in this ongoing task",
+      "accepted": true
+    },
+    {
+      "path": "actual-002/transition-visible-confirm.png",
+      "sha256": "40e0323a77375ed5fa6aa4790978de4c6e2ec5d522b3533343a90fb01c6679da",
+      "scope": "Previously visually inspected in this ongoing task",
+      "accepted": true
+    }
+  ]
+}

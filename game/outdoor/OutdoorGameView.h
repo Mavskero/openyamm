@@ -629,7 +629,6 @@ private:
     bool tryCastSpellRequest(const PartySpellCastRequest &request, const std::string &spellName) override;
     bool beginSaveWithPreview(const std::filesystem::path &path, const std::string &saveName, bool closeUiOnSuccess);
     void clearWorldInteractionInputLatches();
-    float innRestDurationMinutes(uint32_t houseId) const;
     void syncGameplayMouseLookMode(SDL_Window *pWindow, bool enabled);
     void syncCursorToGameplayCrosshair(SDL_Window *pWindow = nullptr);
     void refreshViewDistanceCache();

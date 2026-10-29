@@ -898,8 +898,17 @@ std::string portraitTextureNameForEntry(const CharacterDollEntry &entry)
     return buffer;
 }
 
-std::string characterCreationSkillDisplayName(const std::string &skillName)
+std::string characterCreationSkillDisplayName(
+    const std::string &skillName,
+    const CharacterInspectTable *pInspectTable)
 {
+    const SkillInspectEntry *pEntry = pInspectTable != nullptr ? pInspectTable->getSkill(skillName) : nullptr;
+
+    if (pEntry != nullptr && !pEntry->name.empty())
+    {
+        return pEntry->name;
+    }
+
     const std::string canonicalName = canonicalSkillName(skillName);
 
     if (canonicalName == "LeatherArmor")
@@ -1821,15 +1830,32 @@ std::vector<std::string> NewGameScreen::wrapTextToWidth(
                 }
 
                 std::string word = paragraph.substr(wordStart, wordEnd - wordStart);
+                const std::string candidate = currentLine.empty() ? word : currentLine + " " + word;
+
+                if (!currentLine.empty() && measureTextWidth(fontName, candidate, scale) > maxWidth)
+                {
+                    lines.push_back(currentLine);
+                    currentLine.clear();
+                }
 
                 while (!word.empty() && measureTextWidth(fontName, word, scale) > maxWidth)
                 {
-                    size_t splitLength = 1;
+                    size_t splitLength = 0;
 
-                    while (splitLength < word.size()
-                        && measureTextWidth(fontName, word.substr(0, splitLength + 1), scale) <= maxWidth)
+                    while (splitLength < word.size())
                     {
-                        ++splitLength;
+                        size_t byteCount = 0;
+                        const std::optional<uint32_t> character =
+                            decodeUtf8Character(std::string_view(word).substr(splitLength), byteCount);
+                        const size_t nextLength = splitLength + (character ? byteCount : 1);
+
+                        if (splitLength > 0
+                            && measureTextWidth(fontName, word.substr(0, nextLength), scale) > maxWidth)
+                        {
+                            break;
+                        }
+
+                        splitLength = nextLength;
                     }
 
                     lines.push_back(word.substr(0, splitLength));
@@ -1842,17 +1868,7 @@ std::vector<std::string> NewGameScreen::wrapTextToWidth(
                     continue;
                 }
 
-                const std::string candidate = currentLine.empty() ? word : currentLine + " " + word;
-
-                if (!currentLine.empty() && measureTextWidth(fontName, candidate, scale) > maxWidth)
-                {
-                    lines.push_back(currentLine);
-                    currentLine = word;
-                }
-                else
-                {
-                    currentLine = candidate;
-                }
+                currentLine = currentLine.empty() ? word : currentLine + " " + word;
 
                 wordStart = wordEnd + 1;
             }
@@ -2151,6 +2167,9 @@ void NewGameScreen::renderSkillInspectPopup(
     const float bodyWidth = std::max(1.0f, 377.0f * popupScale);
     const float bodyLineHeight = static_cast<float>(fontHeight("SMALLNUM")) * popupScale;
     const std::vector<std::string> bodyLines = wrapTextToWidth("SMALLNUM", entry.description, bodyWidth, popupScale);
+    const std::vector<std::string> normalLines = entry.normalDescription.empty()
+        ? std::vector<std::string>{}
+        : wrapTextToWidth("SMALLNUM", "Normal: " + entry.normalDescription, bodyWidth, popupScale);
     const std::vector<std::string> expertLines = entry.expertDescription.empty()
         ? std::vector<std::string>{}
         : wrapTextToWidth("SMALLNUM", "Expert: " + entry.expertDescription, bodyWidth, popupScale);
@@ -2165,7 +2184,7 @@ void NewGameScreen::renderSkillInspectPopup(
     float masteryHeight = 0.0f;
     bool hasAnyMastery = false;
 
-    for (const std::vector<std::string> *pLines : {&expertLines, &masterLines, &grandmasterLines})
+    for (const std::vector<std::string> *pLines : {&normalLines, &expertLines, &masterLines, &grandmasterLines})
     {
         if (pLines->empty())
         {
@@ -2281,6 +2300,14 @@ void NewGameScreen::renderSkillInspectPopup(
             renderedBlock = true;
         };
 
+    renderMasteryBlock(
+        normalLines,
+        inspectAvailabilityColor(skillMasteryAvailabilityForCreation(
+            m_pGameData != nullptr ? &m_pGameData->classSkillTable() : nullptr,
+            character,
+            skillName,
+            SkillMastery::Normal)),
+        renderedMasteryBlock);
     renderMasteryBlock(
         expertLines,
         inspectAvailabilityColor(skillMasteryAvailabilityForCreation(
@@ -3187,6 +3214,8 @@ void NewGameScreen::drawScreen(float deltaSeconds)
     drawTexture(resolveAssetName("CharacterCreationBackground", "makeme"), rootRect);
 
     const CharacterDollEntry *pEntry = selectedCharacterEntry();
+    const CharacterInspectTable *pInspectTable =
+        m_pGameData != nullptr ? &m_pGameData->characterInspectTable() : nullptr;
     const std::string fontName = "create";
     const MenuScreenBase::Rect nameFieldRect =
         resolveRect("CharacterCreationNameField", 78.0f, 68.0f, 110.0f, 24.0f);
@@ -3251,7 +3280,10 @@ void NewGameScreen::drawScreen(float deltaSeconds)
         drawText(fontName, "_", cursorX, cursorY, WhiteColor, scale);
     }
 
-    const std::string displayedClassName = displayClassName(selectedClassName());
+    const ClassInspectEntry *pClassInspectEntry =
+        pInspectTable != nullptr ? pInspectTable->getClass(selectedClassName()) : nullptr;
+    const std::string displayedClassName = pClassInspectEntry != nullptr && !pClassInspectEntry->name.empty()
+        ? pClassInspectEntry->name : displayClassName(selectedClassName());
     drawText(
         fontName,
         displayedClassName,
@@ -3363,6 +3395,10 @@ void NewGameScreen::drawScreen(float deltaSeconds)
 
     for (size_t statIndex = 0; statIndex < static_cast<size_t>(StatId::Count); ++statIndex)
     {
+        const StatInspectEntry *pStatInspectEntry =
+            pInspectTable != nullptr ? pInspectTable->getStat(StatLabels[statIndex]) : nullptr;
+        const std::string statLabel = pStatInspectEntry != nullptr && !pStatInspectEntry->name.empty()
+            ? pStatInspectEntry->name : StatLabels[statIndex];
         const float y = StatValueY[statIndex];
         const MenuScreenBase::Rect labelRect =
             resolveRect(StatLabelLayoutIds[statIndex], 2.0f, y - 3.0f, 0.0f, 0.0f);
@@ -3370,7 +3406,7 @@ void NewGameScreen::drawScreen(float deltaSeconds)
         const float labelY = labelRect.y;
         drawText(
             fontName,
-            StatLabels[statIndex],
+            statLabel,
             labelX,
             labelY,
             statLabelColorForStats(m_state.baseStats, statIndex),
@@ -3421,7 +3457,7 @@ void NewGameScreen::drawScreen(float deltaSeconds)
 
         if (rightMouseDown() && m_pGameData != nullptr)
         {
-            const float labelWidth = measureTextWidth(fontName, StatLabels[statIndex], scale);
+            const float labelWidth = measureTextWidth(fontName, statLabel, scale);
             const float valueWidth = measureTextWidth(fontName, statValueText, scale);
             const float rowHeight = static_cast<float>(fontHeight(fontName)) * scale;
             const MenuScreenBase::Rect rowRect = {
@@ -3539,7 +3575,7 @@ void NewGameScreen::drawScreen(float deltaSeconds)
         const bool isDefaultSkill =
             std::find(m_state.defaultSkills.begin(), m_state.defaultSkills.end(), skillName) != m_state.defaultSkills.end();
         const uint32_t color = isDefaultSkill ? YellowColor : BlueColor;
-        const std::string displayName = characterCreationSkillDisplayName(skillName);
+        const std::string displayName = characterCreationSkillDisplayName(skillName, pInspectTable);
         const MenuScreenBase::Rect clickRect =
             drawCenteredSkillText(displayName, skillAnchorRect.x, skillAnchorRect.y, color);
 
@@ -3571,7 +3607,7 @@ void NewGameScreen::drawScreen(float deltaSeconds)
             AvailableSkillPositions[slotIndex].y,
             0.0f,
             0.0f);
-        const std::string displayName = characterCreationSkillDisplayName(skillName);
+        const std::string displayName = characterCreationSkillDisplayName(skillName, pInspectTable);
         const MenuScreenBase::Rect clickRect =
             drawCenteredSkillText(displayName, skillAnchorRect.x, skillAnchorRect.y, isSelected ? BlueColor : WhiteColor);
 

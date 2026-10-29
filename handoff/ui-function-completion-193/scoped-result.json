@@ -1,0 +1,87 @@
+{
+  "checkpoint": 193,
+  "status": "ACCEPTED_SCOPED",
+  "source_base": "5f93672be3e978847364353ac75c5db8b14cecd7",
+  "goal": "active; continuous device-independent development",
+  "runtime": "local-data/validation/ui-function-completion-192/runtime-003",
+  "runtime_changed": false,
+  "save_version": 103,
+  "fixes": [
+    "Shared correct 28-day calendar and safe long numeric save labels; load keyboard selection and empty label",
+    "UTF8 creation wrapping, source Chinese class/stat/skill labels and missing Normal description",
+    "InventoryTarget scroll context, keep target backpack open and exclude HUD from world spell casts",
+    "Inspected companion dismissal and use cure potion on incapacitated paper doll",
+    "Same-batch journal/member keys; indoor inn rest and canonical night inn IDs",
+    "Clickable visible map-transition OK",
+    "Recovered turn-based members rejoin with preserved initiative and caster action ownership"
+  ],
+  "checks": {
+    "native": "build-native-003 passed",
+    "ios": "build-ios-001 unsigned generic Release passed; no device",
+    "existing_test": "1 existing turn-based case;58 assertions passed;0 new cases",
+    "actual001": {
+      "duration_seconds": 12.693,
+      "accepted_before_failure": [
+        "Load selection End/Home and year1169/long filename",
+        "Localized creation labels",
+        "Recharge scroll actual wand click with no MP/unlearned WaterMagic"
+      ],
+      "preserved_failure": "Sparks HUD fixture ran before relative cursor synchronized; no product failure claim",
+      "captures_reviewed": 4,
+      "blank_popup_capture_not_accepted": true
+    },
+    "actual002": {
+      "passed": true,
+      "checkpoint": 193,
+      "frames": 72,
+      "captures": 5,
+      "normal_frames": 30,
+      "inn_start": 75325.21875,
+      "inn_target": 76680.21875,
+      "remaining_only": true,
+      "new_unit_cases": 0,
+      "device": false,
+      "natural_campaign": false,
+      "duration_seconds": 13.911,
+      "accepted": [
+        "Creation skill description",
+        "HUD press retains pending spell, release cancels",
+        "M opens journal and Escape closes",
+        "Indoor house252 actual RentRoom charges40 and rest completes",
+        "Awaken227 paper-doll click cures inspected sleeping companion",
+        "Visible map-transition OK actual click",
+        "30 normal frames and encoded/decoded continued save"
+      ],
+      "captures_reviewed": 5
+    }
+  },
+  "input_sha256": {
+    "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav": "d75d775dcce408e8ad5f1b2a18a84df47a425850114a3de3923894a83949fae9",
+    "local-data/validation/ui-function-completion-193/actual-001/input.oysav": "d75d775dcce408e8ad5f1b2a18a84df47a425850114a3de3923894a83949fae9",
+    "local-data/validation/ui-function-completion-193/actual-002/input.oysav": "d75d775dcce408e8ad5f1b2a18a84df47a425850114a3de3923894a83949fae9"
+  },
+  "fixture_record": "actual-002/fixture.txt",
+  "limitations": [
+    "Controlled normal132 map7d29 seed; House252 opened directly, not natural Stone City doorway",
+    "Party/item/cursor/same-map prompt/UI-time fixtures declared",
+    "Night inns, other cure and scroll branches are source/build covered only",
+    "No new target iPad, cold-load or natural full campaign acceptance",
+    "Rest missing dynamic assets exposed in screenshot and remains next concrete work",
+    "No all-UI or full-game completion claim"
+  ],
+  "preserved_failures": [
+    "build-native-001 capture helper API typo",
+    "actual-001 unsynchronized capture cursor"
+  ],
+  "counts": {
+    "new_unit_cases": 0,
+    "campaign_replays": 0,
+    "device_operations": 0,
+    "new_release": 0
+  },
+  "next": [
+    "Transactional failed travel: restore pre-fare/time/food/OnLeave state and visible error",
+    "Rest dynamic sky/hourglass assets and remaining labels"
+  ],
+  "owned_build_app_jobs": []
+}

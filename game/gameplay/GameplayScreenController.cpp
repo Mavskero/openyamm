@@ -73,8 +73,8 @@ bool isScancodeNewlyPressed(
 {
     return scancode > SDL_SCANCODE_UNKNOWN
         && scancode < SDL_SCANCODE_COUNT
-        && input.keyboardHeld[scancode]
-        && previousKeyboardState[scancode] == 0;
+        && (input.scancodePressCount(scancode) != 0
+            || (input.keyboardHeld[scancode] && previousKeyboardState[scancode] == 0));
 }
 
 bool isNumberHotkeyNewlyPressed(
@@ -886,14 +886,15 @@ GameplayUiOverlayInputResult GameplayScreenController::handleStandardUiInput(
 
     const bool mapShortcutPressed =
         input.isScancodeHeld(SDL_SCANCODE_M)
-        || input.action(KeyboardAction::MapBook).held;
+        || input.scancodePressCount(SDL_SCANCODE_M) != 0
+        || input.isActionActive(KeyboardAction::MapBook);
     const bool storyShortcutPressed =
-        input.action(KeyboardAction::History).held;
+        input.isActionActive(KeyboardAction::History);
     const bool notesShortcutPressed = false;
     const bool zoomInPressed =
-        input.action(KeyboardAction::ZoomIn).held;
+        input.isActionActive(KeyboardAction::ZoomIn);
     const bool zoomOutPressed =
-        input.action(KeyboardAction::ZoomOut).held;
+        input.isActionActive(KeyboardAction::ZoomOut);
 
     return handleSharedOverlayInput(
         context,

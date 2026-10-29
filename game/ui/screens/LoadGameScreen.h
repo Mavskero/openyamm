@@ -12,6 +12,7 @@
 
 namespace OpenYAMM::Game
 {
+class UiTextTable;
 class LoadGameScreen : public MenuScreenBase
 {
 public:
@@ -22,7 +23,8 @@ public:
         const Engine::AssetFileSystem &assetFileSystem,
         const GameDataRepository &gameData,
         LoadAction loadAction,
-        CancelAction cancelAction);
+        CancelAction cancelAction,
+        const UiTextTable *pUiText = nullptr);
 
     AppMode mode() const override;
     void prepareForFirstFrame();
@@ -75,6 +77,7 @@ private:
     size_t m_lastClickedSlotIndex = static_cast<size_t>(-1);
     std::vector<SaveSlotSummary> m_slots;
     std::string m_errorText;
+    std::string m_emptySlotText;
     bool m_slotsLoaded = false;
 
     static std::vector<SaveSlotSummary> s_cachedSlots;

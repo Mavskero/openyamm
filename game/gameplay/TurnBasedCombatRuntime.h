@@ -98,6 +98,7 @@ private:
     static constexpr size_t MaximumTrackedMembers = 5;
 
     void rebuildInitialQueue(Party &party, const IGameplayWorldRuntime *pWorldRuntime);
+    void appendRecoveredPartyMembers(const Party &party);
     void appendNearbyActors(const IGameplayWorldRuntime &worldRuntime);
     void removeInvalidActorEntries(const IGameplayWorldRuntime &worldRuntime);
     std::optional<size_t> readyCharacterQueueIndex(const Party *pParty) const;

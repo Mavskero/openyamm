@@ -1421,7 +1421,9 @@ GameplayInteractionController::updateWorldInteractionFrame(
         input.isScancodeHeld(SDL_SCANCODE_LCTRL) || input.isScancodeHeld(SDL_SCANCODE_RCTRL);
     const bool pointerOverHudButton =
         !pointerPolicy.useCenterGameplayPoint
-        && (worldInteractionInputState.inspectMouseActivateLatch || input.leftMouseButton.pressed)
+        && (pendingSpellCast.active
+            || worldInteractionInputState.inspectMouseActivateLatch
+            || input.leftMouseButton.pressed)
         && GameplayHudInputController::resolveGameplayHudButtonTarget(
                runtime,
                GameplayHudButtonInputConfig{
@@ -1476,6 +1478,11 @@ GameplayInteractionController::updateWorldInteractionFrame(
     if (pendingSpellCast.active)
     {
         runtime.clearContextActionState();
+        const bool hudOwnsPointer =
+            pointerOverHudButton
+            || (overlayInteractionState.gameplayHudClickLatch
+                && overlayInteractionState.gameplayHudPressedTarget.type != GameplayHudPointerTargetType::None);
+        const bool allowPointerWorldTarget = !hoveredPortraitMemberIndex && !hudOwnsPointer && worldReady;
         GameplayWorldPickRequest pendingSpellPickRequest = {};
         GameplayWorldPickRequest centerHoverPickRequest = {};
 
@@ -1500,7 +1507,7 @@ GameplayInteractionController::updateWorldInteractionFrame(
         }
 
         HoverStateInput pendingSpellHoverInput = {};
-        pendingSpellHoverInput.allowHover = !hoveredPortraitMemberIndex && worldReady;
+        pendingSpellHoverInput.allowHover = allowPointerWorldTarget;
         pendingSpellHoverInput.currentTickNanoseconds = currentTickNanoseconds;
         pendingSpellHoverInput.refreshIntervalNanoseconds = HoverInspectRefreshNanoseconds;
         pendingSpellHoverInput.hoverRequest =
@@ -1551,8 +1558,7 @@ GameplayInteractionController::updateWorldInteractionFrame(
             && pendingSpellCast.targetKind == PartySpellCastTargetKind::GroundPoint
             && !confirmFromMobileHudButton
             && input.leftMouseButton.held
-            && !hoveredPortraitMemberIndex
-            && worldReady
+            && allowPointerWorldTarget
             && pWorldRuntime != nullptr)
         {
             const GameplayPendingSpellWorldTargetFacts targetFacts =
@@ -1572,7 +1578,7 @@ GameplayInteractionController::updateWorldInteractionFrame(
             }
         }
 
-        bool confirmFromPointer = pointerPolicy.leftMousePressed;
+        bool confirmFromPointer = pointerPolicy.leftMousePressed && !hudOwnsPointer;
 #if defined(__ANDROID__)
         if (mobileGroundTargetConfirmSpell)
         {
@@ -1596,12 +1602,13 @@ GameplayInteractionController::updateWorldInteractionFrame(
                 };
             }
             else if (!pendingSpellCast.clickLatch
-                && !hoveredPortraitMemberIndex
+                && (confirmFromMobileHudButton || allowPointerWorldTarget)
                 && worldReady
                 && pWorldRuntime != nullptr)
             {
                 const GameplayPendingSpellWorldTargetFacts targetFacts =
-                    pWorldRuntime->pickPendingSpellWorldTarget(pendingSpellPickRequest);
+                    pWorldRuntime->pickPendingSpellWorldTarget(
+                        confirmFromMobileHudButton ? centerHoverPickRequest : pendingSpellPickRequest);
                 pendingTargetInput.worldHit = targetFacts.worldHit;
                 pendingTargetInput.fallbackGroundTargetPoint = targetFacts.fallbackGroundTargetPoint;
             }

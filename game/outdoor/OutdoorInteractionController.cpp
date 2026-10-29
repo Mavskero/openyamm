@@ -1817,14 +1817,7 @@ void OutdoorInteractionController::executeActiveDialogAction(OutdoorGameView &vi
         {
             OutdoorInteractionController::closeActiveEventDialog(view);
         },
-        [&view](const GameplayDialogController::Result &result)
-        {
-            if (result.pendingInnRest.has_value())
-            {
-                view.m_gameSession.gameplayScreenRuntime().startInnRest(
-                    view.innRestDurationMinutes(result.pendingInnRest->houseId));
-            }
-        },
+        {},
         [&view](size_t previousMessageCount, bool allowNpcFallbackContent)
         {
             OutdoorInteractionController::presentPendingEventDialog(

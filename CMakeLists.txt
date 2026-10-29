@@ -636,6 +636,8 @@ if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_link_libraries(readable_scroll_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(ui_continuation_capture tools/UiContinuationCapture.cpp)
     target_link_libraries(ui_continuation_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(ui_playability_capture tools/UiPlayabilityCapture.cpp)
+    target_link_libraries(ui_playability_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(shop_stealing_check tests/UnitTestMain.cpp tests/MM7MechanicsRuntimeTests.cpp
         tests/RegressionGameData.cpp)
     target_include_directories(shop_stealing_check PRIVATE "${CMAKE_SOURCE_DIR}/third_party/doctest")

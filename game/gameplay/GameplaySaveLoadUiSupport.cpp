@@ -3,6 +3,7 @@
 #include "game/gameplay/SavePreviewImage.h"
 #include "game/maps/SaveGame.h"
 #include "game/StringUtils.h"
+#include "game/ui/SaveSlotText.h"
 
 #include <algorithm>
 #include <array>
@@ -16,92 +17,6 @@ namespace OpenYAMM::Game
 {
 namespace
 {
-struct CivilTime
-{
-    int year = 1168;
-    int month = 0;
-    int day = 1;
-    int hour = 0;
-    int minute = 0;
-    int weekday = 0;
-};
-
-constexpr std::array<const char *, 7> WeekdayNames = {
-    "Mon",
-    "Tue",
-    "Wed",
-    "Thu",
-    "Fri",
-    "Sat",
-    "Sun"
-};
-
-constexpr std::array<const char *, 12> MonthNames = {
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec"
-};
-
-CivilTime civilTimeFromGameMinutes(float gameMinutes)
-{
-    int totalMinutes = static_cast<int>(std::floor(std::max(0.0f, gameMinutes)));
-    CivilTime time = {};
-
-    time.minute = totalMinutes % 60;
-    totalMinutes /= 60;
-    time.hour = totalMinutes % 24;
-    int totalDays = totalMinutes / 24;
-    time.weekday = totalDays % 7;
-    time.day = totalDays + 1;
-    return time;
-}
-
-std::string formatClock(const CivilTime &time)
-{
-    int hour = time.hour % 12;
-
-    if (hour == 0)
-    {
-        hour = 12;
-    }
-
-    const char *pMeridiem = time.hour >= 12 ? "PM" : "AM";
-    return std::string(WeekdayNames[time.weekday])
-        + " "
-        + std::to_string(hour)
-        + ":"
-        + (time.minute < 10 ? "0" : "")
-        + std::to_string(time.minute)
-        + " "
-        + pMeridiem;
-}
-
-std::string formatDate(const CivilTime &time)
-{
-    return std::string(MonthNames[time.month]) + " " + std::to_string(time.day) + ", " + std::to_string(time.year);
-}
-
-std::string friendlySaveFileLabel(const std::filesystem::path &path)
-{
-    std::string stem = path.stem().string();
-
-    if (!stem.empty())
-    {
-        stem[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(stem[0])));
-    }
-
-    return stem;
-}
-
 std::string normalizeSaveGameConflictName(const std::string &value)
 {
     size_t begin = 0;
@@ -188,9 +103,9 @@ void refreshSaveGameSlots(
                 slot.populated = true;
                 slot.fileLabel = !saveData->saveName.empty() ? saveData->saveName : friendlySaveFileLabel(slot.path);
                 slot.locationName = resolveSaveLocationName(mapEntries, saveData->mapFileName);
-                const CivilTime civilTime = civilTimeFromGameMinutes(saveData->savedGameMinutes);
-                slot.weekdayClockText = formatClock(civilTime);
-                slot.dateText = formatDate(civilTime);
+                const SaveSlotTimeText timeText = formatSaveSlotTime(saveData->savedGameMinutes);
+                slot.weekdayClockText = timeText.clock;
+                slot.dateText = timeText.date;
 
                 if (!saveData->previewBmp.empty())
                 {
@@ -274,9 +189,9 @@ void refreshLoadGameSlots(
         slot.fileLabel = !saveData->saveName.empty() ? saveData->saveName : friendlySaveFileLabel(entry.path());
         slot.locationName = resolveSaveLocationName(mapEntries, saveData->mapFileName);
         slot.populated = true;
-        const CivilTime civilTime = civilTimeFromGameMinutes(saveData->savedGameMinutes);
-        slot.weekdayClockText = formatClock(civilTime);
-        slot.dateText = formatDate(civilTime);
+        const SaveSlotTimeText timeText = formatSaveSlotTime(saveData->savedGameMinutes);
+        slot.weekdayClockText = timeText.clock;
+        slot.dateText = timeText.date;
 
         if (!saveData->previewBmp.empty())
         {

@@ -3643,6 +3643,32 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                 return {};
             }
 
+            if (view.activeEventDialog().presentation == EventDialogPresentation::Transition)
+            {
+                const GameplayScreenRuntime::HudLayoutElement *pConfirmLayout =
+                    view.findHudLayoutElement("DialogueOkButton");
+                const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedConfirm =
+                    pConfirmLayout != nullptr && pConfirmLayout->visible && pConfirmLayout->interactive
+                        && toLowerCopy(pConfirmLayout->screen) == "dialogue"
+                    ? view.resolveHudLayoutElement(
+                        "DialogueOkButton", screenWidth, screenHeight, pConfirmLayout->width, pConfirmLayout->height)
+                    : std::nullopt;
+
+                if (resolvedConfirm && view.isPointerInsideResolvedElement(*resolvedConfirm, mouseX, mouseY))
+                {
+                    const std::vector<EventDialogAction> &actions = view.activeEventDialog().actions;
+                    for (size_t actionIndex = 0; actionIndex < actions.size(); ++actionIndex)
+                    {
+                        if (actions[actionIndex].kind == EventDialogActionKind::MapTransitionConfirm
+                            && actions[actionIndex].enabled)
+                        {
+                            return {GameplayDialoguePointerTargetType::Action, actionIndex};
+                        }
+                    }
+                    return {};
+                }
+            }
+
             if (view.activeEventDialog().presentation == EventDialogPresentation::Mm9Rude)
             {
                 constexpr float canvasWidth = 800.0f;

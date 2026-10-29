@@ -9078,7 +9078,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
         }
 
         if (normalizedLayoutId == "characterdismissbutton"
-            && (context.isAdventurersInnCharacterSourceActive() || party.activeMemberIndex() == 0))
+            && (context.isAdventurersInnCharacterSourceActive() || characterSourceIndex == 0))
         {
             continue;
         }

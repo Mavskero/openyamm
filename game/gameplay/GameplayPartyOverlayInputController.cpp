@@ -1697,6 +1697,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
          &skillLayout,
          &skillUiData,
          pParty,
+         selectedPartyMemberIndex,
          isReadOnlyAdventurersInnView,
          pActiveCharacter,
          pActiveCharacterDollEntry,
@@ -1966,7 +1967,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                 }
             }
 
-            if (!context.isAdventurersInnCharacterSourceActive() && pParty != nullptr && pParty->activeMemberIndex() > 0)
+            if (!context.isAdventurersInnCharacterSourceActive() && pParty != nullptr && selectedPartyMemberIndex > 0)
             {
                 const UiLayoutManager::LayoutElement *pDismissLayout =
                     context.findHudLayoutElement("CharacterDismissButton");
@@ -2586,6 +2587,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                     PartySpellCastRequest request = {};
                     request.casterMemberIndex = context.utilitySpellOverlayReadOnly().casterMemberIndex;
                     request.spellId = context.utilitySpellOverlayReadOnly().spellId;
+                    applyUtilitySpellOverlayCastOverrides(request, context.utilitySpellOverlayReadOnly());
                     request.targetItemMemberIndex =
                         pParty != nullptr ? std::optional<size_t>(selectedPartyMemberIndex) : std::nullopt;
                     request.targetInventoryGridX = target.gridX;
@@ -2599,6 +2601,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                     PartySpellCastRequest request = {};
                     request.casterMemberIndex = context.utilitySpellOverlayReadOnly().casterMemberIndex;
                     request.spellId = context.utilitySpellOverlayReadOnly().spellId;
+                    applyUtilitySpellOverlayCastOverrides(request, context.utilitySpellOverlayReadOnly());
                     request.targetItemMemberIndex =
                         pParty != nullptr ? std::optional<size_t>(selectedPartyMemberIndex) : std::nullopt;
                     request.targetEquipmentSlot = target.equipmentSlot;
@@ -2938,6 +2941,22 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
             if (target.type == GameplayCharacterPointerTargetType::EquipmentSlot)
             {
+                if (context.heldInventoryItem().active)
+                {
+                    const InventoryItemUseAction useAction =
+                        InventoryItemUseRuntime::classifyItemUse(
+                            context.heldInventoryItem().item,
+                            *context.itemTable(),
+                            context.mergedPotionSettingTable(),
+                            context.mergedReagentSettingTable());
+
+                    if (useAction != InventoryItemUseAction::None && useAction != InventoryItemUseAction::Equip)
+                    {
+                        context.itemService().tryUseHeldItemOnPartyMember(context, memberIndex, true);
+                        return;
+                    }
+                }
+
                 if (!selectedPartyMemberCanAct)
                 {
                     context.setStatusBarEvent("Can't do that");
@@ -2953,19 +2972,6 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                         setHeldItem(unequippedItem);
                     }
 
-                    return;
-                }
-
-                const InventoryItemUseAction useAction =
-                    InventoryItemUseRuntime::classifyItemUse(
-                        context.heldInventoryItem().item,
-                        *context.itemTable(),
-                        context.mergedPotionSettingTable(),
-                        context.mergedReagentSettingTable());
-
-                if (useAction != InventoryItemUseAction::None && useAction != InventoryItemUseAction::Equip)
-                {
-                    context.itemService().tryUseHeldItemOnPartyMember(context, memberIndex, true);
                     return;
                 }
 
@@ -3027,12 +3033,6 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
             if (target.type == GameplayCharacterPointerTargetType::DollPanel && context.heldInventoryItem().active)
             {
-                if (!selectedPartyMemberCanAct)
-                {
-                    context.setStatusBarEvent("Can't do that");
-                    return;
-                }
-
                 const InventoryItemUseAction useAction =
                     InventoryItemUseRuntime::classifyItemUse(
                         context.heldInventoryItem().item,
@@ -3043,6 +3043,12 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                 if (useAction != InventoryItemUseAction::None && useAction != InventoryItemUseAction::Equip)
                 {
                     context.itemService().tryUseHeldItemOnPartyMember(context, memberIndex, true);
+                    return;
+                }
+
+                if (!selectedPartyMemberCanAct)
+                {
+                    context.setStatusBarEvent("Can't do that");
                     return;
                 }
 

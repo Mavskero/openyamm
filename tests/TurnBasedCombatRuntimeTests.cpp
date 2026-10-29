@@ -368,6 +368,105 @@ TEST_CASE("turn based runtime cycles party actions before OE movement phase")
 
     CHECK(runtime.stage() == OpenYAMM::Game::TurnBasedCombatStage::Movement);
     CHECK_EQ(runtime.movementActionPoints(), 130);
+
+    {
+        Game::Party recoveringParty = makeTurnBasedParty(2);
+        Game::TurnBasedCombatRuntime recoveringRuntime;
+        REQUIRE(recoveringRuntime.begin(recoveringParty, nullptr));
+        recoveringRuntime.update(&recoveringParty, nullptr, 0.6f);
+        Game::Character *pRecoveringMember = recoveringParty.member(0);
+        REQUIRE(pRecoveringMember != nullptr);
+        pRecoveringMember->health = -1;
+        pRecoveringMember->conditions.set(static_cast<size_t>(Game::CharacterCondition::Unconscious));
+        recoveringRuntime.update(&recoveringParty, nullptr, 0.0f);
+        REQUIRE_EQ(recoveringParty.activeMemberIndex(), 1);
+        const Game::TurnBasedCombatRuntime::Snapshot beforeHealing = recoveringRuntime.snapshot();
+
+        REQUIRE(recoveringParty.healMember(0, 2));
+        CHECK_FALSE(recoveringRuntime.applyPlayerAction(recoveringParty, 0, 1.0f));
+        recoveringRuntime.storeMemberTurnRecovery(1, 1.0f);
+        REQUIRE(recoveringRuntime.applyPlayerAction(recoveringParty, 1, 5.0f));
+        CHECK(recoveringRuntime.stage() == Game::TurnBasedCombatStage::Attack);
+        CHECK_EQ(recoveringRuntime.snapshot().turnCount, beforeHealing.turnCount);
+        CHECK_EQ(recoveringParty.activeMemberIndex(), 0);
+        CHECK_EQ(recoveringRuntime.queue().size(), 2);
+        CHECK_EQ(recoveringRuntime.queue()[0].id, 0);
+        CHECK_EQ(recoveringRuntime.queue()[0].initiative, beforeHealing.queue[0].initiative);
+        CHECK_EQ(recoveringRuntime.queue()[1].id, 1);
+        CHECK_EQ(recoveringRuntime.queue()[1].initiative, 60);
+        CHECK(recoveringRuntime.applyPlayerAction(recoveringParty, 0, 5.0f));
+    }
+
+    {
+        Game::Party sleepingParty = makeTurnBasedParty(2);
+        Game::Character *pSleepingMember = sleepingParty.member(1);
+        REQUIRE(pSleepingMember != nullptr);
+        pSleepingMember->conditions.set(static_cast<size_t>(Game::CharacterCondition::Asleep));
+        pSleepingMember->recoverySecondsRemaining = 1.0f;
+        MutableTurnWorld world;
+        world.bindParty(&sleepingParty);
+        world.actors.push_back(nearbyHostile());
+        Game::TurnBasedCombatRuntime wakingRuntime;
+        REQUIRE(wakingRuntime.begin(sleepingParty, &world));
+        wakingRuntime.update(&sleepingParty, &world, 0.6f);
+        const Game::TurnBasedCombatRuntime::Snapshot beforeAwakening = wakingRuntime.snapshot();
+
+        pSleepingMember->conditions.reset(static_cast<size_t>(Game::CharacterCondition::Asleep));
+        wakingRuntime.update(&sleepingParty, &world, 0.0f);
+        CHECK(wakingRuntime.stage() == beforeAwakening.stage);
+        CHECK_EQ(wakingRuntime.snapshot().turnCount, beforeAwakening.turnCount);
+        CHECK_EQ(wakingRuntime.snapshot().turnInitiative, beforeAwakening.turnInitiative);
+        CHECK_EQ(wakingRuntime.queue().size(), beforeAwakening.queue.size() + 1);
+        for (const Game::TurnBasedCombatRuntime::QueueEntry &entry : beforeAwakening.queue)
+        {
+            CHECK(std::find(wakingRuntime.queue().begin(), wakingRuntime.queue().end(), entry)
+                != wakingRuntime.queue().end());
+        }
+        CHECK_EQ(sleepingParty.members()[1].recoverySecondsRemaining, doctest::Approx(1.0f));
+        wakingRuntime.update(&sleepingParty, &world, 0.0f);
+        CHECK_EQ(wakingRuntime.queue().size(), beforeAwakening.queue.size() + 1);
+
+        REQUIRE(wakingRuntime.applyPlayerAction(sleepingParty, 0, 5.0f));
+        REQUIRE(wakingRuntime.stage() == Game::TurnBasedCombatStage::Movement);
+        CHECK_EQ(wakingRuntime.movementActionPoints(), 130);
+        REQUIRE(wakingRuntime.finishMovementPhase());
+        wakingRuntime.update(&sleepingParty, &world, 0.016f);
+        wakingRuntime.update(&sleepingParty, &world, 0.6f);
+        CHECK(wakingRuntime.stage() == Game::TurnBasedCombatStage::Attack);
+        CHECK_EQ(sleepingParty.activeMemberIndex(), 1);
+        CHECK_EQ(sleepingParty.members()[1].recoverySecondsRemaining, doctest::Approx(0.0f));
+    }
+
+    {
+        Game::Party disabledParty = makeTurnBasedParty(2);
+        Game::TurnBasedCombatRuntime disabledRuntime;
+        REQUIRE(disabledRuntime.begin(disabledParty, nullptr));
+        disabledRuntime.update(&disabledParty, nullptr, 0.6f);
+        for (size_t index = 0; index < disabledParty.members().size(); ++index)
+        {
+            disabledParty.member(index)->conditions.set(static_cast<size_t>(Game::CharacterCondition::Paralyzed));
+        }
+        CHECK_FALSE(disabledParty.hasActableMember());
+        disabledRuntime.update(&disabledParty, nullptr, 0.0f);
+        CHECK(disabledRuntime.stage() == Game::TurnBasedCombatStage::Movement);
+        CHECK_EQ(disabledRuntime.movementActionPoints(), 130);
+        CHECK_FALSE(disabledRuntime.canBeginPlayerAction(disabledParty));
+        REQUIRE(disabledRuntime.finishMovementPhase());
+        disabledRuntime.update(&disabledParty, nullptr, 0.0f);
+        CHECK(disabledRuntime.stage() == Game::TurnBasedCombatStage::Wait);
+        disabledRuntime.update(&disabledParty, nullptr, 0.6f);
+        CHECK(disabledRuntime.stage() == Game::TurnBasedCombatStage::Movement);
+        CHECK_EQ(disabledRuntime.queue().size(), 2);
+        CHECK(Game::TurnBasedCombatRuntime::isValidSnapshot(disabledRuntime.snapshot()));
+
+        disabledParty.member(0)->conditions.reset(static_cast<size_t>(Game::CharacterCondition::Paralyzed));
+        REQUIRE(disabledRuntime.finishMovementPhase());
+        disabledRuntime.update(&disabledParty, nullptr, 0.0f);
+        disabledRuntime.update(&disabledParty, nullptr, 0.6f);
+        CHECK(disabledRuntime.stage() == Game::TurnBasedCombatStage::Attack);
+        CHECK(disabledRuntime.canBeginPlayerAction(disabledParty));
+        CHECK_EQ(disabledParty.activeMemberIndex(), 0);
+    }
 }
 
 TEST_CASE("turn based runtime advances OE game time once when a combat turn reaches movement")

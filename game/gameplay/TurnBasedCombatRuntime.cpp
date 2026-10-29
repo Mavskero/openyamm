@@ -662,12 +662,18 @@ bool TurnBasedCombatRuntime::applyPlayerAction(Party &party, size_t memberIndex,
         return false;
     }
 
-    const std::optional<size_t> queueIndex = readyCharacterQueueIndex(&party);
-    if (!queueIndex || m_queue[*queueIndex].id != memberIndex)
+    // A healing action can make an earlier member ready before the caster's action is committed.
+    // The active member still owns this action until its existing queue entry has been charged.
+    const std::vector<QueueEntry>::iterator actingEntry = std::find_if(
+        m_queue.begin(), m_queue.end(), [memberIndex](const QueueEntry &entry)
+        {
+            return entry.kind == QueueEntry::Kind::Character && entry.id == memberIndex && entry.initiative <= 0;
+        });
+    if (party.activeMemberIndex() != memberIndex || actingEntry == m_queue.end())
     {
         GAMEPLAY_DEBUG_TRACE(
             "turn_based_player_action_wrong_front requested_member=" + std::to_string(memberIndex)
-            + " ready_member=" + (queueIndex ? std::to_string(m_queue[*queueIndex].id) : std::string("none"))
+            + " active_member=" + std::to_string(party.activeMemberIndex())
             + " " + queueSummary(m_queue));
         return false;
     }
@@ -678,7 +684,7 @@ bool TurnBasedCombatRuntime::applyPlayerAction(Party &party, size_t memberIndex,
             m_memberTurnRecoverySeconds[std::min(memberIndex, MaximumTrackedMembers - 1)] > 0.0f
                 ? m_memberTurnRecoverySeconds[std::min(memberIndex, MaximumTrackedMembers - 1)]
                 : recoverySeconds));
-    m_queue[*queueIndex].initiative = requestedRecoveryTicks;
+    actingEntry->initiative = requestedRecoveryTicks;
     m_actorActionTimerTicks = 0.0f;
     m_loggedReadyMemberIndex.reset();
 
@@ -784,6 +790,33 @@ void TurnBasedCombatRuntime::rebuildInitialQueue(Party &party, const IGameplayWo
     }
 }
 
+void TurnBasedCombatRuntime::appendRecoveredPartyMembers(const Party &party)
+{
+    for (size_t memberIndex = 0; memberIndex < party.members().size(); ++memberIndex)
+    {
+        const Character &member = party.members()[memberIndex];
+        if (!memberCanStayInTurnQueue(member))
+        {
+            continue;
+        }
+
+        const bool alreadyQueued = std::any_of(m_queue.begin(), m_queue.end(), [memberIndex](const QueueEntry &entry)
+        {
+            return entry.kind == QueueEntry::Kind::Character && entry.id == memberIndex;
+        });
+        if (alreadyQueued)
+        {
+            continue;
+        }
+
+        m_queue.push_back(QueueEntry{
+            .kind = QueueEntry::Kind::Character,
+            .id = memberIndex,
+            .initiative = recoverySecondsToTicks(member.recoverySecondsRemaining),
+        });
+    }
+}
+
 void TurnBasedCombatRuntime::appendNearbyActors(const IGameplayWorldRuntime &worldRuntime)
 {
     const size_t actorCount = worldRuntime.mapActorCount();
@@ -879,6 +912,7 @@ void TurnBasedCombatRuntime::sortQueue(Party *pParty)
     if (pParty != nullptr)
     {
         removeInvalidEntries(*pParty);
+        appendRecoveredPartyMembers(*pParty);
     }
 
     std::stable_sort(
@@ -943,7 +977,8 @@ void TurnBasedCombatRuntime::removeInvalidEntries(const Party &party)
                     return false;
                 }
 
-                return entry.id >= party.members().size() || !memberCanStayInTurnQueue(party.members()[entry.id]);
+                // A condition can be cured during combat. Keep its remaining initiative until the member recovers.
+                return entry.id >= party.members().size();
             }),
         m_queue.end());
 }
@@ -968,7 +1003,7 @@ void TurnBasedCombatRuntime::removeInvalidActorEntries(const IGameplayWorldRunti
 
 void TurnBasedCombatRuntime::advanceAttackQueue(Party *pParty, bool resolveReadyActors)
 {
-    if (pParty == nullptr || m_queue.empty())
+    if (pParty == nullptr)
     {
         enterMovementStage();
         return;
@@ -977,6 +1012,11 @@ void TurnBasedCombatRuntime::advanceAttackQueue(Party *pParty, bool resolveReady
     for (;;)
     {
         sortQueue(pParty);
+        if (m_queue.empty())
+        {
+            enterMovementStage();
+            return;
+        }
 
         const std::optional<size_t> readyCharacterIndex = readyCharacterQueueIndex(pParty);
         if (readyCharacterIndex)
@@ -1026,6 +1066,12 @@ void TurnBasedCombatRuntime::advanceAttackQueue(Party *pParty, bool resolveReady
         int nextInitiative = InactiveInitiative;
         for (const QueueEntry &entry : m_queue)
         {
+            if (entry.kind == QueueEntry::Kind::Character
+                && !memberCanStayInTurnQueue(pParty->members()[entry.id]))
+            {
+                continue;
+            }
+
             if (entry.initiative > 0)
             {
                 nextInitiative = std::min(nextInitiative, entry.initiative);

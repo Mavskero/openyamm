@@ -2,6 +2,8 @@
 
 #include "game/maps/SaveGame.h"
 #include "game/ui/Utf8Text.h"
+#include "game/ui/SaveSlotText.h"
+#include "game/tables/UiTextTable.h"
 
 #include <SDL3/SDL.h>
 
@@ -30,18 +32,6 @@ constexpr uint64_t SlotDoubleClickWindowMs = 500;
 constexpr uint32_t WhiteColorAbgr = 0xffffffffu;
 constexpr uint32_t SelectedRowColorAbgr = 0xff00ffffu;
 
-struct CivilTime
-{
-    int year = 1168;
-    int month = 1;
-    int day = 1;
-    int dayOfWeek = 1;
-    int hour24 = 9;
-    int hour12 = 9;
-    int minute = 0;
-    bool isPm = false;
-};
-
 struct ResolvedLayoutElement
 {
     float x = 0.0f;
@@ -61,107 +51,6 @@ std::string toLowerCopy(const std::string &value)
     }
 
     return normalized;
-}
-
-CivilTime civilTimeFromGameMinutes(float gameMinutes)
-{
-    const int totalMinutes = std::max(0, static_cast<int>(std::floor(gameMinutes)));
-    const int totalDays = totalMinutes / (24 * 60);
-    CivilTime time = {};
-    time.year = 1168 + totalDays / (12 * 28);
-    time.month = 1 + (totalDays / 28) % 12;
-    time.day = 1 + totalDays % 28;
-    time.dayOfWeek = 1 + totalDays % 7;
-    time.hour24 = (totalMinutes / 60) % 24;
-    time.minute = totalMinutes % 60;
-    time.isPm = time.hour24 >= 12;
-    time.hour12 = time.hour24 % 12;
-
-    if (time.hour12 == 0)
-    {
-        time.hour12 = 12;
-    }
-
-    return time;
-}
-
-std::string weekdayName(int dayOfWeek)
-{
-    static const std::array<const char *, 7> names = {
-        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
-    };
-    return names[std::clamp(dayOfWeek, 1, 7) - 1];
-}
-
-std::string monthName(int month)
-{
-    static const std::array<const char *, 12> names = {
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    };
-    return names[std::clamp(month, 1, 12) - 1];
-}
-
-std::string formatClock(const CivilTime &time)
-{
-    char buffer[32] = {};
-    std::snprintf(
-        buffer,
-        sizeof(buffer),
-        "%s %02d:%02d%s",
-        weekdayName(time.dayOfWeek).c_str(),
-        time.hour12,
-        time.minute,
-        time.isPm ? "PM" : "AM");
-    return buffer;
-}
-
-std::string formatDate(const CivilTime &time)
-{
-    char buffer[64] = {};
-    std::snprintf(buffer, sizeof(buffer), "%d %s %d", time.day, monthName(time.month).c_str(), time.year);
-    return buffer;
-}
-
-std::string friendlySaveFileLabel(const std::filesystem::path &path)
-{
-    const std::string stem = toLowerCopy(path.stem().string());
-
-    if (stem == "autosave")
-    {
-        return "Autosave";
-    }
-
-    if (stem == "quicksave")
-    {
-        return "Quicksave";
-    }
-
-    if (stem.rfind("save", 0) == 0 && stem.size() > 4)
-    {
-        const std::string suffix = stem.substr(4);
-        const bool allDigits = std::all_of(
-            suffix.begin(),
-            suffix.end(),
-            [](char character)
-            {
-                return std::isdigit(static_cast<unsigned char>(character)) != 0;
-            });
-
-        if (allDigits)
-        {
-            return "Save " + std::to_string(std::max(1, std::stoi(suffix)));
-        }
-    }
-
-    std::string label = path.stem().string();
-
-    if (!label.empty())
-    {
-        label[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(label[0])));
-    }
-
-    return label;
 }
 
 bool decodeBmpBytesToBgra(
@@ -458,11 +347,13 @@ LoadGameScreen::LoadGameScreen(
     const Engine::AssetFileSystem &assetFileSystem,
     const GameDataRepository &gameData,
     LoadAction loadAction,
-    CancelAction cancelAction)
+    CancelAction cancelAction,
+    const UiTextTable *pUiText)
     : MenuScreenBase(assetFileSystem)
     , m_pGameData(&gameData)
     , m_loadAction(std::move(loadAction))
     , m_cancelAction(std::move(cancelAction))
+    , m_emptySlotText(pUiText != nullptr ? pUiText->text(UiTextTable::Message::EmptySlot) : "Empty")
 {
 }
 
@@ -528,6 +419,51 @@ void LoadGameScreen::drawScreen(float deltaSeconds)
     {
         cancel();
         return;
+    }
+
+    if (!m_slots.empty())
+    {
+        const size_t previousIndex = m_selectedIndex;
+        const auto pressed = [this](SDL_Scancode scancode)
+        {
+            return inputFrame().scancodePressCount(scancode) != 0;
+        };
+        if (pressed(SDL_SCANCODE_UP) && m_selectedIndex > 0)
+        {
+            --m_selectedIndex;
+        }
+        else if (pressed(SDL_SCANCODE_DOWN))
+        {
+            m_selectedIndex = std::min(m_selectedIndex + 1, m_slots.size() - 1);
+        }
+        else if (pressed(SDL_SCANCODE_PAGEUP))
+        {
+            m_selectedIndex -= std::min(m_selectedIndex, VisibleSlotCount);
+        }
+        else if (pressed(SDL_SCANCODE_PAGEDOWN))
+        {
+            m_selectedIndex = std::min(m_selectedIndex + VisibleSlotCount, m_slots.size() - 1);
+        }
+        else if (pressed(SDL_SCANCODE_HOME))
+        {
+            m_selectedIndex = 0;
+        }
+        else if (pressed(SDL_SCANCODE_END))
+        {
+            m_selectedIndex = m_slots.size() - 1;
+        }
+        if (m_selectedIndex != previousIndex)
+        {
+            if (m_selectedIndex < m_scrollOffset)
+            {
+                m_scrollOffset = m_selectedIndex;
+            }
+            else if (m_selectedIndex >= m_scrollOffset + VisibleSlotCount)
+            {
+                m_scrollOffset = m_selectedIndex - VisibleSlotCount + 1;
+            }
+            m_lastClickedSlotIndex = static_cast<size_t>(-1);
+        }
     }
 
     if (returnPressed)
@@ -682,6 +618,10 @@ void LoadGameScreen::drawScreen(float deltaSeconds)
         drawLayoutText("LoadGamePreviewLine1", slot.weekdayClockText);
         drawLayoutText("LoadGamePreviewLine2", slot.dateText);
     }
+    else
+    {
+        drawLayoutText("LoadGameSlotRow0", m_emptySlotText);
+    }
 
     if (confirmButton.clicked)
     {
@@ -747,9 +687,9 @@ void LoadGameScreen::refreshSaveSlots()
         slot.fileLabel = !saveData->saveName.empty() ? saveData->saveName : friendlySaveFileLabel(entry.path());
         slot.locationName = saveData->mapFileName;
         slot.populated = true;
-        const CivilTime civilTime = civilTimeFromGameMinutes(saveData->savedGameMinutes);
-        slot.weekdayClockText = formatClock(civilTime);
-        slot.dateText = formatDate(civilTime);
+        const SaveSlotTimeText timeText = formatSaveSlotTime(saveData->savedGameMinutes);
+        slot.weekdayClockText = timeText.clock;
+        slot.dateText = timeText.date;
 
         if (m_pGameData != nullptr)
         {

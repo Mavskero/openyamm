@@ -1,0 +1,28 @@
+{
+  "source_base": "5f93672be3e978847364353ac75c5db8b14cecd7",
+  "files": {
+    "CMakeLists.txt": "c749cb190744edd69fbe4663841ec47ff4e0fec3387d94dd3433a1e5d6fb56e3",
+    "game/app/GameApplication.cpp": "d536160a70fbd84c870e01e3f00ca52411b82d3997e98bd5dafbb92f8caac5c6",
+    "game/gameplay/GameplayInteractionController.cpp": "a1a8ec7aa171d077ae2dba472dcb8220a2cbf1e9e5bcd58aa9c27b6cf2c91bae",
+    "game/gameplay/GameplayItemService.cpp": "453f93a87ae995dbb2701098e63cd9353a1b539749865f9737da7eb287bcc067",
+    "game/gameplay/GameplayOverlayInputController.cpp": "e603e927352fc4ede72b8217c6c6f7ebff0b2a348277a613c6fb2462dc19b1b3",
+    "game/gameplay/GameplayPartyOverlayInputController.cpp": "f88e9a51d195baa983a3d3621237967012c3a451066b1b293ef429d296fe98bf",
+    "game/gameplay/GameplaySaveLoadUiSupport.cpp": "b8ed382455f0432831e907d5b8afe2e88ff07844e5fda22de74a8d019713e9b5",
+    "game/gameplay/GameplayScreenController.cpp": "ca8ce857f00b4818fc9c315d3a9a3ff3eb247540c0ab5b8f6ef07e395210adff",
+    "game/gameplay/GameplayScreenRuntime.cpp": "032b37cfb1b5664be7bddb159d9693e44e6cbd4cf6f932405b965d0c8c1d7444",
+    "game/gameplay/TurnBasedCombatRuntime.cpp": "1a916a581cb760459b7611f4db54a7de4e372d03e9c8c0fc030c373667e3c531",
+    "game/gameplay/TurnBasedCombatRuntime.h": "5b24fd1b6862b11cc6ca3131dd66826d95e52fe5787df77705224f95e001e4a5",
+    "game/outdoor/OutdoorGameView.cpp": "e70f2b998f5f61f1a26f2e2c98a7324b38b998b157c9b0ba5ee09c13527a9247",
+    "game/outdoor/OutdoorGameView.h": "dd670fdaa33172951da46df05efea81c9e6bbce96e8a66eebe3a2584ac87f94b",
+    "game/outdoor/OutdoorInteractionController.cpp": "8164f4960d1d45cdc822959d324b181aa9466867bd973ae29f770400c55c5d9c",
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "d2504ce22b7d110d63603d0be25e0ed046eccceb5feadf96b72e875100a9ac0d",
+    "game/ui/screens/LoadGameScreen.cpp": "65e702ea6091cda5d669e32d2ec807728b174ce6a144166bc1ab3edd81415f56",
+    "game/ui/screens/LoadGameScreen.h": "e2aaac089ba166f5dfa2459397dfc4884465342219a0a9e417650e3f20ebfb4a",
+    "game/ui/screens/NewGameScreen.cpp": "f86bdcb7d1dfdd48f30059c5b39f50c64bf03ce2152bc76a3b70a0dc00cb4733",
+    "tests/TurnBasedCombatRuntimeTests.cpp": "ad829b9095777def26d1fcda996eacce699966865792b1935d0486b94e138076",
+    "game/ui/SaveSlotText.h": "9ac0dc1d381cd3b87cf5a30a375f5734d509d63b001bd6db205524ae87df2a38",
+    "tools/UiPlayabilityCapture.cpp": "265364e9ecae755989e8682e6541f074b2967eab71128ba2a6b7d3de020b04c0"
+  },
+  "runtime": "local-data/validation/ui-function-completion-192/runtime-003",
+  "runtime_changed": false
+}

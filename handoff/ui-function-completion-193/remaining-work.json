@@ -1,0 +1,17 @@
+{
+  "status": "active",
+  "next": [
+    {
+      "issue": "Failed paid transport/edge arrival retains precommitted fare/time/party effects",
+      "evidence": [
+        "HouseInteraction.cpp:2521",
+        "GameplayDialogController.cpp:2650",
+        "GameApplication.cpp:9751"
+      ],
+      "scope": "Complete current affectedUI/inn/spell fixes then implement coherent map-travel transaction and visible failure; avoid altering source-event side effects blindly",
+      "owner": "main",
+      "requires_device": false
+    }
+  ],
+  "do_not_stop_after_batch": true
+}

@@ -55,6 +55,46 @@ const char *restModeTraceName(GameplayUiController::RestMode mode)
     return "unknown";
 }
 
+float innRestDurationMinutes(const IGameplayWorldRuntime *pWorldRuntime, uint32_t houseId)
+{
+    if (pWorldRuntime == nullptr)
+    {
+        return 8.0f * 60.0f;
+    }
+
+    constexpr int MinutesPerDay = 24 * 60;
+    constexpr int InnRestDawnHour = 5;
+    // Merged house ids used by the original Deyja, Pit and Mount Nighon map doors.
+    constexpr uint32_t DeyjaTavernHouseId = 243;
+    constexpr uint32_t PitTavernHouseId = 246;
+    constexpr uint32_t MountNighonTavernHouseId = 248;
+    int currentMinuteOfDay = static_cast<int>(std::floor(pWorldRuntime->gameMinutes()));
+    currentMinuteOfDay %= MinutesPerDay;
+
+    if (currentMinuteOfDay < 0)
+    {
+        currentMinuteOfDay += MinutesPerDay;
+    }
+
+    int minutesUntilDawn = InnRestDawnHour * 60 - currentMinuteOfDay;
+
+    if (minutesUntilDawn <= 0)
+    {
+        minutesUntilDawn += MinutesPerDay;
+    }
+
+    float durationMinutes = static_cast<float>(minutesUntilDawn) + 60.0f;
+
+    if (houseId == DeyjaTavernHouseId
+        || houseId == PitTavernHouseId
+        || houseId == MountNighonTavernHouseId)
+    {
+        durationMinutes += 12.0f * 60.0f;
+    }
+
+    return durationMinutes;
+}
+
 bool isHouseInventoryOverlay(const GameplayUiController::InventoryNestedOverlayState &overlay)
 {
     return overlay.active
@@ -2188,6 +2228,11 @@ void GameplayScreenRuntime::executeActiveDialogAction(
     if (afterCloseContinuation)
     {
         afterCloseContinuation(result);
+    }
+
+    if (result.pendingInnRest.has_value())
+    {
+        startInnRest(innRestDurationMinutes(worldRuntime(), result.pendingInnRest->houseId));
     }
 
     presentPendingDialogActionResult(result, presentPendingEventDialogCallback);

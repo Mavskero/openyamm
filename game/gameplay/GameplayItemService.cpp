@@ -531,10 +531,16 @@ bool GameplayItemService::tryUseHeldItemOnPartyMember(
         runtime.setStatusBarEvent(useResult.statusText);
     }
 
+    const bool scrollOpenedInventoryTarget =
+        useResult.action == InventoryItemUseAction::CastScroll
+        && useResult.consumed
+        && runtime.utilitySpellOverlayReadOnly().active
+        && runtime.utilitySpellOverlayReadOnly().mode == GameplayUiController::UtilitySpellOverlayMode::InventoryTarget;
     const bool closeCharacterScreen =
-        !keepCharacterScreenOpen
-        || (useResult.action == InventoryItemUseAction::CastScroll && useResult.consumed)
-        || useResult.action == InventoryItemUseAction::UseTempleInABottle;
+        !scrollOpenedInventoryTarget
+        && (!keepCharacterScreenOpen
+            || (useResult.action == InventoryItemUseAction::CastScroll && useResult.consumed)
+            || useResult.action == InventoryItemUseAction::UseTempleInABottle);
 
     if (closeCharacterScreen)
     {

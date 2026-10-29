@@ -8565,7 +8565,8 @@ void GameApplication::openLoadGameScreen(bool returnToGameplayMenu, const std::s
             {
                 openMainMenuScreen();
             }
-        });
+        },
+        &m_gameSession.gameplayScreenRuntime().gameplayUiRuntime().uiTextTable());
 
     if (!m_mainMenuChildScreensPrepared)
     {
