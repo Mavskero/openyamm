@@ -1,0 +1,122 @@
+{
+  "checkpoint": 196,
+  "status": "ACCEPTED_SCOPED",
+  "at": "2026-10-29T11:02:49.392630+00:00",
+  "source_base": "18cd05fddcbbd0ca35b27c9cbecbeb7ca02b1bf1",
+  "source_files": {
+    "game/ui/screens/NewGameScreen.cpp": "d2651108bc51f4fb4df5eec1392a845163fc7a5079e6968253ef49498ef4b1cd",
+    "tools/UiPlayabilityCapture.cpp": "e269c964ff0ccdc9e4a1cbd39839a2cd9b280a1bff8b21239a18839484da4c86"
+  },
+  "scope": "NewGameScreen Apple multibyte descriptions use existing CoreText wrapper shared by gameplay details/readers. ASCII, non-Apple and failure fallback retained.",
+  "commands": {
+    "build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "ui_playability_capture",
+        "-j3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 97388,
+      "started_at": "2026-10-29T10:58:20.103386+00:00",
+      "finished_at": "2026-10-29T10:58:26.531304+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/creation-text-wrap-196/build-native-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "actual-001": {
+      "argv": [
+        "openyamm/build-apple/ui_playability_capture",
+        "local-data/validation/ui-function-completion-195/runtime-001",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/creation-text-wrap-196/actual-001",
+        "--creation-only"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 98262,
+      "started_at": "2026-10-29T10:59:23.809632+00:00",
+      "finished_at": "2026-10-29T10:59:28.043211+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 90.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/creation-text-wrap-196/actual-001.log",
+      "executed_binary": "openyamm/build-apple/ui_playability_capture",
+      "executed_binary_sha256": "4400d27870e2baed9980bc162736dbcae9bcb0d259c432c32e4924eb2c94a977",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 98788,
+      "started_at": "2026-10-29T11:00:03.661342+00:00",
+      "finished_at": "2026-10-29T11:00:11.275492+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 900.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/creation-text-wrap-196/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "actual": {
+    "passed": true,
+    "checkpoint": 196,
+    "frames": 12,
+    "captures": 1,
+    "gameplay_session_loaded": false,
+    "new_unit_cases": 0,
+    "device": false
+  },
+  "visual_review": {
+    "file": "creation-punctuation-wrap.png",
+    "sha256": "f43cce6a0be2937f33720e7243dcdcb0d2a0dce0bc9abf73aba4d2d8593317dc",
+    "reviewed": true,
+    "observation": "Long Sword source paragraph now wraps before 快。 rather than starting the next line with 。; all four mastery rows and description remain visible.",
+    "limit": "One actual creation popup; not a full punctuation matrix or target iPad."
+  },
+  "runtime": "local-data/validation/ui-function-completion-195/runtime-001",
+  "save_version": 104,
+  "fixture": "Cold menu/NewGame Jadame selection and actual SDL right press; preview seed files created by retained helper but no Load screen/session/new party. UI delta0.",
+  "new_unit_cases": 0,
+  "campaign_replays": 0,
+  "device_or_simulator": false,
+  "release": "Not included in fixed195 package; no additional release/device checkpoint.",
+  "limitations": [
+    "Only one observed punctuation defect visually confirmed; no punctuation combinatorial testing.",
+    "No new gameplay, touch or natural campaign claim."
+  ],
+  "owned_jobs": []
+}

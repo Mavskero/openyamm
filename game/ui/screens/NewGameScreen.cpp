@@ -1806,6 +1806,19 @@ std::vector<std::string> NewGameScreen::wrapTextToWidth(
         return lines;
     }
 
+#if defined(__APPLE__)
+    if (hasUtf8MultibyteText(text))
+    {
+        // Match the punctuation rules used by in-game descriptions and readers.
+        const std::optional<std::vector<std::string>> wrapped =
+            Engine::wrapAppleText(text, float(fontHeight(fontName)) * scale, maxWidth);
+        if (wrapped)
+        {
+            return *wrapped;
+        }
+    }
+#endif
+
     size_t paragraphStart = 0;
 
     while (paragraphStart <= text.size())

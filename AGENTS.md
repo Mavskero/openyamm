@@ -4,6 +4,11 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- Remote195 is published at `ipados-ui-function-195-20261029`, fixed source `18cd05fd`, all16 attachments verified.
+  Full runtime is in that release; MM6/MM7/MM8 differ fromRC2. See `handoff/ipados-remote-test-195/delivery.json`.
+  Subsequent196 creation punctuation fix is development-only; keep device195 acceptance pinned to its published source.
+  See `handoff/creation-text-wrap-196/README.md`; do not manufacture another device checkpoint for this small fix.
+
 - User now requests cumulative190–195 code/runtime and instructions on GitHub for remote physical-iPad testing.
   See `handoff/ui-function-completion-195/README.md`, `IPADOS_HANDOFF.md` and `CODEX_IPAD_DEVICE_PROMPT.md`.
   Save104 requires backups; old RC binaries cannot read newly written104 saves.

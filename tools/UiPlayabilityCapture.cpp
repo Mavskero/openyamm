@@ -92,7 +92,8 @@ struct NewGameScreenTestAccess
 };
 struct ApplicationCaptureTestAccess
 {
-    static int runLabels(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
+    static int runLabels(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output,
+        bool creationOnly = false)
     {
         runtime = std::filesystem::canonical(runtime);
         input = std::filesystem::canonical(input);
@@ -110,12 +111,16 @@ struct ApplicationCaptureTestAccess
         settings.assetRoot = runtime.string(); settings.startInMainMenu = true; settings.preseedParty = false;
         settings.windowMode = WindowMode::Windowed;
         require(saveGameSettings("settings.ini", settings, error), "Settings write failed");
-        std::ofstream("fixture.txt") << "195 cold-menu label preview. Original seed decoded solely for3independent "
+        std::ofstream("fixture.txt") << (creationOnly
+            ? "196 creation-only punctuation preview; no Load screen or old label checks replayed. "
+            : "195 cold-menu label preview. ") << "Original seed decoded solely for3independent "
             "preview files with empty names/year1169; no game session or new party loaded/committed. "
             "Production mainmenu Load/NewGame calls; creation Jadame selected directly, actual SDLright skill press. "
-            "2screenshots/delta0/no gameplay/oldroute/device/newcase. Original runtime/save preserved.\n";
+            << (creationOnly ? "1screenshot" : "2screenshots")
+            << "/delta0/no gameplay/oldroute/device/newcase. Original runtime/save preserved.\n";
         Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
-        config.appName = "OpenYAMM UI Labels195"; config.assetRoot = runtime.string(); config.activeWorldId = "mm7";
+        config.appName = creationOnly ? "OpenYAMM Creation Wrap196" : "OpenYAMM UI Labels195";
+        config.assetRoot = runtime.string(); config.activeWorldId = "mm7";
         config.windowWidth = 1210; config.windowHeight = 834; config.verticalSync = true;
         SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
         GameApplication game(config);
@@ -136,6 +141,11 @@ struct ApplicationCaptureTestAccess
                 {
                     require(game.initializeRenderer(), "Menu initialization failed");
                     require(game.m_pMapSceneRuntime == nullptr, "Cold-menu preview unexpectedly loaded gameplay");
+                    if (creationOnly)
+                    {
+                        phase = 1;
+                        return true;
+                    }
                     game.openLoadGameScreen(false, "main_menu");
                     const UiTextTable &text = game.m_gameSession.gameplayUiRuntime().uiTextTable();
                     require(text.text(UiTextTable::Message::SaveAutosave) == "自动存档", "Cold-menu text not loaded");
@@ -176,7 +186,7 @@ struct ApplicationCaptureTestAccess
                         phase = 3; ready = frames + 1; break;
                     }
                     case 3:
-                        capture("creation-localized-mastery");
+                        capture(creationOnly ? "creation-punctuation-wrap" : "creation-localized-mastery");
                         pointer(0, 0, width, height, SDL_BUTTON_RIGHT, false); phase = 4; break;
                     case 4:
                         require(game.m_pMapSceneRuntime == nullptr, "Label preview created a campaign");
@@ -187,7 +197,8 @@ struct ApplicationCaptureTestAccess
                     }
                 }, [&]() { game.shutdownApplication(); });
             require(app.run() == 0 && complete, "Label preview ended early");
-            std::ofstream("result.json") << "{\"passed\":true,\"checkpoint\":195,\"frames\":" << frames
+            std::ofstream("result.json") << "{\"passed\":true,\"checkpoint\":" << (creationOnly ? 196 : 195)
+                << ",\"frames\":" << frames
                 << ",\"captures\":" << captures << ",\"gameplay_session_loaded\":false,\"new_unit_cases\":0,\"device\":false}\n";
             return 0;
         }
@@ -714,7 +725,9 @@ int main(int argc, char **argv)
 {
     try
     {
-        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only]");
+        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only]");
+        if (argc == 5 && std::string(argv[4]) == "--creation-only")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::runLabels(argv[1], argv[2], argv[3], true);
         if (argc == 5 && std::string(argv[4]) == "--labels-only")
             return OpenYAMM::Game::ApplicationCaptureTestAccess::runLabels(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--travel-rest")
