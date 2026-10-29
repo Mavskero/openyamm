@@ -1,0 +1,32 @@
+{
+  "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-combat-ui-223/runtime-001",
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-failure-ui-224/runtime-001",
+  "changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "added_members": [],
+  "old_ui_count": 149,
+  "new_ui_count": 164,
+  "added_keys": [
+    "ui.spell_divine_intervention_blocked_by_gear",
+    "ui.spell_wand_already_charged",
+    "ui.spell_not_skilled_enough",
+    "ui.spell_canceled",
+    "ui.spell_unknown_attack",
+    "ui.spell_failed",
+    "ui.spell_meteor_shower_indoors",
+    "ui.spell_starburst_indoors",
+    "ui.spell_fly_indoors",
+    "ui.spell_armageddon_indoors",
+    "ui.spell_inferno_outdoors",
+    "ui.spell_prismatic_light_outdoors",
+    "ui.spell_hostile_creatures_nearby",
+    "ui.spell_item_quality_too_low",
+    "ui.spell_summon_limit_reached"
+  ],
+  "all_old_caption_values_retained": true,
+  "ui_text_sha256": "614485341cae18c2cac9ee782a2094e65884008a0907bbcda064b809329403d6",
+  "combat223_navigation222_and_all_other_members_worlds_retained": true,
+  "controlled_fixtures": false,
+  "new_release": false
+}

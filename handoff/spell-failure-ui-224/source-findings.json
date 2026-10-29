@@ -1,0 +1,42 @@
+{
+  "source_root": "local-data/validation/mm8-runtime-076/source-001",
+  "original_global_ids": [
+    428,
+    491,
+    495,
+    494,
+    499,
+    492,
+    497,
+    638,
+    585,
+    648
+  ],
+  "ui_old_count": 149,
+  "ui_new_count": 164,
+  "source_ui_count": 122,
+  "project_ui_count": 42,
+  "old_ui_values_retained": true,
+  "typed_failure_reasons": 12,
+  "generic_fixed_failure_calls_tagged": 24,
+  "project_translations": {
+    "gear": "当前装备阻止施展此法术。",
+    "wand": "魔杖已经充能！",
+    "not_skilled_enough": "魔法技能不足",
+    "cancel": "已取消施法",
+    "unknown_attack": "未知的攻击法术"
+  },
+  "presentation_ownership": "PartySpellCastResult adds transient failureReason at end; Party retains diagnostic text and no UI dependency. Shared GameplaySpellService maps exact reason then existing status. Dynamic reasonless failures retain caller text.",
+  "success_override_fix": "Both world views stop overwriting service-localized success with hardcoded Cast; silent target clear remains silent.",
+  "rules_unchanged": [
+    "eligibility",
+    "cost",
+    "recovery",
+    "RNG",
+    "target selection",
+    "world effects",
+    "Save105"
+  ],
+  "source_label_limits": "Original Global497 Chinese retained verbatim;638 is hostile-nearby and585 is item quality. No fabricated original ID for five project captions.",
+  "validation_scope": "Source review, native/core import/unsigned generic iOS only; no extra cases, GUI, gameplay, campaign or device run."
+}

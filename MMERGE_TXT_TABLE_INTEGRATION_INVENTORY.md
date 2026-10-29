@@ -1,5 +1,10 @@
 # MMMerge TXT table integration inventory
 
+Checkpoint224 adds10 original Global rows and5 explicit project captions:164UI keys,122 source/42 project.
+Complete old149 and previous prefixes remain accepted; all old values retained. Typed transient failure reasons
+feed shared localized display; casting rules and Save105 unchanged. Native/core/unsignediOS pass,0cases/App/device.
+See `handoff/spell-failure-ui-224/README.md`; complete224 changesonlyui_text, retainingCombat223/navigation222/worlds.
+
 Checkpoint223 adds original Global485/496/586 to shared UiText and637 to CombatText:149UIkeys/7combatkeys.
 Complete132UIprefix and5/6combat catalogs remain accepted. Ordinary casting/selection/SP/evasion messages use
 current language;14newUItranslations are explicit project text. iPad control hints follow existing tap/Menu

@@ -4,6 +4,7 @@
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/party/SpellIds.h"
 #include "game/tables/SpellTable.h"
+#include "game/tables/UiTextTable.h"
 
 namespace OpenYAMM::Game
 {
@@ -46,7 +47,8 @@ GameplaySpellActionController::AttackCastResult GameplaySpellActionController::t
 
     if (pAttackSpellEntry == nullptr)
     {
-        runtime.setStatusBarEvent("Unknown attack spell");
+        runtime.setStatusBarEvent(
+            runtime.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::SpellUnknownAttack));
         return {
             .disposition = AttackCastDisposition::Failed,
             .followupUiActive = false,
@@ -95,7 +97,9 @@ GameplaySpellActionController::updatePendingTargetSelection(
     {
         if (!pendingTargetState.cancelLatch)
         {
-            spellService.clearPendingTargetSelection(runtime, "Spell canceled");
+            spellService.clearPendingTargetSelection(
+                runtime,
+                runtime.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::SpellCanceled));
             runtime.interactionState().menuToggleLatch = true;
             result.targetSelectionConsumed = true;
         }

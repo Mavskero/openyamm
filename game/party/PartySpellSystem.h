@@ -70,6 +70,23 @@ enum class PartySpellCastStatus : uint8_t
     Failed,
 };
 
+enum class PartySpellFailureReason : uint8_t
+{
+    None,
+    GenericSpellFailed,
+    DivineInterventionBlockedByGear,
+    MeteorShowerIndoors,
+    StarburstIndoors,
+    FlyIndoors,
+    ArmageddonIndoors,
+    InfernoOutdoors,
+    PrismaticLightOutdoors,
+    HostileCreaturesNearby,
+    WandAlreadyCharged,
+    ItemQualityTooLow,
+    SummonLimitReached,
+};
+
 struct PartySpellCastRequest
 {
     size_t casterMemberIndex = 0;
@@ -146,6 +163,8 @@ struct PartySpellCastResult
         float peakAlpha = 0.0f;
     };
     std::optional<ScreenOverlayRequest> screenOverlayRequest;
+    // Runtime presentation metadata; statusText remains the original diagnostic/caller text.
+    PartySpellFailureReason failureReason = PartySpellFailureReason::None;
 
     bool succeeded() const
     {

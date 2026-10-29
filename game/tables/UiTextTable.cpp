@@ -169,6 +169,21 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.spell_unknown_quick", "Unknown quick spell"},
     {"ui.town_portal_data_missing", "Town Portal data missing"},
     {"ui.spell_not_enough_spell_points", "Not enough spell points"},
+    {"ui.spell_failed", "Spell failed"},
+    {"ui.spell_divine_intervention_blocked_by_gear", "Divine Intervention is blocked by equipped gear"},
+    {"ui.spell_meteor_shower_indoors", "Can't cast Meteor Shower indoors!"},
+    {"ui.spell_starburst_indoors", "Can't cast Starburst indoors!"},
+    {"ui.spell_fly_indoors", "Can not cast Fly indoors!"},
+    {"ui.spell_armageddon_indoors", "Can't cast Armageddon indoors!"},
+    {"ui.spell_inferno_outdoors", "Can't cast Inferno outdoors!"},
+    {"ui.spell_prismatic_light_outdoors", "Can't cast Prismatic Light outdoors!"},
+    {"ui.spell_hostile_creatures_nearby", "There are hostile creatures nearby!"},
+    {"ui.spell_wand_already_charged", "Wand already charged!"},
+    {"ui.spell_item_quality_too_low", "Item is not of high enough quality"},
+    {"ui.spell_summon_limit_reached", "This character can't summon any more monsters!"},
+    {"ui.spell_not_skilled_enough", "Not skilled enough"},
+    {"ui.spell_canceled", "Spell canceled"},
+    {"ui.spell_unknown_attack", "Unknown attack spell"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -222,7 +237,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 72 with mastery/calendar/save, the 103 with keyboard, the 112 with journal
     // the 115/116 with initial skill training captions and base-attribute requirements,
     // the 119 with skill category headings, the 122 with NPC confirmations,
-    // and the 132 with ordinary travel and fine captions.
+    // the 132 with ordinary travel and fine captions,
+    // and the 149 with spell feedback and target-selection captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -239,6 +255,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t SkillHeadingMessageCount = size_t(Message::Yes);
     constexpr size_t NpcConfirmationMessageCount = size_t(Message::MoreInformation);
     constexpr size_t TravelMessageCount = size_t(Message::FinishCurrentAction);
+    constexpr size_t SpellMessageCount = size_t(Message::SpellFailed);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -255,7 +272,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != TrainingRequirementMessageCount
         && schemaMessageCount != SkillHeadingMessageCount
         && schemaMessageCount != NpcConfirmationMessageCount
-        && schemaMessageCount != TravelMessageCount)
+        && schemaMessageCount != TravelMessageCount
+        && schemaMessageCount != SpellMessageCount)
     {
         return false;
     }

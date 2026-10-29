@@ -303,42 +303,48 @@ bool isSpellIndoorOnly(SpellId spellId)
     return spellId == SpellId::Inferno || spellId == SpellId::PrismaticLight;
 }
 
-std::string spellWorldUnavailableText(SpellId spellId, bool indoorMap)
+struct SpellWorldAvailabilityFailure
+{
+    std::string text;
+    PartySpellFailureReason reason = PartySpellFailureReason::None;
+};
+
+SpellWorldAvailabilityFailure spellWorldUnavailableFailure(SpellId spellId, bool indoorMap)
 {
     if (indoorMap)
     {
         switch (spellId)
         {
             case SpellId::MeteorShower:
-                return "Can't cast Meteor Shower indoors!";
+                return {"Can't cast Meteor Shower indoors!", PartySpellFailureReason::MeteorShowerIndoors};
             case SpellId::Starburst:
-                return "Can't cast Starburst indoors!";
+                return {"Can't cast Starburst indoors!", PartySpellFailureReason::StarburstIndoors};
             case SpellId::Fly:
-                return "Can not cast Fly indoors!";
+                return {"Can not cast Fly indoors!", PartySpellFailureReason::FlyIndoors};
             case SpellId::Armageddon:
-                return "Can't cast Armageddon indoors!";
+                return {"Can't cast Armageddon indoors!", PartySpellFailureReason::ArmageddonIndoors};
             default:
-                return SpellFailedText;
+                return {SpellFailedText, PartySpellFailureReason::GenericSpellFailed};
         }
     }
 
     switch (spellId)
     {
         case SpellId::Inferno:
-            return "Can't cast Inferno outdoors!";
+            return {"Can't cast Inferno outdoors!", PartySpellFailureReason::InfernoOutdoors};
         case SpellId::PrismaticLight:
-            return "Can't cast Prismatic Light outdoors!";
+            return {"Can't cast Prismatic Light outdoors!", PartySpellFailureReason::PrismaticLightOutdoors};
         default:
-            return SpellFailedText;
+            return {SpellFailedText, PartySpellFailureReason::GenericSpellFailed};
     }
 }
 
-std::optional<std::string> spellWorldAvailabilityFailure(SpellId spellId, bool indoorMap)
+std::optional<SpellWorldAvailabilityFailure> spellWorldAvailabilityFailure(SpellId spellId, bool indoorMap)
 {
     if ((indoorMap && isSpellOutdoorOnly(spellId))
         || (!indoorMap && isSpellIndoorOnly(spellId)))
     {
-        return spellWorldUnavailableText(spellId, indoorMap);
+        return spellWorldUnavailableFailure(spellId, indoorMap);
     }
 
     return std::nullopt;
@@ -1442,7 +1448,8 @@ PartySpellCastResult makeFailure(
     PartySpellCastStatus status,
     PartySpellCastTargetKind targetKind,
     PartySpellCastEffectKind effectKind,
-    const std::string &statusText)
+    const std::string &statusText,
+    PartySpellFailureReason failureReason = PartySpellFailureReason::None)
 {
     PartySpellCastResult result = {};
     result.spellId = spellId;
@@ -1450,6 +1457,7 @@ PartySpellCastResult makeFailure(
     result.targetKind = targetKind;
     result.effectKind = effectKind;
     result.statusText = statusText;
+    result.failureReason = failureReason;
     return result;
 }
 }
@@ -1472,7 +1480,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
             PartySpellCastStatus::InvalidCaster,
             PartySpellCastTargetKind::None,
             PartySpellCastEffectKind::Unsupported,
-            SpellFailedText);
+            SpellFailedText,
+            PartySpellFailureReason::GenericSpellFailed);
     }
 
     if (spellIdFromValue(request.spellId) == SpellId::DivineIntervention
@@ -1483,7 +1492,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
             PartySpellCastStatus::Unsupported,
             PartySpellCastTargetKind::None,
             PartySpellCastEffectKind::PartyRestore,
-            "Divine Intervention is blocked by equipped gear");
+            "Divine Intervention is blocked by equipped gear",
+            PartySpellFailureReason::DivineInterventionBlockedByGear);
     }
 
     const SpellEntry *pSpellEntry = spellTable.findById(static_cast<int>(request.spellId));
@@ -1495,7 +1505,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
             PartySpellCastStatus::InvalidSpell,
             PartySpellCastTargetKind::None,
             PartySpellCastEffectKind::Unsupported,
-            SpellFailedText);
+            SpellFailedText,
+            PartySpellFailureReason::GenericSpellFailed);
     }
 
     if (party.hasPartyBuff(PartyBuffId::Invisibility))
@@ -1525,7 +1536,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
             PartySpellCastStatus::Unsupported,
             PartySpellCastTargetKind::None,
             PartySpellCastEffectKind::Unsupported,
-            SpellFailedText);
+            SpellFailedText,
+            PartySpellFailureReason::GenericSpellFailed);
     }
 
     result.targetKind = rule->targetKind;
@@ -1574,9 +1586,11 @@ PartySpellCastResult PartySpellSystem::castSpell(
         [&](PartySpellCastStatus status,
             PartySpellCastTargetKind targetKind,
             PartySpellCastEffectKind effectKind,
-            const std::string &statusText) -> PartySpellCastResult
+            const std::string &statusText,
+            PartySpellFailureReason failureReason = PartySpellFailureReason::None) -> PartySpellCastResult
         {
-            PartySpellCastResult failure = makeFailure(request.spellId, status, targetKind, effectKind, statusText);
+            PartySpellCastResult failure =
+                makeFailure(request.spellId, status, targetKind, effectKind, statusText, failureReason);
             failure.skillLevel = skillLevel;
             failure.skillMastery = skillMastery;
             failure.recoverySeconds = failureRecoverySeconds;
@@ -1615,13 +1629,14 @@ PartySpellCastResult PartySpellSystem::castSpell(
                 PartySpellCastStatus::Failed,
                 rule->targetKind,
                 rule->effectKind,
-                SpellFailedText);
+                SpellFailedText,
+                PartySpellFailureReason::GenericSpellFailed);
         }
     }
 
     bx::Vec3 targetPoint = {0.0f, 0.0f, 0.0f};
     const SpellId spellId = spellIdFromValue(request.spellId);
-    const std::optional<std::string> worldAvailabilityFailure =
+    const std::optional<SpellWorldAvailabilityFailure> worldAvailabilityFailure =
         spellWorldAvailabilityFailure(spellId, worldRuntime.isIndoorMap());
 
     if (worldAvailabilityFailure.has_value())
@@ -1630,7 +1645,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
             PartySpellCastStatus::Failed,
             rule->targetKind,
             rule->effectKind,
-            *worldAvailabilityFailure);
+            worldAvailabilityFailure->text,
+            worldAvailabilityFailure->reason);
     }
 
     if (rule->targetKind == PartySpellCastTargetKind::Actor)
@@ -1665,7 +1681,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                     PartySpellCastStatus::Failed,
                     rule->targetKind,
                     rule->effectKind,
-                    SpellFailedText);
+                    SpellFailedText,
+                    PartySpellFailureReason::GenericSpellFailed);
             }
 
             targetPoint = resolveActorTargetPoint(actor);
@@ -1768,7 +1785,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                 PartySpellCastStatus::Failed,
                 rule->targetKind,
                 rule->effectKind,
-                SpellFailedText);
+                SpellFailedText,
+                PartySpellFailureReason::GenericSpellFailed);
         }
     }
     else if (rule->targetKind == PartySpellCastTargetKind::UtilityUi)
@@ -1783,7 +1801,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                     PartySpellCastStatus::Failed,
                     rule->targetKind,
                     rule->effectKind,
-                    SpellFailedText);
+                    SpellFailedText,
+                    PartySpellFailureReason::GenericSpellFailed);
             }
 
             if (request.utilityAction == PartySpellUtilityActionKind::None)
@@ -1800,7 +1819,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                             PartySpellCastStatus::Failed,
                             rule->targetKind,
                             rule->effectKind,
-                            SpellFailedText);
+                            SpellFailedText,
+                            PartySpellFailureReason::GenericSpellFailed);
                     }
                 }
 
@@ -1851,7 +1871,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                 PartySpellCastStatus::Failed,
                 rule->targetKind,
                 rule->effectKind,
-                HostileCreaturesNearbyText);
+                HostileCreaturesNearbyText,
+                PartySpellFailureReason::HostileCreaturesNearby);
         }
 
         const float durationSeconds = resolvePartyBuffDurationSeconds(request.spellId, skillLevel, skillMastery);
@@ -2145,7 +2166,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                     PartySpellCastStatus::Failed,
                     rule->targetKind,
                     rule->effectKind,
-                    SpellFailedText);
+                    SpellFailedText,
+                    PartySpellFailureReason::GenericSpellFailed);
             }
 
             InventoryItem *pMutableInventoryItem =
@@ -2164,7 +2186,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        SpellFailedText);
+                        SpellFailedText,
+                        PartySpellFailureReason::GenericSpellFailed);
                 }
 
                 const SpecialItemEnchantKind enchantKind =
@@ -2183,7 +2206,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        SpellFailedText);
+                        SpellFailedText,
+                        PartySpellFailureReason::GenericSpellFailed);
                 }
 
                 const float durationSeconds =
@@ -2217,7 +2241,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        SpellFailedText);
+                        SpellFailedText,
+                        PartySpellFailureReason::GenericSpellFailed);
                 }
 
                 const uint16_t currentCharges =
@@ -2240,7 +2265,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        WandAlreadyChargedText);
+                        WandAlreadyChargedText,
+                        PartySpellFailureReason::WandAlreadyCharged);
                 }
 
                 if (pMutableInventoryItem != nullptr)
@@ -2265,7 +2291,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        SpellFailedText);
+                        SpellFailedText,
+                        PartySpellFailureReason::GenericSpellFailed);
                 }
 
                 static thread_local std::mt19937 rng(std::random_device{}());
@@ -2289,7 +2316,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        ItemQualityTooLowText);
+                        ItemQualityTooLowText,
+                        PartySpellFailureReason::ItemQualityTooLow);
                 }
 
                 std::uniform_int_distribution<int> distribution(1, 100);
@@ -2302,7 +2330,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        SpellFailedText);
+                        SpellFailedText,
+                        PartySpellFailureReason::GenericSpellFailed);
                 }
 
                 const bool preferStandardEnchant =
@@ -2322,7 +2351,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                             PartySpellCastStatus::Failed,
                             rule->targetKind,
                             rule->effectKind,
-                            SpellFailedText);
+                            SpellFailedText,
+                            PartySpellFailureReason::GenericSpellFailed);
                     }
 
                     pMutableInventoryItem->standardEnchantId = *standardEnchantId;
@@ -2349,7 +2379,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                             PartySpellCastStatus::Failed,
                             rule->targetKind,
                             rule->effectKind,
-                            SpellFailedText);
+                            SpellFailedText,
+                            PartySpellFailureReason::GenericSpellFailed);
                     }
 
                     pMutableInventoryItem->specialEnchantId = *specialEnchantId;
@@ -2383,7 +2414,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        SpellFailedText);
+                        SpellFailedText,
+                        PartySpellFailureReason::GenericSpellFailed);
                 }
 
                 EventRuntimeState::PendingMapMove move = {};
@@ -2414,7 +2446,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        SpellFailedText);
+                        SpellFailedText,
+                        PartySpellFailureReason::GenericSpellFailed);
                 }
 
                 Character *pTargetMember = party.member(request.casterMemberIndex);
@@ -2425,7 +2458,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        SpellFailedText);
+                        SpellFailedText,
+                        PartySpellFailureReason::GenericSpellFailed);
                 }
 
                 if (request.utilityAction == PartySpellUtilityActionKind::LloydsBeaconSet)
@@ -2471,7 +2505,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                             PartySpellCastStatus::Failed,
                             rule->targetKind,
                             rule->effectKind,
-                            SpellFailedText);
+                            SpellFailedText,
+                            PartySpellFailureReason::GenericSpellFailed);
                     }
 
                     EventRuntimeState *pEventRuntimeState = worldRuntime.eventRuntimeState();
@@ -2482,7 +2517,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                             PartySpellCastStatus::Failed,
                             rule->targetKind,
                             rule->effectKind,
-                            SpellFailedText);
+                            SpellFailedText,
+                            PartySpellFailureReason::GenericSpellFailed);
                     }
 
                     EventRuntimeState::PendingMapMove move = {};
@@ -2576,7 +2612,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                 PartySpellCastStatus::Failed,
                 rule->targetKind,
                 rule->effectKind,
-                SpellFailedText);
+                SpellFailedText,
+                PartySpellFailureReason::GenericSpellFailed);
         }
 
         if (request.targetActorIndex)
@@ -2705,7 +2742,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        SummonLimitText);
+                        SummonLimitText,
+                        PartySpellFailureReason::SummonLimitReached);
                 }
 
                 castSucceeded = worldRuntime.summonFriendlyMonsterById(
@@ -2725,7 +2763,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
                     PartySpellCastStatus::Failed,
                     rule->targetKind,
                     rule->effectKind,
-                    SpellFailedText);
+                    SpellFailedText,
+                    PartySpellFailureReason::GenericSpellFailed);
             }
 
             if (spellId == SpellId::Armageddon)
@@ -2742,7 +2781,9 @@ PartySpellCastResult PartySpellSystem::castSpell(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
-                        failureText.empty() ? SpellFailedText : failureText);
+                        failureText.empty() ? SpellFailedText : failureText,
+                        failureText.empty()
+                            ? PartySpellFailureReason::GenericSpellFailed : PartySpellFailureReason::None);
                 }
 
                 castSucceeded = true;
@@ -2929,7 +2970,8 @@ PartySpellCastResult PartySpellSystem::castSpell(
             PartySpellCastStatus::Failed,
             rule->targetKind,
             rule->effectKind,
-            SpellFailedText);
+            SpellFailedText,
+            PartySpellFailureReason::GenericSpellFailed);
     }
 
     if (request.spendMana)

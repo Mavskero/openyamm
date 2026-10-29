@@ -1,5 +1,7 @@
 # OpenYAMM iPadOS：214 累计交付
 
+当前开发分支224继续补齐具体施法失败、取消及成功提示；164键UI与Combat/导航累计小型增量见 [224说明](handoff/spell-failure-ui-224/README.md)。源码与构建通过，尚无本批像素/触控验收；固定214交付保持原身份。
+
 更新：2026-10-29。本次集中交付固定195之后的196–214修复，并包含接收端195真机反馈中的修复。
 仓库为 [Mavskero/openyamm](https://github.com/Mavskero/openyamm)，开发分支为 `codex/ipados`。
 本次 tag 为 `ipados-ui-cumulative-214-20261029`，见[发布页面](https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-cumulative-214-20261029)。

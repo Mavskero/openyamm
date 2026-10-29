@@ -4914,9 +4914,7 @@ bool OutdoorGameView::tryCastSpellRequest(const PartySpellCastRequest &request, 
     if (resolution.disposition == GameplaySpellService::SpellRequestDisposition::CastSucceeded)
     {
         m_worldFxSystem.triggerPartySpellFx(resolution.castResult);
-        m_gameSession.gameplaySpellService().clearPendingTargetSelection(
-            screenRuntime,
-            isSpellId(resolvedRequest.spellId, SpellId::Telekinesis) ? std::string() : "Cast " + spellName);
+        m_gameSession.gameplaySpellService().clearPendingTargetSelection(screenRuntime);
         return true;
     }
 

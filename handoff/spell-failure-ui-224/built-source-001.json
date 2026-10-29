@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-29T18:15:08.646282+00:00",
+  "source_base": "75fde50cd685bb5ad5a49c24125eb462b1755a47",
+  "files": {
+    "game/gameplay/GameplaySpellActionController.cpp": "79cfbacb67a0f49d7ce3b50479121b69d56eaad9075cfe51affe711acf9c5629",
+    "game/gameplay/GameplaySpellService.cpp": "af89fba7e815411ee5e3883c637f4f9c8ba6eda4a7dec1a94de0f22b521a49fa",
+    "game/indoor/IndoorGameView.cpp": "f77f78413692b20a9ec2541945a2d6ccf25a081b1326e0138af601a6b6e454fd",
+    "game/outdoor/OutdoorGameView.cpp": "69aa857e90ea631706766e39f6c61dbb611865a5d956a2f4aa8f39ec14a9a000",
+    "game/party/PartySpellSystem.cpp": "1c49ce352cf0708cd8cd88823b4aafbcbf32070387b87a2df210c7489c407bdf",
+    "game/party/PartySpellSystem.h": "788180bce9e97c543c19f734e2722b7831e06b907b401a9b9a98483f4a670371",
+    "game/tables/UiTextTable.cpp": "d0635508832065267c8a774d83ddb5f299dcf014aed9c4c6b284f393d27b515b",
+    "game/tables/UiTextTable.h": "ff649421a56f9b9f31557b226f58d2649604b94fe59d7ec6b24d8691d545ae37",
+    "tools/mmerge_import/CoreResources.cpp": "bcb5be2fae4f9da86564cc16c65b6c0656c73ae01f7c45ebad5eabf1257ee976"
+  },
+  "agents_frozen": true,
+  "main_build_owner": true
+}

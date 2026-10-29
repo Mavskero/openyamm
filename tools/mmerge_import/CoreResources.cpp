@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 112> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 122> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -349,10 +349,20 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::SpellCastFormat, 485},
         {UiMessage::SpellNoValidTarget, 496},
         {UiMessage::SpellNotEnoughSpellPoints, 586},
+        {UiMessage::SpellFailed, 428},
+        {UiMessage::SpellMeteorShowerIndoors, 491},
+        {UiMessage::SpellStarburstIndoors, 495},
+        {UiMessage::SpellFlyIndoors, 494},
+        {UiMessage::SpellArmageddonIndoors, 499},
+        {UiMessage::SpellInfernoOutdoors, 492},
+        {UiMessage::SpellPrismaticLightOutdoors, 497},
+        {UiMessage::SpellHostileCreaturesNearby, 638},
+        {UiMessage::SpellItemQualityTooLow, 585},
+        {UiMessage::SpellSummonLimitReached, 648},
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 37> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 42> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -391,6 +401,11 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::HighMagicPresence, "你感觉到这里有强大的魔法力量。"},
         {UiMessage::SpellUnknownQuick, "未知的快捷法术"},
         {UiMessage::TownPortalDataMissing, "缺少时空之门数据"},
+        {UiMessage::SpellDivineInterventionBlockedByGear, "当前装备阻止施展此法术。"},
+        {UiMessage::SpellWandAlreadyCharged, "魔杖已经充能！"},
+        {UiMessage::SpellNotSkilledEnough, "魔法技能不足"},
+        {UiMessage::SpellCanceled, "已取消施法"},
+        {UiMessage::SpellUnknownAttack, "未知的攻击法术"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

@@ -847,8 +847,70 @@ void GameplaySpellService::applyFailureFeedback(
         runtime.closeUtilitySpellOverlayAfterSpellResolution(request.spellId);
     }
 
-    const std::string &statusText = result.status == PartySpellCastStatus::NotEnoughSpellPoints
-        ? runtime.gameplayUiRuntime().uiTextTable().text(UiMessage::SpellNotEnoughSpellPoints) : result.statusText;
+    UiMessage message = UiMessage::Count;
+    switch (result.failureReason)
+    {
+        case PartySpellFailureReason::GenericSpellFailed:
+            message = UiMessage::SpellFailed;
+            break;
+        case PartySpellFailureReason::DivineInterventionBlockedByGear:
+            message = UiMessage::SpellDivineInterventionBlockedByGear;
+            break;
+        case PartySpellFailureReason::MeteorShowerIndoors:
+            message = UiMessage::SpellMeteorShowerIndoors;
+            break;
+        case PartySpellFailureReason::StarburstIndoors:
+            message = UiMessage::SpellStarburstIndoors;
+            break;
+        case PartySpellFailureReason::FlyIndoors:
+            message = UiMessage::SpellFlyIndoors;
+            break;
+        case PartySpellFailureReason::ArmageddonIndoors:
+            message = UiMessage::SpellArmageddonIndoors;
+            break;
+        case PartySpellFailureReason::InfernoOutdoors:
+            message = UiMessage::SpellInfernoOutdoors;
+            break;
+        case PartySpellFailureReason::PrismaticLightOutdoors:
+            message = UiMessage::SpellPrismaticLightOutdoors;
+            break;
+        case PartySpellFailureReason::HostileCreaturesNearby:
+            message = UiMessage::SpellHostileCreaturesNearby;
+            break;
+        case PartySpellFailureReason::WandAlreadyCharged:
+            message = UiMessage::SpellWandAlreadyCharged;
+            break;
+        case PartySpellFailureReason::ItemQualityTooLow:
+            message = UiMessage::SpellItemQualityTooLow;
+            break;
+        case PartySpellFailureReason::SummonLimitReached:
+            message = UiMessage::SpellSummonLimitReached;
+            break;
+        case PartySpellFailureReason::None:
+            break;
+    }
+
+    if (message == UiMessage::Count)
+    {
+        switch (result.status)
+        {
+            case PartySpellCastStatus::NotEnoughSpellPoints:
+                message = UiMessage::SpellNotEnoughSpellPoints;
+                break;
+            case PartySpellCastStatus::NotSkilledEnough:
+                message = UiMessage::SpellNotSkilledEnough;
+                break;
+            case PartySpellCastStatus::InvalidCaster:
+            case PartySpellCastStatus::InvalidSpell:
+                message = UiMessage::SpellFailed;
+                break;
+            default:
+                break;
+        }
+    }
+
+    const std::string &statusText = message != UiMessage::Count
+        ? runtime.gameplayUiRuntime().uiTextTable().text(message) : result.statusText;
     runtime.triggerSpellFailureFeedback(request.casterMemberIndex, statusText);
 }
 }

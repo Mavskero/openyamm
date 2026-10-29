@@ -4,6 +4,13 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 224 ACCEPTED_SOURCE_SCOPED: `handoff/spell-failure-ui-224/scoped-result.json`.
+  Precise spell-failure metadata and shared display localize 12 fixed reasons plus skill/cancel/attack errors;
+  both world views retain service-localized success. UiText164 accepts complete old149;122 source/42 project rows.
+  Native94.607s/core0.179s/assembly2.245s/unsignediOS77.279s pass;0cases/App/campaign/device/newrelease.
+  Complete default224 changes only ui_text; Combat223/navigation222/worlds and Save105 unchanged. Source/build scope,
+  no actual affected pixels/touch/fullcampaign claim. GoalACTIVE/~85%lowconfidence; fixed214/195/RCs preserved.
+
 - 223 ACCEPTED_SOURCE_SCOPED: `local-data/validation/spell-combat-ui-223/scoped-result.json`.
   Ordinaryspell/target/item/portal/beacon/SPstatus andtwo evasionmessages usecurrentlanguage; original485/496/586/637.
   UiText149(old132prefix accepted),CombatText7(old5/6accepted),14explicitnewprojecttranslations. iPad now usesreal

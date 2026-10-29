@@ -1,0 +1,76 @@
+{
+  "checkpoint": 224,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-30T02:24:59.999487+08:00",
+  "source_base": "75fde50cd685bb5ad5a49c24125eb462b1755a47",
+  "runtime": "local-data/validation/spell-failure-ui-224/runtime-001",
+  "scope": [
+    "Precise fixed spell failures, skill/cancel/attack messages use current language through shared presentation",
+    "Both world views preserve existing service-localized success feedback",
+    "Transient typed metadata keeps original status text and all casting costs/recovery/conditions unchanged"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:15:30.279894+00:00",
+      "finished_at": "2026-10-29T18:17:04.886976+00:00",
+      "elapsed_seconds": 94.607082
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:17:34.308237+00:00",
+      "finished_at": "2026-10-29T18:17:34.486866+00:00",
+      "elapsed_seconds": 0.178629
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:17:43.578375+00:00",
+      "finished_at": "2026-10-29T18:17:45.823124+00:00",
+      "elapsed_seconds": 2.244749
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:17:43.582402+00:00",
+      "finished_at": "2026-10-29T18:19:00.860939+00:00",
+      "elapsed_seconds": 77.278537
+    }
+  },
+  "ui_text_count": 164,
+  "ui_old149_complete_prefix_accepted": true,
+  "ui_source_count": 122,
+  "ui_project_count": 42,
+  "new_source_ids": [
+    428,
+    491,
+    495,
+    494,
+    499,
+    492,
+    497,
+    638,
+    585,
+    648
+  ],
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "all_old_caption_values_retained": true,
+  "combat223_navigation222_and_all_other_archive_members_worlds_retained": true,
+  "save_version": 105,
+  "new_cases": 0,
+  "existing_cases_executed": 0,
+  "app_gui_runs": 0,
+  "headless_gameplay_runs": 0,
+  "campaign_replays": 0,
+  "device_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "No affected failure/success pixels or touch acceptance in this batch; source/import/build only",
+    "Caller-provided dynamic failure messages remain original text",
+    "Complete natural campaign and remaining target-iPad conditional flows unproved"
+  ]
+}

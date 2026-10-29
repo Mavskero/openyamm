@@ -164,13 +164,28 @@ public:
         SpellUnknownQuick,
         TownPortalDataMissing,
         SpellNotEnoughSpellPoints,
+        SpellFailed,
+        SpellDivineInterventionBlockedByGear,
+        SpellMeteorShowerIndoors,
+        SpellStarburstIndoors,
+        SpellFlyIndoors,
+        SpellArmageddonIndoors,
+        SpellInfernoOutdoors,
+        SpellPrismaticLightOutdoors,
+        SpellHostileCreaturesNearby,
+        SpellWandAlreadyCharged,
+        SpellItemQualityTooLow,
+        SpellSummonLimitReached,
+        SpellNotSkilledEnough,
+        SpellCanceled,
+        SpellUnknownAttack,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
     // Validate the current schema or migrate a complete older prefix with
-    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122 or 132 keys.
+    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122, 132 or 149 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;
