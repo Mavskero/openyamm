@@ -210,12 +210,8 @@ bool commitSaveGameEditAndSave(
         }
 
         saveGameScreen.selectedIndex = saveGameScreen.editSlotIndex;
-        saveGameScreen.slots[saveGameScreen.editSlotIndex].fileLabel =
-            saveGameScreen.editBuffer.empty()
-                ? "Empty"
-                : saveGameScreen.editBuffer;
-        saveGameScreen.editActive = false;
-        saveGameScreen.editBuffer.clear();
+        // Keep the draft and the existing slot metadata until the asynchronous
+        // save succeeds. A failed write must leave the name available for retry.
         saveGameScreen.errorText.clear();
     }
 
@@ -1963,7 +1959,7 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
 
     if (escapePressed)
     {
-        if (!view.interactionState().saveGameToggleLatch)
+        if (input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0 || !view.interactionState().saveGameToggleLatch)
         {
             view.closeSaveGameOverlay();
             latchGameplayMenuEscape(view);
@@ -1972,7 +1968,7 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
     }
     else if (commitPressed)
     {
-        if (!view.interactionState().saveGameToggleLatch)
+        if (input.scancodePressCount(SDL_SCANCODE_RETURN) != 0 || !view.interactionState().saveGameToggleLatch)
         {
             commitSaveGameEditAndSave(view, saveGameScreen);
             resetSaveGameEditInputState(view.interactionState());
@@ -2139,9 +2135,9 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
                         saveGameScreen.editActive = true;
                         saveGameScreen.editSlotIndex = slotIndex;
                         saveGameScreen.editBuffer =
-                            saveGameScreen.slots[slotIndex].fileLabel == "Empty"
-                                ? std::string()
-                                : saveGameScreen.slots[slotIndex].fileLabel;
+                            saveGameScreen.slots[slotIndex].populated
+                                ? saveGameScreen.slots[slotIndex].fileLabel
+                                : std::string();
                         saveGameScreen.errorText.clear();
                         resetSaveGameEditInputState(view.interactionState());
                     }
@@ -2206,9 +2202,15 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
         requestedJournalView = JournalShortcutView::Notes;
     }
 
+    const bool freshJournalShortcutPress =
+        (requestedJournalView == JournalShortcutView::Map
+            && (input.scancodePressCount(SDL_SCANCODE_M) != 0 || input.action(KeyboardAction::MapBook).pressed))
+        || (requestedJournalView == JournalShortcutView::Story && input.action(KeyboardAction::History).pressed);
+
     if (requestedJournalView != JournalShortcutView::None)
     {
-        if (!view.interactionState().journalToggleLatch)
+        // A new keydown can follow its release between frames without an idle frame to clear the latch.
+        if (freshJournalShortcutPress || !view.interactionState().journalToggleLatch)
         {
             uint32_t sourceAction = SourceActionOpenMapBook;
             if (requestedJournalView == JournalShortcutView::Story) sourceAction = SourceActionOpenHistoryBook;
@@ -2347,7 +2349,8 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
 
     if (journalScreen.view == GameplayUiController::JournalView::Map)
     {
-        if (zoomInPressed && !view.interactionState().journalMapKeyZoomLatch)
+        if (zoomInPressed
+            && (input.action(KeyboardAction::ZoomIn).pressed || !view.interactionState().journalMapKeyZoomLatch))
         {
             view.interactionState().journalMapKeyZoomLatch = true;
             if (!view.allowSourceGameplayAction(SourceActionZoomIn, 3)) return true;
@@ -2357,7 +2360,8 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
             journalScreen.cachedMapValid = false;
             view.interactionState().journalMapKeyZoomLatch = true;
         }
-        else if (zoomOutPressed && !view.interactionState().journalMapKeyZoomLatch)
+        else if (zoomOutPressed
+            && (input.action(KeyboardAction::ZoomOut).pressed || !view.interactionState().journalMapKeyZoomLatch))
         {
             view.interactionState().journalMapKeyZoomLatch = true;
             if (!view.allowSourceGameplayAction(SourceActionZoomOut, 3)) return true;

@@ -9,7 +9,6 @@
 #include "game/gameplay/GameplayInputController.h"
 #include "game/gameplay/GameplayItemService.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
-#include "game/gameplay/AwardRuntime.h"
 #include "game/app/KeyboardBindings.h"
 #include "game/items/InventoryItemUseRuntime.h"
 #include "game/party/LloydsBeaconRuntime.h"
@@ -18,6 +17,7 @@
 #include "game/tables/MergedBaseTables.h"
 #include "game/ui/GameplayHudCommon.h"
 #include "game/ui/CharacterSkillsLayout.h"
+#include "game/ui/CharacterAwardsLayout.h"
 #include "game/ui/CharacterSkillRows.h"
 #include "game/ui/ReadableScrollLayout.h"
 #include "game/ui/SpellbookUiLayout.h"
@@ -446,6 +446,7 @@ bool GameplayPartyOverlayInputController::handleReadableScrollOverlayInput(
         state.adventurersInnToggleLatch = false;
         state.restToggleLatch = false;
         context.characterScreen().skillDragActive = false;
+        context.characterScreen().awardDragActive = false;
         state.menuToggleLatch = input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
         state.closeOverlayLatch = input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
     };
@@ -1561,6 +1562,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             : nullptr;
     const bool selectedPartyMemberCanAct =
         pSelectedPartyMember != nullptr && GameMechanics::canAct(*pSelectedPartyMember);
+    const uint64_t selectedPartyMemberId = pSelectedPartyMember != nullptr ? pSelectedPartyMember->memberId : 0;
     const auto clearPendingCharacterDismiss =
         [&context]()
         {
@@ -1604,6 +1606,10 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
         {skillUiData.weaponRows.size(), skillUiData.magicRows.size(),
          skillUiData.armorRows.size(), skillUiData.miscRows.size()});
     const float skillRowHeight = skillLayout.rowHeight;
+    const std::optional<CharacterAwardsLayout> awardLayout =
+        context.characterScreenReadOnly().page == GameplayUiController::CharacterPage::Awards
+            ? layoutCharacterAwards(context, pActiveCharacter, pParty, screenWidth, screenHeight)
+            : std::nullopt;
 
     const bool closePressed =
         (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE])
@@ -1626,6 +1632,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             context.characterScreen().open = false;
             context.characterScreen().dollJewelryOverlayOpen = false;
             context.characterScreen().adventurersInnRosterOverlayOpen = false;
+            context.characterScreen().awardDragActive = false;
             clearPendingCharacterDismiss();
             context.clearAdventurersInnReleaseConfirmation();
             latchGameplayMenuEscape(context);
@@ -1654,7 +1661,13 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             }
         }
 
+        // Keep a held button latched to no target until release after changing characters.
+        context.interactionState().characterClickLatch = input.leftMouseButton.held;
+        context.interactionState().characterPressedTarget = {};
+        context.characterScreen().skillDragActive = false;
+        context.characterScreen().awardDragActive = false;
         context.interactionState().characterMemberCycleLatch = true;
+        return;
     }
     else
     {
@@ -1696,8 +1709,10 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
          skillRowHeight,
          &skillLayout,
          &skillUiData,
+         &awardLayout,
          pParty,
          selectedPartyMemberIndex,
+         selectedPartyMemberId,
          isReadOnlyAdventurersInnView,
          pActiveCharacter,
          pActiveCharacterDollEntry,
@@ -1930,39 +1945,13 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                     return target;
                 }
 
-                target = resolveCharacterButtonTarget(
-                    "CharacterAwardsScrollThumb",
-                    GameplayCharacterPointerTargetType::AwardScrollTrack);
-
-                if (target.type == GameplayCharacterPointerTargetType::None)
+                if (awardLayout
+                    && ((awardLayout->thumbRect
+                            && context.isPointerInsideResolvedElement(*awardLayout->thumbRect, pointerX, pointerY))
+                        || (awardLayout->trackRect
+                            && context.isPointerInsideResolvedElement(*awardLayout->trackRect, pointerX, pointerY))))
                 {
-                    target = resolveCharacterButtonTarget(
-                        "CharacterAwardsScrollTrack",
-                        GameplayCharacterPointerTargetType::AwardScrollTrack);
-                }
-
-                if (target.type != GameplayCharacterPointerTargetType::None)
-                {
-                    const UiLayoutManager::LayoutElement *pTrackLayout =
-                        context.findHudLayoutElement("CharacterAwardsScrollTrack");
-                    const std::optional<GameplayResolvedHudLayoutElement> trackRect =
-                        pTrackLayout != nullptr
-                            ? context.resolveHudLayoutElement(
-                                "CharacterAwardsScrollTrack",
-                                screenWidth,
-                                screenHeight,
-                                pTrackLayout->width,
-                                pTrackLayout->height)
-                            : std::nullopt;
-
-                    if (trackRect.has_value() && trackRect->height > 0.0f)
-                    {
-                        target.scrollFraction = std::clamp(
-                            (pointerY - trackRect->y) / trackRect->height,
-                            0.0f,
-                            1.0f);
-                    }
-
+                    target.type = GameplayCharacterPointerTargetType::AwardScrollTrack;
                     return target;
                 }
             }
@@ -2269,7 +2258,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             if (context.characterScreenReadOnly().page == GameplayUiController::CharacterPage::Skills)
             {
                 const auto findSkillRowTarget =
-                    [&context, screenWidth, screenHeight, pointerX, pointerY, skillRowHeight, &skillLayout](
+                    [&context, screenWidth, screenHeight, pointerX, pointerY, skillRowHeight, &skillLayout,
+                     selectedPartyMemberIndex, selectedPartyMemberId](
                         const char *pRegionId,
                         const char *pLevelHeaderId,
                         const std::vector<CharacterSkillUiRow> &rows) -> GameplayCharacterPointerTarget
@@ -2337,6 +2327,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                                 target.type = GameplayCharacterPointerTargetType::SkillRow;
                                 target.page = GameplayUiController::CharacterPage::Skills;
                                 target.skillName = row.canonicalName;
+                                target.memberIndex = selectedPartyMemberIndex;
+                                target.memberId = selectedPartyMemberId;
                                 return target;
                             }
                         }
@@ -2457,7 +2449,6 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
         [&context,
          pActiveCharacterDollEntry,
          pActiveCharacterDollType,
-         pActiveCharacter,
          pParty,
          screenWidth,
          screenHeight,
@@ -2465,7 +2456,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
          &resolveCharacterInventoryGrid,
          isReadOnlyAdventurersInnView,
          selectedPartyMemberIndex,
-         selectedPartyMemberCanAct](
+         selectedPartyMemberCanAct,
+         &awardLayout](
             const GameplayCharacterPointerTarget &target,
             float activationX,
             float activationY)
@@ -2624,6 +2616,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                 }
 
                 context.characterScreen().page = target.page;
+                context.characterScreen().awardDragActive = false;
                 return;
             }
 
@@ -2637,22 +2630,9 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                 return;
             }
 
-            if (target.type == GameplayCharacterPointerTargetType::AwardScrollDownButton && pActiveCharacter != nullptr)
+            if (target.type == GameplayCharacterPointerTargetType::AwardScrollDownButton && awardLayout)
             {
-                const AwardTable *pAwardTable = context.awardTable();
-                const size_t awardCount = pAwardTable != nullptr && pParty != nullptr
-                    ? visibleAwardCount(
-                          *pAwardTable,
-                          *pActiveCharacter,
-                          *pParty,
-                          [&context](uint32_t autonoteId)
-                          {
-                              return context.isAutonoteUnlocked(autonoteId);
-                          })
-                    : pActiveCharacter->awards.size();
-                const size_t maximumScrollOffset = awardCount > 0 ? awardCount - 1 : 0;
-
-                if (context.characterScreenReadOnly().awardScrollOffset < maximumScrollOffset)
+                if (context.characterScreenReadOnly().awardScrollOffset < awardLayout->maximumScrollOffset)
                 {
                     ++context.characterScreen().awardScrollOffset;
                 }
@@ -2660,22 +2640,11 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                 return;
             }
 
-            if (target.type == GameplayCharacterPointerTargetType::AwardScrollTrack && pActiveCharacter != nullptr)
+            if (target.type == GameplayCharacterPointerTargetType::AwardScrollTrack
+                && awardLayout && awardLayout->thumbRect)
             {
-                const AwardTable *pAwardTable = context.awardTable();
-                const size_t awardCount = pAwardTable != nullptr && pParty != nullptr
-                    ? visibleAwardCount(
-                          *pAwardTable,
-                          *pActiveCharacter,
-                          *pParty,
-                          [&context](uint32_t autonoteId)
-                          {
-                              return context.isAutonoteUnlocked(autonoteId);
-                          })
-                    : pActiveCharacter->awards.size();
-                const size_t maximumScrollOffset = awardCount > 0 ? awardCount - 1 : 0;
-                context.characterScreen().awardScrollOffset = static_cast<size_t>(
-                    std::round(target.scrollFraction * static_cast<float>(maximumScrollOffset)));
+                context.characterScreen().awardScrollOffset =
+                    awardLayout->scrollOffsetAt(activationY, awardLayout->thumbRect->height * 0.5f);
                 return;
             }
 
@@ -2906,20 +2875,30 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
             if (target.type == GameplayCharacterPointerTargetType::SkillRow && pParty != nullptr)
             {
-                if (pParty->activeMemberIndex() != selectedPartyMemberIndex
-                    && !context.trySelectPartyMember(selectedPartyMemberIndex, true))
+                const Character *pMember = pParty->member(target.memberIndex);
+                if (context.isAdventurersInnCharacterSourceActive()
+                    || context.selectedCharacterScreenSourceIndex() != target.memberIndex
+                    || pMember == nullptr || target.memberId == 0 || pMember->memberId != target.memberId)
                 {
                     return;
                 }
 
-                if (pParty->increaseActiveMemberSkillLevel(target.skillName))
+                if (pParty->activeMemberIndex() != target.memberIndex
+                    && !context.trySelectPartyMember(target.memberIndex, true))
+                {
+                    return;
+                }
+
+                const Character *pActiveMember = pParty->activeMember();
+                if (pActiveMember != nullptr && pActiveMember->memberId == target.memberId
+                    && pParty->increaseActiveMemberSkillLevel(target.skillName))
                 {
                     if (context.audioSystem() != nullptr)
                     {
                         context.audioSystem()->playCommonSound(SoundId::Quest, GameAudioSystem::PlaybackGroup::Ui);
                     }
 
-                    context.playSpeechReaction(pParty->activeMemberIndex(), SpeechId::SkillIncreased, true);
+                    context.playSpeechReaction(target.memberIndex, SpeechId::SkillIncreased, true);
                 }
 
                 return;
@@ -3287,6 +3266,68 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
     GameplayOverlayInteractionState &interactionState = context.interactionState();
 
     GameplayUiController::CharacterScreenState &screen = context.characterScreen();
+    const bool awardsScrollAvailable = screen.open && screen.page == GameplayUiController::CharacterPage::Awards
+        && awardLayout && awardLayout->trackRect && awardLayout->thumbRect;
+    if (screen.awardDragActive)
+    {
+        const Character *pSelectedCharacter = context.selectedCharacterScreenCharacter();
+        if (!awardsScrollAvailable || screen.source != screen.awardDragSource
+            || context.selectedCharacterScreenSourceIndex() != screen.awardDragSourceIndex
+            || pSelectedCharacter == nullptr || pSelectedCharacter->memberId != screen.awardDragMemberId)
+        {
+            screen.awardDragActive = false;
+            interactionState.characterClickLatch = isLeftMousePressed;
+            interactionState.characterPressedTarget = {};
+            return;
+        }
+
+        screen.awardScrollOffset = awardLayout->scrollOffsetAt(mouseY, screen.awardDragThumbOffset);
+        screen.awardDragActive = isLeftMousePressed && !input.mobileTouchDragReleased;
+        interactionState.characterClickLatch = isLeftMousePressed;
+        interactionState.characterPressedTarget = {};
+        return;
+    }
+
+    if (awardsScrollAvailable
+        && (input.leftMouseButton.pressed || input.mobileTouchDragStarted
+            || (isLeftMousePressed && !interactionState.characterClickLatch)))
+    {
+        const float startX = input.mobileTouchDragStarted ? input.mobileTouchDragStartX : mouseX;
+        const float startY = input.mobileTouchDragStarted ? input.mobileTouchDragStartY : mouseY;
+        const GameplayCharacterPointerTarget target = findCharacterPointerTarget(startX, startY);
+        if (target.type == GameplayCharacterPointerTargetType::AwardScrollTrack)
+        {
+            interactionState.characterClickLatch = isLeftMousePressed;
+            interactionState.characterPressedTarget = {};
+            const Character *pSelectedCharacter = context.selectedCharacterScreenCharacter();
+            const uint64_t memberId = pSelectedCharacter != nullptr ? pSelectedCharacter->memberId : 0;
+            const GameplayUiController::CharacterScreenSource source = screen.source;
+            const size_t sourceIndex = context.selectedCharacterScreenSourceIndex();
+            if (memberId == 0 || !context.allowSourceGameplayAction(SourceActionAwardScrollBar, 7))
+            {
+                return;
+            }
+
+            pSelectedCharacter = context.selectedCharacterScreenCharacter();
+            if (screen.source != source || context.selectedCharacterScreenSourceIndex() != sourceIndex
+                || pSelectedCharacter == nullptr || pSelectedCharacter->memberId != memberId)
+            {
+                return;
+            }
+
+            screen.awardDragThumbOffset =
+                context.isPointerInsideResolvedElement(*awardLayout->thumbRect, startX, startY)
+                    ? startY - awardLayout->thumbRect->y
+                    : awardLayout->thumbRect->height * 0.5f;
+            screen.awardDragSource = source;
+            screen.awardDragSourceIndex = sourceIndex;
+            screen.awardDragMemberId = memberId;
+            screen.awardDragActive = isLeftMousePressed && !input.mobileTouchDragReleased;
+            screen.awardScrollOffset = awardLayout->scrollOffsetAt(mouseY, screen.awardDragThumbOffset);
+            return;
+        }
+    }
+
     if (screen.open && screen.page == GameplayUiController::CharacterPage::Skills)
     {
         const auto clearSkillClick = [&interactionState]()

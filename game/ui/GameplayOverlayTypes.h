@@ -389,6 +389,8 @@ struct GameplayCharacterPointerTarget
     EquipmentSlot equipmentSlot = EquipmentSlot::MainHand;
     size_t innIndex = 0;
     float scrollFraction = 0.0f;
+    size_t memberIndex = 0;
+    uint64_t memberId = 0;
 
     bool operator==(const GameplayCharacterPointerTarget &other) const = default;
 };

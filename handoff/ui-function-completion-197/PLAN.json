@@ -1,0 +1,36 @@
+{
+  "checkpoint": 197,
+  "status": "implementing",
+  "production_base": "d56a67ca5919c00f8e4c5ef96452bd22e38a863f",
+  "runtime": "local-data/validation/ui-function-completion-195/runtime-001",
+  "save_schema": 104,
+  "confirmed_fixes": [
+    "Use cross-map acquired AutoNotes in the journal",
+    "Bind skill upgrade gestures to stable party member identity",
+    "Share award layout/range/thumb with input and support held drag",
+    "Use slot populated state for names and retain edit draft on asynchronous save failure",
+    "Accept fresh journal/zoom keydown despite previous held latch"
+  ],
+  "validation": "one combined native and unsigned generic iOS build; one bounded affected Mac UI flow; no new unit cases, no campaign/cold/device replay",
+  "owners": {
+    "main": [
+      "game/gameplay/GameplayScreenRuntime.cpp",
+      "game/CMakeLists.txt",
+      "builds/app/evidence"
+    ],
+    "sol_party_ui_193": [
+      "game/ui/GameplayOverlayTypes.h",
+      "game/gameplay/GameplayPartyOverlayInputController.cpp",
+      "game/ui/GameplayPartyOverlayRenderer.cpp",
+      "game/ui/GameplayUiController.h",
+      "game/ui/CharacterAwardsLayout.*"
+    ],
+    "sol_travel_ui_193": [
+      "game/gameplay/GameplayOverlayInputController.cpp journal function only; main save edits completed"
+    ],
+    "sol_spell_playability_193": [
+      "tools/UiPlayabilityCapture.cpp"
+    ]
+  },
+  "remote_release": "195 remains fixed; no new device checkpoint"
+}

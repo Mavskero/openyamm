@@ -4,6 +4,11 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 197 fixes journal/party/save UI continuity; see `handoff/ui-function-completion-197/README.md`.
+  Native and unsigned generic iOS build passed; one14.095second controlled Mac flow/3reviewedimages passed.
+  Runtime195 andSave104 unchanged; fixed remote195 acceptance continues separately. Fullgoal remains active.
+  Refresh the generated iOS CMake project after adding source files before calling the Xcode app scheme.
+
 - Remote195 is published at `ipados-ui-function-195-20261029`, fixed source `18cd05fd`, all16 attachments verified.
   Full runtime is in that release; MM6/MM7/MM8 differ fromRC2. See `handoff/ipados-remote-test-195/delivery.json`.
   Subsequent196 creation punctuation fix is development-only; keep device195 acceptance pinned to its published source.

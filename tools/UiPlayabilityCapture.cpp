@@ -6,6 +6,11 @@
 #include "game/gameplay/GameplaySaveLoadUiSupport.h"
 #include "game/gameplay/HouseInteraction.h"
 #include "game/maps/SaveGame.h"
+#include "game/tables/AwardTable.h"
+#include "game/tables/JournalAutonoteTable.h"
+#include "game/ui/CharacterAwardsLayout.h"
+#include "game/ui/CharacterSkillRows.h"
+#include "game/ui/CharacterSkillsLayout.h"
 #include "game/ui/DialogueTopicLayout.h"
 #include "game/ui/SaveSlotText.h"
 #include "game/ui/Utf8Text.h"
@@ -92,6 +97,446 @@ struct NewGameScreenTestAccess
 };
 struct ApplicationCaptureTestAccess
 {
+    static int runJournalPartySave(
+        std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
+    {
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "Journal/party output must be new");
+        std::string error;
+        const auto source = loadGameDataFromPath(input, error);
+        require(source && source->currentSceneKind == SceneKind::Indoor, "Expected original normal132 indoor seed");
+        std::filesystem::create_directories(output / "saves");
+        std::filesystem::copy_file(input, output / "input.oysav");
+        std::filesystem::create_directory(output / "blocked-save.oysav");
+        std::ofstream(output / "blocked-save.oysav" / "preserved.txt") << "197 directory must survive\n";
+        std::filesystem::current_path(output);
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings("settings.ini", settings, error), "Cannot write isolated settings");
+        std::ofstream fixture("fixture.txt");
+        fixture << "197 affected journal/party/save flow; original normal132 MM7 indoor save copied to input.oysav. "
+            "Runtime=" << runtime.string() << ". One previously locked potion note is placed only in another "
+            "known indoor map's cached EventRuntimeState, not the current map. No actual travel claimed. "
+            "Party0/1 learned Axe level1/Normal and20points are fixtures; original other skills retained. "
+            "Member1 receives original CharacterAward IDs from the loaded award table solely to create overflow. "
+            "Actual SDL down/Tab/held/up and dynamic-thumb middle/bottom drags; repeated synthetic down events "
+            "maintain held input because SDL_PushEvent does not change native SDL_GetMouseState. "
+            "Held continuation frames must report held=true/pressed=false. Adjacent M and keypad zoom pairs "
+            "have no idle update between repetitions. UI delta0; final30normalframes and actual save/decode. "
+            "Empty-slot double-click, Unicode draft, real asynchronous preview/write failure at a nonempty "
+            "directory, then successful retry to the original empty slot. At most3screenshots/<90seconds. "
+            "No195/196 flow replay, natural acquisition/campaign/cold/device/new unit cases.\n";
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM Journal Party Save197";
+        config.assetRoot = runtime.string();
+        config.activeWorldId = "mm7";
+        config.startupMapFileOverride = source->mapFileName;
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        unsigned phase = 0, frames = 0, ready = 6, captures = 0, normalFrames = 0, saveWaitFrames = 0;
+        bool complete = false;
+        int initialZoom = 0;
+        int zoomDirection = -1;
+        SDL_Scancode zoomCode = SDL_SCANCODE_KP_MINUS;
+        uint32_t noteBit = 0;
+        size_t awardMiddleOffset = 0, awardMaximumOffset = 0;
+        float dragX = 0, dragGrab = 0;
+        std::string pending, emptyLabel;
+        const std::string draft = "重试草稿一九七";
+        std::filesystem::path retryPath;
+        GameplayResolvedHudLayoutElement skillRect{};
+        std::ofstream trace("observations.jsonl");
+        const auto started = std::chrono::steady_clock::now();
+        const auto screen = [&]() -> GameplayScreenRuntime & { return game.m_gameSession.gameplayScreenRuntime(); };
+        const auto rect = [&](const char *id, int width, int height)
+        {
+            const auto *layout = screen().findHudLayoutElement(id);
+            require(layout != nullptr, "Missing affected layout");
+            const auto result = screen().resolveHudLayoutElement(id, width, height, layout->width, layout->height);
+            require(result.has_value(), "Affected layout did not resolve");
+            return *result;
+        };
+        const auto capture = [&](const char *name)
+        {
+            require(pending.empty() && captures < 3, "Journal/party capture budget exceeded");
+            pending = name;
+            bgfx::requestScreenShot(BGFX_INVALID_HANDLE, name);
+        };
+        const auto skillUnchanged = [&]()
+        {
+            for (size_t index = 0; index < 2; ++index)
+            {
+                const Character *member = screen().party()->member(index);
+                const CharacterSkill *skill = member->findSkillByCanonicalName("Axe");
+                require(skill && skill->level == 1 && member->skillPoints == 20,
+                    "Cross-member held skill press spent points or upgraded a member");
+            }
+        };
+        const auto heldPointer = [&](float x, float y, int width, int height)
+        {
+            pointer(x, y, width, height, SDL_BUTTON_LEFT, true);
+        };
+        const auto requireHeldContinuation = [&]()
+        {
+            const auto &button = game.m_gameInputSystem.frame().leftMouseButton;
+            require(button.held && !button.pressed, "Synthetic held continuation gained or lost a button edge");
+        };
+        const auto resolveAxeRow = [&](int width, int height)
+        {
+            const auto data = buildCharacterSkillUiData(
+                screen().party()->member(screen().characterScreen().sourceIndex), screen().characterInspectTable());
+            require(!data.weaponRows.empty() && data.weaponRows.front().canonicalName == "Axe",
+                "Fixture Axe is not the first weapon row");
+            const auto font = screen().findHudFont("Lucida");
+            const float natural = font ? float(std::max(1, font->fontHeight - 3)) : 11.0f;
+            const auto layout = layoutCharacterSkillRows(screen(), width, height, natural,
+                {data.weaponRows.size(), data.magicRows.size(), data.armorRows.size(), data.miscRows.size()});
+            const auto region = rect("CharacterSkillsWeaponsListRegion", width, height);
+            const auto level = rect("CharacterSkillsWeaponsLevelHeader", width, height);
+            GameplayResolvedHudLayoutElement row{region.x, region.y, level.x + level.width - region.x,
+                layout.rowHeight * region.scale, region.scale};
+            require(layout.placeVisible(row), "Fixture Axe row is not visible");
+            return row;
+        };
+        const auto awards = [&](int width, int height)
+        {
+            const auto layout = layoutCharacterAwards(screen(), screen().party()->member(1), screen().party(),
+                width, height);
+            require(layout && layout->thumbRect && layout->maximumScrollOffset > 1 && layout->thumbTravel > 0,
+                "Original award fixture did not create a draggable overflow");
+            return *layout;
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(game.initializeRenderer() && game.loadSessionFromPath(output / "input.oysav"),
+                        "Journal/party initial load failed");
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal, "Metal required");
+                    require(screen().ensureGameplayLayoutsLoaded(), "Affected layouts unavailable");
+                    require(screen().party() && screen().party()->memberCount() >= 2, "Seed needs two party members");
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames < 1200 && std::chrono::steady_clock::now() - started < std::chrono::seconds(90),
+                        "Journal/party capture exceeded bound");
+                    game.renderFrame(width, height, wheel, phase == 32 ? 1.0f / 60.0f : 0.0f);
+                    trace << "{\"frame\":" << frames << ",\"phase\":" << phase
+                        << ",\"journal\":" << screen().journalScreenState().active
+                        << ",\"save_edit\":" << screen().saveGameScreenState().editActive
+                        << ",\"award_offset\":" << screen().characterScreen().awardScrollOffset << "}\n";
+                    trace.flush();
+                    if (!pending.empty())
+                    {
+                        if (const auto image = Engine::BgfxContext::consumeScreenshot(pending))
+                        {
+                            SDL_Surface *surface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()), int(image->width * 4));
+                            require(surface && SDL_SaveBMP(surface, (pending + ".bmp").c_str()), "Affected screenshot failed");
+                            SDL_DestroySurface(surface);
+                            pending.clear();
+                            ++captures;
+                        }
+                    }
+                    if (frames < ready || !pending.empty()) return;
+                    switch (phase)
+                    {
+                    case 0:
+                    {
+                        const auto *table = screen().journalAutonoteTable();
+                        require(table != nullptr, "Original note table unavailable");
+                        const auto note = std::find_if(table->entries().begin(), table->entries().end(), [&](const auto &entry)
+                        {
+                            return entry.category == JournalAutonoteCategory::Potion
+                                && !screen().isAutonoteUnlocked(entry.noteBit >> 16);
+                        });
+                        require(note != table->entries().end(), "Seed needs a locked original potion note");
+                        noteBit = note->noteBit;
+                        screen().worldRuntime()->eventRuntimeState()->variables.erase(noteBit);
+                        const auto &maps = game.m_gameSession.data().mapEntries();
+                        const auto map = std::find_if(maps.begin(), maps.end(), [&](const auto &entry)
+                        {
+                            return entry.worldId == "mm7" && entry.fileName.ends_with(".blv")
+                                && entry.fileName != std::filesystem::path(source->mapFileName).filename().string();
+                        });
+                        require(map != maps.end(), "Another known MM7 indoor map unavailable");
+                        const std::string cacheKey = map->canonicalId.empty() ? map->fileName : map->canonicalId;
+                        IndoorSceneRuntime::Snapshot cached{};
+                        cached.eventRuntimeState.emplace();
+                        cached.eventRuntimeState->mapFileName = map->fileName;
+                        cached.eventRuntimeState->variables[noteBit] = 1;
+                        game.m_gameSession.storeIndoorSceneState(cacheKey, cached);
+                        require(!screen().worldRuntime()->eventRuntimeState()->variables.contains(noteBit)
+                            && screen().isAutonoteUnlocked(noteBit >> 16), "Cached-only note fixture not isolated");
+                        fixture << "note_id=" << (noteBit >> 16) << " cached_map=" << cacheKey << " text="
+                            << std::quoted(note->text) << '\n';
+                        key(SDL_SCANCODE_M); phase = 1; break;
+                    }
+                    case 1:
+                        require(screen().journalScreenState().active, "First complete M press did not open journal");
+                        key(SDL_SCANCODE_M); phase = 2; break;
+                    case 2:
+                        require(!screen().journalScreenState().active, "Adjacent complete M press did not close journal");
+                        key(SDL_SCANCODE_M); phase = 3; break;
+                    case 3:
+                        require(screen().journalScreenState().active, "Journal did not reopen");
+                        initialZoom = screen().journalScreenState().mapZoomStep;
+                        require(initialZoom == 0 || initialZoom == 2, "Indoor fixture lacks two zoom steps");
+                        zoomDirection = initialZoom == 0 ? 1 : -1;
+                        zoomCode = initialZoom == 0 ? SDL_SCANCODE_KP_PLUS : SDL_SCANCODE_KP_MINUS;
+                        fixture << "initial_zoom=" << initialZoom << " zoom_direction=" << zoomDirection << '\n';
+                        key(zoomCode); phase = 4; break;
+                    case 4:
+                        require(screen().journalScreenState().mapZoomStep == initialZoom + zoomDirection, "First zoom press lost");
+                        key(zoomCode); phase = 5; break;
+                    case 5:
+                        require(screen().journalScreenState().mapZoomStep == initialZoom + zoomDirection * 2, "Adjacent zoom press lost");
+                        click(rect("JournalMainViewNotes", width, height), width, height);
+                        phase = 6; ready = frames + 2; break;
+                    case 6:
+                        require(screen().journalScreenState().view == GameplayUiController::JournalView::Notes
+                            && screen().journalScreenState().notesCategory == GameplayUiController::JournalNotesCategory::Potion,
+                            "Actual Notes click did not select potion notes");
+                        require(!screen().worldRuntime()->eventRuntimeState()->variables.contains(noteBit)
+                            && screen().isAutonoteUnlocked(noteBit >> 16), "Notes opening changed the cached-only bit");
+                        capture("cached-map-potion-note");
+                        key(SDL_SCANCODE_ESCAPE); phase = 7; ready = frames + 1; break;
+                    case 7:
+                    {
+                        require(!screen().journalScreenState().active, "Journal Escape did not close");
+                        for (size_t index = 0; index < 2; ++index)
+                        {
+                            Character &member = *screen().party()->member(index);
+                            member.skills["Axe"] = {"Axe", 1, SkillMastery::Normal};
+                            member.skillPoints = 20;
+                        }
+                        screen().party()->setActiveMemberIndex(0);
+                        auto &character = screen().characterScreen();
+                        character = {};
+                        character.open = true;
+                        character.page = GameplayUiController::CharacterPage::Skills;
+                        character.source = GameplayUiController::CharacterScreenSource::Party;
+                        character.sourceIndex = 0;
+                        phase = 8; ready = frames + 2; break;
+                    }
+                    case 8:
+                        skillRect = resolveAxeRow(width, height);
+                        heldPointer(skillRect.x + skillRect.width / 2, skillRect.y + skillRect.height / 2, width, height);
+                        phase = 9; break;
+                    case 9:
+                        require(game.m_gameInputSystem.frame().leftMouseButton.held, "Initial skill down was not held");
+                        skillUnchanged();
+                        key(SDL_SCANCODE_TAB);
+                        heldPointer(skillRect.x + skillRect.width / 2, skillRect.y + skillRect.height / 2, width, height);
+                        phase = 10; break;
+                    case 10:
+                        requireHeldContinuation();
+                        require(screen().party()->activeMemberIndex() == 1
+                            && screen().characterScreen().sourceIndex == 1, "Tab did not select member1");
+                        skillUnchanged();
+                        heldPointer(skillRect.x + skillRect.width / 2, skillRect.y + skillRect.height / 2, width, height);
+                        phase = 11; break;
+                    case 11:
+                        requireHeldContinuation();
+                        skillUnchanged();
+                        pointer(skillRect.x + skillRect.width / 2, skillRect.y + skillRect.height / 2,
+                            width, height, SDL_BUTTON_LEFT, false);
+                        phase = 12; break;
+                    case 12:
+                        skillUnchanged();
+                        require(!game.m_gameInputSystem.frame().leftMouseButton.held, "Skill release remained held");
+                        skillRect = resolveAxeRow(width, height);
+                        click(skillRect, width, height);
+                        phase = 13; ready = frames + 2; break;
+                    case 13:
+                    {
+                        const Character &first = *screen().party()->member(0);
+                        const Character &second = *screen().party()->member(1);
+                        require(first.skillPoints == 20 && first.findSkillByCanonicalName("Axe")->level == 1
+                            && second.skillPoints == 18 && second.findSkillByCanonicalName("Axe")->level == 2,
+                            "Fresh skill click did not upgrade only member1 once");
+                        auto &character = screen().characterScreen();
+                        character.page = GameplayUiController::CharacterPage::Awards;
+                        const auto *table = screen().awardTable();
+                        require(table != nullptr, "Original award table unavailable");
+                        fixture << "member1_original_award_ids=";
+                        size_t added = 0;
+                        for (const auto &entry : table->entries())
+                        {
+                            if (entry.stateKind == AwardStateKind::CharacterAward
+                                && screen().party()->member(1)->awards.insert(entry.stateId).second)
+                            {
+                                fixture << entry.stateId << ',';
+                                if (++added == 40) break;
+                            }
+                        }
+                        fixture << '\n';
+                        character.awardScrollOffset = 0;
+                        phase = 14; ready = frames + 2; break;
+                    }
+                    case 14:
+                    {
+                        const auto layout = awards(width, height);
+                        awardMaximumOffset = layout.maximumScrollOffset;
+                        dragX = layout.thumbRect->x + std::min(1.0f, layout.thumbRect->width / 2);
+                        dragGrab = layout.thumbRect->height / 2;
+                        heldPointer(dragX, layout.thumbRect->y + dragGrab, width, height);
+                        phase = 15; break;
+                    }
+                    case 15:
+                    {
+                        require(screen().characterScreen().awardDragActive, "Actual thumb down did not start drag");
+                        const auto layout = awards(width, height);
+                        heldPointer(dragX, layout.thumbTrackTop + layout.thumbTravel * 0.5f + dragGrab, width, height);
+                        phase = 16; break;
+                    }
+                    case 16:
+                        requireHeldContinuation();
+                        awardMiddleOffset = screen().characterScreen().awardScrollOffset;
+                        require(awardMiddleOffset > 0 && awardMiddleOffset < awardMaximumOffset,
+                            "Held thumb drag did not reach a middle offset");
+                        pointer(dragX, awards(width, height).thumbRect->y + dragGrab,
+                            width, height, SDL_BUTTON_LEFT, false);
+                        phase = 17; break;
+                    case 17:
+                    {
+                        require(!screen().characterScreen().awardDragActive, "Award release left a drag active");
+                        const auto layout = awards(width, height);
+                        heldPointer(dragX, layout.thumbRect->y + dragGrab, width, height);
+                        phase = 18; break;
+                    }
+                    case 18:
+                    {
+                        require(screen().characterScreen().awardDragActive, "Moved thumb did not accept a new drag");
+                        const auto layout = awards(width, height);
+                        heldPointer(dragX, layout.thumbTrackTop + layout.thumbTravel + dragGrab, width, height);
+                        phase = 19; break;
+                    }
+                    case 19:
+                        requireHeldContinuation();
+                        require(screen().characterScreen().awardScrollOffset == awardMaximumOffset,
+                            "Held thumb drag did not reach final awards");
+                        pointer(dragX, awards(width, height).thumbRect->y + dragGrab,
+                            width, height, SDL_BUTTON_LEFT, false);
+                        phase = 20; break;
+                    case 20:
+                        require(!screen().characterScreen().awardDragActive, "Final award release remained active");
+                        fixture << "award_middle_offset=" << awardMiddleOffset
+                            << " award_bottom_offset=" << screen().characterScreen().awardScrollOffset
+                            << " award_maximum_offset=" << awardMaximumOffset << '\n';
+                        capture("awards-dynamic-thumb-bottom");
+                        screen().characterScreen() = {};
+                        screen().openSaveGameOverlay();
+                        phase = 21; ready = frames + 2; break;
+                    case 21:
+                    {
+                        auto &save = screen().saveGameScreenState();
+                        require(save.active && !save.slots.empty() && !save.slots[0].populated,
+                            "Isolated slot0 is not empty");
+                        save.selectedIndex = 0;
+                        emptyLabel = screen().gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::EmptySlot);
+                        require(save.slots[0].fileLabel == emptyLabel, "Empty slot did not use loaded Chinese caption");
+                        retryPath = save.slots[0].path;
+                        save.slots[0].populated = true;
+                        save.slots[0].fileLabel = "Empty";
+                        const auto populated = screen().prepareSelectedSaveGameRequest();
+                        require(populated && populated->saveName == "Empty", "Populated custom Empty name was discarded");
+                        save.slots[0].populated = false;
+                        save.slots[0].fileLabel = emptyLabel;
+                        const auto unpopulated = screen().prepareSelectedSaveGameRequest();
+                        require(unpopulated && !unpopulated->saveName.empty() && unpopulated->saveName != emptyLabel,
+                            "Empty slot used its display caption as the save name");
+                        click(rect("SaveGameSlotRow0", width, height), width, height);
+                        phase = 22; ready = frames + 2; break;
+                    }
+                    case 22:
+                        click(rect("SaveGameSlotRow0", width, height), width, height);
+                        phase = 23; ready = frames + 2; break;
+                    case 23:
+                    {
+                        auto &save = screen().saveGameScreenState();
+                        require(save.editActive && save.editSlotIndex == 0 && save.editBuffer.empty(),
+                            "Actual empty-slot double-click prefills the Chinese caption");
+                        save.slots[0].path = output / "blocked-save.oysav";
+                        SDL_Event text{};
+                        text.type = SDL_EVENT_TEXT_INPUT;
+                        text.text.windowID = SDL_GetWindowID(window());
+                        text.text.text = draft.c_str();
+                        require(SDL_PushEvent(&text), "Unicode draft queue failed");
+                        key(SDL_SCANCODE_RETURN);
+                        saveWaitFrames = 0;
+                        phase = 24; break;
+                    }
+                    case 24:
+                    {
+                        auto &save = screen().saveGameScreenState();
+                        require(++saveWaitFrames < 180, "Asynchronous save failure did not return");
+                        require(save.active && save.editActive && save.editBuffer == draft
+                            && save.slots[0].fileLabel == emptyLabel && !save.slots[0].populated,
+                            "Failed save lost the draft or replaced original slot metadata");
+                        if (save.errorText.empty()) break;
+                        require(save.errorText == "保存失败：无法写入，原档未改动",
+                            "Failure was not the actual asynchronous write rejection");
+                        require(std::filesystem::is_directory(output / "blocked-save.oysav")
+                            && std::filesystem::is_regular_file(output / "blocked-save.oysav" / "preserved.txt"),
+                            "Failed save replaced the protected directory fixture");
+                        fixture << "save_failure=" << std::quoted(save.errorText) << '\n';
+                        capture("save-failure-retains-unicode-draft");
+                        phase = 25; break;
+                    }
+                    case 25:
+                        screen().saveGameScreenState().slots[0].path = retryPath;
+                        key(SDL_SCANCODE_RETURN);
+                        saveWaitFrames = 0;
+                        phase = 26; break;
+                    case 26:
+                        require(++saveWaitFrames < 180, "Asynchronous save retry did not finish");
+                        if (screen().saveGameScreenState().active) break;
+                        {
+                            const auto saved = loadGameDataFromPath(retryPath, error);
+                            require(saved && saved->saveName == draft && !saved->previewBmp.empty(),
+                                "Actual save retry did not persist Unicode name and preview");
+                        }
+                        phase = 31; break;
+                    case 31: phase = 32; break;
+                    case 32:
+                        if (++normalFrames < 30) break;
+                        require(game.quickSaveToPath(output / "continued.oysav"), "Continued actual save failed");
+                        require(loadGameDataFromPath(output / "continued.oysav", error).has_value(),
+                            "Continued save decode failed");
+                        complete = true;
+                        phase = 33;
+                        { SDL_Event quit{}; quit.type = SDL_EVENT_QUIT; SDL_PushEvent(&quit); }
+                        break;
+                    default: break;
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete, "Journal/party capture ended early");
+            std::ofstream("result.json") << "{\"passed\":true,\"checkpoint\":197,\"frames\":" << frames
+                << ",\"captures\":" << captures << ",\"normal_frames\":" << normalFrames
+                << ",\"cached_note_id\":" << (noteBit >> 16)
+                << ",\"award_middle_offset\":" << awardMiddleOffset << ",\"award_bottom_offset\":" << awardMaximumOffset
+                << ",\"new_unit_cases\":0,\"device\":false,\"natural_campaign\":false}\n";
+            return 0;
+        }
+        catch (const std::exception &exception)
+        {
+            std::ofstream("failure.txt") << "phase=" << phase << " frame=" << frames << " " << exception.what() << '\n';
+            throw;
+        }
+    }
     static int runLabels(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output,
         bool creationOnly = false)
     {
@@ -725,7 +1170,9 @@ int main(int argc, char **argv)
 {
     try
     {
-        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only]");
+        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only|--journal-party-save]");
+        if (argc == 5 && std::string(argv[4]) == "--journal-party-save")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::runJournalPartySave(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--creation-only")
             return OpenYAMM::Game::ApplicationCaptureTestAccess::runLabels(argv[1], argv[2], argv[3], true);
         if (argc == 5 && std::string(argv[4]) == "--labels-only")

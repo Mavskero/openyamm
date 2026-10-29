@@ -397,6 +397,11 @@ public:
         float skillScrollOffset = 0;
         float skillDragStartOffset = 0;
         bool skillDragActive = false;
+        bool awardDragActive = false;
+        float awardDragThumbOffset = 0.0f;
+        CharacterScreenSource awardDragSource = CharacterScreenSource::Party;
+        size_t awardDragSourceIndex = 0;
+        uint64_t awardDragMemberId = 0;
     };
 
     struct InventoryNestedOverlayState

@@ -1,0 +1,18 @@
+{
+  "observed_at": "2026-10-29T11:14:10.652315+00:00",
+  "source": "wait_threads remote latest final; reported evidence only, raw receiving-host files/pixels not inspected",
+  "thread": "01a182d6-6146-7813-a3fe-b25ff695a1f5",
+  "host": "remote-control:env_e_6a81fa1c1e70832ba41378f19f596343",
+  "cursor": "5f737d6d-9271-419a-a62c-c8c34f4afd2b:2",
+  "release195": {
+    "source": "18cd05fd",
+    "installed_preserving_data": true,
+    "six_resources_readback_verified": true,
+    "old_saves_preserved": 10,
+    "backup_approx_gb": 12,
+    "in_game_acceptance_started": false
+  },
+  "required_at_receiver": "User enters device passcode locally for XCTest / Enable UI Automation",
+  "current_host_device_operations": false,
+  "offline_development_blocked": false
+}

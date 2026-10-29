@@ -218,6 +218,7 @@ add_library(openyamm_game STATIC
     tables/SpeechReactionTable.cpp
     ui/SpellbookUiLayout.cpp
     ui/CharacterSkillsLayout.cpp
+    ui/CharacterAwardsLayout.cpp
     ui/CharacterStatLayout.cpp
     ui/CharacterSkillRows.cpp
     party/SpellSchool.cpp

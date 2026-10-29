@@ -1,0 +1,253 @@
+{
+  "checkpoint": 197,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-29T11:23:47.072025+00:00",
+  "production_base": "d56a67ca5919c00f8e4c5ef96452bd22e38a863f",
+  "fixes": [
+    "Use cross-map acquired AutoNotes in the journal",
+    "Bind skill upgrade gestures to stable party member identity",
+    "Share award layout/range/thumb with input and support held drag",
+    "Use slot populated state for names and retain edit draft on asynchronous save failure",
+    "Accept fresh journal/zoom keydown despite previous held latch",
+    "Accept fresh manual-save Return/Escape independently of the prior held latch"
+  ],
+  "commands": {
+    "native": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "-j3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 12576,
+      "started_at": "2026-10-29T11:16:22.277917+00:00",
+      "finished_at": "2026-10-29T11:17:53.276451+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-197/build-native-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "capture": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "ui_playability_capture",
+        "-j3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 17129,
+      "started_at": "2026-10-29T11:21:16.052604+00:00",
+      "finished_at": "2026-10-29T11:21:22.343473+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 300.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-197/build-capture-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "ios_initial_failure": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 14052,
+      "started_at": "2026-10-29T11:17:58.828462+00:00",
+      "finished_at": "2026-10-29T11:19:12.886349+00:00",
+      "exit_code": 65,
+      "timed_out": false,
+      "timeout_seconds": 900.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-197/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "ios_configuration_refresh": {
+      "argv": [
+        "cmake",
+        "-S",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm",
+        "-B",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm/build-ios-xcode"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 16159,
+      "started_at": "2026-10-29T11:20:10.074792+00:00",
+      "finished_at": "2026-10-29T11:20:10.984457+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 180.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-197/configure-ios-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "ios": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 16334,
+      "started_at": "2026-10-29T11:20:17.528995+00:00",
+      "finished_at": "2026-10-29T11:20:24.896815+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 900.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-197/build-ios-002.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "actual": {
+      "argv": [
+        "openyamm/build-apple/ui_playability_capture",
+        "local-data/validation/ui-function-completion-195/runtime-001",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-197/actual-001",
+        "--journal-party-save"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 17464,
+      "started_at": "2026-10-29T11:21:41.337738+00:00",
+      "finished_at": "2026-10-29T11:21:55.432889+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 115.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-197/actual-001.log",
+      "executed_binary": "openyamm/build-apple/ui_playability_capture",
+      "executed_binary_sha256": "9810914e7677ac4c45563246d3b66f2cb5ee41807f1bead3f65688ffb97769f3",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "actual": {
+    "passed": true,
+    "checkpoint": 197,
+    "frames": 77,
+    "captures": 3,
+    "normal_frames": 30,
+    "cached_note_id": 28,
+    "award_middle_offset": 16,
+    "award_bottom_offset": 32,
+    "new_unit_cases": 0,
+    "device": false,
+    "natural_campaign": false
+  },
+  "fixture": "197 affected journal/party/save flow; original normal132 MM7 indoor save copied to input.oysav. Runtime=/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/runtime-001. One previously locked potion note is placed only in another known indoor map's cached EventRuntimeState, not the current map. No actual travel claimed. Party0/1 learned Axe level1/Normal and20points are fixtures; original other skills retained. Member1 receives original CharacterAward IDs from the loaded award table solely to create overflow. Actual SDL down/Tab/held/up and dynamic-thumb middle/bottom drags; repeated synthetic down events maintain held input because SDL_PushEvent does not change native SDL_GetMouseState. Held continuation frames must report held=true/pressed=false. Adjacent M and keypad zoom pairs have no idle update between repetitions. UI delta0; final30normalframes and actual save/decode. Empty-slot double-click, Unicode draft, real asynchronous preview/write failure at a nonempty directory, then successful retry to the original empty slot. At most3screenshots/<90seconds. No195/196 flow replay, natural acquisition/campaign/cold/device/new unit cases.\nnote_id=28 cached_map=world.mm7.map.d01 text=\"催化剂（灰色）= 蘑菇 + 空药剂瓶。各种灰色试剂的效果不同。\"\ninitial_zoom=2 zoom_direction=-1\nmember1_original_award_ids=2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,\naward_middle_offset=16 award_bottom_offset=32 award_maximum_offset=32\nsave_failure=\"保存失败：无法写入，原档未改动\"\n",
+  "images": [
+    {
+      "file": "actual-001/cached-map-potion-note.png",
+      "sha256": "d5a46f81ed8ed2d89c9eede102b5b159acb9120a2bc27897e561fa1737151d36",
+      "pixels_reviewed": true,
+      "observation": "Cached-only note28 visible in full in Potion Notes; actual current map contains no note28 variable."
+    },
+    {
+      "file": "actual-001/awards-dynamic-thumb-bottom.png",
+      "sha256": "16775237df948b20394b70fa418cb2f8d929278d144f81cce6696f4768bcd68e",
+      "pixels_reviewed": true,
+      "observation": "Last award rows visible and dynamic thumb at bottom of track; midpoint16 and bottom32 observed in the same run."
+    },
+    {
+      "file": "actual-001/save-failure-retains-unicode-draft.png",
+      "sha256": "cb31396dc6c53e6ddd5c1db547c2a54eb4a8f05d33ee51c70683455e52ff03f0",
+      "pixels_reviewed": true,
+      "observation": "Production write failure visible; selected row retains the complete Chinese draft, other rows show localized empty slots."
+    }
+  ],
+  "source_files": {
+    "game/CMakeLists.txt": "d0ab2c3a6be1eaa55858464eb349df2278e0d863ad25d2fb1c6a37c76c76ef82",
+    "game/gameplay/GameplayOverlayInputController.cpp": "31f68f321ed672b1b82bfce6b94d7c450f60e40a81b50eaee7075e4c52b063a6",
+    "game/gameplay/GameplayPartyOverlayInputController.cpp": "cb47315e88ab8a080984d85d5c26e1a52b50569de0fe22350dccb8b97f361def",
+    "game/gameplay/GameplayScreenRuntime.cpp": "46da2ff296a02ef92abc0e8b56a7c776378cd01a1c1c3d2589582542cc522c62",
+    "game/ui/GameplayOverlayTypes.h": "5cbb10702d8af7843d2c2ebe9fb07e50b77b74e72cbdb4c01f4b9cd6ca1d6787",
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "ffbdeb39ea62ae96728a0428aaa93affcdf8a963d394df855a7204bb046d7ef5",
+    "game/ui/GameplayUiController.h": "f31dedf8f7f54495c8de496d95095f7cece476d15785ccf1631153bb9dc21f3d",
+    "game/ui/CharacterAwardsLayout.h": "408e80510406bb58daf1275f55390ecb62f03e85fdb6720b00cd12e15197406b",
+    "game/ui/CharacterAwardsLayout.cpp": "8a59c7bbcebc0193e891277930ae1aa6e40cd5ba3f2eb558a43f66a4c1deb713",
+    "tools/UiPlayabilityCapture.cpp": "35e0be95922c2229ba086e4478b0192aca988c3a311e06ba2c82766be2ce6691"
+  },
+  "runtime": "local-data/validation/ui-function-completion-195/runtime-001",
+  "runtime_changed": false,
+  "save_schema": 104,
+  "save_schema_changed": false,
+  "preserved_failure": {
+    "record": "build-ios-001.command.json",
+    "reason": "Generated Xcode project predated new CharacterAwardsLayout.cpp; link had undefined helper symbols. Reconfigured existing CMake project, then ios002 succeeded. No production workaround."
+  },
+  "validation_scope": {
+    "new_unit_cases": 0,
+    "campaign_replays": 0,
+    "cold_replays": 0,
+    "device_or_simulator_operations": 0,
+    "mac_app_runs": 1,
+    "reviewed_images": 3,
+    "normal_continuation_frames": 30,
+    "save_files_written_in_isolated_output": [
+      "saves/save1.oysav",
+      "continued.oysav"
+    ]
+  },
+  "limitations": [
+    "Cached note, skill levels/points and award overflow are declared fixtures, not natural acquisition or natural travel.",
+    "SDL synthetic held input was maintained by repeated down events with asserted held=true/pressed=false; this is not physical finger/mouse acceptance.",
+    "Only the affected Mac UI flow was exercised; no full UI, full natural campaign, audio or new target-iPad acceptance.",
+    "Remote195 stays pinned; receiver reports installation/readback/backup and waits for local system authentication, with no in-game acceptance yet."
+  ],
+  "goal_status": "active",
+  "full_game_complete": false,
+  "owned_jobs_remaining": [],
+  "next": "Implement the confirmed missing video brightness control and real preview after bounded architecture decision; do not invent unknown legacy Tinting behavior."
+}

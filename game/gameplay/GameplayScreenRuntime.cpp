@@ -3056,7 +3056,7 @@ std::optional<GameplayScreenRuntime::PreparedSaveGameRequest> GameplayScreenRunt
     else
     {
         const GameplayUiController::SaveSlotSummary &slot = saveGameScreen.slots[saveGameScreen.selectedIndex];
-        request.saveName = slot.fileLabel == "Empty" ? std::string() : slot.fileLabel;
+        request.saveName = slot.populated ? slot.fileLabel : std::string();
     }
 
     if (request.saveName.empty())
