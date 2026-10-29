@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-30T03:24:56.711514+08:00",
+  "source_base": "86c8bc7d6a55285a8f6dd88c3a352fbe4d1cd6b9",
+  "files": {
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "5d562b0c8b12251b15b0b36c52f334e71e7fce214f4715a0195c90b04512522a",
+    "tools/HouseDialogueLayoutCapture.cpp": "07df66ea635dabe9ea1f198db4d3a14b83308ab6e18c7b168c5d824783919aad"
+  },
+  "agents_frozen": true,
+  "main_build_app_owner": true
+}

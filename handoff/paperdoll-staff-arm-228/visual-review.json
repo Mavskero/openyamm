@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-30T03:30:34.518267+08:00",
+  "old_image": "local-data/validation/equipment-083/capture-004/paperdoll-2.png",
+  "old_image_reviewed": true,
+  "current_image": "actual-001/paperdoll-staff-arm.png",
+  "current_image_reviewed": true,
+  "sha256": "287ae18bbfd5b5afa318e0d58c0de9ef7188416030c47b54276f00beb388f5a6",
+  "bytes": 4172564,
+  "observation": "Previous background gap between the left upper arm and armor sleeve is absent; forearm now joins under sleeve. Staff/armor/portraits/inventory remain visible.",
+  "scope": "Only original member2 character9/staff79/armor84/no offhand, native composite Mac view",
+  "not_pixel_identical_comparison": true,
+  "format": "PNG is a format-only conversion of original BMP, no crop/filter/retouch",
+  "physical_touch_or_fallback_pixel_acceptance": false
+}

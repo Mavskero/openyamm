@@ -8394,6 +8394,9 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
         pMainHandItem != nullptr
         && (pMainHandItem->equipStat == "Weapon2"
             || (canonicalSkillName(pMainHandItem->skillGroup) == "Spear" && spearMastery < SkillMastery::Master));
+    const bool useNativeTwoHandedWeaponPose =
+        pMainHandItem != nullptr && pCharacter != nullptr
+        && pCharacter->equipment.offHand == 0 && pMainHandItem->equipStat == "Weapon2";
     const bool offHandWeaponGripAbove =
         pOffHandItem != nullptr && pOffHandItem->equipStat != "Shield";
     std::optional<NativePaperdollComposite> nativePaperdollComposite;
@@ -8616,8 +8619,9 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                                     pCharacterDollType->leftHandClosedY);
                             }
                         }
-                        else if (!leftHandDisabled)
+                        else if (!leftHandDisabled || useNativeTwoHandedWeaponPose)
                         {
+                            // Native MM8 draws a two-handed weapon's LHo pose at LHf before armor.
                             compositeHudLayer(
                                 pCharacterDollEntry->leftHandOpenAsset,
                                 pCharacterDollType->leftHandFingersX,
@@ -8637,7 +8641,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                                 pCharacterDollType->rightHandFingersY);
                         }
 
-                        if (leftHandDisabled || offHandWeaponGripAbove)
+                        if ((leftHandDisabled && !useNativeTwoHandedWeaponPose) || offHandWeaponGripAbove)
                         {
                             compositeHudLayer(
                                 pCharacterDollEntry->leftHandHoldAsset,
@@ -9204,12 +9208,13 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                         pCharacterDollType->leftHandClosedY);
                 }
             }
-            else if (leftHandDisabled)
+            else if (leftHandDisabled && !useNativeTwoHandedWeaponPose)
             {
                 continue;
             }
             else
             {
+                // Keep the two-handed LHo/LHf pose before armor, matching the native composite.
                 submitCharacterDollLayer(
                     *pLayout,
                     *resolved,
@@ -9242,7 +9247,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                     pCharacterDollType->rightHandFingersY);
             }
 
-            if (leftHandDisabled || offHandWeaponGripAbove)
+            if ((leftHandDisabled && !useNativeTwoHandedWeaponPose) || offHandWeaponGripAbove)
             {
                 submitCharacterDollLayer(
                     *pLayout,

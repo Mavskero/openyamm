@@ -1,0 +1,15 @@
+{
+  "original": "local-data/validation/mm8-inn-081/route-green-002/inn-route-complete.oysav",
+  "copy": "local-data/validation/paperdoll-staff-arm-228/source-input.oysav",
+  "original_sha256": "eec8d6eb15dfcab59d8043bfb27d1ef4436a9283f77f572b7e074ae13586f4f6",
+  "copy_sha256": "eec8d6eb15dfcab59d8043bfb27d1ef4436a9283f77f572b7e074ae13586f4f6",
+  "save_version": 85,
+  "subject": "existing member2/character9/mainHand79/armor84/offHand0",
+  "new_map_pose_equipment_stats_quest_fixtures": false,
+  "capture_only_ui_selection": true,
+  "gameplay_delta": 0,
+  "save_write_requested": false,
+  "original_sha256_after": "eec8d6eb15dfcab59d8043bfb27d1ef4436a9283f77f572b7e074ae13586f4f6",
+  "copy_sha256_after": "eec8d6eb15dfcab59d8043bfb27d1ef4436a9283f77f572b7e074ae13586f4f6",
+  "unchanged_after_app": true
+}

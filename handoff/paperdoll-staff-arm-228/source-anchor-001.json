@@ -1,0 +1,72 @@
+{
+  "original_patch_file": "local-data/validation/mm8-runtime-076/source-001/Scripts/Structs/CharacterOutfits.lua",
+  "sha256": "b9287e2750eb18ea351afd600baca7af99ae364a1df5699d5645cee63671cb0b",
+  "anchors": {
+    "0x43a952": "LHf Y -> signed16 doll offset0x1d",
+    "0x43a958": "LHf X -> signed16 doll offset0x1b",
+    "source_lines": [
+      1087,
+      1095
+    ]
+  },
+  "original_executable_reference": {
+    "no_offhand_staff_branch": "0x43a901-0x43a958",
+    "selected_portrait_column": "LHo via asset array0x522d90 initialized at0x439a07",
+    "no_offhand_skips_late_left_hand": "0x43b7a0/0x43b7ac ->0x43bad8"
+  },
+  "current_mismatch": "Both current branches skip LHo under leftHandDisabled and draw late LHu at leftHandOpen anchor",
+  "scope_guard_review_pending": false,
+  "data_or_art_changed": false,
+  "new_unit_cases": 0,
+  "device_operations": 0,
+  "implemented_guard": "mainHand Weapon2 + raw equipment.offHand ==0 (all skill groups)",
+  "source_portrait8_character9": {
+    "LHu": "pc09LHu",
+    "LHo": "pc09LHu",
+    "source_actual_asset_dimensions": [
+      26,
+      54
+    ],
+    "native_LHf": [
+      138,
+      150
+    ],
+    "old_LHo_anchor": [
+      132,
+      150
+    ],
+    "note": "Both pose columns reference the same bitmap for this character; actual correction is anchor and layer order, not new art"
+  },
+  "layer_order": {
+    "left_hand": 65,
+    "armor": 66,
+    "fingers": 75
+  },
+  "branch_equivalence": "Native composite and fallback both fixed; non-Weapon2 and nonzero-offhand outputs preserved",
+  "source_table_files": [
+    "Data/Tables/Character portraits.txt:10",
+    "Data/Tables/Character doll types.txt:2"
+  ],
+  "original_exe": {
+    "path": "local-data/validation/mm8-runtime-076/source-001/mm8.exe",
+    "sha256": "97be86a7597fbd9763f9b4b0ed1f4a7e47c960703fa30857c32daa056b7d403b",
+    "static_ranges": [
+      [
+        "0x43a901",
+        "0x43a99e"
+      ],
+      [
+        "0x43b7a0",
+        "0x43b7b2"
+      ]
+    ],
+    "evidence": "original-staff-branch-001.txt",
+    "executed": false
+  },
+  "all_no_offhand_Weapon2_proof": "Original43a91f requires EquipStat1. Skill4/Spear enters43a939 directly; all other skills enter same43a939 when offhand slot0. Source ConstAndBits.lua520 confirmsStaff0/Spear4. No mastery branch.",
+  "source_reference_sha256": {
+    "Scripts/Core/ConstAndBits.lua": "466b2f8b3ccceb3a2ab2d95795493dfabc523ddf3c3cb57d4c6dc33609f12893",
+    "Data/Tables/Character portraits.txt": "a15cef9da5d78ce9f7c58a3517b81675260b2f16ac73f850a55fc0dc9b5bd456",
+    "Data/Tables/Character doll types.txt": "22db51ff82ca495140cd715a71a05fa100595afde322e8e744e0601b8dd4fee2"
+  }
+}

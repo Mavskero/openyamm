@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-30T03:27:17.546243+08:00",
+  "source_base": "86c8bc7d6a55285a8f6dd88c3a352fbe4d1cd6b9",
+  "files": {
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "827a0526ef480d927e44b0c8d8c70a76751dbe48dcbb2bf0cda35aa829ec8f84",
+    "tools/HouseDialogueLayoutCapture.cpp": "07df66ea635dabe9ea1f198db4d3a14b83308ab6e18c7b168c5d824783919aad"
+  },
+  "agents_frozen": true,
+  "main_build_app_owner": true,
+  "reason_for_second_build": "Independent raw original-exe proof broadens pose guard from Staff to every Weapon2 with actual empty offhand slot before first App run"
+}

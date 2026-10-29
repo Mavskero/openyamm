@@ -1,0 +1,79 @@
+{
+  "checkpoint": 228,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-30T03:30:34.518267+08:00",
+  "source_base": "86c8bc7d6a55285a8f6dd88c3a352fbe4d1cd6b9",
+  "runtime": "local-data/validation/equipment-feedback-227/runtime-001",
+  "runtime_changed": false,
+  "save_version": 105,
+  "scope": [
+    "Restore original LHo/LHf early arm pose for all Weapon2 with actual empty offhand slot",
+    "Stop late LHu/LHo replacement on that same predicate in native composite and fallback",
+    "One affected original character9 staff/armor Mac image confirms historical83 gap removed"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 5.339712,
+      "started_at": "2026-10-29T19:24:56.840046+00:00",
+      "finished_at": "2026-10-29T19:25:02.179758+00:00"
+    },
+    "build-native-002": {
+      "exit_code": 0,
+      "elapsed_seconds": 6.932707,
+      "started_at": "2026-10-29T19:27:17.737999+00:00",
+      "finished_at": "2026-10-29T19:27:24.670706+00:00"
+    },
+    "actual-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 13.724812,
+      "started_at": "2026-10-29T19:27:38.997372+00:00",
+      "finished_at": "2026-10-29T19:27:52.722184+00:00"
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 8.521525,
+      "started_at": "2026-10-29T19:27:38.990294+00:00",
+      "finished_at": "2026-10-29T19:27:47.511819+00:00"
+    }
+  },
+  "source_files_verified": 2,
+  "final_native_build": "build-native-002",
+  "initial_native_build_note": "Native001 passed narrower Staff guard. Independent original-exe inspection proved all Weapon2/no-offhand use same pose;002 rebuilt before first and only App run.",
+  "source_art_tables_offsets_rules_changed": false,
+  "new_test_cases": 0,
+  "existing_cases_executed": 0,
+  "app_gui_runs": 1,
+  "app_frames": 19,
+  "captures": 1,
+  "images_reviewed_current": 1,
+  "images_reviewed_old": 1,
+  "capture_request_frame": 12,
+  "capture_readback_frame": 14,
+  "actual_window_points": [
+    1210,
+    833
+  ],
+  "drawable_pixels": [
+    2420,
+    1666
+  ],
+  "original_save_version": 85,
+  "original_and_copy_hashes_unchanged": true,
+  "gameplay_delta": 0,
+  "ui_fixture": "Normal production portrait pointer frames select member2 and Inventory; no state edits to Party/equipment/map/pose/gold/time",
+  "save_writes": 0,
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "device_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "Only one staff character rendered; other empty-offhand Weapon2 types and fallback are source/build accepted",
+    "No equipment transaction or ordinary continued gameplay claim from paused UI capture",
+    "Full natural campaign and target-iPad affected UI remain unproved"
+  ]
+}

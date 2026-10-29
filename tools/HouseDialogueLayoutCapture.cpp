@@ -43,6 +43,7 @@ enum class Page
     Transport,
     Character,
     Portal,
+    StaffArm,
 };
 
 struct State
@@ -86,6 +87,7 @@ std::string pageName(Page page)
     case Page::Transport: return "transport";
     case Page::Character: return "character";
     case Page::Portal: return "portal";
+    case Page::StaffArm: return "staff-arm";
     }
     return "unknown";
 }
@@ -102,6 +104,7 @@ std::set<std::string> expectedCaptures(Page page)
     case Page::Transport: return {"transport-menu", "transport-rejected"};
     case Page::Character: return {"character-skills"};
     case Page::Portal: return {"dimension-door-preview"};
+    case Page::StaffArm: return {"paperdoll-staff-arm"};
     }
     return {};
 }
@@ -874,6 +877,35 @@ struct ApplicationCaptureTestAccess
             }
             break;
 
+        case Page::StaffArm:
+            if (state.phase == 0)
+            {
+                const Party *pParty = runtime.partyReadOnly();
+                const Character *pMember = pParty != nullptr ? pParty->member(2) : nullptr;
+                require(pMember != nullptr && pMember->characterDataId == 9
+                        && pMember->equipment.mainHand == 79 && pMember->equipment.armor == 84
+                        && pMember->equipment.offHand == 0,
+                    "Staff-arm capture needs original member2 character9 with staff79, armor84 and no off-hand item");
+                checks << "staff-arm-input\tpass\tmember=2 character_data_id=" << pMember->characterDataId
+                       << " main_hand=" << pMember->equipment.mainHand
+                       << " armor=" << pMember->equipment.armor
+                       << " off_hand=" << pMember->equipment.offHand << '\n';
+                clickPortraitToOpenCharacter(session, width, height, 2);
+                require(runtime.characterScreen().page == GameplayUiController::CharacterPage::Inventory,
+                    "Normal member2 portrait clicks did not open Inventory");
+                advance(state, 1);
+            }
+            else if (state.phase == 1)
+            {
+                captureRequest = "paperdoll-staff-arm";
+                advance(state, 2);
+            }
+            else if (state.phase == 2 && captured.contains("paperdoll-staff-arm"))
+            {
+                state.complete = true;
+            }
+            break;
+
         case Page::Portal:
             if (state.phase == 0)
             {
@@ -969,6 +1001,11 @@ struct ApplicationCaptureTestAccess
         std::ofstream checks(absoluteOutput / "checks.tsv");
         checks.exceptions(std::ios::badbit | std::ios::failbit);
         checks << "check\tresult\tdetail\n";
+        if (page == Page::StaffArm)
+        {
+            checks << "staff-arm-scope\tdeclared\tgameplay_delta=0; original input only; "
+                      "no Party/equipment/map/pose/gold/time state edits; no save writes\n";
+        }
 
         SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
         Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
@@ -1017,7 +1054,7 @@ struct ApplicationCaptureTestAccess
                 }
                 std::optional<std::string> captureRequest;
                 updatePage(game, page, state, width, height, captured, captureRequest, checks);
-                game.renderFrame(width, height, wheel, delta);
+                game.renderFrame(width, height, wheel, page == Page::StaffArm ? 0.0f : delta);
 
                 if (captureRequest)
                 {
@@ -1051,6 +1088,12 @@ struct ApplicationCaptureTestAccess
                               << capture->width << 'x' << capture->height << '\n';
                     checks << "capture\tpass\t" << iterator->first << '='
                            << capture->width << 'x' << capture->height << '\n';
+                    if (page == Page::StaffArm)
+                    {
+                        checks << "staff-arm-frame\tpass\trequested_frame=" << iterator->second.requestedFrame
+                               << " readback_frame=" << frames << " drawable="
+                               << capture->width << 'x' << capture->height << '\n';
+                    }
                     captured.insert(iterator->first);
                     iterator = pendingCaptures.erase(iterator);
                 }
@@ -1091,7 +1134,7 @@ int main(int argc, char **argv)
         {
             throw std::runtime_error(
                 "Usage: house_dialogue_layout_capture RUNTIME INPUT_SAVE NEW_OUTPUT "
-                "--temple|--npc|--shop|--tavern|--training|--transport|--character|--portal "
+                "--temple|--npc|--shop|--tavern|--training|--transport|--character|--portal|--staff-arm "
                 "WINDOW_WIDTH WINDOW_HEIGHT");
         }
         const std::string option = argv[4];
@@ -1104,6 +1147,7 @@ int main(int argc, char **argv)
         else if (option == "--transport") page = OpenYAMM::Game::Page::Transport;
         else if (option == "--character") page = OpenYAMM::Game::Page::Character;
         else if (option == "--portal") page = OpenYAMM::Game::Page::Portal;
+        else if (option == "--staff-arm") page = OpenYAMM::Game::Page::StaffArm;
         else throw std::runtime_error("Unsupported house dialogue page: " + option);
         return OpenYAMM::Game::ApplicationCaptureTestAccess::run(
             std::filesystem::canonical(argv[1]),

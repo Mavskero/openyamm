@@ -4,6 +4,13 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 228 ACCEPTED_SCOPED: `handoff/paperdoll-staff-arm-228/scoped-result.json`.
+  Original no-offhand Weapon2 LHo/LHf arm restored before armor in native composite andfallback; no art/table/rules
+  change. One13.725s/19frame Mac originalSave85 character9/staff79/armor84 view,1reviewedimage shows old83gap gone;
+  original/copy hashes unchanged,gameplaydelta0,nosavewrite. Finalnative6.933s/unsignediOS8.522s pass,2sourcehashes
+  match;0cases/campaign/device/release. Complete runtime227/UI214/Save105 retained. Otherweapons/fallback source
+  scope only;fullnaturalcampaign unproved,goalACTIVE/~85%lowconfidence. Nextsame-function Spear/offhand source branch.
+
 - 227 ACCEPTED_SOURCE_SCOPED: `handoff/equipment-feedback-227/scoped-result.json`.
   Equipment/placement failure now reports fresh per-call reason; four consumers no longer read prior lastStatus.
   Inactive/no-plan andfour newcaptions usecurrentUiText214; completeold210 retained,146source/68project.

@@ -1,0 +1,13 @@
+{
+  "status": "KNOWN_ADJACENT_SOURCE_BRANCH",
+  "source_base": "after228",
+  "scope": "Original43a928 Spear4 enters early pose even with nonzero offhand; verify full late pass and valid mastery/offhand combinations against current renderer before editing",
+  "owner": "sol_teacher_ui_216 read-only",
+  "constraints": [
+    "same original function only",
+    "no broad audit",
+    "no guessed shift",
+    "no App/test/replay until concrete defect and required scope known"
+  ],
+  "new_device_checkpoint": false
+}
