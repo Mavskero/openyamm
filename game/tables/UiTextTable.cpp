@@ -91,6 +91,37 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.save_autosave", "Autosave"},
     {"ui.save_quicksave", "Quicksave"},
     {"ui.save_slot", "Save"},
+    {"ui.keyboard_forward", "Forward"},
+    {"ui.keyboard_backward", "Backward"},
+    {"ui.keyboard_left", "Left"},
+    {"ui.keyboard_right", "Right"},
+    {"ui.keyboard_yell", "Yell"},
+    {"ui.keyboard_jump", "Jump"},
+    {"ui.keyboard_combat", "Combat"},
+    {"ui.keyboard_cast_ready", "Cast Ready"},
+    {"ui.keyboard_attack", "Attack"},
+    {"ui.keyboard_trigger", "Trigger"},
+    {"ui.keyboard_cast", "Cast"},
+    {"ui.keyboard_pass", "Pass"},
+    {"ui.keyboard_char_cycle", "Char Cycle"},
+    {"ui.keyboard_quest", "Quest"},
+    {"ui.keyboard_quick_ref", "Quick Ref"},
+    {"ui.keyboard_rest", "Rest"},
+    {"ui.keyboard_history", "History"},
+    {"ui.keyboard_use", "Use"},
+    {"ui.keyboard_map_book", "Map Book"},
+    {"ui.keyboard_always_run", "Always Run"},
+    {"ui.keyboard_look_up", "Look Up"},
+    {"ui.keyboard_look_down", "Look Down"},
+    {"ui.keyboard_center_view", "Ctr. View"},
+    {"ui.keyboard_zoom_in", "Zoom In"},
+    {"ui.keyboard_zoom_out", "Zoom Out"},
+    {"ui.keyboard_fly_up", "Fly Up"},
+    {"ui.keyboard_fly_down", "Fly Down"},
+    {"ui.keyboard_land", "Land"},
+    {"ui.keyboard_double_speed", "Double Speed"},
+    {"ui.keyboard_press_input", "Choose key"},
+    {"ui.keyboard_binding_conflict", "Conflict"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -130,7 +161,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
 {
     // Migrate only complete older prefixes: the original 13 captions, the 16 with
     // Arcomage, the 19 with initial inspect labels, the 26 with item details,
-    // the 35 with win text, the 39 with bank captions and the 45 with rest captions.
+    // the 35 with win text, the 39 with bank captions, the 45 with rest captions,
+    // and the 72 with mastery, calendar and save captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -139,6 +171,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t WinMessageCount = size_t(Message::BankBalance);
     constexpr size_t BankMessageCount = size_t(Message::RestHealEightHours);
     constexpr size_t RestMessageCount = size_t(Message::SkillNormal);
+    constexpr size_t SaveMessageCount = size_t(Message::KeyboardForward);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -147,7 +180,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != ItemDetailMessageCount
         && schemaMessageCount != WinMessageCount
         && schemaMessageCount != BankMessageCount
-        && schemaMessageCount != RestMessageCount)
+        && schemaMessageCount != RestMessageCount
+        && schemaMessageCount != SaveMessageCount)
     {
         return false;
     }

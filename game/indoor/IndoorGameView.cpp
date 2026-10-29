@@ -1610,6 +1610,17 @@ float IndoorGameView::gameplayCameraYawRadians() const
     return m_pIndoorRenderer != nullptr ? m_pIndoorRenderer->cameraYawRadians() : 0.0f;
 }
 
+void IndoorGameView::turnAroundAfterHouseExit()
+{
+    if (m_pIndoorRenderer != nullptr)
+    {
+        constexpr float HalfTurnRadians = 3.14159265358979323846f;
+        m_pIndoorRenderer->setCameraAngles(
+            m_pIndoorRenderer->cameraYawRadians() + HalfTurnRadians,
+            m_pIndoorRenderer->cameraPitchRadians());
+    }
+}
+
 bool IndoorGameView::activeMemberKnowsSpell(uint32_t spellId) const
 {
     const IndoorPartyRuntime *pRuntime = partyRuntime();

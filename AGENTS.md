@@ -4,6 +4,11 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 203–206 integrated Keyboard rebinding/localization/fit, shared FlipOnExit and global shortcut guards.
+  See `handoff/ui-function-completion-204/README.md`; native/import/iOS pass, two bounded Keyboard runs/fourimages.
+  Initialdriver timingfailure and visualoverflow preserved/repaired; no newunitcases/campaign/device;205/206sourceonly.
+  Defaultcomplete runtime204/runtime-001,Save104 unchanged;remote195fixed/fullgoalactive. Next207Journaltitles/Combatgray.
+
 - 202 fixes classic keyboard TurnRate16/32 indoors/outdoors and removes mouse sensitivity coupling.
   See `handoff/ui-function-completion-202/README.md`; native/iOS pass,1focusedcase22assertions,0App/device/campaign.
   Held cadence is an explicit refresh-independent adaptation; Runtime198/Save104/remote195 unchanged; fullgoal active.

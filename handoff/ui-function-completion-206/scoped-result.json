@@ -1,0 +1,33 @@
+{
+  "completed_at": "2026-10-29T13:17:56.074133+00:00",
+  "production_base": "e174747d44c0f28ccece50595dc4a168c6ba2e03",
+  "runtime": "local-data/validation/ui-function-completion-204/runtime-001",
+  "save_schema": 104,
+  "save_schema_changed": false,
+  "release195_unchanged": true,
+  "goal_status": "active",
+  "full_game_complete": false,
+  "next": "207 confirmedJournal English titles andCombat key incorrectly gray despite implemented consumer",
+  "owned_jobs_remaining": [],
+  "limitations": [
+    "Full natural campaign and target iPad acceptance remain unproved. Fixedremote195 unchanged.",
+    "No new unit cases/campaign/cold/device operations. Runtime changes onlydata_tables/ui_text.txt; all other engine members andworlds retained."
+  ],
+  "checkpoint": 206,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "fixes": [
+    "F9/F10 queues and consumers suppress quick operations while Keyboard active or the key explicitly rebound; raw latches still update",
+    "IndoorF8/F12 diagnostic toggles requireworldinput and yield to explicit bindings"
+  ],
+  "source_files": {
+    "game/app/GameApplication.cpp": "1592efcecbd019a7a95c5fc28238fe1a21c2206c97361ffd9e73db1f72a7be2a",
+    "game/indoor/IndoorRenderer.cpp": "14c81fb9e75a0bef178a49d90e5a69d26b449f21b7ccc59f5638df31965fb71d"
+  },
+  "combined_validation_record": "local-data/validation/ui-function-completion-204/scoped-result.json",
+  "validation_scope": {
+    "new_unit_cases": 0,
+    "device_or_simulator_operations": 0,
+    "campaign_replays": 0,
+    "scope": "source/native/unsignedgeneric iOS only; no new actual behaviorclaim"
+  }
+}

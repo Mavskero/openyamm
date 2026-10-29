@@ -1,0 +1,47 @@
+{
+  "archive": "local-data/validation/mm8-runtime-076/source-001/Data/10 LocZHCN.EnglishT.lod",
+  "member": "global.txt",
+  "mapping": {
+    "Forward": 706,
+    "Backward": 707,
+    "Left": 708,
+    "Right": 709,
+    "Yell": 710,
+    "Jump": 711,
+    "Combat": 712,
+    "CastReady": 713,
+    "Attack": 714,
+    "Trigger": 715,
+    "Cast": 716,
+    "Pass": 717,
+    "CharCycle": 718,
+    "Quest": 719,
+    "QuickRef": 720,
+    "Rest": 721,
+    "History": 722,
+    "MapBook": 724,
+    "AlwaysRun": 725,
+    "LookUp": 726,
+    "LookDown": 727,
+    "CenterView": 728,
+    "ZoomIn": 729,
+    "ZoomOut": 730,
+    "FlyUp": 731,
+    "FlyDown": 732,
+    "Land": 733
+  },
+  "excluded_source": {
+    "723": "Auto Notes is not Use"
+  },
+  "project_translations": {
+    "Use": "使用",
+    "DoubleSpeed": "双倍速度",
+    "PressInput": "等待输入",
+    "BindingConflict": "绑定冲突"
+  },
+  "schema": {
+    "old": 72,
+    "new": 103,
+    "legacy72_preserved": true
+  }
+}

@@ -42,6 +42,9 @@ public:
     virtual ~IGameplayOverlaySceneAdapter() = default;
 
     virtual float gameplayCameraYawRadians() const = 0;
+    virtual void turnAroundAfterHouseExit()
+    {
+    }
 
     virtual void executeActiveDialogAction() = 0;
     virtual bool tryCastSpellRequest(

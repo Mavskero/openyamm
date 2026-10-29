@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 64> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 91> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -300,10 +300,38 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::MonthDecember, 426},
         {UiMessage::SaveAutosave, 16},
         {UiMessage::SaveQuicksave, 748},
+        {UiMessage::KeyboardForward, 706},
+        {UiMessage::KeyboardBackward, 707},
+        {UiMessage::KeyboardLeft, 708},
+        {UiMessage::KeyboardRight, 709},
+        {UiMessage::KeyboardYell, 710},
+        {UiMessage::KeyboardJump, 711},
+        {UiMessage::KeyboardCombat, 712},
+        {UiMessage::KeyboardCastReady, 713},
+        {UiMessage::KeyboardAttack, 714},
+        {UiMessage::KeyboardTrigger, 715},
+        {UiMessage::KeyboardCast, 716},
+        {UiMessage::KeyboardPass, 717},
+        {UiMessage::KeyboardCharCycle, 718},
+        {UiMessage::KeyboardQuest, 719},
+        {UiMessage::KeyboardQuickRef, 720},
+        {UiMessage::KeyboardRest, 721},
+        {UiMessage::KeyboardHistory, 722},
+        // GlobalTxt 723 is Auto Notes; the added Use action is translated below.
+        {UiMessage::KeyboardMapBook, 724},
+        {UiMessage::KeyboardAlwaysRun, 725},
+        {UiMessage::KeyboardLookUp, 726},
+        {UiMessage::KeyboardLookDown, 727},
+        {UiMessage::KeyboardCenterView, 728},
+        {UiMessage::KeyboardZoomIn, 729},
+        {UiMessage::KeyboardZoomOut, 730},
+        {UiMessage::KeyboardFlyUp, 731},
+        {UiMessage::KeyboardFlyDown, 732},
+        {UiMessage::KeyboardLand, 733},
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 8> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 12> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -313,6 +341,10 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
             "生命得以延续，贾达姆也迎来了新的和平。"
             "你缔结的强大联盟将确保这片土地得到重建，并最终走向繁荣。"},
         {UiMessage::SaveSlot, "存档"},
+        {UiMessage::KeyboardUse, "使用"},
+        {UiMessage::KeyboardDoubleSpeed, "双倍速度"},
+        {UiMessage::KeyboardPressInput, "等待输入"},
+        {UiMessage::KeyboardBindingConflict, "绑定冲突"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

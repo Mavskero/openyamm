@@ -884,9 +884,10 @@ GameplayUiOverlayInputResult GameplayScreenController::handleStandardUiInput(
         && !houseBankInputActive
         && !config.blockJournalToggle;
 
+    const bool legacyMapShortcutEnabled = !context.settingsSnapshot().keyboard.usesScancode(SDL_SCANCODE_M);
     const bool mapShortcutPressed =
-        input.isScancodeHeld(SDL_SCANCODE_M)
-        || input.scancodePressCount(SDL_SCANCODE_M) != 0
+        (legacyMapShortcutEnabled
+            && (input.isScancodeHeld(SDL_SCANCODE_M) || input.scancodePressCount(SDL_SCANCODE_M) != 0))
         || input.isActionActive(KeyboardAction::MapBook);
     const bool storyShortcutPressed =
         input.isActionActive(KeyboardAction::History);

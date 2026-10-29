@@ -1,0 +1,36 @@
+{
+  "completed_at": "2026-10-29T13:17:56.074133+00:00",
+  "production_base": "e174747d44c0f28ccece50595dc4a168c6ba2e03",
+  "runtime": "local-data/validation/ui-function-completion-204/runtime-001",
+  "save_schema": 104,
+  "save_schema_changed": false,
+  "release195_unchanged": true,
+  "goal_status": "active",
+  "full_game_complete": false,
+  "next": "207 confirmedJournal English titles andCombat key incorrectly gray despite implemented consumer",
+  "owned_jobs_remaining": [],
+  "limitations": [
+    "Full natural campaign and target iPad acceptance remain unproved. Fixedremote195 unchanged.",
+    "No new unit cases/campaign/cold/device operations. Runtime changes onlydata_tables/ui_text.txt; all other engine members andworlds retained."
+  ],
+  "checkpoint": 203,
+  "status": "ACCEPTED_SCOPED",
+  "fixes": [
+    "Keyboard/LMB rebinding atomically swaps a unique conflict; ambiguous historical duplicates remain unchanged with retry feedback",
+    "Both legacyM shortcut paths defer to explicit bindings"
+  ],
+  "source_files": {
+    "game/app/GameSettings.h": "05ac307ceaadbf8d170cb30aa25ea37fafd48c8165a3b6728f48191e57abb415",
+    "game/gameplay/GameplayOverlayInputController.cpp": "07f659e45a80f317a3988e603c387513c1feb5d4529e39779d622c90c82f4297",
+    "game/gameplay/GameplayScreenController.cpp": "675089af399d4afb7d8da1ce9a2202104c79878acf90c4df46a471db4bb8ea4f",
+    "game/ui/GameplayUiController.h": "5b6582fdc56a6ae20ce8f1f3f728c48938544ef5488023fe0f3fc17248d89ba2",
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "cc455646cf506f057370980770471452fef89515c9452af660b0fbf90a906314"
+  },
+  "combined_validation_record": "local-data/validation/ui-function-completion-204/scoped-result.json",
+  "validation_scope": {
+    "new_unit_cases": 0,
+    "device_or_simulator_operations": 0,
+    "campaign_replays": 0,
+    "scope": "203 keyboardactual001/002 references204"
+  }
+}

@@ -12,6 +12,7 @@
 #include "game/ui/CharacterSkillRows.h"
 #include "game/ui/CharacterSkillsLayout.h"
 #include "game/ui/DialogueTopicLayout.h"
+#include "game/ui/KeyboardScreenLayout.h"
 #include "game/ui/SaveSlotText.h"
 #include "game/ui/Utf8Text.h"
 #include "game/ui/screens/LoadGameScreen.h"
@@ -98,6 +99,179 @@ struct NewGameScreenTestAccess
 };
 struct ApplicationCaptureTestAccess
 {
+    static int runKeyboard(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output,
+        bool finishOnly = false)
+    {
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "Keyboard output must be new");
+        std::filesystem::create_directories(output);
+        std::filesystem::copy_file(input, output / "input.oysav");
+        std::filesystem::current_path(output);
+        std::string error;
+        auto settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string(); settings.startInMainMenu = true; settings.preseedParty = false;
+        settings.controlScheme = ControlScheme::Modern;
+        settings.keyboard.restoreDefaults(ControlScheme::Modern);
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings("settings.ini", settings, error), "Keyboard settings write failed");
+        std::ofstream("fixture.txt") << "203/204 affected Keyboard only. Original normal132 save copied; "
+            "Modern defaults and direct overlay opening, UI delta0, SDL row clicks/key events. "
+            "One declared duplicate Backward=D fixture exercises ambiguous old configuration. "
+            "3screenshots; no movement/save/campaign/device acceptance. Settings persistence read from INI.\n";
+        if (finishOnly)
+            std::ofstream("fixture.txt", std::ios::app) << "Footer/height repair continuation only: directly seed "
+                "Backward=D and Jump waiting/conflict UI to reproduce the already-observed presentation; "
+                "2screenshots, no repeated swap/M-binding flow.\n";
+        auto config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM Keyboard203-204"; config.assetRoot = runtime.string(); config.activeWorldId = "mm7";
+        config.windowWidth = 1210; config.windowHeight = 834; config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        unsigned phase = 0, frames = 0, captures = 0, ready = 6;
+        bool complete = false;
+        std::string pending;
+        const auto started = std::chrono::steady_clock::now();
+        const auto screen = [&]() -> GameplayScreenRuntime & { return game.m_gameSession.gameplayScreenRuntime(); };
+        const auto capture = [&](const char *name)
+        {
+            require(pending.empty() && captures < 3, "Keyboard capture budget exceeded");
+            pending = name; bgfx::requestScreenShot(BGFX_INVALID_HANDLE, name);
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(game.initializeRenderer() && game.loadSessionFromPath(output / "input.oysav"),
+                        "Keyboard initial load failed");
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal, "Metal required");
+                    require(screen().ensureGameplayLayoutsLoaded(), "Keyboard layouts unavailable");
+                    require(screen().gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::KeyboardForward) == "向前",
+                        "Keyboard localized labels not loaded");
+                    screen().openKeyboardOverlay();
+                    if (finishOnly)
+                    {
+                        screen().mutableSettings().keyboard.setBinding(KeyboardAction::Backward, SDL_SCANCODE_D);
+                        screen().keyboardScreenState().pendingAction = KeyboardAction::Jump;
+                        screen().keyboardScreenState().waitingForBinding = true;
+                        screen().keyboardScreenState().bindingConflict = true;
+                        phase = 12;
+                    }
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames < 600 && std::chrono::steady_clock::now() - started < std::chrono::seconds(60),
+                        "Keyboard capture exceeded bound");
+                    game.renderFrame(width, height, wheel, 0.0f);
+                    if (!pending.empty())
+                    {
+                        if (const auto image = Engine::BgfxContext::consumeScreenshot(pending))
+                        {
+                            SDL_Surface *surface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()), int(image->width * 4));
+                            require(surface && SDL_SaveBMP(surface, (pending + ".bmp").c_str()), "Keyboard screenshot failed");
+                            SDL_DestroySurface(surface); pending.clear(); ++captures;
+                        }
+                    }
+                    if (frames < ready || !pending.empty()) return;
+                    const auto rowClick = [&](KeyboardAction action)
+                    {
+                        const auto layout = resolveKeyboardScreenLayout(screen(), width, height);
+                        require(layout.has_value(), "Keyboard row layout unavailable");
+                        const auto &definition = keyboardBindingDefinition(action);
+                        require(screen().keyboardScreenState().page == definition.page, "Keyboard row on wrong page");
+                        const float x = layout->valueColumnX(definition.column) + 4 * layout->rootScale;
+                        const float y = layout->rowY(definition.row) + layout->rowHeight * 0.5f;
+                        pointer(x, y, width, height, SDL_BUTTON_LEFT, true);
+                        pointer(x, y, width, height, SDL_BUTTON_LEFT, false);
+                    };
+                    const auto buttonClick = [&](const char *name)
+                    {
+                        const auto *layout = screen().findHudLayoutElement(name);
+                        require(layout != nullptr, "Keyboard button layout missing");
+                        const auto rect = screen().resolveHudLayoutElement(name, width, height, layout->width, layout->height);
+                        require(rect.has_value(), "Keyboard button unavailable");
+                        click(*rect, width, height);
+                    };
+                    switch (phase)
+                    {
+                    case 0: rowClick(KeyboardAction::Left); phase = 1; break;
+                    case 1:
+                        if (!screen().keyboardScreenState().waitingForBinding) break;
+                        key(SDL_SCANCODE_D); phase = 2; break;
+                    case 2:
+                        require(screen().settingsSnapshot().keyboard.keyboardBinding(KeyboardAction::Left) == SDL_SCANCODE_D
+                            && screen().settingsSnapshot().keyboard.keyboardBinding(KeyboardAction::Right) == SDL_SCANCODE_A,
+                            "Single key conflict did not swap");
+                        capture("keyboard-page1-swap"); phase = 3; break;
+                    case 3: rowClick(KeyboardAction::Forward); phase = 4; break;
+                    case 4:
+                        if (!screen().keyboardScreenState().waitingForBinding) break;
+                        key(SDL_SCANCODE_M); phase = 5; break;
+                    case 5:
+                    {
+                        const auto persisted = loadGameSettings("settings.ini", error);
+                        require(persisted && persisted->keyboard.keyboardBinding(KeyboardAction::Forward) == SDL_SCANCODE_M
+                            && persisted->keyboard.keyboardBinding(KeyboardAction::Left) == SDL_SCANCODE_D
+                            && persisted->keyboard.keyboardBinding(KeyboardAction::Right) == SDL_SCANCODE_A,
+                            "Keyboard changes did not persist");
+                        key(SDL_SCANCODE_ESCAPE); phase = 6; break;
+                    }
+                    case 6: key(SDL_SCANCODE_ESCAPE); phase = 7; break;
+                    case 7: key(SDL_SCANCODE_ESCAPE); phase = 8; break;
+                    case 8:
+                        require(screen().currentHudScreenState() == GameplayHudScreenState::Gameplay, "Keyboard return failed");
+                        key(SDL_SCANCODE_M); phase = 9; break;
+                    case 9:
+                        require(game.m_gameInputSystem.frame().action(KeyboardAction::Forward).pressed
+                            && !screen().journalScreenState().active, "Rebound M was consumed by map alias");
+                        screen().openKeyboardOverlay(); phase = 10; break;
+                    case 10:
+                        screen().mutableSettings().keyboard.setBinding(KeyboardAction::Backward, SDL_SCANCODE_D);
+                        rowClick(KeyboardAction::Jump); phase = 11; break;
+                    case 11:
+                        if (!screen().keyboardScreenState().waitingForBinding) break;
+                        key(SDL_SCANCODE_D); phase = 12; break;
+                    case 12:
+                        require(screen().keyboardScreenState().waitingForBinding
+                            && screen().keyboardScreenState().bindingConflict
+                            && screen().settingsSnapshot().keyboard.keyboardBinding(KeyboardAction::Jump) == SDL_SCANCODE_X,
+                            "Ambiguous duplicate configuration was overwritten");
+                        capture("keyboard-duplicate-feedback"); phase = 13; break;
+                    case 13: buttonClick("KeyboardDefaultButton"); phase = 14; break;
+                    case 14:
+                        if (game.m_gameInputSystem.frame().leftMouseButton.held) break;
+                        require(!screen().keyboardScreenState().waitingForBinding
+                            && screen().settingsSnapshot().keyboard.keyboardBinding(KeyboardAction::Backward) == SDL_SCANCODE_S,
+                            "Keyboard defaults did not restore");
+                        buttonClick("KeyboardPage2Button"); phase = 15; break;
+                    case 15:
+                        if (game.m_gameInputSystem.frame().leftMouseButton.held) break;
+                        require(screen().keyboardScreenState().page == KeyboardBindingPage::Page2, "Keyboard page2 failed");
+                        capture("keyboard-page2"); phase = 16; break;
+                    case 16:
+                        complete = true; phase = 17;
+                        { SDL_Event quit{}; quit.type = SDL_EVENT_QUIT; SDL_PushEvent(&quit); }
+                        break;
+                    default: break;
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete, "Keyboard capture ended early");
+            std::ofstream("result.json") << "{\"passed\":true,\"checkpoints\":[203,204],\"frames\":" << frames
+                << ",\"captures\":" << captures << ",\"new_unit_cases\":0,\"device\":false,\"natural_campaign\":false}\n";
+            return 0;
+        }
+        catch (const std::exception &exception)
+        {
+            std::ofstream("failure.txt") << "phase=" << phase << " frame=" << frames << " " << exception.what() << '\n';
+            throw;
+        }
+    }
     static int runMonsterTint(
         std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
     {
@@ -1521,7 +1695,11 @@ int main(int argc, char **argv)
 {
     try
     {
-        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only|--journal-party-save|--video-brightness|--monster-tint]");
+        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only|--journal-party-save|--video-brightness|--monster-tint|--keyboard]");
+        if (argc == 5 && std::string(argv[4]) == "--keyboard")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::runKeyboard(argv[1], argv[2], argv[3]);
+        if (argc == 5 && std::string(argv[4]) == "--keyboard-finish")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::runKeyboard(argv[1], argv[2], argv[3], true);
         if (argc == 5 && std::string(argv[4]) == "--monster-tint")
             return OpenYAMM::Game::ApplicationCaptureTestAccess::runMonsterTint(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--video-brightness")

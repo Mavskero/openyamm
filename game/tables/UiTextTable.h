@@ -85,12 +85,43 @@ public:
         SaveAutosave,
         SaveQuicksave,
         SaveSlot,
+        KeyboardForward,
+        KeyboardBackward,
+        KeyboardLeft,
+        KeyboardRight,
+        KeyboardYell,
+        KeyboardJump,
+        KeyboardCombat,
+        KeyboardCastReady,
+        KeyboardAttack,
+        KeyboardTrigger,
+        KeyboardCast,
+        KeyboardPass,
+        KeyboardCharCycle,
+        KeyboardQuest,
+        KeyboardQuickRef,
+        KeyboardRest,
+        KeyboardHistory,
+        KeyboardUse,
+        KeyboardMapBook,
+        KeyboardAlwaysRun,
+        KeyboardLookUp,
+        KeyboardLookDown,
+        KeyboardCenterView,
+        KeyboardZoomIn,
+        KeyboardZoomOut,
+        KeyboardFlyUp,
+        KeyboardFlyDown,
+        KeyboardLand,
+        KeyboardDoubleSpeed,
+        KeyboardPressInput,
+        KeyboardBindingConflict,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
-    // Validate the current schema or explicitly migrate a complete 13-, 16-, 19-, 26-, 35-, 39- or 45-key schema.
+    // Validate the current schema or migrate a complete 13-, 16-, 19-, 26-, 35-, 39-, 45- or 72-key schema.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     std::string formatItemType(const std::string &type) const;

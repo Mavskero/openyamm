@@ -581,6 +581,7 @@ public:
     GameAudioSystem *audioSystem() const;
     const GameDataRepository &data() const;
     float gameplayCameraYawRadians() const override;
+    void turnAroundAfterHouseExit() override;
     void setStatusBarEvent(
         const std::string &text,
         float durationSeconds = 2.0f,
@@ -841,7 +842,6 @@ private:
     bool m_renderGameplayUiThisFrame;
     bool m_walkSoundEnabled = true;
     bool m_showHitStatusMessages = true;
-    bool m_flipOnExitEnabled = false;
     bool m_isRotatingCamera;
     float m_lastMouseX;
     float m_lastMouseY;

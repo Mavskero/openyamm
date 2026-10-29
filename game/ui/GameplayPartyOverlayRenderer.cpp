@@ -3181,8 +3181,40 @@ void GameplayPartyOverlayRenderer::renderKeyboardOverlay(GameplayScreenRuntime &
 
     const float rootScale = keyboardLayout->rootScale;
     const float fontScale = 1.0f * rootScale;
-    const float lineHeight = static_cast<float>(font->fontHeight) * fontScale;
     const GameSettings &settings = context.settingsSnapshot();
+    const UiTextTable &uiText = context.gameplayUiRuntime().uiTextTable();
+    using UiMessage = UiTextTable::Message;
+    constexpr std::array<UiMessage, KeyboardActionCount> ActionLabels{{
+        UiMessage::KeyboardForward,
+        UiMessage::KeyboardBackward,
+        UiMessage::KeyboardLeft,
+        UiMessage::KeyboardRight,
+        UiMessage::KeyboardYell,
+        UiMessage::KeyboardJump,
+        UiMessage::KeyboardCombat,
+        UiMessage::KeyboardCastReady,
+        UiMessage::KeyboardAttack,
+        UiMessage::KeyboardTrigger,
+        UiMessage::KeyboardCast,
+        UiMessage::KeyboardPass,
+        UiMessage::KeyboardCharCycle,
+        UiMessage::KeyboardQuest,
+        UiMessage::KeyboardQuickRef,
+        UiMessage::KeyboardRest,
+        UiMessage::KeyboardHistory,
+        UiMessage::KeyboardUse,
+        UiMessage::KeyboardMapBook,
+        UiMessage::KeyboardAlwaysRun,
+        UiMessage::KeyboardLookUp,
+        UiMessage::KeyboardLookDown,
+        UiMessage::KeyboardCenterView,
+        UiMessage::KeyboardZoomIn,
+        UiMessage::KeyboardZoomOut,
+        UiMessage::KeyboardFlyUp,
+        UiMessage::KeyboardFlyDown,
+        UiMessage::KeyboardLand,
+        UiMessage::KeyboardDoubleSpeed,
+    }};
 
     for (const KeyboardBindingDefinition &definition : keyboardBindingDefinitions())
     {
@@ -3197,33 +3229,47 @@ void GameplayPartyOverlayRenderer::renderKeyboardOverlay(GameplayScreenRuntime &
         const bool highlighted =
             keyboardScreen.waitingForBinding
             && keyboardScreen.pendingAction == definition.action;
+        const bool conflict = highlighted && keyboardScreen.bindingConflict;
 
         const uint32_t labelColor = definition.implemented ? 0xffffffffu : 0xffc8c8c8u;
-        const uint32_t valueColor = highlighted ? 0xff9bffffu : 0xffffffffu;
-        const float textY = rowY
-            + keyboardLayout->textPaddingY
-            + std::max(0.0f, (keyboardLayout->rowHeight - lineHeight) * 0.15f);
-
-        renderHudLines(
-            context,
-            *font,
-            labelColor,
-            std::vector<std::string>{std::string(definition.label)},
-            labelX + keyboardLayout->textPaddingX,
-            textY,
-            fontScale);
-        renderHudLines(
-            context,
-            *font,
-            valueColor,
-            std::vector<std::string>{
-                highlighted
-                    ? std::string("Press Input")
-                    : inputBindingDisplayName(settings.keyboard.binding(definition.action))
-            },
-            valueX + keyboardLayout->textPaddingX,
-            textY,
-            fontScale);
+        const uint32_t valueColor = conflict ? 0xff9b9bffu : (highlighted ? 0xff9bffffu : 0xffffffffu);
+        const auto renderCell = [&](const std::string &text, float x, float cellWidth, uint32_t color)
+        {
+            const float availableWidth = std::max(1.0f, cellWidth - 2 * keyboardLayout->textPaddingX);
+            const float measuredWidth = context.measureHudTextWidth(*font, text);
+            float cellScale = std::min(fontScale, availableWidth / std::max(1.0f, measuredWidth));
+            float renderedHeight = font->fontHeight * cellScale;
+#if defined(__APPLE__)
+            if (hasUtf8MultibyteText(text))
+            {
+                const auto measure = [&]()
+                {
+                    return Engine::measureAppleTextImageSize(text, font->fontHeight * cellScale);
+                };
+                if (const auto size = measure())
+                {
+                    const float availableHeight = keyboardLayout->rowHeight * 0.8f;
+                    const float shadowOffset = std::max(1.0f, cellScale);
+                    cellScale *= std::min({1.0f, availableWidth / std::max(1.0f, float(size->width)),
+                        availableHeight / (size->height + shadowOffset)});
+                    if (const auto fittedSize = measure())
+                    {
+                        renderedHeight = fittedSize->height + std::max(1.0f, cellScale);
+                    }
+                }
+            }
+#endif
+            const float textY = rowY + std::max(0.0f, (keyboardLayout->rowHeight - renderedHeight) * 0.5f);
+            renderHudLines(context, *font, color, std::vector<std::string>{text},
+                x + keyboardLayout->textPaddingX, textY, cellScale);
+        };
+        renderCell(uiText.text(ActionLabels[keyboardActionIndex(definition.action)]),
+            labelX, keyboardLayout->labelWidth(definition.column), labelColor);
+        renderCell(highlighted
+                ? uiText.text(conflict ? UiMessage::KeyboardBindingConflict : UiMessage::KeyboardPressInput)
+                : inputBindingDisplayName(settings.keyboard.binding(definition.action)),
+            valueX, definition.column == KeyboardBindingColumn::Left
+                ? keyboardLayout->leftValueWidth : keyboardLayout->rightValueWidth, valueColor);
     }
 
 }

@@ -3918,7 +3918,8 @@ void IndoorRenderer::render(
 
     const bool geometryToggleHeld = input.isScancodeHeld(SDL_SCANCODE_F8);
 
-    if (geometryToggleHeld && !m_indoorGeometryRenderingToggleHeld)
+    if (allowWorldInput && !settings.keyboard.usesScancode(SDL_SCANCODE_F8)
+        && geometryToggleHeld && !m_indoorGeometryRenderingToggleHeld)
     {
         m_indoorGeometryRenderingDisabled = !m_indoorGeometryRenderingDisabled;
         std::cout << "Indoor geometry rendering "
@@ -3930,7 +3931,8 @@ void IndoorRenderer::render(
 
     const bool geometryTranslucentToggleHeld = input.isScancodeHeld(SDL_SCANCODE_F12);
 
-    if (geometryTranslucentToggleHeld && !m_indoorGeometryTranslucentToggleHeld)
+    if (allowWorldInput && !settings.keyboard.usesScancode(SDL_SCANCODE_F12)
+        && geometryTranslucentToggleHeld && !m_indoorGeometryTranslucentToggleHeld)
     {
         m_indoorGeometryTranslucent = !m_indoorGeometryTranslucent;
         std::cout << "Indoor geometry translucent debug rendering "

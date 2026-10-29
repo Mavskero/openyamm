@@ -5204,7 +5204,7 @@ void OutdoorGameView::setShowHitStatusMessages(bool active)
 
 void OutdoorGameView::setFlipOnExitEnabled(bool active)
 {
-    m_flipOnExitEnabled = active;
+    m_gameSettings.flipOnExit = active;
 }
 
 OutdoorPartyRuntime *OutdoorGameView::partyRuntime() const
@@ -5230,6 +5230,11 @@ const GameDataRepository &OutdoorGameView::data() const
 float OutdoorGameView::gameplayCameraYawRadians() const
 {
     return effectiveCameraYawRadians();
+}
+
+void OutdoorGameView::turnAroundAfterHouseExit()
+{
+    setCameraAngles(cameraYawRadians() + Pi, cameraPitchRadians());
 }
 
 void OutdoorGameView::executeActiveDialogAction()

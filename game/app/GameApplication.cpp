@@ -7733,14 +7733,15 @@ void GameApplication::updateQuickSaveInput()
     const GameplayInputFrame &inputFrame = m_gameInputSystem.frame();
     const bool saveHeld = inputFrame.isScancodeHeld(SDL_SCANCODE_F9);
     const bool loadHeld = inputFrame.isScancodeHeld(SDL_SCANCODE_F10);
-    if (inputFrame.scancodePressCount(SDL_SCANCODE_F9) != 0 || (saveHeld && !m_quickSaveLatch))
-    {
-        m_pendingQuickSave = true;
-    }
-    if (inputFrame.scancodePressCount(SDL_SCANCODE_F10) != 0 || (loadHeld && !m_quickLoadLatch))
-    {
-        m_pendingQuickLoad = true;
-    }
+    const bool keyboardPageActive = m_gameSession.gameplayScreenRuntime().keyboardScreenState().active;
+    const bool saveShortcutEnabled = !keyboardPageActive && !m_settings.keyboard.usesScancode(SDL_SCANCODE_F9);
+    const bool loadShortcutEnabled = !keyboardPageActive && !m_settings.keyboard.usesScancode(SDL_SCANCODE_F10);
+    m_pendingQuickSave = saveShortcutEnabled
+        && (m_pendingQuickSave || inputFrame.scancodePressCount(SDL_SCANCODE_F9) != 0
+            || (saveHeld && !m_quickSaveLatch));
+    m_pendingQuickLoad = loadShortcutEnabled
+        && (m_pendingQuickLoad || inputFrame.scancodePressCount(SDL_SCANCODE_F10) != 0
+            || (loadHeld && !m_quickLoadLatch));
     m_quickSaveLatch = saveHeld;
     m_quickLoadLatch = loadHeld;
 }
@@ -8022,6 +8023,13 @@ void GameApplication::updateGameplayTraceSnapshotHotkeys()
 
 bool GameApplication::processPendingQuickSaveInput()
 {
+    // UI changes can claim a shortcut after this frame's input was queued.
+    const bool keyboardPageActive = m_gameSession.gameplayScreenRuntime().keyboardScreenState().active;
+    m_pendingQuickSave = m_pendingQuickSave
+        && !keyboardPageActive && !m_settings.keyboard.usesScancode(SDL_SCANCODE_F9);
+    m_pendingQuickLoad = m_pendingQuickLoad
+        && !keyboardPageActive && !m_settings.keyboard.usesScancode(SDL_SCANCODE_F10);
+
     if (m_pendingAdvanceTime)
     {
         m_pendingAdvanceTime = false;

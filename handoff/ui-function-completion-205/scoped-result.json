@@ -1,0 +1,38 @@
+{
+  "completed_at": "2026-10-29T13:17:56.074133+00:00",
+  "production_base": "e174747d44c0f28ccece50595dc4a168c6ba2e03",
+  "runtime": "local-data/validation/ui-function-completion-204/runtime-001",
+  "save_schema": 104,
+  "save_schema_changed": false,
+  "release195_unchanged": true,
+  "goal_status": "active",
+  "full_game_complete": false,
+  "next": "207 confirmedJournal English titles andCombat key incorrectly gray despite implemented consumer",
+  "owned_jobs_remaining": [],
+  "limitations": [
+    "Full natural campaign and target iPad acceptance remain unproved. Fixedremote195 unchanged.",
+    "No new unit cases/campaign/cold/device operations. Runtime changes onlydata_tables/ui_text.txt; all other engine members andworlds retained."
+  ],
+  "checkpoint": 205,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "fixes": [
+    "Shared final active-house close calls indoor/outdoor half-turn hook exactly once when FlipOnExit enabled",
+    "Old outdoor-only turn branch removed; subpage returns and nonhouse dialogue do not turn"
+  ],
+  "source_files": {
+    "game/gameplay/GameplayScreenRuntime.cpp": "f80e9b40d7bdad036bf0298b3ad3fcabd08e9308c7f6aeccf14d4d11a77f8a89",
+    "game/ui/GameplayOverlayAdapters.h": "b3da6e6b5299bc1ef9186d42d213f4672445d5215d74a8c6add198846e58349b",
+    "game/indoor/IndoorGameView.h": "81e2aa6b57da25514fb03e50efd320fe5d0d17275c62b42c09849dc4087c7e71",
+    "game/indoor/IndoorGameView.cpp": "8020af5e83e2516a8460982920d8ed935362c3fbd581d0cef4a84faeb2cbb187",
+    "game/outdoor/OutdoorGameView.h": "31e08e835eb90804998399b46ef437346695d912abe84bc1c795686521f1acfd",
+    "game/outdoor/OutdoorGameView.cpp": "4c7f1052c933b414e717c98d5efd8b743395288b09f5df6d9dbf72cf6d1b8b21",
+    "game/outdoor/OutdoorInteractionController.cpp": "b07be5d1438dd0edcb2d518f29aacd9cd9a55ec015f58134231f657b342f1842"
+  },
+  "combined_validation_record": "local-data/validation/ui-function-completion-204/scoped-result.json",
+  "validation_scope": {
+    "new_unit_cases": 0,
+    "device_or_simulator_operations": 0,
+    "campaign_replays": 0,
+    "scope": "source/native/unsignedgeneric iOS only; no new actual behaviorclaim"
+  }
+}

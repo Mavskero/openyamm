@@ -68,6 +68,24 @@ struct GameSettings
             return inputBinding.kind == InputBindingKind::Keyboard ? inputBinding.scancode : SDL_SCANCODE_UNKNOWN;
         }
 
+        bool usesScancode(SDL_Scancode scancode) const
+        {
+            if (scancode <= SDL_SCANCODE_UNKNOWN || scancode >= SDL_SCANCODE_COUNT)
+            {
+                return false;
+            }
+
+            for (const InputBinding &inputBinding : bindings)
+            {
+                if (inputBinding.kind == InputBindingKind::Keyboard && inputBinding.scancode == scancode)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         bool isPressed(KeyboardAction action, const bool *pKeyboardState) const
         {
             const SDL_Scancode scancode = keyboardBinding(action);

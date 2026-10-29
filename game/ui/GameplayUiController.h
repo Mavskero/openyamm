@@ -308,6 +308,7 @@ public:
         bool active = false;
         KeyboardBindingPage page = KeyboardBindingPage::Page1;
         bool waitingForBinding = false;
+        bool bindingConflict = false;
         KeyboardAction pendingAction = KeyboardAction::Forward;
     };
 

@@ -1,0 +1,11 @@
+{
+  "reference_commit": "87b3e29b51b931cc5f0e8998f238a686cafa86a4",
+  "references": [
+    "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Application/GameConfig.h#L564",
+    "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/GUI/UI/UIHouses.cpp#L1002-L1019"
+  ],
+  "meaning": "Final building window close adds180degrees to yaw when enabled, without indoor/outdoor restriction.",
+  "normal_source_example": "BrAlvar event7 EnterHouse231 Trolls Inn",
+  "defect": "Shared final Goodbye/Escape close bypasses the old outdoor-only custom callback; indoor callback was empty.",
+  "fix": "Scene adapter hook at shared active house final close; clear dialogue before one call; remove old outdoor turn branch. Subpage returns and nonhouse dialogue do not turn."
+}

@@ -570,10 +570,18 @@ uint32_t GameplayScreenRuntime::closeActiveEventDialog()
     EventRuntimeState *pEventRuntimeState =
         worldRuntime() != nullptr ? worldRuntime()->eventRuntimeState() : nullptr;
     const uint32_t hostHouseId = pEventRuntimeState != nullptr ? pEventRuntimeState->dialogueState.hostHouseId : 0;
+    const bool shouldTurnAround = activeEventDialog().isActive && hostHouseId != 0
+        && m_pSettings != nullptr && m_pSettings->flipOnExit;
     GameplayDialogUiFlowState state = dialogUiFlowState();
     ::OpenYAMM::Game::closeActiveEventDialog(
         state,
         pEventRuntimeState);
+
+    if (shouldTurnAround && m_pSceneAdapter != nullptr)
+    {
+        m_pSceneAdapter->turnAroundAfterHouseExit();
+    }
+
     return hostHouseId;
 }
 

@@ -70,6 +70,7 @@ public:
     IGameplayWorldRuntime *worldRuntime() const;
     GameAudioSystem *audioSystem() const;
     float gameplayCameraYawRadians() const override;
+    void turnAroundAfterHouseExit() override;
     bool activeMemberKnowsSpell(uint32_t spellId) const;
     bool activeMemberHasSpellbookSchool(GameplayUiController::SpellbookSchool school) const;
     bool canActivateMapActorDialogue(size_t actorIndex) const;

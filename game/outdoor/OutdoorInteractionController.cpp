@@ -1876,12 +1876,7 @@ void OutdoorInteractionController::closeActiveEventDialog(OutdoorGameView &view)
         pEventRuntimeState->grantedItemIds.clear();
     }
 
-    const uint32_t hostHouseId = view.m_gameSession.gameplayScreenRuntime().closeActiveEventDialog();
-
-    if (hostHouseId != 0 && view.m_flipOnExitEnabled)
-    {
-        view.setCameraAngles(view.cameraYawRadians() + Pi, view.cameraPitchRadians());
-    }
+    view.m_gameSession.gameplayScreenRuntime().closeActiveEventDialog();
 }
 
 bool OutdoorInteractionController::requestTravelAutosave(OutdoorGameView &view)

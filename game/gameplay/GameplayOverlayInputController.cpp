@@ -456,6 +456,93 @@ std::optional<SDL_Scancode> firstNewlyPressedScancode(
     return std::nullopt;
 }
 
+enum class KeyboardRebindResult
+{
+    Unchanged,
+    Changed,
+    Conflict
+};
+
+bool sameKeyboardInputBinding(const InputBinding &left, const InputBinding &right)
+{
+    if (left.kind != right.kind)
+    {
+        return false;
+    }
+
+    switch (left.kind)
+    {
+    case InputBindingKind::Keyboard:
+        return left.scancode == right.scancode;
+    case InputBindingKind::MouseButton:
+        return left.mouseButton == right.mouseButton;
+    case InputBindingKind::None:
+        return true;
+    }
+
+    return false;
+}
+
+bool canPersistKeyboardInputBinding(const InputBinding &binding)
+{
+    return (binding.kind == InputBindingKind::Keyboard
+            && binding.scancode > SDL_SCANCODE_UNKNOWN && binding.scancode < SDL_SCANCODE_COUNT)
+        || (binding.kind == InputBindingKind::MouseButton && binding.mouseButton == SDL_BUTTON_LEFT);
+}
+
+KeyboardRebindResult rebindKeyboardAction(
+    GameSettings::KeyboardSettings &settings,
+    KeyboardAction action,
+    const InputBinding &requestedBinding)
+{
+    const size_t actionIndex = keyboardActionIndex(action);
+    const InputBinding previousBinding = settings.binding(action);
+    if (sameKeyboardInputBinding(previousBinding, requestedBinding))
+    {
+        return KeyboardRebindResult::Unchanged;
+    }
+
+    if (!canPersistKeyboardInputBinding(requestedBinding))
+    {
+        return KeyboardRebindResult::Conflict;
+    }
+
+    size_t conflictingIndex = KeyboardActionCount;
+    size_t conflictCount = 0;
+    bool previousBindingShared = false;
+    for (size_t index = 0; index < KeyboardActionCount; ++index)
+    {
+        if (index == actionIndex)
+        {
+            continue;
+        }
+
+        if (sameKeyboardInputBinding(settings.bindings[index], requestedBinding))
+        {
+            conflictingIndex = index;
+            ++conflictCount;
+        }
+        previousBindingShared = previousBindingShared
+            || sameKeyboardInputBinding(settings.bindings[index], previousBinding);
+    }
+
+    // Do not move a historical duplicate or create an Unbound entry that the INI reader cannot restore.
+    if (conflictCount > 1
+        || (conflictCount == 1 && (previousBindingShared || !canPersistKeyboardInputBinding(previousBinding))))
+    {
+        return KeyboardRebindResult::Conflict;
+    }
+
+    auto bindings = settings.bindings;
+    if (conflictCount == 1)
+    {
+        bindings[conflictingIndex] = previousBinding;
+    }
+    bindings[actionIndex] = requestedBinding;
+    settings.bindings = bindings;
+    return KeyboardRebindResult::Changed;
+}
+
 enum class JournalShortcutView : uint8_t
 {
     None = 0,
@@ -1680,6 +1767,7 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
 
     if (!keyboardScreen.active)
     {
+        keyboardScreen.bindingConflict = false;
         view.interactionState().keyboardToggleLatch = false;
         view.interactionState().keyboardClickLatch = false;
         view.interactionState().keyboardPressedTarget = {};
@@ -1700,6 +1788,23 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
         return true;
     }
 
+    const auto applyBinding = [&view, &keyboardScreen](const InputBinding &binding)
+    {
+        const KeyboardRebindResult result = rebindKeyboardAction(
+            view.mutableSettings().keyboard, keyboardScreen.pendingAction, binding);
+        keyboardScreen.bindingConflict = result == KeyboardRebindResult::Conflict;
+        if (keyboardScreen.bindingConflict)
+        {
+            return;
+        }
+
+        keyboardScreen.waitingForBinding = false;
+        if (result == KeyboardRebindResult::Changed)
+        {
+            view.commitSettingsChange();
+        }
+    };
+
     if (keyboardScreen.waitingForBinding)
     {
         const std::optional<SDL_Scancode> reboundScancode =
@@ -1707,9 +1812,7 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
 
         if (reboundScancode.has_value())
         {
-            view.mutableSettings().keyboard.setBinding(keyboardScreen.pendingAction, *reboundScancode);
-            keyboardScreen.waitingForBinding = false;
-            view.commitSettingsChange();
+            applyBinding(keyboardInputBinding(*reboundScancode));
             return true;
         }
     }
@@ -1809,10 +1912,7 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
     {
         // Footer navigation and binding rows keep their visible actions while a
         // binding is pending. A click in the remaining area binds the mouse.
-        view.mutableSettings().keyboard.setBinding(
-            keyboardScreen.pendingAction, mouseButtonInputBinding(SDL_BUTTON_LEFT));
-        keyboardScreen.waitingForBinding = false;
-        view.commitSettingsChange();
+        applyBinding(mouseButtonInputBinding(SDL_BUTTON_LEFT));
         return true;
     }
 
@@ -1828,22 +1928,26 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
             {
             case GameplayKeyboardPointerTargetType::BindingRow:
                 keyboardScreen.waitingForBinding = true;
+                keyboardScreen.bindingConflict = false;
                 keyboardScreen.pendingAction = target.action;
                 break;
 
             case GameplayKeyboardPointerTargetType::Page1Button:
                 keyboardScreen.page = KeyboardBindingPage::Page1;
                 keyboardScreen.waitingForBinding = false;
+                keyboardScreen.bindingConflict = false;
                 break;
 
             case GameplayKeyboardPointerTargetType::Page2Button:
                 keyboardScreen.page = KeyboardBindingPage::Page2;
                 keyboardScreen.waitingForBinding = false;
+                keyboardScreen.bindingConflict = false;
                 break;
 
             case GameplayKeyboardPointerTargetType::DefaultButton:
                 view.mutableSettings().keyboard.restoreDefaults(view.mutableSettings().controlScheme);
                 keyboardScreen.waitingForBinding = false;
+                keyboardScreen.bindingConflict = false;
                 view.commitSettingsChange();
                 break;
 
@@ -2359,9 +2463,12 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
         requestedJournalView = JournalShortcutView::Notes;
     }
 
+    const bool freshMapShortcutPress = input.action(KeyboardAction::MapBook).pressed
+        || (!view.settingsSnapshot().keyboard.usesScancode(SDL_SCANCODE_M)
+            && input.scancodePressCount(SDL_SCANCODE_M) != 0);
     const bool freshJournalShortcutPress =
         (requestedJournalView == JournalShortcutView::Map
-            && (input.scancodePressCount(SDL_SCANCODE_M) != 0 || input.action(KeyboardAction::MapBook).pressed))
+            && freshMapShortcutPress)
         || (requestedJournalView == JournalShortcutView::Story && input.action(KeyboardAction::History).pressed);
 
     if (requestedJournalView != JournalShortcutView::None)
