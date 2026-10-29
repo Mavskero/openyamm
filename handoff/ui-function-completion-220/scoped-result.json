@@ -1,0 +1,54 @@
+{
+  "checkpoint": 220,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-29T16:27:22.330837+00:00",
+  "source_base": "fc114bd5d7df3d5b4940fa6f3164ab7ef7e8d8cc",
+  "scope": "Five existing ordinary roster/hire/generated-mercenary confirmation captions use original GlobalTxt 704/705/122 through shared UiText",
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T16:24:19.161577+00:00",
+      "finished_at": "2026-10-29T16:25:30.130544+00:00"
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T16:25:37.928253+00:00",
+      "finished_at": "2026-10-29T16:25:38.121130+00:00"
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T16:25:38.412322+00:00",
+      "finished_at": "2026-10-29T16:25:40.598386+00:00"
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T16:25:49.734521+00:00",
+      "finished_at": "2026-10-29T16:26:48.096077+00:00"
+    }
+  },
+  "ui_text_count": 122,
+  "old_119_values_retained": true,
+  "runtime": "local-data/validation/ui-function-completion-220/runtime-001",
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "all_other_runtime_members_retained": true,
+  "action_kind_id_offer_unchanged": true,
+  "source_Join_identity_unchanged": true,
+  "save_version": 104,
+  "new_unit_cases": 0,
+  "app_runs": 0,
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "device_or_simulator_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "Five button captions source/import/build reviewed only; no new pixel/touch or recruitment-route acceptance",
+    "Full natural completion/allUI/long-term stability remain unproved"
+  ],
+  "next": "Only concrete mainline/UI defect or receiving214 affected UI evidence; no broad audit or passed-route replay"
+}

@@ -1,0 +1,16 @@
+{
+  "row_count": 122,
+  "source_ids": [
+    704,
+    705,
+    122
+  ],
+  "captions": {
+    "ui.yes": "是",
+    "ui.no": "否",
+    "ui.join": "加入"
+  },
+  "old_119_caption_values_retained": true,
+  "new_project_translations": 0,
+  "save_version": 104
+}

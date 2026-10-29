@@ -4,6 +4,13 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 220 ACCEPTED_SOURCE_SCOPED: `local-data/validation/ui-function-completion-220/scoped-result.json`.
+  Five ordinary roster/hire/generatedJoin captions now use original GlobalTxt704/705/122 via sharedUI122keys.
+  Existing119values retained; completeold119prefix migration added, actionkind/id/offer/sourceJoin identity unchanged.
+  Native70.969s/core0.193s/unsignedgeneric iOS58.362s pass;0App/newcases/recruit/campaign/cold/device/release.
+  Defaultcomplete220/runtime-001 changesonlyui_text;Save104/214/195/RCs preserved. GoalACTIVE/~85%lowconfidence;
+  source/build scope only, no five-button pixel/touch/fullcampaign claim. No broad audit or passed-route replay.
+
 - 219 ACCEPTED_SCOPED: `local-data/validation/sword-teacher-ui-219/scoped-result.json`.
   Firstactual SDL original805/1285/topic1515 expertSword quote→learn→skills:9067→7067,Sword4Normal→4Expert,
   Chinese quote/status/suffix in2reviewedimages.15.921s/317frames,gameplaydelta0/UIstatustimerreal. OnlyNPCcontext

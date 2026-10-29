@@ -139,6 +139,9 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.skill_weapons", "Weapons"},
     {"ui.skill_magic", "Magic"},
     {"ui.skill_misc", "Misc"},
+    {"ui.yes", "Yes"},
+    {"ui.no", "No"},
+    {"ui.join", "Join"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -180,7 +183,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // Arcomage, the 19 with initial inspect labels, the 26 with item details,
     // the 35 with win text, the 39 with bank captions, the 45 with rest captions,
     // the 72 with mastery/calendar/save, the 103 with keyboard, the 112 with journal
-    // and the 115/116 with initial skill training captions and base-attribute requirements.
+    // the 115/116 with initial skill training captions and base-attribute requirements,
+    // and the 119 with skill category headings.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -194,6 +198,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t JournalMessageCount = size_t(Message::InventoryTargetHint);
     constexpr size_t TrainingMessageCount = size_t(Message::SkillTrainingRequirement);
     constexpr size_t TrainingRequirementMessageCount = size_t(Message::SkillWeapons);
+    constexpr size_t SkillHeadingMessageCount = size_t(Message::Yes);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -207,7 +212,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != KeyboardMessageCount
         && schemaMessageCount != JournalMessageCount
         && schemaMessageCount != TrainingMessageCount
-        && schemaMessageCount != TrainingRequirementMessageCount)
+        && schemaMessageCount != TrainingRequirementMessageCount
+        && schemaMessageCount != SkillHeadingMessageCount)
     {
         return false;
     }

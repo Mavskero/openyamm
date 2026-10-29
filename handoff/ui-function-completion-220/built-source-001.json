@@ -1,0 +1,13 @@
+{
+  "recorded_at": "2026-10-29T16:24:54.458370+00:00",
+  "files": {
+    "game/events/EventDialogContent.cpp": "a6fce92b2383d9fd3d7167327bd48e8417b2610ef6ebd527ff18c4b7675574b7",
+    "game/tables/UiTextTable.h": "82be5e07f97d1fa48971765efe029e958169214270e92e78838efd97f57ea773",
+    "game/tables/UiTextTable.cpp": "d23243f937c688c57f274681fbd5be09b85a4808557da977932aba78ddcf0a03",
+    "tools/mmerge_import/CoreResources.cpp": "116a130ab5f5649208e0b714024518d31a1869deaa715c7b513587b70c27c76b"
+  },
+  "ownership_returned": true,
+  "main_build_owner": true,
+  "action_kind_id_offer_unchanged": true,
+  "source_Join_identity_unchanged": true
+}

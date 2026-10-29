@@ -1463,12 +1463,14 @@ EventDialogContent buildEventDialogContent(
             {
                 EventDialogAction acceptAction = {};
                 acceptAction.kind = EventDialogActionKind::RosterJoinAccept;
-                acceptAction.label = "Yes";
+                acceptAction.label = pUiTextTable != nullptr
+                    ? pUiTextTable->text(UiTextTable::Message::Yes) : "Yes";
                 dialog.actions.push_back(std::move(acceptAction));
 
                 EventDialogAction declineAction = {};
                 declineAction.kind = EventDialogActionKind::RosterJoinDecline;
-                declineAction.label = "No";
+                declineAction.label = pUiTextTable != nullptr
+                    ? pUiTextTable->text(UiTextTable::Message::No) : "No";
                 dialog.actions.push_back(std::move(declineAction));
             }
             else if (hasPendingMasteryTeacherOffer && pClassSkillTable != nullptr && pParty != nullptr)
@@ -1554,12 +1556,14 @@ EventDialogContent buildEventDialogContent(
             {
                 EventDialogAction acceptAction = {};
                 acceptAction.kind = EventDialogActionKind::NpcHireAccept;
-                acceptAction.label = "Yes";
+                acceptAction.label = pUiTextTable != nullptr
+                    ? pUiTextTable->text(UiTextTable::Message::Yes) : "Yes";
                 dialog.actions.push_back(std::move(acceptAction));
 
                 EventDialogAction declineAction = {};
                 declineAction.kind = EventDialogActionKind::NpcHireDecline;
-                declineAction.label = "No";
+                declineAction.label = pUiTextTable != nullptr
+                    ? pUiTextTable->text(UiTextTable::Message::No) : "No";
                 dialog.actions.push_back(std::move(declineAction));
             }
             else
@@ -1569,7 +1573,8 @@ EventDialogContent buildEventDialogContent(
                     EventDialogAction joinAction = {};
                     joinAction.kind = EventDialogActionKind::GeneratedMercenaryJoinOffer;
                     joinAction.id = dialog.sourceId;
-                    joinAction.label = "Join";
+                    joinAction.label = pUiTextTable != nullptr
+                        ? pUiTextTable->text(UiTextTable::Message::Join) : "Join";
                     dialog.actions.push_back(std::move(joinAction));
                 }
 
