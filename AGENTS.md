@@ -4,6 +4,11 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 201 fixes indoor WalkSound and volume slider gesture/commit handling; see `handoff/ui-function-completion-201/README.md`.
+  Native/iOS passed; no new tests/App/device/campaign runs. Runtime198/Save104/remote195 unchanged; fullgoal active.
+  Next202 source-confirmed keyboard turn modes; no actual201 sound/touch acceptance claim.
+
+
 - 200 connects original monster Tinting RGB to actor rendering and preview; see `handoff/ui-function-completion-200/README.md`.
   Native/iOS and one13.684second controlled Metal off/on/preview pass;3images reviewed,0newunitcases/device/campaign.
   Runtime198/Save104 and fixedremote195 unchanged; fullgoalactive. Next indoorWalkSound and volume touch drag.

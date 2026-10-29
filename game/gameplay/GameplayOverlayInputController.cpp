@@ -1395,7 +1395,8 @@ bool GameplayOverlayInputController::handleControlsOverlayInput(
             return {};
         };
     const auto applySliderValue =
-        [&view](GameplayControlsPointerTargetType type, int sliderValue) -> bool
+        [&view, &controlsScreen](
+            GameplayControlsPointerTargetType type, int sliderValue, bool deferCommit = false) -> bool
         {
             GameSettings &settings = view.mutableSettings();
             const int clampedValue = std::clamp(sliderValue, 0, 9);
@@ -1429,7 +1430,32 @@ bool GameplayOverlayInputController::handleControlsOverlayInput(
             }
 
             *pSettingValue = clampedValue;
-            view.commitSettingsChange();
+            if (deferCommit)
+            {
+                controlsScreen.sliderDirty = true;
+                if (GameAudioSystem *pAudioSystem = view.audioSystem())
+                {
+                    const float volume = static_cast<float>(clampedValue) / 9.0f;
+                    switch (type)
+                    {
+                    case GameplayControlsPointerTargetType::SoundTrack:
+                        pAudioSystem->setSoundVolume(volume);
+                        break;
+                    case GameplayControlsPointerTargetType::MusicTrack:
+                        pAudioSystem->setMusicVolume(volume);
+                        break;
+                    case GameplayControlsPointerTargetType::VoiceTrack:
+                        pAudioSystem->setVoiceVolume(volume);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                view.commitSettingsChange();
+            }
 
             if (previewGroup && view.audioSystem() != nullptr)
             {
@@ -1479,38 +1505,73 @@ bool GameplayOverlayInputController::handleControlsOverlayInput(
             const float trackWidth = std::max(1.0f, resolved->width);
             const float t = std::clamp((pointerX - resolved->x) / trackWidth, 0.0f, 1.0f);
             const int sliderValue = std::clamp(static_cast<int>(std::lround(t * 9.0f)), 0, 9);
-            (void)applySliderValue(type, sliderValue);
+            (void)applySliderValue(type, sliderValue, true);
+        };
+    const auto finishSliderDrag =
+        [&view, &controlsScreen]()
+        {
+            view.interactionState().controlsSliderDragActive = false;
+            view.interactionState().controlsDraggedSlider = GameplayControlsPointerTargetType::None;
+            view.interactionState().controlsClickLatch = false;
+            view.interactionState().controlsPressedTarget = {};
+            if (controlsScreen.sliderDirty)
+            {
+                controlsScreen.sliderDirty = false;
+                view.commitSettingsChange();
+            }
         };
 
-    if (pointerState.leftButtonPressed)
+    if (view.interactionState().controlsSliderDragActive)
     {
-        if (!view.interactionState().controlsSliderDragActive)
-        {
-            const GameplayControlsPointerTarget sliderTarget = findSliderPressTarget(pointerState.x, pointerState.y);
-
-            if (sliderTarget.type == GameplayControlsPointerTargetType::SoundTrack
-                || sliderTarget.type == GameplayControlsPointerTargetType::MusicTrack
-                || sliderTarget.type == GameplayControlsPointerTargetType::VoiceTrack)
-            {
-                view.interactionState().controlsSliderDragActive = true;
-                view.interactionState().controlsDraggedSlider = sliderTarget.type;
-                view.interactionState().controlsClickLatch = false;
-                view.interactionState().controlsPressedTarget = {};
-                (void)applySliderValue(sliderTarget.type, sliderTarget.sliderValue);
-                return true;
-            }
-        }
-        else
+        // Focus cancellation uses (-1, -1); retain the last applied volume there.
+        if (pointerState.x >= 0.0f || pointerState.y >= 0.0f)
         {
             updateDraggedSlider(view.interactionState().controlsDraggedSlider, pointerState.x);
+        }
+        if (!pointerState.leftButtonPressed || input.mobileTouchDragReleased)
+        {
+            finishSliderDrag();
+        }
+        return true;
+    }
+
+    // A complete short touch drag has no held press. A delivered release without
+    // ownership belongs to a gesture that started before this overlay opened.
+    const bool completedTouchDrag = input.mobileTouchDragStarted && input.mobileTouchDragReleased
+        && !pointerState.leftButtonPressed && !input.leftMouseButton.released;
+    if (input.leftMouseButton.pressed || completedTouchDrag)
+    {
+        const float startX = input.mobileTouchDragStarted ? input.mobileTouchDragStartX : pointerState.x;
+        const float startY = input.mobileTouchDragStarted ? input.mobileTouchDragStartY : pointerState.y;
+        const GameplayControlsPointerTarget sliderTarget = findSliderPressTarget(startX, startY);
+
+        if (sliderTarget.type == GameplayControlsPointerTargetType::SoundTrack
+            || sliderTarget.type == GameplayControlsPointerTargetType::MusicTrack
+            || sliderTarget.type == GameplayControlsPointerTargetType::VoiceTrack)
+        {
+            view.interactionState().controlsSliderDragActive = true;
+            view.interactionState().controlsDraggedSlider = sliderTarget.type;
+            view.interactionState().controlsClickLatch = false;
+            view.interactionState().controlsPressedTarget = {};
+            updateDraggedSlider(sliderTarget.type, pointerState.x);
+            if (!pointerState.leftButtonPressed || input.mobileTouchDragReleased)
+            {
+                finishSliderDrag();
+            }
             return true;
         }
     }
-    else if (view.interactionState().controlsSliderDragActive)
+
+    if (input.mobileTouchDragStarted || input.mobileTouchDragActive || input.mobileTouchDragReleased)
     {
-        view.interactionState().controlsSliderDragActive = false;
-        view.interactionState().controlsDraggedSlider = GameplayControlsPointerTargetType::None;
-        view.interactionState().controlsClickLatch = false;
+        view.interactionState().controlsClickLatch = pointerState.leftButtonPressed;
+        view.interactionState().controlsPressedTarget = {};
+        return true;
+    }
+    if (pointerState.leftButtonPressed && !input.leftMouseButton.pressed
+        && !view.interactionState().controlsClickLatch)
+    {
+        // Do not acquire a mouse/touch press inherited from the parent overlay.
         view.interactionState().controlsPressedTarget = {};
         return true;
     }

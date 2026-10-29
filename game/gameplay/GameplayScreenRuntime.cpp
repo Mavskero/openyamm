@@ -1808,6 +1808,11 @@ void GameplayScreenRuntime::closeMenuOverlay()
 
 void GameplayScreenRuntime::openControlsOverlay()
 {
+    if (uiController().controlsScreen().sliderDirty)
+    {
+        uiController().controlsScreen().sliderDirty = false;
+        commitSettingsChange();
+    }
     uiController().menuScreen().active = false;
     interactionState().menuToggleLatch = false;
     interactionState().menuClickLatch = false;
@@ -1832,6 +1837,11 @@ void GameplayScreenRuntime::openControlsOverlay()
 
 void GameplayScreenRuntime::closeControlsOverlay()
 {
+    if (uiController().controlsScreen().sliderDirty)
+    {
+        uiController().controlsScreen().sliderDirty = false;
+        commitSettingsChange();
+    }
     uiController().controlsScreen() = {};
     interactionState().controlsToggleLatch = false;
     interactionState().controlsClickLatch = false;

@@ -1054,6 +1054,17 @@ void IndoorGameView::setSettingsSnapshot(const GameSettings &settings)
 {
     m_settings = settings;
 
+    if (!m_settings.walksound)
+    {
+        if (m_pGameAudioSystem != nullptr)
+        {
+            m_pGameAudioSystem->stopGroup(GameAudioSystem::PlaybackGroup::Walking);
+        }
+        m_walkingMotionHoldSeconds = 0.0f;
+        m_activeWalkingSoundId = std::nullopt;
+        m_hasLastFootstepPosition = false;
+    }
+
     if (!m_settings.combatText)
     {
         m_combatFloatingTexts.clear();
@@ -2085,20 +2096,21 @@ bool IndoorGameView::beginSaveWithPreview(
 
 void IndoorGameView::updateFootstepAudio(float deltaSeconds)
 {
-    if (deltaSeconds <= 0.0f || m_pGameAudioSystem == nullptr || m_pIndoorSceneRuntime == nullptr)
-    {
-        return;
-    }
-
-    if (resolveGameplayHudScreenState(
+    if (deltaSeconds <= 0.0f || !m_settings.walksound
+        || m_pGameAudioSystem == nullptr || m_pIndoorSceneRuntime == nullptr
+        || resolveGameplayHudScreenState(
             m_gameSession.gameplayUiController(),
             m_gameSession.gameplayScreenRuntime().activeEventDialog(),
             worldRuntime())
-        != GameplayHudScreenState::Gameplay)
+            != GameplayHudScreenState::Gameplay)
     {
-        m_pGameAudioSystem->stopGroup(GameAudioSystem::PlaybackGroup::Walking);
+        if (m_pGameAudioSystem != nullptr)
+        {
+            m_pGameAudioSystem->stopGroup(GameAudioSystem::PlaybackGroup::Walking);
+        }
         m_walkingMotionHoldSeconds = 0.0f;
         m_activeWalkingSoundId = std::nullopt;
+        m_hasLastFootstepPosition = false;
         return;
     }
 

@@ -300,6 +300,7 @@ public:
     struct ControlsScreenState
     {
         bool active = false;
+        bool sliderDirty = false;
     };
 
     struct KeyboardScreenState
