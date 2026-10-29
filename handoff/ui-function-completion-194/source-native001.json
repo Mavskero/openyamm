@@ -1,0 +1,29 @@
+{
+  "source_base": "7550604a842bda7eaf13c3c004dc3506293dd2b3",
+  "files": {
+    "assets_dev/engine/ui/gameplay/rest.yml": "728fb569e4cbd516bcc9b40d1bb65adf4b53b290565d251a0cc529d38b9a48d1",
+    "game/app/GameApplication.cpp": "9a37573ee60138e145ae1ff267b97aa208ee794ab4441ca0a9fed94fd6b990f5",
+    "game/app/GameSession.cpp": "3d7431ad36274998c9d85c7e48c143e89cc8bd552b79a915054eebd4206b4a06",
+    "game/events/EventRuntime.h": "c4d8ebfdd1fcdcf85bcca3a648099cd8ab9c956d6f7f9c42b0a15214df1a7588",
+    "game/gameplay/GameplayDialogController.cpp": "e0bd20f8eadc8893d582cf49bd879bd1769dc018408d47c2f94bfbc6ad031af1",
+    "game/gameplay/HouseInteraction.cpp": "112b3f36837b4ce0bf0d9f20403d7dbed4e9a3601cf10e997fd86a428f3a4ee4",
+    "game/gameplay/TravelRuntime.cpp": "b419136cd0e4d7d149a04b3d4f0bece105b8bd8ee986558ceb6bb45607e17698",
+    "game/gameplay/TravelRuntime.h": "304e2e77fef536508efee9c117aee2ef62b2f050a463663de22b7d1aa7b1ca5d",
+    "game/maps/SaveGame.cpp": "87facd226c2dcc8b044dc05e6f0b071bbdfe1bfe2260d7866d055690575446c1",
+    "game/maps/SaveGame.h": "a1e6fe499fcd09772f51cb377601c29f14c2ddd37af252fcb6743e59dc8eb4ed",
+    "game/mm9/Mm9PositionedTransitionRuntime.cpp": "4c141af5ac87e4a11691e3254239f3213f5810bae13a77d95ee101a407069cdc",
+    "game/outdoor/HeadlessOutdoorDiagnostics.cpp": "6ced25f88eefb2149dc547cfa17645660cbf9afda9c75e9df327f3d175867810",
+    "game/scene/IndoorSceneRuntime.cpp": "51a9a166fdb064fec8ecedb6384333275366cca2207ef82a1f78f190c1a2b226",
+    "game/scene/OutdoorSceneRuntime.cpp": "9aa419c480fd12a113dc5461fb28642a5e1736670514e2fa627181232c85936b",
+    "game/tables/UiTextTable.cpp": "a444867f0f6d6fc8d9d7419daced19c84cc186a22a8d9fd5e4e8a6c6aa698c06",
+    "game/tables/UiTextTable.h": "2f0b9ac5cc7f733d7f8bae4c7b9933160417fa7c0ea64501df6271392146ed5b",
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "f8a6e0e5b90fd7ed3c0ccbe589970caf11735971d1bdf95429bb27f938c1c4c1",
+    "tests/HouseDialogueRegressionTests.cpp": "0cec1c42bff8ed7bd163ced858d6ed6cc507036d27c77b6a8613f5d2cdc1d2eb",
+    "tests/Mm9TransportRouteTests.cpp": "fc50127f6d324d39e32d5e5966cf84cce7ba34c1b5611502d73ca0c9c0aa68fe",
+    "tools/UiPlayabilityCapture.cpp": "0f27115b69a31bae31400adac69bf880f64833cd2bf9f23b4331c532e0621e0e",
+    "tools/mmerge_import/CoreResources.cpp": "27e1b0c2ceb29df9b0ddc163f0bfee7910fbddd28f1c1002ddfb89d5324acf04",
+    "tools/mmerge_import/UiResources.cpp": "7072bc0feed6e8fb0e9ec540d250496d280c071c59325024cf6fe7cddcb56e7e"
+  },
+  "build": "build-native-001",
+  "agents_frozen": true
+}

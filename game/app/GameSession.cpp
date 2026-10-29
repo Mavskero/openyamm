@@ -1768,6 +1768,7 @@ std::optional<GameSaveData> GameSession::buildSaveData() const
     saveData.party = m_partyState->snapshot();
     saveData.namedGlobalVars = m_namedGlobalVars;
     saveData.sessionSavedLocations = m_sessionSavedLocations;
+    saveData.pendingMapMove = m_pendingMapMove;
     saveData.breachAlvarCompanions = m_breachAlvarCompanions;
     saveData.breachMaze = m_breachMazeRunData;
     saveData.savedGameMinutes = m_gameMinutes;
@@ -2008,7 +2009,7 @@ void GameSession::restoreFromSaveData(const GameSaveData &saveData)
     m_outdoorCameraPitchRadians = saveData.outdoorCameraPitchRadians;
     m_indoorCameraYawRadians = saveData.indoorCameraYawRadians;
     m_indoorCameraPitchRadians = saveData.indoorCameraPitchRadians;
-    m_pendingMapMove.reset();
+    m_pendingMapMove = saveData.pendingMapMove;
 }
 
 bool GameSession::restoreTurnBasedCombatFromSaveData(const GameSaveData &saveData)

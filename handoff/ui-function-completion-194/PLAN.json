@@ -1,0 +1,22 @@
+{
+  "status": "active",
+  "checkpoint": 194,
+  "implementation": [
+    "Pre-departure full session backup and visible travel failure rollback",
+    "Deferred paid/native/edge/MM9 plans with original effect order",
+    "Save104 session root and nested moves with versioned fields",
+    "Rest sky/hourglass frame import and original Chinese labels"
+  ],
+  "validation": [
+    "One combined native build and core/UI imports",
+    "Two existing cases: queued save round trip; transport transaction",
+    "One bounded Mac run: missing destination resource failure, same-map plan commit, rest captions/assets and real wait button, continued frames/save",
+    "Unsigned generic iOS Release build"
+  ],
+  "device_operations": false,
+  "new_unit_cases": 0,
+  "campaign_replays": 0,
+  "release": false,
+  "next_concrete_work": "Existing193 screenshots: remaining English mastery/None and save calendar/slot labels; read-only source lookup underway",
+  "stop_after_batch": false
+}

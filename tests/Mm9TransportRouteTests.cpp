@@ -2,6 +2,7 @@
 
 #include "game/maps/MapRegistry.h"
 #include "game/gameplay/GameplayDialogController.h"
+#include "game/gameplay/TravelRuntime.h"
 #include "game/mm9/Mm9RudeDialogue.h"
 #include "game/mm9/Mm9TransportRoute.h"
 #include "game/party/Party.h"
@@ -132,7 +133,7 @@ TEST_CASE("MM9 transport route table rejects duplicate service weekday ownership
     CHECK(table.errors().front().find("duplicate service weekday ownership") != std::string::npos);
 }
 
-TEST_CASE("MM9 RUDE transport route charges advances time and queues an exact arrival")
+TEST_CASE("MM9 RUDE transport route queues an exact arrival before charging at travel commit")
 {
     OpenYAMM::Game::Mm9RudeDialogueTable rudeTable;
     REQUIRE(rudeTable.loadDialogueText("NPC18.rude", rudeRow()));
@@ -172,8 +173,8 @@ TEST_CASE("MM9 RUDE transport route charges advances time and queues an exact ar
     const OpenYAMM::Game::GameplayDialogController::Result result =
         controller.executeActiveDialogAction(context);
     CHECK(result.shouldCloseActiveDialog);
-    CHECK(party.gold() < goldBefore);
-    CHECK_EQ(worldRuntime.gameMinutes(), minutesBefore + 2.0f * 24.0f * 60.0f);
+    CHECK_EQ(party.gold(), goldBefore);
+    CHECK_EQ(worldRuntime.gameMinutes(), minutesBefore);
     REQUIRE(eventRuntimeState.pendingMapMove.has_value());
     CHECK(eventRuntimeState.pendingMapMove->mapName == "sturmford.odm");
     CHECK_EQ(eventRuntimeState.pendingMapMove->x, 100);
@@ -182,6 +183,18 @@ TEST_CASE("MM9 RUDE transport route charges advances time and queues an exact ar
     REQUIRE(eventRuntimeState.lastMapTransitionRequested.has_value());
     CHECK(eventRuntimeState.lastMapTransitionRequested->sourceKind == "mm9_boat_route");
     CHECK_EQ(eventRuntimeState.lastMapTransitionRequested->travelDays, 2);
+    const OpenYAMM::Game::EventRuntimeState::DeferredTravelPlan &plan =
+        eventRuntimeState.pendingMapMove->travelPlan;
+    CHECK(plan.mode == OpenYAMM::Game::EventRuntimeState::TravelPlanMode::TravelDays);
+    CHECK(plan.goldFare > 0);
+    CHECK_EQ(plan.travelDays, 2);
+    CHECK_EQ(plan.foodRequired, 0);
+    CHECK_FALSE(plan.exitCallback.has_value());
+    std::string error;
+    REQUIRE(OpenYAMM::Game::applyDeferredTravelPlan(party, &worldRuntime, plan, error));
+    CHECK(error.empty());
+    CHECK_EQ(party.gold(), goldBefore - plan.goldFare);
+    CHECK_EQ(worldRuntime.gameMinutes(), minutesBefore + 2.0f * 24.0f * 60.0f);
 }
 
 TEST_CASE("MM9 RUDE transport rejects unavailable and unaffordable routes without mutation")

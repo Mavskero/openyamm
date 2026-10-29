@@ -12,7 +12,6 @@
 #include "game/gameplay/MasteryTeacherDialog.h"
 #include "game/gameplay/MercenaryRecruitmentRuntime.h"
 #include "game/gameplay/OwnedMercenaryRuntime.h"
-#include "game/gameplay/TravelRuntime.h"
 #include "game/mm9/Mm9RudeDialogue.h"
 #include "game/mm9/Mm9MapTransition.h"
 #include "game/mm9/Mm9SkillTrainer.h"
@@ -617,45 +616,57 @@ void executeNpcHook(
     context.eventRuntimeState.activeHookContext.reset();
 }
 
-bool executeMm9RudeExitCallback(GameplayDialogController::Context &context)
+std::optional<EventRuntimeState::DeferredTravelExitCallback> pendingMm9RudeExitCallback(
+    const GameplayDialogController::Context &context)
 {
     if (context.pWorldRuntime == nullptr
         || context.activeEventDialog.presentation != EventDialogPresentation::Mm9Rude
         || context.activeEventDialog.mm9RudeExitCallbackExecuted
         || !context.activeEventDialog.sourceActorIndex.has_value())
     {
-        return false;
+        return std::nullopt;
     }
 
     const MapDeltaData *pMapDeltaData = context.pWorldRuntime->mapDeltaData();
     const uint32_t actorIndex = *context.activeEventDialog.sourceActorIndex;
     if (pMapDeltaData == nullptr || actorIndex >= pMapDeltaData->actors.size())
     {
-        return false;
+        return std::nullopt;
     }
 
     const MapDeltaActor &actor = pMapDeltaData->actors[actorIndex];
     const std::optional<uint16_t> eventId = mm9RudeExitEventIdForSourceObject(actor.mm9SourceObjectIndex);
     if (!eventId.has_value())
     {
+        return std::nullopt;
+    }
+
+    return EventRuntimeState::DeferredTravelExitCallback{*eventId, actorIndex, actor.mm9SourceObjectIndex};
+}
+
+bool executeMm9RudeExitCallback(GameplayDialogController::Context &context)
+{
+    const std::optional<EventRuntimeState::DeferredTravelExitCallback> callback = pendingMm9RudeExitCallback(context);
+    if (!callback)
+    {
         return false;
     }
 
     size_t previousMessageCount = context.eventRuntimeState.messages.size();
     EventRuntimeState::ActiveHookContext hookContext = {};
-    hookContext.actorIndex = actorIndex;
+    hookContext.actorIndex = callback->actorIndex;
     const std::optional<EventRuntimeState::ActiveHookContext> previousHookContext =
         context.eventRuntimeState.activeHookContext;
     context.eventRuntimeState.activeHookContext = std::move(hookContext);
     context.activeEventDialog.mm9RudeExitCallbackExecuted = true;
-    const bool executed = context.pWorldRuntime->executeMapEvent(*eventId, previousMessageCount);
+    const bool executed = context.pWorldRuntime->executeMapEvent(callback->eventId, previousMessageCount);
     context.eventRuntimeState.activeHookContext = previousHookContext;
     GAMEPLAY_DEBUG_TRACE(
         "mm9_rude_exit_callback"
         " rude_id=" + std::to_string(context.activeEventDialog.sourceId)
-        + " actor_index=" + std::to_string(actorIndex)
-        + " source_object_index=" + std::to_string(actor.mm9SourceObjectIndex)
-        + " event_id=" + std::to_string(*eventId)
+        + " actor_index=" + std::to_string(callback->actorIndex)
+        + " source_object_index=" + std::to_string(callback->sourceObjectIndex)
+        + " event_id=" + std::to_string(callback->eventId)
         + " executed=" + std::string(executed ? "true" : "false"));
     return executed;
 }
@@ -670,7 +681,8 @@ bool samePendingMapMove(
         && left.mapName == right.mapName
         && left.directionDegrees == right.directionDegrees
         && left.useMapStartPosition == right.useMapStartPosition
-        && left.useFullscreenLoading == right.useFullscreenLoading;
+        && left.useFullscreenLoading == right.useFullscreenLoading
+        && left.travelPlan == right.travelPlan;
 }
 
 bool samePendingMapMove(
@@ -1240,26 +1252,6 @@ int boundaryTravelHeadingDegrees(MapBoundaryEdge edge)
     }
 
     return 0;
-}
-
-void applyMapTransitionTravelSideEffects(
-    GameplayDialogController::Context &context,
-    const MapEdgeTransition &transition)
-{
-    if (context.pScreenRuntime != nullptr)
-    {
-        context.pScreenRuntime->stopAllAudioPlayback();
-    }
-
-    const int foodRequired = mapTransitionTravelFoodRequired(context, transition);
-    if (context.pParty != nullptr)
-    {
-        applyTravelDaysSideEffects(
-            *context.pParty,
-            context.pWorldRuntime,
-            transition.travelDays,
-            foodRequired);
-    }
 }
 
 bool executeMapTransitionHook(
@@ -2247,13 +2239,6 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
             return result;
         }
 
-        context.pParty->addGold(-price);
-        applyTravelDaysSideEffects(
-            *context.pParty,
-            context.pWorldRuntime,
-            static_cast<int>(pRoute->travelDays),
-            0);
-
         EventRuntimeState::PendingMapMove pendingMove = {};
         pendingMove.mapName = pRoute->destinationMapFileName;
         pendingMove.x = pRoute->arrivalX;
@@ -2262,6 +2247,15 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
         pendingMove.directionDegrees = static_cast<int32_t>(std::lround(pRoute->facingDegrees));
         pendingMove.useMapStartPosition = false;
         pendingMove.useFullscreenLoading = true;
+        pendingMove.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
+        pendingMove.travelPlan.goldFare = price;
+        pendingMove.travelPlan.travelDays = static_cast<int32_t>(pRoute->travelDays);
+        pendingMove.travelPlan.exitCallback = pendingMm9RudeExitCallback(context);
+        if (pendingMove.travelPlan.exitCallback)
+        {
+            // The pending transaction now owns this once-only callback, including rollback on failure.
+            context.activeEventDialog.mm9RudeExitCallbackExecuted = true;
+        }
         pendingMove.traceSourceKind = "mm9_boat_route";
         pendingMove.traceSourceId = pRoute->dockNpcId;
         pendingMove.traceActionId = static_cast<uint32_t>(action.kind);
@@ -2286,7 +2280,6 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
             "It will take " + std::to_string(pRoute->travelDays)
                 + (pRoute->travelDays == 1 ? " day" : " days")
                 + " to travel to " + pRoute->destinationName + ".");
-        executeMm9RudeExitCallback(context);
         result.shouldCloseActiveDialog = true;
         return result;
     }
@@ -2593,13 +2586,23 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
 
         if (context.eventRuntimeState.pendingDialogueContext->transitionMapMove.has_value())
         {
+            EventRuntimeState::PendingMapMove pendingMove =
+                *context.eventRuntimeState.pendingDialogueContext->transitionMapMove;
             const Mm9MapTransition *pMm9Transition = pendingMm9PositionedTransition(
                 context,
                 *context.eventRuntimeState.pendingDialogueContext);
+            if (pMm9Transition != nullptr)
+            {
+                // A legacy saved prompt has not paid yet; derive its plan only at confirmation.
+                pendingMove.travelPlan = {};
+                pendingMove.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
+                pendingMove.travelPlan.travelDays = std::max(0, pMm9Transition->travelDays);
+                pendingMove.travelPlan.foodRequired = std::max(0, pMm9Transition->travelDays);
+            }
             logMapTransitionConfirmed(
                 context.eventRuntimeState,
                 *context.eventRuntimeState.pendingDialogueContext,
-                *context.eventRuntimeState.pendingDialogueContext->transitionMapMove,
+                pendingMove,
                 action.id);
             if (pMm9Transition != nullptr && context.eventRuntimeState.lastMapTransitionConfirmed)
             {
@@ -2610,23 +2613,14 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 trace.travelDays = static_cast<uint32_t>(std::max(0, pMm9Transition->travelDays));
             }
 
-            if (context.pScreenRuntime != nullptr)
+            if (pMm9Transition == nullptr && context.pScreenRuntime != nullptr)
             {
                 context.pScreenRuntime->stopAllAudioPlayback();
             }
 
-            if (pMm9Transition != nullptr && context.pParty != nullptr)
-            {
-                applyTravelDaysSideEffects(
-                    *context.pParty,
-                    context.pWorldRuntime,
-                    pMm9Transition->travelDays,
-                    std::max(0, pMm9Transition->travelDays));
-            }
             // Scripted MoveToMap confirmations do not implicitly rest, heal, charge food or advance
             // days. Content-specific travel effects belong to their explicit source event/route.
-            context.eventRuntimeState.pendingMapMove =
-                *context.eventRuntimeState.pendingDialogueContext->transitionMapMove;
+            context.eventRuntimeState.pendingMapMove = std::move(pendingMove);
             result.shouldCloseActiveDialog = true;
             return result;
         }
@@ -2647,12 +2641,13 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
             return result;
         }
 
-        applyMapTransitionTravelSideEffects(context, **pTransition);
-
         EventRuntimeState::PendingMapMove pendingMapMove = {};
         pendingMapMove.mapName = (*pTransition)->destinationMapFileName;
         pendingMapMove.directionDegrees = (*pTransition)->directionDegrees;
         pendingMapMove.useMapStartPosition = (*pTransition)->useMapStartPosition;
+        pendingMapMove.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
+        pendingMapMove.travelPlan.travelDays = std::max(0, (*pTransition)->travelDays);
+        pendingMapMove.travelPlan.foodRequired = mapTransitionTravelFoodRequired(context, **pTransition);
         assignMapMoveTraceSource(
             pendingMapMove,
             dialogueContextKindName(context.eventRuntimeState.pendingDialogueContext->kind),

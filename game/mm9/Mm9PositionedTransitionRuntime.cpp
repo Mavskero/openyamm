@@ -24,6 +24,9 @@ EventRuntimeState::PendingMapMove buildPendingMove(const Mm9MapTransition &trans
     move.directionDegrees = static_cast<int32_t>(std::lround(transition.facingDegrees)) % 360;
     move.useMapStartPosition = false;
     move.useFullscreenLoading = !transition.loadScreen.empty();
+    move.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
+    move.travelPlan.travelDays = std::max(0, transition.travelDays);
+    move.travelPlan.foodRequired = std::max(0, transition.travelDays);
     move.traceSourceKind = "mm9_exit_trigger";
     move.traceSourceId = transition.sourceObjectIndex;
     move.traceDestinationName = transition.destinationMapFileName;

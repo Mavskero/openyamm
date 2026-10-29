@@ -4,7 +4,6 @@
 #include "game/gameplay/GameplayActorService.h"
 #include "game/indoor/IndoorGeometryUtils.h"
 #include "game/gameplay/InteractiveDecorationRules.h"
-#include "game/gameplay/TravelRuntime.h"
 #include "game/maps/MapAssetLoader.h"
 #include "game/maps/MapIdentity.h"
 #include "game/tables/MergedBaseTables.h"
@@ -829,14 +828,6 @@ bool IndoorSceneRuntime::advanceSimulation(float deltaMilliseconds)
     if (activation)
     {
         stateChanged = true;
-        if (!activation->pTransition->askPlayer)
-        {
-            applyTravelDaysSideEffects(
-                m_partyRuntime.party(),
-                &m_worldRuntime,
-                activation->pTransition->travelDays,
-                std::max(0, activation->pTransition->travelDays));
-        }
     }
 
     const bool mechanismsAdvanced = advanceMechanisms(deltaMilliseconds);

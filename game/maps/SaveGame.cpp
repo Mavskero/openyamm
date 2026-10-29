@@ -8,6 +8,7 @@
 #include "game/gameplay/MercenaryRecruitmentRuntime.h"
 #include "game/gameplay/MergeMonsterGenerationState.h"
 #include "game/gameplay/PartyJumpState.h"
+#include "game/gameplay/TravelRuntime.h"
 #include "game/tables/HouseTable.h"
 #include "game/tables/ItemTable.h"
 
@@ -38,7 +39,8 @@ namespace OpenYAMM::Game
 {
 namespace
 {
-constexpr uint32_t SaveVersion = 103;
+constexpr uint32_t SaveVersion = 104;
+constexpr uint32_t SaveVersionDeferredTravel = 104;
 constexpr uint32_t SaveVersionReusableMercenarySlots = 103;
 constexpr uint32_t SaveVersionSessionLocations = 102;
 constexpr uint32_t SaveVersionOwnedMercenaries = 101;
@@ -2368,6 +2370,43 @@ bool readValue(BinaryReader &reader, EventRuntimeState::OutdoorModelMechanismDef
         && readValue(reader, value.moveParty);
 }
 
+void writeValue(BinaryWriter &writer, const EventRuntimeState::DeferredTravelExitCallback &value)
+{
+    writeValue(writer, value.eventId);
+    writeValue(writer, value.actorIndex);
+    writeValue(writer, value.sourceObjectIndex);
+}
+
+bool readValue(BinaryReader &reader, EventRuntimeState::DeferredTravelExitCallback &value)
+{
+    return readValue(reader, value.eventId)
+        && readValue(reader, value.actorIndex)
+        && readValue(reader, value.sourceObjectIndex);
+}
+
+void writeValue(BinaryWriter &writer, const EventRuntimeState::DeferredTravelPlan &value)
+{
+    writeValue(writer, value.mode);
+    writeValue(writer, value.goldFare);
+    writeValue(writer, value.travelDays);
+    writeValue(writer, value.foodRequired);
+    writeValue(writer, value.exitCallback);
+}
+
+bool readValue(BinaryReader &reader, EventRuntimeState::DeferredTravelPlan &value)
+{
+    if (!readValue(reader, value.mode)
+        || !readValue(reader, value.goldFare)
+        || !readValue(reader, value.travelDays)
+        || !readValue(reader, value.foodRequired)
+        || !readValue(reader, value.exitCallback))
+    {
+        return false;
+    }
+    std::string error;
+    return validateDeferredTravelPlan(value, error);
+}
+
 void writeValue(BinaryWriter &writer, const EventRuntimeState::PendingMapMove &value)
 {
     writeValue(writer, value.x);
@@ -2378,6 +2417,13 @@ void writeValue(BinaryWriter &writer, const EventRuntimeState::PendingMapMove &v
     writeValue(writer, value.useMapStartPosition);
     writeValue(writer, value.lookAngleDegrees);
     writeValue(writer, value.clearSessionLocation);
+    writeValue(writer, value.useFullscreenLoading);
+    writeValue(writer, value.traceSourceKind);
+    writeValue(writer, value.traceSourceId);
+    writeValue(writer, value.traceActionId);
+    writeValue(writer, value.traceEventId);
+    writeValue(writer, value.traceDestinationName);
+    writeValue(writer, value.travelPlan);
 }
 
 bool readValue(BinaryReader &reader, EventRuntimeState::PendingMapMove &value)
@@ -2389,7 +2435,14 @@ bool readValue(BinaryReader &reader, EventRuntimeState::PendingMapMove &value)
         && readValue(reader, value.directionDegrees)
         && readValue(reader, value.useMapStartPosition)
         && (reader.version() < SaveVersionSessionLocations || readValue(reader, value.lookAngleDegrees))
-        && (reader.version() < SaveVersionSessionLocations || readValue(reader, value.clearSessionLocation));
+        && (reader.version() < SaveVersionSessionLocations || readValue(reader, value.clearSessionLocation))
+        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.useFullscreenLoading))
+        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.traceSourceKind))
+        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.traceSourceId))
+        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.traceActionId))
+        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.traceEventId))
+        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.traceDestinationName))
+        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.travelPlan));
 }
 
 void writeValue(BinaryWriter &writer, const EventRuntimeState::PendingDialogueContext &value)
@@ -4859,6 +4912,40 @@ bool readValue(BinaryReader &reader, TurnBasedCombatRuntime::Snapshot &value)
     return TurnBasedCombatRuntime::isValidSnapshot(value);
 }
 
+bool validateSavedTravelPlans(const GameSaveData &data, std::string &error)
+{
+    const auto validateMove = [&error](const std::optional<EventRuntimeState::PendingMapMove> &move)
+    {
+        return !move || validateDeferredTravelPlan(move->travelPlan, error);
+    };
+    const auto validateState = [&validateMove](const std::optional<EventRuntimeState> &state)
+    {
+        return !state || (validateMove(state->pendingMapMove)
+            && (!state->pendingDialogueContext || validateMove(state->pendingDialogueContext->transitionMapMove)));
+    };
+    if (!validateMove(data.pendingMapMove) || !validateState(data.outdoorWorld.eventRuntimeState)
+        || !validateState(data.indoorScene.eventRuntimeState))
+    {
+        return false;
+    }
+    for (const auto &[map, world] : data.outdoorWorldStates)
+    {
+        if (!validateState(world.eventRuntimeState)) return false;
+    }
+    for (const auto &[map, scene] : data.indoorSceneStates)
+    {
+        if (!validateState(scene.eventRuntimeState)) return false;
+    }
+    if (data.breachMaze)
+    {
+        for (const auto &[level, floor] : data.breachMaze->floors)
+        {
+            if (!validateState(floor.runtime.scene.eventRuntimeState)) return false;
+        }
+    }
+    return true;
+}
+
 bool validateSavedOutdoorLightTimes(const GameSaveData &data, std::string &error)
 {
     const auto validate = [&error](const std::optional<EventRuntimeState> &state)
@@ -5080,6 +5167,7 @@ void writeValue(BinaryWriter &writer, const GameSaveData &value)
     writeValue(writer, value.breachAlvarCompanions);
     writeValue(writer, value.breachMaze);
     writeValue(writer, value.sessionSavedLocations);
+    writeValue(writer, value.pendingMapMove);
 }
 
 bool readValue(BinaryReader &reader, GameSaveData &value)
@@ -5115,7 +5203,8 @@ bool readValue(BinaryReader &reader, GameSaveData &value)
         && (reader.version() < SaveVersionTurnBasedCombat || readValue(reader, value.turnBasedCombat))
         && (reader.version() < SaveVersionBreachAlvarCompanions || readValue(reader, value.breachAlvarCompanions))
         && (reader.version() < SaveVersionBreachMaze || readValue(reader, value.breachMaze))
-        && (reader.version() < SaveVersionSessionLocations || readValue(reader, value.sessionSavedLocations));
+        && (reader.version() < SaveVersionSessionLocations || readValue(reader, value.sessionSavedLocations))
+        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.pendingMapMove));
 }
 }
 
@@ -6188,7 +6277,8 @@ bool writeSaveBytesAtomically(
 bool saveGameDataToPath(const std::filesystem::path &path, const GameSaveData &data, std::string &error,
     const BreachAlvarFriendActorRules *pCompanionRules, const BreachMercenaryProfile *pMercenaryProfile)
 {
-    if (!validateSavedOutdoorLightTimes(data, error) || !validateSavedPartyMotion(data, error)
+    if (!validateSavedTravelPlans(data, error)
+        || !validateSavedOutdoorLightTimes(data, error) || !validateSavedPartyMotion(data, error)
         || !validateSavedBreachMaze(data, error) || !validateSavedActorCombat(data, error))
     {
         return false;
@@ -6408,7 +6498,8 @@ std::optional<GameSaveData> loadGameDataFromPath(const std::filesystem::path &pa
         return std::nullopt;
     }
 
-    if (!validateSavedOutdoorLightTimes(data, error) || !validateSavedPartyMotion(data, error)
+    if (!validateSavedTravelPlans(data, error)
+        || !validateSavedOutdoorLightTimes(data, error) || !validateSavedPartyMotion(data, error)
         || !validateSavedBreachMaze(data, error) || !validateSavedActorCombat(data, error))
     {
         return std::nullopt;

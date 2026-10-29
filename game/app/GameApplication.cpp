@@ -8,6 +8,7 @@
 #include "game/gameplay/GameMechanics.h"
 #include "game/gameplay/GameplayHeldItemController.h"
 #include "game/gameplay/ReputationRuntime.h"
+#include "game/gameplay/TravelRuntime.h"
 #include "game/scene/IndoorSceneRuntime.h"
 #include "game/scene/OutdoorSceneRuntime.h"
 #include "game/items/ItemGenerator.h"
@@ -9658,228 +9659,234 @@ bool GameApplication::processPendingMapMove(bool initializeView)
 bool GameApplication::applyMapMove(const EventRuntimeState::PendingMapMove &move, bool initializeView,
     const std::function<void()> &commitArrival)
 {
-    synchronizeSessionFromRuntime();
-    closeTransientGameplayUiForMapMove();
-
-    const bool isSameMapTeleport =
-        !move.mapName
-        || move.mapName->empty()
-        || *move.mapName == "0"
-        || *move.mapName == "0."
-        || (!move.useMapStartPosition
-            && sameMapFileName(*move.mapName, m_gameSession.currentMapFileName()));
-
-    const auto applyMapMoveDirection = [this, &move]()
+    SessionReplacementBackup backup;
+    try
     {
-        if ((!move.directionDegrees && !move.lookAngleDegrees) || m_pMapSceneRuntime == nullptr)
-        {
-            return;
-        }
+        // Capture the leaving scene before fare, time, food, source callbacks or UI closure.
+        backup = captureSessionReplacementBackup();
+    }
+    catch (const std::exception &failure)
+    {
+        std::cerr << "GameApplication: travel backup failed: " << failure.what() << '\n';
+        reportQuickSaveStatus("无法开始旅行，当前进度无法保留。");
+        return false;
+    }
+    if (!backup.hadRuntime || !backup.saveData)
+    {
+        reportQuickSaveStatus("当前无法开始旅行。");
+        return false;
+    }
 
-        if (m_pMapSceneRuntime->kind() == SceneKind::Outdoor)
+    const auto rejectTravel = [this, &backup, initializeView](const std::string &reason)
+    {
+        const bool restored = restoreSessionReplacementBackup(backup, initializeView);
+        cancelLoadingOverlay();
+        std::cerr << "GameApplication: travel failed: " << reason
+                  << "; previous scene restored=" << restored << '\n';
+        reportQuickSaveStatus(restored
+            ? "无法到达目的地，已恢复出发前进度。"
+            : "旅行失败，无法恢复原场景，请重新读取存档。");
+        if (!restored && m_screenManager.activeScreen() == nullptr)
         {
-            const float yawRadians = move.directionDegrees
-                ? mapMoveHeadingDegreesToYawRadians(*move.directionDegrees)
-                : m_outdoorGameView.cameraYawRadians();
-            const float pitchRadians = move.lookAngleDegrees
-                ? static_cast<float>(*move.lookAngleDegrees) * Pi / 180.0f
-                : m_outdoorGameView.cameraPitchRadians();
-            m_outdoorGameView.setCameraAngles(yawRadians, pitchRadians);
+            openMainMenuScreen();
         }
-        else if (m_pMapSceneRuntime->kind() == SceneKind::Indoor)
-        {
-            const float yawRadians = move.directionDegrees
-                ? mapMoveHeadingDegreesToYawRadians(*move.directionDegrees)
-                : m_indoorRenderer.cameraYawRadians();
-            const float pitchRadians = move.lookAngleDegrees
-                ? static_cast<float>(*move.lookAngleDegrees) * Pi / 180.0f
-                : m_indoorRenderer.cameraPitchRadians();
-            m_indoorRenderer.setCameraAngles(yawRadians, pitchRadians);
-        }
+        return false;
     };
-    if (isSameMapTeleport)
+
+    try
     {
+        std::string travelError;
+        if (!applyDeferredTravelPlan(m_pMapSceneRuntime->party(), m_gameSession.activeWorldRuntime(),
+                move.travelPlan, travelError))
+        {
+            return rejectTravel(travelError);
+        }
+        closeTransientGameplayUiForMapMove();
+
+        const bool isSameMapTeleport =
+            !move.mapName
+            || move.mapName->empty()
+            || *move.mapName == "0"
+            || *move.mapName == "0."
+            || (!move.useMapStartPosition
+                && sameMapFileName(*move.mapName, m_gameSession.currentMapFileName()));
+
+        const auto applyMapMoveDirection = [this, &move]()
+        {
+            if ((!move.directionDegrees && !move.lookAngleDegrees) || m_pMapSceneRuntime == nullptr)
+            {
+                return;
+            }
+
+            if (m_pMapSceneRuntime->kind() == SceneKind::Outdoor)
+            {
+                const float yawRadians = move.directionDegrees
+                    ? mapMoveHeadingDegreesToYawRadians(*move.directionDegrees)
+                    : m_outdoorGameView.cameraYawRadians();
+                const float pitchRadians = move.lookAngleDegrees
+                    ? static_cast<float>(*move.lookAngleDegrees) * Pi / 180.0f
+                    : m_outdoorGameView.cameraPitchRadians();
+                m_outdoorGameView.setCameraAngles(yawRadians, pitchRadians);
+            }
+            else if (m_pMapSceneRuntime->kind() == SceneKind::Indoor)
+            {
+                const float yawRadians = move.directionDegrees
+                    ? mapMoveHeadingDegreesToYawRadians(*move.directionDegrees)
+                    : m_indoorRenderer.cameraYawRadians();
+                const float pitchRadians = move.lookAngleDegrees
+                    ? static_cast<float>(*move.lookAngleDegrees) * Pi / 180.0f
+                    : m_indoorRenderer.cameraPitchRadians();
+                m_indoorRenderer.setCameraAngles(yawRadians, pitchRadians);
+            }
+        };
+        if (isSameMapTeleport)
+        {
+            const std::string previousMapFileName = m_gameSession.currentMapFileName();
+            if (m_pMapSceneRuntime != nullptr
+                && m_pMapSceneRuntime->kind() == SceneKind::Outdoor
+                && m_pOutdoorPartyRuntime != nullptr)
+            {
+                m_pOutdoorPartyRuntime->teleportTo(
+                    static_cast<float>(move.x),
+                    static_cast<float>(move.y),
+                    static_cast<float>(move.z)
+                );
+            }
+            else if (m_pMapSceneRuntime != nullptr && m_pMapSceneRuntime->kind() == SceneKind::Indoor)
+            {
+                IndoorSceneRuntime *pIndoorRuntime = static_cast<IndoorSceneRuntime *>(m_pMapSceneRuntime.get());
+                pIndoorRuntime->partyRuntime().teleportPartyPosition(
+                    static_cast<float>(move.x),
+                    static_cast<float>(move.y),
+                    static_cast<float>(move.z));
+            }
+
+            applyMapMoveDirection();
+
+            m_gameAudioSystem.playCommonSound(SoundId::Teleport, GameAudioSystem::PlaybackGroup::Ui);
+            if (commitArrival) commitArrival();
+            m_gameSession.clearSessionSavedLocation(move.clearSessionLocation);
+            synchronizeSessionFromRuntime();
+            GAMEPLAY_DEBUG_TRACE_BLOCK(
+                logMapArrived(
+                    previousMapFileName,
+                    m_gameSession.currentMapFileName(),
+                    move,
+                    true,
+                    m_gameSession.gameMinutes());
+            );
+            return true;
+        }
+
+        EventRuntimeState *pLeavingRuntimeState =
+            m_pMapSceneRuntime != nullptr ? m_pMapSceneRuntime->eventRuntimeState() : nullptr;
+        executeCurrentMapOnLeaveEvents();
+        PendingMapLeaveOutputs onLeaveOutputs = pLeavingRuntimeState != nullptr
+            ? consumePendingMapLeaveOutputs(*pLeavingRuntimeState)
+            : PendingMapLeaveOutputs{};
+
+        const std::string targetMapName = *move.mapName;
         const std::string previousMapFileName = m_gameSession.currentMapFileName();
+
+        captureCurrentSceneState();
+
+        m_gameSession.setCurrentMapFileName(targetMapName);
+        const LoadingOverlayScreen::Presentation loadingPresentation = move.useFullscreenLoading
+            ? LoadingOverlayScreen::Presentation::Fullscreen
+            : LoadingOverlayScreen::Presentation::DungeonTransition;
+        beginLoadingOverlay(loadingPresentation);
+        renderLoadingOverlayProgress(15);
+
+        if (!loadCurrentSessionMap(
+                initializeView,
+                [this](int localProgress)
+                {
+                    renderLoadingOverlayProgress(remapLoadingProgress(localProgress, 20, 85));
+                }))
+        {
+            return rejectTravel("destination map could not be loaded");
+        }
+
+        EventRuntimeState *pArrivingRuntimeState =
+            m_pMapSceneRuntime != nullptr ? m_pMapSceneRuntime->eventRuntimeState() : nullptr;
+
+        if (pArrivingRuntimeState != nullptr)
+        {
+            appendPendingMapLeaveOutputs(*pArrivingRuntimeState, std::move(onLeaveOutputs));
+        }
+
         if (m_pMapSceneRuntime != nullptr
             && m_pMapSceneRuntime->kind() == SceneKind::Outdoor
-            && m_pOutdoorPartyRuntime != nullptr)
+            && m_pOutdoorPartyRuntime != nullptr
+            && !move.useMapStartPosition)
         {
+            const PartyJumpState arrivalJump = m_pOutdoorPartyRuntime->snapshot().jumpState;
             m_pOutdoorPartyRuntime->teleportTo(
                 static_cast<float>(move.x),
                 static_cast<float>(move.y),
                 static_cast<float>(move.z)
             );
+            OutdoorPartyRuntime::Snapshot arrival = m_pOutdoorPartyRuntime->snapshot();
+            arrival.jumpState = arrivalJump;
+            m_pOutdoorPartyRuntime->restoreSnapshot(arrival);
         }
-        else if (m_pMapSceneRuntime != nullptr && m_pMapSceneRuntime->kind() == SceneKind::Indoor)
+        else if (m_pMapSceneRuntime != nullptr
+                 && m_pMapSceneRuntime->kind() == SceneKind::Indoor
+                 && !move.useMapStartPosition)
         {
             IndoorSceneRuntime *pIndoorRuntime = static_cast<IndoorSceneRuntime *>(m_pMapSceneRuntime.get());
+            const PartyJumpState arrivalJump = pIndoorRuntime->partyRuntime().snapshot().jumpState;
             pIndoorRuntime->partyRuntime().teleportPartyPosition(
                 static_cast<float>(move.x),
                 static_cast<float>(move.y),
                 static_cast<float>(move.z));
+            IndoorPartyRuntime::Snapshot arrival = pIndoorRuntime->partyRuntime().snapshot();
+            arrival.jumpState = arrivalJump;
+            pIndoorRuntime->partyRuntime().restoreSnapshot(arrival);
         }
 
         applyMapMoveDirection();
-
-        m_gameAudioSystem.playCommonSound(SoundId::Teleport, GameAudioSystem::PlaybackGroup::Ui);
-        if (commitArrival) commitArrival();
-        m_gameSession.clearSessionSavedLocation(move.clearSessionLocation);
-        synchronizeSessionFromRuntime();
+        float arrivedGameMinutes = m_gameSession.gameMinutes();
+        if (IGameplayWorldRuntime *pWorldRuntime = m_gameSession.activeWorldRuntime())
+        {
+            arrivedGameMinutes = pWorldRuntime->gameMinutes();
+        }
         GAMEPLAY_DEBUG_TRACE_BLOCK(
-            logMapArrived(
-                previousMapFileName,
-                m_gameSession.currentMapFileName(),
-                move,
-                true,
-                m_gameSession.gameMinutes());
+            logMapArrived(previousMapFileName, targetMapName, move, false, arrivedGameMinutes);
         );
-        return true;
-    }
 
-    EventRuntimeState *pLeavingRuntimeState =
-        m_pMapSceneRuntime != nullptr ? m_pMapSceneRuntime->eventRuntimeState() : nullptr;
-    executeCurrentMapOnLeaveEvents();
-    PendingMapLeaveOutputs onLeaveOutputs = pLeavingRuntimeState != nullptr
-        ? consumePendingMapLeaveOutputs(*pLeavingRuntimeState)
-        : PendingMapLeaveOutputs{};
-
-    const std::string targetMapName = *move.mapName;
-    const std::string previousMapFileName = m_gameSession.currentMapFileName();
-
-    captureCurrentSceneState();
-
-    const std::optional<GameSaveData> rollbackState = m_gameSession.buildSaveData();
-    if (!rollbackState)
-    {
-        if (pLeavingRuntimeState != nullptr)
+        if (isDungeonMapFileName(targetMapName) && !sameMapFileName(previousMapFileName, targetMapName))
         {
-            appendPendingMapLeaveOutputs(*pLeavingRuntimeState, std::move(onLeaveOutputs));
-        }
-        return false;
-    }
+            Party *pParty = m_pMapSceneRuntime != nullptr ? &m_pMapSceneRuntime->party() : nullptr;
+            const std::optional<size_t> memberIndex =
+                pParty != nullptr ? chooseRandomActablePartyMember(*pParty) : std::nullopt;
 
-    m_gameSession.setCurrentMapFileName(targetMapName);
-    const LoadingOverlayScreen::Presentation loadingPresentation = move.useFullscreenLoading
-        ? LoadingOverlayScreen::Presentation::Fullscreen
-        : LoadingOverlayScreen::Presentation::DungeonTransition;
-    beginLoadingOverlay(loadingPresentation);
-    renderLoadingOverlayProgress(15);
-
-    if (!loadCurrentSessionMap(
-            initializeView,
-            [this](int localProgress)
+            if (memberIndex.has_value())
             {
-                renderLoadingOverlayProgress(remapLoadingProgress(localProgress, 20, 85));
-            }))
-    {
-        m_gameSession.restoreFromSaveData(*rollbackState);
-        const bool previousLoading = m_loadingSavedGameRuntime;
-        m_loadingSavedGameRuntime = true;
-        bool previousMapRestored = loadCurrentSessionMap(
-            initializeView,
-            [this](int localProgress)
-            {
-                renderLoadingOverlayProgress(remapLoadingProgress(localProgress, 20, 85));
-            }) && applyCurrentSessionToRuntime();
-        if (previousMapRestored)
-        {
-            previousMapRestored = m_gameSession.restoreTurnBasedCombatFromSaveData(*rollbackState);
-        }
-        if (previousMapRestored)
-        {
-            m_gameSession.restoreHeldInventoryItemFromSaveData(*rollbackState);
-        }
-        m_loadingSavedGameRuntime = previousLoading;
-
-        if (previousMapRestored && m_pMapSceneRuntime != nullptr)
-        {
-            EventRuntimeState *pRestoredRuntimeState = m_pMapSceneRuntime->eventRuntimeState();
-
-            if (pRestoredRuntimeState != nullptr)
-            {
-                appendPendingMapLeaveOutputs(*pRestoredRuntimeState, std::move(onLeaveOutputs));
+                m_gameSession.gameplayScreenRuntime().queueDelayedSpeechReaction(
+                    *memberIndex,
+                    SpeechId::EnterDungeon,
+                    EnterDungeonSpeechDelaySeconds);
             }
         }
 
-        cancelLoadingOverlay();
-        return false;
-    }
+        if (commitArrival) commitArrival();
+        m_gameSession.clearSessionSavedLocation(move.clearSessionLocation);
+        synchronizeSessionFromRuntime();
+        renderLoadingOverlayProgress(95);
+        completeLoadingOverlay();
 
-    EventRuntimeState *pArrivingRuntimeState =
-        m_pMapSceneRuntime != nullptr ? m_pMapSceneRuntime->eventRuntimeState() : nullptr;
-
-    if (pArrivingRuntimeState != nullptr)
-    {
-        appendPendingMapLeaveOutputs(*pArrivingRuntimeState, std::move(onLeaveOutputs));
-    }
-
-    if (m_pMapSceneRuntime != nullptr
-        && m_pMapSceneRuntime->kind() == SceneKind::Outdoor
-        && m_pOutdoorPartyRuntime != nullptr
-        && !move.useMapStartPosition)
-    {
-        const PartyJumpState arrivalJump = m_pOutdoorPartyRuntime->snapshot().jumpState;
-        m_pOutdoorPartyRuntime->teleportTo(
-            static_cast<float>(move.x),
-            static_cast<float>(move.y),
-            static_cast<float>(move.z)
-        );
-        OutdoorPartyRuntime::Snapshot arrival = m_pOutdoorPartyRuntime->snapshot();
-        arrival.jumpState = arrivalJump;
-        m_pOutdoorPartyRuntime->restoreSnapshot(arrival);
-    }
-    else if (m_pMapSceneRuntime != nullptr
-             && m_pMapSceneRuntime->kind() == SceneKind::Indoor
-             && !move.useMapStartPosition)
-    {
-        IndoorSceneRuntime *pIndoorRuntime = static_cast<IndoorSceneRuntime *>(m_pMapSceneRuntime.get());
-        const PartyJumpState arrivalJump = pIndoorRuntime->partyRuntime().snapshot().jumpState;
-        pIndoorRuntime->partyRuntime().teleportPartyPosition(
-            static_cast<float>(move.x),
-            static_cast<float>(move.y),
-            static_cast<float>(move.z));
-        IndoorPartyRuntime::Snapshot arrival = pIndoorRuntime->partyRuntime().snapshot();
-        arrival.jumpState = arrivalJump;
-        pIndoorRuntime->partyRuntime().restoreSnapshot(arrival);
-    }
-
-    applyMapMoveDirection();
-    float arrivedGameMinutes = m_gameSession.gameMinutes();
-    if (IGameplayWorldRuntime *pWorldRuntime = m_gameSession.activeWorldRuntime())
-    {
-        arrivedGameMinutes = pWorldRuntime->gameMinutes();
-    }
-    GAMEPLAY_DEBUG_TRACE_BLOCK(
-        logMapArrived(previousMapFileName, targetMapName, move, false, arrivedGameMinutes);
-    );
-
-    if (isDungeonMapFileName(targetMapName) && !sameMapFileName(previousMapFileName, targetMapName))
-    {
-        Party *pParty = m_pMapSceneRuntime != nullptr ? &m_pMapSceneRuntime->party() : nullptr;
-        const std::optional<size_t> memberIndex =
-            pParty != nullptr ? chooseRandomActablePartyMember(*pParty) : std::nullopt;
-
-        if (memberIndex.has_value())
+        if (IGameplayWorldRuntime *pWorldRuntime = m_gameSession.activeWorldRuntime())
         {
-            m_gameSession.gameplayScreenRuntime().queueDelayedSpeechReaction(
-                *memberIndex,
-                SpeechId::EnterDungeon,
-                EnterDungeonSpeechDelaySeconds);
+            pWorldRuntime->requestTravelAutosave();
         }
+
+        return true;
     }
-
-    if (commitArrival) commitArrival();
-    m_gameSession.clearSessionSavedLocation(move.clearSessionLocation);
-    synchronizeSessionFromRuntime();
-    renderLoadingOverlayProgress(95);
-    completeLoadingOverlay();
-
-    if (IGameplayWorldRuntime *pWorldRuntime = m_gameSession.activeWorldRuntime())
+    catch (const std::exception &failure)
     {
-        pWorldRuntime->requestTravelAutosave();
+        return rejectTravel(failure.what());
     }
-
-    return true;
 }
 
 void GameApplication::closeTransientGameplayUiForMapMove()

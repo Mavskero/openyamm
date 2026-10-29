@@ -1,7 +1,6 @@
 #include "game/scene/OutdoorSceneRuntime.h"
 #include "game/FaceEnums.h"
 #include "game/debug/GameplayDebugTrace.h"
-#include "game/gameplay/TravelRuntime.h"
 
 #include <SDL3/SDL.h>
 
@@ -449,14 +448,6 @@ OutdoorSceneRuntime::AdvanceFrameResult OutdoorSceneRuntime::advanceFrame(
         {
             result.shouldOpenEventDialog = result.shouldOpenEventDialog
                 || activation->pTransition->askPlayer;
-            if (!activation->pTransition->askPlayer)
-            {
-                applyTravelDaysSideEffects(
-                    m_pPartyRuntime->party(),
-                    m_pWorldRuntime,
-                    activation->pTransition->travelDays,
-                    std::max(0, activation->pTransition->travelDays));
-            }
         }
     }
 

@@ -1,0 +1,35 @@
+{
+  "reviewed_at": "2026-10-29T10:30:45.504196+00:00",
+  "images": [
+    {
+      "file": "actual-001/continued-after-travel-rest.png",
+      "sha256": "a9315c7cd68095d71d5c9654f630b56a90e26b8e947e76bd207d1e0a50b9e524",
+      "review": "Visible travel error and original resources; complete sky, hourglass, Chinese captions/date; continued scene after actual wait",
+      "accepted": true
+    },
+    {
+      "file": "actual-001/failed-travel-restored.png",
+      "sha256": "970158e1e83340dbf95b4670d17e6103d63f8bca33b8bcc9540ceaceb576cf42",
+      "review": "Visible travel error and original resources; complete sky, hourglass, Chinese captions/date; continued scene after actual wait",
+      "accepted": true
+    },
+    {
+      "file": "actual-001/rest-complete-assets-labels.png",
+      "sha256": "a92a44100940318c2d6ace593a6a24ba857b9c2f85665d787e49c9f5da54e60f",
+      "review": "Visible travel error and original resources; complete sky, hourglass, Chinese captions/date; continued scene after actual wait",
+      "accepted": true
+    },
+    {
+      "file": "actual-001/rest-hourglass-start.png",
+      "sha256": "a92a44100940318c2d6ace593a6a24ba857b9c2f85665d787e49c9f5da54e60f",
+      "review": "Visible travel error and original resources; complete sky, hourglass, Chinese captions/date; continued scene after actual wait",
+      "accepted": true
+    }
+  ],
+  "rest_text": "All six readable; preserves original skin edges/apple; no visible baked English overlap",
+  "dynamic_frames_scope": "Sky at7:25 and initial hourglass only;304 frames imported/source decoded,not every frame viewed",
+  "input_sha256": {
+    "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav": "d75d775dcce408e8ad5f1b2a18a84df47a425850114a3de3923894a83949fae9",
+    "local-data/validation/ui-function-completion-194/actual-001/input.oysav": "d75d775dcce408e8ad5f1b2a18a84df47a425850114a3de3923894a83949fae9"
+  }
+}

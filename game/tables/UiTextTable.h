@@ -52,12 +52,18 @@ public:
         BankDeposit,
         BankWithdraw,
         BankHowMuch,
+        RestHealEightHours,
+        RestWaitWithoutHealing,
+        RestWaitUntilDawn,
+        RestWaitFiveMinutes,
+        RestWaitOneHour,
+        RestExit,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
-    // Validate the current schema or explicitly migrate a complete 13-, 16-, 19-, 26- or 35-key schema.
+    // Validate the current schema or explicitly migrate a complete 13-, 16-, 19-, 26-, 35- or 39-key schema.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     std::string formatItemType(const std::string &type) const;

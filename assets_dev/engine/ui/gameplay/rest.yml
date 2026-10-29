@@ -1,5 +1,21 @@
 screen: Rest
 
+# Unlettered parts of the original 6UI marble and green stone panels replace only
+# the baked caption interiors. Button edges, pressed states and the food icon stay visible.
+texture_regions:
+  - {name: rest_heal_caption_bg, source: restmain, source_width: 640, source_height: 367,
+     x: 65, y: 159, width: 205, height: 34}
+  - {name: rest_wait_caption_bg, source: restmain, source_width: 640, source_height: 367,
+     x: 382, y: 160, width: 178, height: 26}
+  - {name: rest_dawn_caption_bg, source: restmain, source_width: 640, source_height: 367,
+     x: 103, y: 242, width: 182, height: 24}
+  - {name: rest_hour_caption_bg, source: restmain, source_width: 640, source_height: 367,
+     x: 103, y: 274, width: 182, height: 24}
+  - {name: rest_minutes_caption_bg, source: restmain, source_width: 640, source_height: 367,
+     x: 103, y: 306, width: 182, height: 24}
+  - {name: rest_exit_caption_bg, source: restmain, source_width: 640, source_height: 367,
+     x: 365, y: 303, width: 177, height: 34}
+
 elements:
   - id: RestRoot
     anchor: center
@@ -119,6 +135,114 @@ elements:
           highlighted: RexitH
           pressed: RexitD
 
+      - id: RestHealCaption
+        anchor: top_left
+        offset_x: 65
+        offset_y: 159
+        width: 205
+        height: 34
+        z_index: 35
+        asset:
+          default: rest_heal_caption_bg
+        text:
+          value: "{rest_heal_eight_hours}"
+          font: Create
+          align_x: center
+          align_y: middle
+          fit_height: true
+          pad_x: 3
+          pad_y: 1
+
+      - id: RestWaitCaption
+        anchor: top_left
+        offset_x: 86
+        offset_y: 207
+        width: 220
+        height: 28
+        z_index: 35
+        asset:
+          default: rest_wait_caption_bg
+        text:
+          value: "{rest_wait_without_healing}"
+          font: Create
+          align_x: center
+          align_y: middle
+          fit_height: true
+          pad_x: 3
+          pad_y: 1
+
+      - id: RestDawnCaption
+        anchor: top_left
+        offset_x: 103
+        offset_y: 242
+        width: 182
+        height: 24
+        z_index: 35
+        asset:
+          default: rest_dawn_caption_bg
+        text:
+          value: "{rest_wait_until_dawn}"
+          font: Create
+          align_x: center
+          align_y: middle
+          fit_height: true
+          pad_x: 3
+          pad_y: 1
+
+      - id: RestHourCaption
+        anchor: top_left
+        offset_x: 103
+        offset_y: 274
+        width: 182
+        height: 24
+        z_index: 35
+        asset:
+          default: rest_hour_caption_bg
+        text:
+          value: "{rest_wait_one_hour}"
+          font: Create
+          align_x: center
+          align_y: middle
+          fit_height: true
+          pad_x: 3
+          pad_y: 1
+
+      - id: RestFiveMinutesCaption
+        anchor: top_left
+        offset_x: 103
+        offset_y: 306
+        width: 182
+        height: 24
+        z_index: 35
+        asset:
+          default: rest_minutes_caption_bg
+        text:
+          value: "{rest_wait_five_minutes}"
+          font: Create
+          align_x: center
+          align_y: middle
+          fit_height: true
+          pad_x: 3
+          pad_y: 1
+
+      - id: RestExitCaption
+        anchor: top_left
+        offset_x: 365
+        offset_y: 303
+        width: 177
+        height: 34
+        z_index: 35
+        asset:
+          default: rest_exit_caption_bg
+        text:
+          value: "{rest_exit}"
+          font: Create
+          align_x: center
+          align_y: middle
+          fit_height: true
+          pad_x: 3
+          pad_y: 1
+
       - id: RestTimeText
         anchor: top_left
         offset_x: 485
@@ -140,10 +264,11 @@ elements:
         height: 20
         z_index: 40
         text:
-          value: "Day"
+          value: "{day_label}"
           font: Create
           align_x: left
           align_y: top
+          fit_height: true
 
       - id: RestDayValueText
         anchor: top_left
@@ -166,10 +291,11 @@ elements:
         height: 20
         z_index: 40
         text:
-          value: "Month"
+          value: "{month_label}"
           font: Create
           align_x: left
           align_y: top
+          fit_height: true
 
       - id: RestMonthValueText
         anchor: top_left
@@ -192,10 +318,11 @@ elements:
         height: 20
         z_index: 40
         text:
-          value: "Year"
+          value: "{year_label}"
           font: Create
           align_x: left
           align_y: top
+          fit_height: true
 
       - id: RestYearValueText
         anchor: top_left

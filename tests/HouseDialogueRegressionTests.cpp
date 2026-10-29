@@ -1,6 +1,8 @@
 #include "doctest/doctest.h"
 
+#include "game/app/GameSession.h"
 #include "game/audio/SoundIds.h"
+#include "game/data/GameDataLoader.h"
 #include "game/events/EvtEnums.h"
 #include "game/events/ISceneEventContext.h"
 #include "game/gameplay/GenericActorDialog.h"
@@ -1376,19 +1378,57 @@ TEST_CASE("persistent lua runtime travel state survives save data round trip")
     runtimeState.transportRouteOverrides[
         OpenYAMM::Game::EventRuntime::transportRouteOverrideKey(route.houseId, route.routeIndex)] = route;
 
+    using PendingMapMove = OpenYAMM::Game::EventRuntimeState::PendingMapMove;
+    using TravelPlanMode = OpenYAMM::Game::EventRuntimeState::TravelPlanMode;
+    PendingMapMove transportMove;
+    transportMove.x = 101;
+    transportMove.y = -202;
+    transportMove.z = 303;
+    transportMove.mapName = "7Out01.odm";
+    transportMove.directionDegrees = 90;
+    transportMove.lookAngleDegrees = -12;
+    transportMove.useMapStartPosition = true;
+    transportMove.useFullscreenLoading = true;
+    transportMove.clearSessionLocation = "TempleInABottleReturn";
+    transportMove.traceSourceKind = "house_transport";
+    transportMove.traceSourceId = 462;
+    transportMove.traceActionId = 4;
+    transportMove.traceEventId = 1778;
+    transportMove.traceDestinationName = "Emerald Island";
+    transportMove.travelPlan.mode = TravelPlanMode::Transport;
+    transportMove.travelPlan.goldFare = 55;
+    transportMove.travelPlan.travelDays = 6;
+    runtimeState.pendingMapMove = transportMove;
+
+    PendingMapMove walkingMove = transportMove;
+    walkingMove.travelPlan.mode = TravelPlanMode::TravelDays;
+    walkingMove.travelPlan.goldFare = 7;
+    walkingMove.travelPlan.travelDays = 2;
+    walkingMove.travelPlan.foodRequired = 5;
+    walkingMove.travelPlan.exitCallback =
+        OpenYAMM::Game::EventRuntimeState::DeferredTravelExitCallback{50207, 3, 207};
+    runtimeState.pendingDialogueContext.emplace();
+    runtimeState.pendingDialogueContext->kind = OpenYAMM::Game::DialogueContextKind::MapTransition;
+    runtimeState.pendingDialogueContext->transitionMapMove = walkingMove;
+
     OpenYAMM::Game::GameSaveData saveData = {};
     saveData.mapFileName = "7out03.odm";
+    saveData.savedGameMinutes = 540.0;
     saveData.hasOutdoorRuntimeState = true;
+    saveData.outdoorWorld.gameMinutes = 540.0;
     saveData.outdoorWorld.eventRuntimeState = runtimeState;
+    saveData.pendingMapMove = transportMove;
+    saveData.pendingMapMove->traceSourceKind = "breach_maze";
+    saveData.pendingMapMove->travelPlan = {};
 
     const std::filesystem::path savePath =
         std::filesystem::temp_directory_path() / "openyamm_persistent_lua_runtime_state_roundtrip.oysav";
     std::string error;
     REQUIRE(OpenYAMM::Game::saveGameDataToPath(savePath, saveData, error));
+    const std::vector<uint8_t> originalBytes = readBinaryFileBytes(savePath);
 
     const std::optional<OpenYAMM::Game::GameSaveData> loaded =
         OpenYAMM::Game::loadGameDataFromPath(savePath, error);
-    std::filesystem::remove(savePath);
 
     REQUIRE(loaded.has_value());
     REQUIRE(loaded->outdoorWorld.eventRuntimeState.has_value());
@@ -1402,6 +1442,77 @@ TEST_CASE("persistent lua runtime travel state survives save data round trip")
     CHECK_EQ(loadedState.transportRouteOverrides.at(routeKey).mapFileName, "7Out01.odm");
     CHECK_EQ(loadedState.transportRouteOverrides.at(routeKey).daysAvailable[2], true);
     CHECK_EQ(loadedState.transportRouteOverrides.at(routeKey).directionDegrees, 90);
+
+    const auto checkMove = [](const PendingMapMove &actual, const PendingMapMove &expected)
+    {
+        CHECK(actual.x == expected.x);
+        CHECK(actual.y == expected.y);
+        CHECK(actual.z == expected.z);
+        CHECK(actual.mapName == expected.mapName);
+        CHECK(actual.directionDegrees == expected.directionDegrees);
+        CHECK(actual.lookAngleDegrees == expected.lookAngleDegrees);
+        CHECK(actual.useMapStartPosition == expected.useMapStartPosition);
+        CHECK(actual.useFullscreenLoading == expected.useFullscreenLoading);
+        CHECK(actual.clearSessionLocation == expected.clearSessionLocation);
+        CHECK(actual.traceSourceKind == expected.traceSourceKind);
+        CHECK(actual.traceSourceId == expected.traceSourceId);
+        CHECK(actual.traceActionId == expected.traceActionId);
+        CHECK(actual.traceEventId == expected.traceEventId);
+        CHECK(actual.traceDestinationName == expected.traceDestinationName);
+        CHECK(actual.travelPlan == expected.travelPlan);
+    };
+    REQUIRE(loaded->pendingMapMove);
+    REQUIRE(loadedState.pendingMapMove);
+    REQUIRE(loadedState.pendingDialogueContext);
+    REQUIRE(loadedState.pendingDialogueContext->transitionMapMove);
+    checkMove(*loaded->pendingMapMove, *saveData.pendingMapMove);
+    checkMove(*loadedState.pendingMapMove, transportMove);
+    checkMove(*loadedState.pendingDialogueContext->transitionMapMove, walkingMove);
+
+    OpenYAMM::Game::GameDataLoader loader;
+    OpenYAMM::Game::GameDataRepository data;
+    data.bind(loader);
+    OpenYAMM::Game::GameSession session;
+    session.bindDataRepository(&data);
+    session.restoreFromSaveData(*loaded);
+    REQUIRE(session.pendingMapMove());
+    checkMove(*session.pendingMapMove(), *saveData.pendingMapMove);
+    session.setPendingMapMove(walkingMove);
+    const std::optional<OpenYAMM::Game::GameSaveData> rebuilt = session.buildSaveData();
+    REQUIRE(rebuilt);
+    REQUIRE(rebuilt->pendingMapMove);
+    checkMove(*rebuilt->pendingMapMove, walkingMove);
+    CHECK(rebuilt->party.gold == loaded->party.gold);
+    CHECK(rebuilt->party.food == loaded->party.food);
+    CHECK(rebuilt->savedGameMinutes == loaded->savedGameMinutes);
+    REQUIRE(session.consumePendingMapMove());
+    const std::optional<OpenYAMM::Game::GameSaveData> consumed = session.buildSaveData();
+    REQUIRE(consumed);
+    CHECK_FALSE(consumed->pendingMapMove);
+
+    OpenYAMM::Game::GameSaveData invalid = saveData;
+    invalid.pendingMapMove->travelPlan.goldFare = 1;
+    CHECK_FALSE(OpenYAMM::Game::saveGameDataToPath(savePath, invalid, error));
+    CHECK(readBinaryFileBytes(savePath) == originalBytes);
+    invalid = saveData;
+    invalid.outdoorWorld.eventRuntimeState->pendingDialogueContext->transitionMapMove->travelPlan.foodRequired = -1;
+    CHECK_FALSE(OpenYAMM::Game::saveGameDataToPath(savePath, invalid, error));
+    CHECK(readBinaryFileBytes(savePath) == originalBytes);
+
+    // The root move's None plan is the final record: mode, three costs and the absent callback flag.
+    constexpr size_t NonePlanBytes = sizeof(uint8_t) + 3 * sizeof(int32_t) + sizeof(bool);
+    REQUIRE(originalBytes.size() > NonePlanBytes);
+    std::vector<uint8_t> corrupt = originalBytes;
+    corrupt[corrupt.size() - NonePlanBytes] = 255;
+    const std::filesystem::path corruptPath = savePath.string() + ".corrupt";
+    {
+        std::ofstream output(corruptPath, std::ios::binary | std::ios::trunc);
+        output.write(reinterpret_cast<const char *>(corrupt.data()), std::streamsize(corrupt.size()));
+        REQUIRE(output.good());
+    }
+    CHECK_FALSE(OpenYAMM::Game::loadGameDataFromPath(corruptPath, error));
+    std::filesystem::remove(corruptPath);
+    std::filesystem::remove(savePath);
 }
 
 TEST_CASE("hired follower views use runtime NPC overrides")
@@ -5746,6 +5857,7 @@ TEST_CASE("transport action spends gold advances time and queues map move")
         findHouseActionById(actions, OpenYAMM::Game::HouseActionId::TransportRoute);
 
     REQUIRE(action.has_value());
+    const OpenYAMM::Game::Party::Snapshot beforeTravel = harness.party().snapshot();
     const OpenYAMM::Game::HouseActionResult result = OpenYAMM::Game::performHouseAction(
         *action,
         *pHouseEntry,
@@ -5756,6 +5868,29 @@ TEST_CASE("transport action spends gold advances time and queues map move")
     CHECK(result.succeeded);
     REQUIRE(result.soundType.has_value());
     CHECK_EQ(*result.soundType, OpenYAMM::Game::HouseSoundType::TransportTravel);
+    CHECK_EQ(harness.party().gold(), initialGold);
+    CHECK_EQ(harness.worldRuntime().gameMinutes(), doctest::Approx(initialGameMinutes));
+    CHECK_EQ(pActiveMember->health, beforeTravel.members[harness.party().activeMemberIndex()].health);
+    CHECK_EQ(pActiveMember->spellPoints, beforeTravel.members[harness.party().activeMemberIndex()].spellPoints);
+    CHECK_EQ(pActiveMember->recoverySecondsRemaining, doctest::Approx(3.0f));
+    CHECK(pActiveMember->conditions == beforeTravel.members[harness.party().activeMemberIndex()].conditions);
+    const OpenYAMM::Game::PartyBuffState *pTorchLight =
+        harness.party().partyBuff(OpenYAMM::Game::PartyBuffId::TorchLight);
+    REQUIRE(pTorchLight != nullptr);
+    CHECK_EQ(pTorchLight->remainingSeconds, doctest::Approx(600.0f));
+
+    const OpenYAMM::Game::EventRuntimeState *pWorldRuntimeState = harness.worldRuntime().eventRuntimeState();
+    REQUIRE(pWorldRuntimeState != nullptr);
+    const std::optional<OpenYAMM::Game::EventRuntimeState::PendingMapMove> &pendingMapMove =
+        pWorldRuntimeState->pendingMapMove;
+    REQUIRE(pendingMapMove.has_value());
+    CHECK(pendingMapMove->travelPlan.mode == OpenYAMM::Game::EventRuntimeState::TravelPlanMode::Transport);
+    CHECK_EQ(pendingMapMove->travelPlan.goldFare, expectedPrice);
+    CHECK_EQ(pendingMapMove->travelPlan.travelDays, 4);
+    CHECK_EQ(pendingMapMove->travelPlan.foodRequired, 0);
+    std::string error;
+    REQUIRE_MESSAGE(OpenYAMM::Game::applyDeferredTravelPlan(
+        harness.party(), &harness.worldRuntime(), pendingMapMove->travelPlan, error), error);
     CHECK_EQ(harness.party().gold(), initialGold - expectedPrice);
     CHECK_EQ(harness.worldRuntime().gameMinutes(), doctest::Approx(initialGameMinutes + 4.0f * 24.0f * 60.0f));
 
@@ -5772,13 +5907,6 @@ TEST_CASE("transport action spends gold advances time and queues map move")
     CHECK_EQ(pActiveMember->magicalBonuses.might, 0);
     CHECK_FALSE(harness.party().hasPartyBuff(OpenYAMM::Game::PartyBuffId::TorchLight));
 
-    const OpenYAMM::Game::EventRuntimeState *pWorldRuntimeState = harness.worldRuntime().eventRuntimeState();
-
-    REQUIRE(pWorldRuntimeState != nullptr);
-    const std::optional<OpenYAMM::Game::EventRuntimeState::PendingMapMove> &pendingMapMove =
-        pWorldRuntimeState->pendingMapMove;
-
-    REQUIRE(pendingMapMove.has_value());
     REQUIRE(pendingMapMove->mapName.has_value());
     CHECK_EQ(*pendingMapMove->mapName, "Out02.odm");
     CHECK_EQ(pendingMapMove->x, 8609);
@@ -6269,7 +6397,11 @@ TEST_CASE("transport route travel time is clamped to at least one day")
         &harness.worldRuntime());
 
     CHECK(result.succeeded);
-    CHECK_EQ(harness.worldRuntime().gameMinutes(), doctest::Approx(initialGameMinutes + 24.0f * 60.0f));
+    CHECK_EQ(harness.worldRuntime().gameMinutes(), doctest::Approx(initialGameMinutes));
+    REQUIRE(harness.eventRuntimeState().pendingMapMove);
+    CHECK(harness.eventRuntimeState().pendingMapMove->travelPlan.mode
+        == OpenYAMM::Game::EventRuntimeState::TravelPlanMode::Transport);
+    CHECK_EQ(harness.eventRuntimeState().pendingMapMove->travelPlan.travelDays, 1);
     REQUIRE_FALSE(result.messages.empty());
     CHECK_EQ(result.messages.front(), "It will take 1 day to travel to Test Harbor.");
 }
@@ -6318,7 +6450,11 @@ TEST_CASE("transport route travel time uses hired NPC travel reductions")
         &harness.worldRuntime());
 
     CHECK(result.succeeded);
-    CHECK_EQ(harness.worldRuntime().gameMinutes(), doctest::Approx(initialGameMinutes + 2.0f * 24.0f * 60.0f));
+    CHECK_EQ(harness.worldRuntime().gameMinutes(), doctest::Approx(initialGameMinutes));
+    REQUIRE(harness.eventRuntimeState().pendingMapMove);
+    CHECK(harness.eventRuntimeState().pendingMapMove->travelPlan.mode
+        == OpenYAMM::Game::EventRuntimeState::TravelPlanMode::Transport);
+    CHECK_EQ(harness.eventRuntimeState().pendingMapMove->travelPlan.travelDays, 2);
     REQUIRE_FALSE(result.messages.empty());
     CHECK_EQ(result.messages.front(), "It will take 2 days to travel to Test Harbor.");
 }
@@ -6380,6 +6516,9 @@ TEST_CASE("transport route override changes visible route and travel target")
     CHECK_EQ(harness.eventRuntimeState().pendingMapMove->mapName, std::optional<std::string>("override.odm"));
     CHECK_EQ(harness.eventRuntimeState().pendingMapMove->x, 11);
     CHECK_EQ(harness.eventRuntimeState().pendingMapMove->directionDegrees, std::optional<int32_t>(180));
+    CHECK(harness.eventRuntimeState().pendingMapMove->travelPlan.mode
+        == OpenYAMM::Game::EventRuntimeState::TravelPlanMode::Transport);
+    CHECK_EQ(harness.eventRuntimeState().pendingMapMove->travelPlan.travelDays, 4);
     REQUIRE_FALSE(result.messages.empty());
     CHECK_EQ(result.messages.front(), "It will take 4 days to travel to Override Route.");
 }

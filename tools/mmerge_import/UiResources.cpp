@@ -267,7 +267,26 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
     }
 
     // Menu overlays and WinGameScreen select these original images outside the YAML layouts.
-    const std::set<std::string> requiredDynamicImageReferences = {"ui-parch", "winbg"};
+    std::set<std::string> requiredDynamicImageReferences = {"ui-parch", "winbg"};
+    // Rest picks its sky frame from game time and its hourglass frame from elapsed UI time.
+    // The YAML only names one frame of each original family.
+    std::set<std::string> restAnimationImageReferences;
+    if (layouts.contains("rest.yml"))
+    {
+        for (unsigned frame = 0; frame < 244; ++frame)
+        {
+            std::ostringstream name;
+            name << "terra" << std::setfill('0') << std::setw(4) << frame;
+            restAnimationImageReferences.insert(name.str());
+        }
+        for (unsigned frame = 60; frame <= 119; ++frame)
+        {
+            std::ostringstream name;
+            name << "hglas" << std::setfill('0') << std::setw(3) << frame;
+            restAnimationImageReferences.insert(name.str());
+        }
+        requiredDynamicImageReferences.insert(restAnimationImageReferences.begin(), restAnimationImageReferences.end());
+    }
     images.insert(requiredDynamicImageReferences.begin(), requiredDynamicImageReferences.end());
 
     // LoadingOverlayScreen selects these original images dynamically, outside the YAML layouts.
@@ -331,6 +350,7 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
             << ",\"image_references\":" << images.size() << ",\"font_references\":" << fonts.size()
             << ",\"dimension_door_image_references\":" << dimensionDoorImageReferences.size()
             << ",\"loading_image_references\":" << loadingImageReferences.size()
+            << ",\"rest_animation_image_references\":" << restAnimationImageReferences.size()
             << ",\"owned_image_references\":" << ownedImages.size()
             << ",\"images\":[";
         bool first = true;

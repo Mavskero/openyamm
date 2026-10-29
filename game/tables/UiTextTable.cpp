@@ -58,6 +58,12 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.bank_deposit", "Deposit"},
     {"ui.bank_withdraw", "Withdraw"},
     {"ui.bank_how_much", "How Much?"},
+    {"ui.rest_heal_eight_hours", "Rest & Heal 8 Hours"},
+    {"ui.rest_wait_without_healing", "Wait without healing"},
+    {"ui.rest_wait_until_dawn", "Wait until Dawn"},
+    {"ui.rest_wait_five_minutes", "Wait 5 Minutes"},
+    {"ui.rest_wait_one_hour", "Wait 1 Hour"},
+    {"ui.rest_exit", "Exit Rest"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -96,20 +102,23 @@ UiTextTable::UiTextTable()
 bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
 {
     // Migrate only complete older prefixes: the original 13 captions, the 16 with
-    // Arcomage, the 19 with initial inspect labels, the 26 with item details and the 35 with win text.
+    // Arcomage, the 19 with initial inspect labels, the 26 with item details,
+    // the 35 with win text and the 39 with bank captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
     constexpr size_t InspectMessageCount = size_t(Message::ItemPower);
     constexpr size_t ItemDetailMessageCount = size_t(Message::Congratulations);
     constexpr size_t WinMessageCount = size_t(Message::BankBalance);
+    constexpr size_t BankMessageCount = size_t(Message::RestHealEightHours);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
         && schemaMessageCount != ArcomageMessageCount
         && schemaMessageCount != InspectMessageCount
         && schemaMessageCount != ItemDetailMessageCount
-        && schemaMessageCount != WinMessageCount)
+        && schemaMessageCount != WinMessageCount
+        && schemaMessageCount != BankMessageCount)
     {
         return false;
     }

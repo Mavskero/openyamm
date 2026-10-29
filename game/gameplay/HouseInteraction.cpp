@@ -2515,15 +2515,9 @@ HouseActionResult performHouseAction(
                 return result;
             }
 
-            party.addGold(-price);
-            party.restAndHealAll();
             const int travelDays =
                 adjustedTransportTravelDays(route, pEventRuntimeState, !isBoatHouse(houseEntry));
-            const float beforeGameMinutes = pWorldRuntime->gameMinutes();
-            const float travelMinutes = static_cast<float>(travelDays * MinutesPerDay);
-            pWorldRuntime->advanceGameMinutes(travelMinutes);
-            party.advanceTimedStates(travelMinutes * 60.0f);
-            const float afterGameMinutes = pWorldRuntime->gameMinutes();
+            const double beforeGameMinutes = pWorldRuntime->gameMinutes();
 
             EventRuntimeState::PendingMapMove pendingMapMove = {};
             pendingMapMove.mapName = route.mapFileName;
@@ -2532,6 +2526,9 @@ HouseActionResult performHouseAction(
             pendingMapMove.z = route.z;
             pendingMapMove.directionDegrees = route.directionDegrees;
             pendingMapMove.useMapStartPosition = route.useMapStartPosition;
+            pendingMapMove.travelPlan.mode = EventRuntimeState::TravelPlanMode::Transport;
+            pendingMapMove.travelPlan.goldFare = price;
+            pendingMapMove.travelPlan.travelDays = travelDays;
             pendingMapMove.traceSourceKind = isBoatHouse(houseEntry) ? "boat_route" : "horse_route";
             pendingMapMove.traceSourceId = houseEntry.id;
             pendingMapMove.traceActionId = static_cast<uint32_t>(action.id);
@@ -2552,14 +2549,6 @@ HouseActionResult performHouseAction(
                 .directionDegrees = route.directionDegrees,
             };
             GAMEPLAY_DEBUG_TRACE(
-                "game_time_advanced source=\"" + pendingMapMove.traceSourceKind + "\""
-                + " source_id=" + std::to_string(houseEntry.id)
-                + " action_id=" + std::to_string(static_cast<uint32_t>(action.id))
-                + " minutes=" + std::to_string(travelMinutes)
-                + " before_game_minutes=" + std::to_string(beforeGameMinutes)
-                + " after_game_minutes=" + std::to_string(afterGameMinutes)
-                + " game_minutes=" + std::to_string(afterGameMinutes));
-            GAMEPLAY_DEBUG_TRACE(
                 "map_transition_requested source_kind=\"" + pendingMapMove.traceSourceKind + "\""
                 + " source_id=" + std::to_string(houseEntry.id)
                 + " action_id=" + std::to_string(static_cast<uint32_t>(action.id))
@@ -2568,8 +2557,9 @@ HouseActionResult performHouseAction(
                 + " destination_map=\"" + route.mapFileName + "\""
                 + " destination_name=\"" + route.destinationName + "\""
                 + " travel_days=" + std::to_string(travelDays)
+                + " deferred=true"
                 + " before_game_minutes=" + std::to_string(beforeGameMinutes)
-                + " game_minutes=" + std::to_string(afterGameMinutes)
+                + " game_minutes=" + std::to_string(beforeGameMinutes)
                 + " use_start_position=" + (route.useMapStartPosition ? "true" : "false")
                 + " pos=(" + std::to_string(route.x)
                 + "," + std::to_string(route.y)

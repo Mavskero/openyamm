@@ -92,6 +92,187 @@ struct NewGameScreenTestAccess
 };
 struct ApplicationCaptureTestAccess
 {
+    static int runTravel(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
+    {
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "Travel capture output must be new");
+        std::string error;
+        const auto source = loadGameDataFromPath(input, error);
+        require(source && source->currentSceneKind == SceneKind::Indoor, "Expected original indoor seed");
+        std::filesystem::create_directories(output);
+        std::filesystem::copy_file(input, output / "input.oysav");
+        std::filesystem::current_path(output);
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings("settings.ini", settings, error), "Cannot save settings");
+        std::ofstream("fixture.txt") << "194 affected travel/rest flow. Original normal132 indoor save copied. "
+            "Inspection-only runtime has current194 engine and preserved192 missing7d24 map fixture. "
+            "Direct queued TravelDays plan (fare1/day1/food1), injured activeHP1/SP0; missing destination resource "
+            "forces actual loader failure. Immediate full Party comparison, original clock/map/path and no retry. "
+            "Then same-map plan commits costs once and pending-root Save104 codec is observed. "
+            "Rest overlay opened with world restriction bypass for visual inspection; real 5-minute click/Escape. "
+            "UI delta0, final30normalframes. No actual coach/walking map edge/MM9 callback/campaign/device/cold.\n";
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM Travel and Rest194";
+        config.assetRoot = runtime.string();
+        config.activeWorldId = "mm7";
+        config.startupMapFileOverride = source->mapFileName;
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        unsigned phase = 0, frames = 0, ready = 6, captures = 0, normalFrames = 0;
+        bool complete = false;
+        double beforeMinutes = 0, restMinutes = 0;
+        int beforeGold = 0, beforeFood = 0;
+        std::string pending;
+        const auto started = std::chrono::steady_clock::now();
+        const auto screen = [&]() -> GameplayScreenRuntime & { return game.m_gameSession.gameplayScreenRuntime(); };
+        const auto capture = [&](const char *name)
+        {
+            require(pending.empty() && captures < 4, "Travel capture budget exceeded");
+            pending = name;
+            bgfx::requestScreenShot(BGFX_INVALID_HANDLE, name);
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(game.initializeRenderer() && game.loadSessionFromPath(output / "input.oysav"),
+                        "Travel initial load failed");
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal, "Metal required");
+                    require(screen().ensureGameplayLayoutsLoaded(), "Rest layout unavailable");
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames < 900 && std::chrono::steady_clock::now() - started < std::chrono::seconds(90),
+                        "Travel capture exceeded bound");
+                    game.renderFrame(width, height, wheel, phase == 7 ? 1.0f / 60.0f : 0.0f);
+                    if (!pending.empty())
+                    {
+                        if (const auto image = Engine::BgfxContext::consumeScreenshot(pending))
+                        {
+                            SDL_Surface *surface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()), int(image->width * 4));
+                            require(surface && SDL_SaveBMP(surface, (pending + ".bmp").c_str()), "Travel screenshot failed");
+                            SDL_DestroySurface(surface);
+                            pending.clear();
+                            ++captures;
+                        }
+                    }
+                    if (frames < ready || !pending.empty()) return;
+                    switch (phase)
+                    {
+                    case 0:
+                    {
+                        Party &party = *screen().party();
+                        require(party.gold() > 1 && party.food() > 1, "Seed needs original fare and provisions");
+                        party.member(0)->health = 1;
+                        party.member(0)->spellPoints = 0;
+                        const auto beforeParty = encodePartySnapshotForComparison(party.snapshot());
+                        beforeGold = party.gold(); beforeFood = party.food();
+                        beforeMinutes = game.m_gameSession.activeWorldRuntime()->gameMinutes();
+                        EventRuntimeState::PendingMapMove move;
+                        move.mapName = "7d24.blv";
+                        move.useMapStartPosition = true;
+                        move.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
+                        move.travelPlan.goldFare = 1;
+                        move.travelPlan.travelDays = 1;
+                        move.travelPlan.foodRequired = 1;
+                        move.traceSourceKind = "controlled-travel-194";
+                        game.m_gameSession.setPendingMapMove(move);
+                        require(game.quickSaveToPath(output / "queued.oysav"), "Queued travel save failed");
+                        const auto queued = loadGameDataFromPath(output / "queued.oysav", error);
+                        require(queued && queued->pendingMapMove && queued->pendingMapMove->travelPlan == move.travelPlan,
+                            "Queued root travel plan was not saved");
+                        const auto generation = game.m_runtimeTeardownGeneration;
+                        require(!game.processPendingMapMove(), "Missing map unexpectedly loaded");
+                        require(game.m_runtimeTeardownGeneration > generation, "Failure did not exercise runtime reconstruction");
+                        require(encodePartySnapshotForComparison(screen().party()->snapshot()) == beforeParty,
+                            "Failed travel changed Party fields");
+                        require(game.m_gameSession.activeWorldRuntime()->gameMinutes() == beforeMinutes
+                            && game.m_gameSession.currentMapFileName() == source->mapFileName
+                            && game.m_gameSession.currentSavePath() == output / "queued.oysav",
+                            "Failed travel changed clock, map or save path");
+                        require(!game.m_gameplayController.consumePendingMapMove(), "Failed travel remained queued");
+                        require(screen().statusBarEventText() == "无法到达目的地，已恢复出发前进度。",
+                            "Travel failure did not publish visible feedback");
+                        phase = 1; ready = frames + 2; break;
+                    }
+                    case 1:
+                        capture("failed-travel-restored"); phase = 2; break;
+                    case 2:
+                    {
+                        auto *world = game.m_gameSession.activeWorldRuntime();
+                        EventRuntimeState::PendingMapMove move;
+                        move.x = int32_t(world->partyX()); move.y = int32_t(world->partyY());
+                        move.z = int32_t(world->partyFootZ());
+                        move.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
+                        move.travelPlan.goldFare = 1; move.travelPlan.travelDays = 1; move.travelPlan.foodRequired = 1;
+                        game.m_gameSession.setPendingMapMove(move);
+                        require(game.processPendingMapMove(), "Same-map travel plan did not commit");
+                        require(screen().party()->gold() == beforeGold - 1 && screen().party()->food() == beforeFood - 1
+                            && world->gameMinutes() == beforeMinutes + 1440.0,
+                            "Successful travel costs differ from quoted plan");
+                        require(screen().party()->member(0)->health == screen().party()->member(0)->maxHealth,
+                            "Successful travel did not retain rest effect");
+                        require(!game.processPendingMapMove(), "Travel plan committed twice");
+                        screen().openRestOverlay(false);
+                        restMinutes = world->gameMinutes();
+                        phase = 3; ready = frames + 3; break;
+                    }
+                    case 3:
+                    {
+                        capture("rest-complete-assets-labels");
+                        const auto *element = screen().findHudLayoutElement("RestButton5Minutes");
+                        require(element != nullptr, "Rest five-minute button missing");
+                        click(screen().resolveHudLayoutElement(element->id, width, height,
+                            element->width, element->height).value(), width, height);
+                        phase = 4; ready = frames + 3; break;
+                    }
+                    case 4:
+                        require(screen().restScreenState().mode != GameplayUiController::RestMode::None,
+                            "Actual rest button did not start waiting");
+                        capture("rest-hourglass-start"); key(SDL_SCANCODE_ESCAPE);
+                        phase = 5; ready = frames + 3; break;
+                    case 5:
+                        require(!screen().restScreenState().active
+                            && game.m_gameSession.activeWorldRuntime()->gameMinutes() == restMinutes + 5.0,
+                            "Rest Escape did not finish selected wait");
+                        capture("continued-after-travel-rest"); phase = 6; break;
+                    case 6: phase = 7; break;
+                    case 7:
+                        if (++normalFrames < 30) break;
+                        require(game.quickSaveToPath(output / "continued.oysav"), "Continued save failed");
+                        require(loadGameDataFromPath(output / "continued.oysav", error).has_value(), "Continued decode failed");
+                        complete = true; phase = 8;
+                        { SDL_Event quit{}; quit.type = SDL_EVENT_QUIT; SDL_PushEvent(&quit); }
+                        break;
+                    default: break;
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete, "Travel capture ended before completion");
+            std::ofstream("result.json") << "{\"passed\":true,\"checkpoint\":194,\"frames\":" << frames
+                << ",\"captures\":" << captures << ",\"normal_frames\":" << normalFrames
+                << ",\"new_unit_cases\":0,\"device\":false,\"natural_campaign\":false}\n";
+            return 0;
+        }
+        catch (const std::exception &exception)
+        {
+            std::ofstream("failure.txt") << "phase=" << phase << " frame=" << frames << " " << exception.what() << '\n';
+            throw;
+        }
+    }
     static int run(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output,
         bool remainingOnly = false)
     {
@@ -428,7 +609,9 @@ int main(int argc, char **argv)
 {
     try
     {
-        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only]");
+        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest]");
+        if (argc == 5 && std::string(argv[4]) == "--travel-rest")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::runTravel(argv[1], argv[2], argv[3]);
         return OpenYAMM::Game::ApplicationCaptureTestAccess::run(argv[1], argv[2], argv[3], argc == 5 && std::string(argv[4]) == "--remaining-only");
     }
     catch (const std::exception &exception) { std::cerr << exception.what() << '\n'; return 1; }

@@ -2557,6 +2557,18 @@ void GameplayPartyOverlayRenderer::renderRestOverlay(GameplayScreenRuntime &cont
     const float gameMinutes = context.worldRuntime() != nullptr ? context.worldRuntime()->gameMinutes() : 0.0f;
     const RestDateText dateText = formatRestDateText(gameMinutes);
     const std::string timeText = formatRestTimeText(gameMinutes);
+    const UiTextTable &uiText = context.gameplayUiRuntime().uiTextTable();
+    constexpr std::array<std::pair<const char *, UiTextTable::Message>, 9> RestCaptionMessages{{
+        {"{rest_heal_eight_hours}", UiTextTable::Message::RestHealEightHours},
+        {"{rest_wait_without_healing}", UiTextTable::Message::RestWaitWithoutHealing},
+        {"{rest_wait_until_dawn}", UiTextTable::Message::RestWaitUntilDawn},
+        {"{rest_wait_five_minutes}", UiTextTable::Message::RestWaitFiveMinutes},
+        {"{rest_wait_one_hour}", UiTextTable::Message::RestWaitOneHour},
+        {"{rest_exit}", UiTextTable::Message::RestExit},
+        {"{day_label}", UiTextTable::Message::Day},
+        {"{month_label}", UiTextTable::Message::Month},
+        {"{year_label}", UiTextTable::Message::Year},
+    }};
     const std::vector<std::string> orderedLayoutIds = context.sortedHudLayoutIdsForScreen("Rest");
 
     for (const std::string &layoutId : orderedLayoutIds)
@@ -2630,6 +2642,10 @@ void GameplayPartyOverlayRenderer::renderRestOverlay(GameplayScreenRuntime &cont
         if (!pLayout->labelText.empty())
         {
             std::string label = pLayout->labelText;
+            for (const auto &[pPlaceholder, message] : RestCaptionMessages)
+            {
+                label = replaceAllText(label, pPlaceholder, uiText.text(message));
+            }
             label = replaceAllText(label, "{time}", timeText);
             label = replaceAllText(label, "{day_num}", std::to_string(dateText.day));
             label = replaceAllText(label, "{month_num}", std::to_string(dateText.month));

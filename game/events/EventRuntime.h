@@ -134,6 +134,33 @@ struct EventRuntimeState
         OutdoorMechanismAudioProfile audio = {};
     };
 
+    enum class TravelPlanMode : uint8_t
+    {
+        None = 0,
+        Transport = 1,
+        TravelDays = 2,
+    };
+
+    struct DeferredTravelExitCallback
+    {
+        uint16_t eventId = 0;
+        uint32_t actorIndex = 0;
+        uint32_t sourceObjectIndex = 0;
+
+        bool operator==(const DeferredTravelExitCallback &) const = default;
+    };
+
+    struct DeferredTravelPlan
+    {
+        TravelPlanMode mode = TravelPlanMode::None;
+        int32_t goldFare = 0;
+        int32_t travelDays = 0;
+        int32_t foodRequired = 0;
+        std::optional<DeferredTravelExitCallback> exitCallback;
+
+        bool operator==(const DeferredTravelPlan &) const = default;
+    };
+
     struct PendingMapMove
     {
         int32_t x = 0;
@@ -144,6 +171,8 @@ struct EventRuntimeState
         std::optional<int32_t> lookAngleDegrees;
         bool useMapStartPosition = false;
         bool useFullscreenLoading = false;
+        // Applied by the App's map-move transaction; legacy queued moves have already paid.
+        DeferredTravelPlan travelPlan;
         // Session-owned return points are consumed only after the destination loads successfully.
         std::string clearSessionLocation;
         std::string traceSourceKind;

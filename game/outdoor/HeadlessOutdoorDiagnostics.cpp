@@ -445,6 +445,11 @@ struct GameApplicationTestAccess
         return application.m_pOutdoorWorldRuntime.get();
     }
 
+    static const IGameplayWorldRuntime *activeWorldRuntime(const GameApplication &application)
+    {
+        return application.m_gameSession.activeWorldRuntime();
+    }
+
     static IMapSceneRuntime *mapSceneRuntime(GameApplication &application)
     {
         return application.m_pMapSceneRuntime.get();
@@ -5055,6 +5060,8 @@ int HeadlessGameplayDiagnostics::runVerifyMm9PositionedTransition(
     const int arrivalX = pTransition->arrivalX;
     const int arrivalY = pTransition->arrivalY;
     const int arrivalZ = pTransition->arrivalZ;
+    const int sourceTravelDays = pTransition->travelDays;
+    const int deferredTravelDays = std::max(0, sourceTravelDays);
     const OutdoorMovementInput neutralInput = {};
     const auto advanceAt = [&](float x, float y, float z)
     {
@@ -5075,17 +5082,19 @@ int HeadlessGameplayDiagnostics::runVerifyMm9PositionedTransition(
     if (!pTransition->askPlayer)
     {
         const EventRuntimeState::PendingMapMove *pAutomaticMove = pWorldRuntime->pendingMapMove();
-        const float expectedGameMinutes = gameMinutesBeforeEntry
-            + static_cast<float>(std::max(0, pTransition->travelDays) * 1440);
         if (firstEntry.shouldOpenEventDialog || pEventRuntimeState->pendingDialogueContext.has_value()
             || pAutomaticMove == nullptr || !pAutomaticMove->mapName.has_value()
             || *pAutomaticMove->mapName != destinationMapFileName
             || pAutomaticMove->x != arrivalX || pAutomaticMove->y != arrivalY || pAutomaticMove->z != arrivalZ
+            || pAutomaticMove->travelPlan.mode != EventRuntimeState::TravelPlanMode::TravelDays
+            || pAutomaticMove->travelPlan.travelDays != deferredTravelDays
+            || pAutomaticMove->travelPlan.foodRequired != deferredTravelDays
+            || pAutomaticMove->travelPlan.goldFare != 0
             || !pEventRuntimeState->lastMapTransitionRequested.has_value()
             || pEventRuntimeState->lastMapTransitionRequested->confirmationRequired
             || pEventRuntimeState->lastMapTransitionRequested->sourceKind != "mm9_exit_trigger"
             || pEventRuntimeState->lastMapTransitionRequested->sourceId != sourceObjectIndex
-            || std::abs(pWorldRuntime->gameMinutes() - expectedGameMinutes) > 1.0f)
+            || std::abs(pWorldRuntime->gameMinutes() - gameMinutesBeforeEntry) > 1.0f)
         {
             std::cerr << "MM9 positioned transition automatic state: dialog="
                       << (firstEntry.shouldOpenEventDialog ? "yes" : "no")
@@ -5093,7 +5102,7 @@ int HeadlessGameplayDiagnostics::runVerifyMm9PositionedTransition(
                       << " move=" << (pAutomaticMove != nullptr ? "yes" : "no")
                       << " map=\"" << (pAutomaticMove != nullptr ? pAutomaticMove->mapName.value_or("") : "")
                       << "\" minutes=" << pWorldRuntime->gameMinutes()
-                      << " expected_minutes=" << expectedGameMinutes << '\n';
+                      << " expected_minutes=" << gameMinutesBeforeEntry << '\n';
             if (pAutomaticMove != nullptr)
             {
                 std::cerr << "MM9 positioned transition automatic move: pos=("
@@ -5120,6 +5129,7 @@ int HeadlessGameplayDiagnostics::runVerifyMm9PositionedTransition(
             std::cerr << "MM9 positioned transition failed: automatic entry repeated side effects\n";
             return 1;
         }
+        const double expectedGameMinutes = pWorldRuntime->gameMinutes() + double(deferredTravelDays) * 1440.0;
         if (!GameApplicationTestAccess::processPendingMapMove(application))
         {
             std::cerr << "MM9 positioned transition failed: automatic map move was not processed\n";
@@ -5132,10 +5142,16 @@ int HeadlessGameplayDiagnostics::runVerifyMm9PositionedTransition(
             std::cerr << "MM9 positioned transition failed: automatic destination map did not load\n";
             return 1;
         }
+        const IGameplayWorldRuntime *pArrivedWorld = GameApplicationTestAccess::activeWorldRuntime(application);
+        if (pArrivedWorld == nullptr || std::abs(pArrivedWorld->gameMinutes() - expectedGameMinutes) > 1.0)
+        {
+            std::cerr << "MM9 positioned transition failed: automatic travel commit advanced incorrect time\n";
+            return 1;
+        }
 
         std::cout << "MM9 positioned transition: source_map=\"" << mapFileName
                   << "\" source_object=" << sourceObjectIndex
-                  << " automatic=yes debounce=yes travel_days=" << pTransition->travelDays
+                  << " automatic=yes debounce=yes travel_days=" << sourceTravelDays
                   << " destination=\"" << destinationMapFileName
                   << "\" arrival=(" << arrivalX << ',' << arrivalY << ',' << arrivalZ << ")\n";
         return 0;
@@ -20867,6 +20883,10 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
             pActiveMember->spellPoints = std::max(0, pActiveMember->spellPoints - 7);
             pActiveMember->recoverySecondsRemaining = 2.0f;
             pActiveMember->conditions.set(static_cast<size_t>(CharacterCondition::Fear));
+            const size_t activeMemberIndex = party.activeMemberIndex();
+            const int initialHealth = pActiveMember->health;
+            const int initialSpellPoints = pActiveMember->spellPoints;
+            const auto initialConditions = pActiveMember->conditions;
 
             const float bodyRadius = 37.0f;
             const OutdoorMoveState initialMoveState = pPartyRuntime->movementState();
@@ -20911,33 +20931,16 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
 
             const float expectedGameMinutes =
                 initialGameMinutes + static_cast<float>(expectedTravelDays) * 1440.0f;
-
-            if (std::abs(pWorld->gameMinutes() - expectedGameMinutes) > 0.01f)
-            {
-                failure = "map transition confirm did not advance travel time";
-                return false;
-            }
-
             constexpr int ExpectedOutdoorTravelFood = 5;
-
-            if (party.food() != std::max(0, initialFood - ExpectedOutdoorTravelFood))
+            if (std::abs(pWorld->gameMinutes() - initialGameMinutes) > 0.01f
+                || party.food() != initialFood
+                || pActiveMember->health != initialHealth
+                || pActiveMember->spellPoints != initialSpellPoints
+                || pActiveMember->recoverySecondsRemaining != 2.0f
+                || pActiveMember->conditions != initialConditions
+                || !party.hasPartyBuff(PartyBuffId::TorchLight))
             {
-                failure = "map transition confirm did not consume travel food";
-                return false;
-            }
-
-            const int expectedHealth = pActiveMember->maxHealth + pActiveMember->magicalBonuses.maxHealth;
-            const int expectedSpellPoints =
-                pActiveMember->maxSpellPoints + pActiveMember->magicalBonuses.maxSpellPoints;
-
-            if (pActiveMember->health != expectedHealth
-                || pActiveMember->spellPoints != expectedSpellPoints
-                || pActiveMember->recoverySecondsRemaining != 0.0f
-                || pActiveMember->conditions.test(static_cast<size_t>(CharacterCondition::Fear))
-                || !pActiveMember->conditions.test(static_cast<size_t>(CharacterCondition::Weak))
-                || party.hasPartyBuff(PartyBuffId::TorchLight))
-            {
-                failure = "map transition confirm did not apply full-rest travel recovery";
+                failure = "map transition confirmation applied travel effects before map commit";
                 return false;
             }
 
@@ -20945,7 +20948,11 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
 
             if (pPendingMapMove == nullptr
                 || !pPendingMapMove->mapName.has_value()
-                || *pPendingMapMove->mapName != "Out06.odm")
+                || *pPendingMapMove->mapName != "Out06.odm"
+                || pPendingMapMove->travelPlan.mode != EventRuntimeState::TravelPlanMode::TravelDays
+                || pPendingMapMove->travelPlan.travelDays != expectedTravelDays
+                || pPendingMapMove->travelPlan.foodRequired != ExpectedOutdoorTravelFood
+                || pPendingMapMove->travelPlan.goldFare != 0)
             {
                 failure = "map transition confirm did not queue the destination map move";
                 return false;
@@ -20968,6 +20975,34 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
             if (!loadedMap || toLowerCopy(loadedMap->map.fileName) != "out06.odm")
             {
                 failure = "map transition confirm did not load the destination outdoor map";
+                return false;
+            }
+
+            OutdoorWorldRuntime *pArrivedWorld = GameApplicationTestAccess::outdoorWorldRuntime(application);
+            OutdoorPartyRuntime *pArrivedPartyRuntime = GameApplicationTestAccess::outdoorPartyRuntime(application);
+            if (pArrivedWorld == nullptr || pArrivedPartyRuntime == nullptr)
+            {
+                failure = "destination outdoor runtime is incomplete";
+                return false;
+            }
+            const Party &arrivedParty = pArrivedPartyRuntime->party();
+            const Character *pArrivedMember = arrivedParty.member(activeMemberIndex);
+            if (std::abs(pArrivedWorld->gameMinutes() - expectedGameMinutes) > 0.01f
+                || arrivedParty.food() != std::max(0, initialFood - ExpectedOutdoorTravelFood))
+            {
+                failure = "map transition commit did not advance time and consume travel food";
+                return false;
+            }
+            if (pArrivedMember == nullptr
+                || pArrivedMember->health != pArrivedMember->maxHealth + pArrivedMember->magicalBonuses.maxHealth
+                || pArrivedMember->spellPoints
+                    != pArrivedMember->maxSpellPoints + pArrivedMember->magicalBonuses.maxSpellPoints
+                || pArrivedMember->recoverySecondsRemaining != 0.0f
+                || pArrivedMember->conditions.test(static_cast<size_t>(CharacterCondition::Fear))
+                || !pArrivedMember->conditions.test(static_cast<size_t>(CharacterCondition::Weak))
+                || arrivedParty.hasPartyBuff(PartyBuffId::TorchLight))
+            {
+                failure = "map transition commit did not apply full-rest travel recovery";
                 return false;
             }
 
