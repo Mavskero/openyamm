@@ -135,6 +135,7 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.inventory_target_hint", "Select an item to cast; Exit cancels."},
     {"ui.skill_training_offer", "Become %s in %s for %lu gold"},
     {"ui.skill_training_learned", "%s is now a %s in %s."},
+    {"ui.skill_training_requirement", "Your base %s must be at least %u to learn %s %s."},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -175,7 +176,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // Migrate only complete older prefixes: the original 13 captions, the 16 with
     // Arcomage, the 19 with initial inspect labels, the 26 with item details,
     // the 35 with win text, the 39 with bank captions, the 45 with rest captions,
-    // the 72 with mastery/calendar/save, the 103 with keyboard and the 112 with journal captions.
+    // the 72 with mastery/calendar/save, the 103 with keyboard, the 112 with journal
+    // and the 115 with initial skill training captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -187,6 +189,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t SaveMessageCount = size_t(Message::KeyboardForward);
     constexpr size_t KeyboardMessageCount = size_t(Message::JournalPotionNotes);
     constexpr size_t JournalMessageCount = size_t(Message::InventoryTargetHint);
+    constexpr size_t TrainingMessageCount = size_t(Message::SkillTrainingRequirement);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -198,7 +201,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != RestMessageCount
         && schemaMessageCount != SaveMessageCount
         && schemaMessageCount != KeyboardMessageCount
-        && schemaMessageCount != JournalMessageCount)
+        && schemaMessageCount != JournalMessageCount
+        && schemaMessageCount != TrainingMessageCount)
     {
         return false;
     }
@@ -225,7 +229,9 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
             || (index == size_t(Message::ScoreFormat) && !hasExpectedParameters(row[1], {"%lu"}))
             || (index == size_t(Message::CharacterFormat) && !hasExpectedParameters(row[1], {"%s", "%u", "%s"}))
             || (index == size_t(Message::SkillTrainingOffer) && !hasExpectedParameters(row[1], {"%s", "%s", "%lu"}))
-            || (index == size_t(Message::SkillTrainingLearned) && !hasExpectedParameters(row[1], {"%s", "%s", "%s"})))
+            || (index == size_t(Message::SkillTrainingLearned) && !hasExpectedParameters(row[1], {"%s", "%s", "%s"}))
+            || (index == size_t(Message::SkillTrainingRequirement)
+                && !hasExpectedParameters(row[1], {"%s", "%u", "%s", "%s"})))
         {
             return false;
         }
@@ -340,6 +346,25 @@ std::string UiTextTable::formatSkillTrainingLearned(
     result.replace(skillOffset, 2, skill);
     result.replace(masteryOffset, 2, mastery);
     result.replace(nameOffset, 2, name);
+    return result;
+}
+
+std::string UiTextTable::formatSkillTrainingRequirement(
+    const std::string &attribute, uint32_t value, const std::string &mastery, const std::string &skill) const
+{
+    std::string result = text(Message::SkillTrainingRequirement);
+    if (!hasExpectedParameters(result, {"%s", "%u", "%s", "%s"}))
+    {
+        return {};
+    }
+    const size_t attributeOffset = result.find("%s");
+    const size_t valueOffset = result.find("%u", attributeOffset + 2);
+    const size_t masteryOffset = result.find("%s", valueOffset + 2);
+    const size_t skillOffset = result.find("%s", masteryOffset + 2);
+    result.replace(skillOffset, 2, skill);
+    result.replace(masteryOffset, 2, mastery);
+    result.replace(valueOffset, 2, std::to_string(value));
+    result.replace(attributeOffset, 2, attribute);
     return result;
 }
 

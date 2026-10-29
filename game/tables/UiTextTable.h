@@ -130,12 +130,14 @@ public:
         InventoryTargetHint,
         SkillTrainingOffer,
         SkillTrainingLearned,
+        SkillTrainingRequirement,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
-    // Validate the current schema or migrate a complete 13-, 16-, 19-, 26-, 35-, 39-, 45-, 72-, 103- or 112-key schema.
+    // Validate the current schema or migrate a complete older prefix with
+    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112 or 115 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;
@@ -146,6 +148,8 @@ public:
     std::string formatSkillTrainingOffer(const std::string &mastery, const std::string &skill, uint32_t cost) const;
     std::string formatSkillTrainingLearned(
         const std::string &name, const std::string &mastery, const std::string &skill) const;
+    std::string formatSkillTrainingRequirement(
+        const std::string &attribute, uint32_t value, const std::string &mastery, const std::string &skill) const;
     static const char *key(Message message);
 
 private:

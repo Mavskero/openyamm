@@ -1,0 +1,21 @@
+{
+  "image": "actual-001/character-skills.png",
+  "reviewed": true,
+  "dimensions": [
+    2420,
+    1668
+  ],
+  "visible": [
+    "Chinese character name,skill points,skill names and none label",
+    "Character skill rows and exit button fit the viewport"
+  ],
+  "new_confirmed_defect": "Weapons/Magic/Armor/Misc/Level group headers remain English",
+  "next": "218 fix these observed headings only",
+  "not_proven": [
+    "Higher mastery suffix pixels",
+    "Teacher quote/success/failure UI",
+    "iPad touch",
+    "Natural campaign"
+  ],
+  "source": "local-data/validation/mainline-playability-184/actual-006/varn-first-mate-complete.oysav"
+}

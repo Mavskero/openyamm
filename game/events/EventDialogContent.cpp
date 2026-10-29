@@ -1501,6 +1501,34 @@ EventDialogContent buildEventDialogContent(
                             learnAction.label = offerText;
                         }
                     }
+                    else if (!evaluation->approved && evaluation->requiredBaseAttributeId && pUiTextTable != nullptr)
+                    {
+                        const char *pAttributeKey = nullptr;
+                        switch (*evaluation->requiredBaseAttributeId)
+                        {
+                            case 0x21: pAttributeKey = "Intellect"; break;
+                            case 0x22: pAttributeKey = "Personality"; break;
+                            case 0x23: pAttributeKey = "Endurance"; break;
+                            default: break;
+                        }
+                        if (pAttributeKey != nullptr)
+                        {
+                            const StatInspectEntry *pAttribute = pCharacterInspectTable != nullptr
+                                ? pCharacterInspectTable->getStat(pAttributeKey) : nullptr;
+                            const SkillInspectEntry *pSkill = pCharacterInspectTable != nullptr
+                                ? pCharacterInspectTable->getSkill(evaluation->skillName) : nullptr;
+                            const std::string requirementText = pUiTextTable->formatSkillTrainingRequirement(
+                                pAttribute != nullptr && !pAttribute->name.empty() ? pAttribute->name : pAttributeKey,
+                                evaluation->requiredBaseAttributeValue,
+                                pUiTextTable->skillMasteryName(evaluation->targetMastery),
+                                pSkill != nullptr && !pSkill->name.empty()
+                                    ? pSkill->name : displaySkillName(evaluation->skillName));
+                            if (!requirementText.empty())
+                            {
+                                learnAction.label = requirementText;
+                            }
+                        }
+                    }
                     dialog.actions.push_back(std::move(learnAction));
                 }
             }

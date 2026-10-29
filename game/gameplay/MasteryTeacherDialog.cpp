@@ -573,14 +573,20 @@ std::optional<MasteryTeacherEvaluation> evaluateSkillMasteryTraining(
     {
         if (requirementFailure == MasteryRequirementFailure::IntellectTooLow)
         {
+            evaluation.requiredBaseAttributeId = 0x21;
+            evaluation.requiredBaseAttributeValue = 50;
             evaluation.displayText = "You must have at least 50 base Intellect to learn Master Learning.";
         }
         else if (requirementFailure == MasteryRequirementFailure::PersonalityTooLow)
         {
+            evaluation.requiredBaseAttributeId = 0x22;
+            evaluation.requiredBaseAttributeValue = 50;
             evaluation.displayText = "You must have at least 50 base Personality to learn Master Merchant.";
         }
         else if (requirementFailure == MasteryRequirementFailure::EnduranceTooLow)
         {
+            evaluation.requiredBaseAttributeId = 0x23;
+            evaluation.requiredBaseAttributeValue = 50;
             evaluation.displayText = "You must have at least 50 base Endurance to learn Master Bodybuilding.";
         }
         else

@@ -4,6 +4,13 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 217 ACCEPTED_SOURCE_SCOPED: `local-data/validation/ui-function-completion-217/scoped-result.json`.
+  Three50-base-attribute teacher failures now explain localized attribute/mastery/skill in option and status;
+  onlypresentationalmetadata added,existingrules/equipment/permanentbonuses/cost retained. Native/core/iOS passed.
+  One11.620s/19frame existing characterUI check/1reviewedimage, inherited184fixtures/originalhashunchanged;
+  Normal-only skills,so no highermastery/teacherfailurepixel claim.0newcases/campaign/cold/device. Runtime217
+  changesonlyui_text116keys;Save104 and214/195/RCfixed. GoalACTIVE/~85%. Next218 observed English skillheaders.
+
 - 216 ACCEPTED_SOURCE_SCOPED: `local-data/validation/ui-function-completion-216/scoped-result.json`.
   Skill mastery suffixes, original534 approved teacher quote, success/map notes and input-neutral item target hint
   use currentUI names. Native75.568s/coreimport0.240s/unsignediOS59.659s pass,115typedkeys;0newcases/App/device/campaign.

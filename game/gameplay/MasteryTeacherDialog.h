@@ -20,6 +20,8 @@ struct MasteryTeacherEvaluation
     std::string skillName;
     SkillMastery targetMastery = SkillMastery::None;
     int cost = 0;
+    std::optional<uint32_t> requiredBaseAttributeId;
+    uint32_t requiredBaseAttributeValue = 0;
 };
 
 struct MasteryTeacherTopicDefinition

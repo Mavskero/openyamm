@@ -3450,7 +3450,34 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
 
             if (evaluation && !evaluation->displayText.empty())
             {
-                context.uiController.setStatusBarEvent(evaluation->displayText);
+                std::string displayText = evaluation->displayText;
+                if (!evaluation->approved && evaluation->requiredBaseAttributeId && context.pScreenRuntime != nullptr)
+                {
+                    const char *pAttributeKey = nullptr;
+                    switch (*evaluation->requiredBaseAttributeId)
+                    {
+                        case 0x21: pAttributeKey = "Intellect"; break;
+                        case 0x22: pAttributeKey = "Personality"; break;
+                        case 0x23: pAttributeKey = "Endurance"; break;
+                        default: break;
+                    }
+                    if (pAttributeKey != nullptr)
+                    {
+                        const StatInspectEntry *pAttribute = context.pCharacterInspectTable != nullptr
+                            ? context.pCharacterInspectTable->getStat(pAttributeKey) : nullptr;
+                        const UiTextTable &text = context.pScreenRuntime->gameplayUiRuntime().uiTextTable();
+                        const std::string requirementText = text.formatSkillTrainingRequirement(
+                            pAttribute != nullptr && !pAttribute->name.empty() ? pAttribute->name : pAttributeKey,
+                            evaluation->requiredBaseAttributeValue,
+                            text.skillMasteryName(evaluation->targetMastery),
+                            masteryTeacherSkillName(evaluation->skillName, context.pCharacterInspectTable));
+                        if (!requirementText.empty())
+                        {
+                            displayText = requirementText;
+                        }
+                    }
+                }
+                context.uiController.setStatusBarEvent(displayText);
             }
 
             result.shouldOpenPendingEventDialog = true;

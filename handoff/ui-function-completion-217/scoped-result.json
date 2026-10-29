@@ -1,0 +1,67 @@
+{
+  "checkpoint": 217,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-29T15:44:00.133394+00:00",
+  "source_base": "0990e4af",
+  "scope": "Three base-attribute50 training failure explanations in action label and status; typed presentational metadata only",
+  "qualification_changed": false,
+  "economy_changed": false,
+  "ui_text_count": 116,
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:33:59.394662+00:00",
+      "finished_at": "2026-10-29T15:35:16.331260+00:00"
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:37:04.213803+00:00",
+      "finished_at": "2026-10-29T15:37:04.557305+00:00"
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:37:24.306386+00:00",
+      "finished_at": "2026-10-29T15:37:26.290039+00:00"
+    },
+    "build-capture-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:38:32.390945+00:00",
+      "finished_at": "2026-10-29T15:38:37.507670+00:00"
+    },
+    "actual-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:40:03.297616+00:00",
+      "finished_at": "2026-10-29T15:40:14.918024+00:00"
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:40:55.796395+00:00",
+      "finished_at": "2026-10-29T15:42:06.337542+00:00"
+    }
+  },
+  "runtime": "local-data/validation/ui-function-completion-217/runtime-001",
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "all_other_runtime_members_retained": true,
+  "save_version": 104,
+  "new_unit_cases": 0,
+  "app_runs": 1,
+  "app_frames": 19,
+  "reviewed_images": 1,
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "device_or_simulator_operations": 0,
+  "original_input_unchanged": true,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "Higher mastery and three teacher failures are source/build accepted only, not pixel-confirmed",
+    "App image inherits184 map/party/Disarm16 fixtures; no natural campaign claim",
+    "Full natural campaign, allUI and device acceptance remain unproved"
+  ],
+  "next_concrete_defect": "Actual image shows English Weapons/Magic/Armor/Misc/Level headers;218 bounded fix"
+}
