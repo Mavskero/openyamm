@@ -512,6 +512,11 @@ bool GameplayUiRuntime::ensureGameplayLayoutsLoaded(const GameplayUiController &
                 }
             }
             m_uiTextTableValid = table && m_uiTextTable.loadFromRows(rows);
+            if (m_uiTextTableValid && rows.size() != size_t(UiTextTable::Message::Count))
+            {
+                std::fprintf(stderr,
+                    "GameplayUiRuntime: legacy ui_text schema; newer captions use English defaults.\n");
+            }
             if (!m_uiTextTableValid)
             {
                 std::fprintf(stderr, "GameplayUiRuntime: invalid ui_text.txt; rebuild/reimport the runtime assets.\n");

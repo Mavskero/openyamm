@@ -6,6 +6,10 @@
 #include "game/maps/SaveGame.h"
 #include "game/ui/DialogueTopicLayout.h"
 #include "game/ui/ReadableScrollLayout.h"
+#include "game/ui/GameplayPartyOverlayRenderer.h"
+#include "game/tables/CharacterInspectTable.h"
+#include "game/tables/SpellTable.h"
+#include "game/ui/screens/ArcomageScreen.h"
 #include "game/ui/screens/LoadGameScreen.h"
 
 #include <SDL3/SDL.h>
@@ -152,6 +156,330 @@ bool insideViewport(const GameplayResolvedHudLayoutElement &rect, int width, int
 // One consolidated UI flow. Its item/dialog/storage fixtures are recorded below.
 struct ApplicationCaptureTestAccess
 {
+    static int previewUiControls(std::filesystem::path runtime, std::filesystem::path input,
+        std::filesystem::path output)
+    {
+        const auto started = std::chrono::steady_clock::now();
+        const auto elapsedMs = [&]()
+        {
+            return std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - started).count();
+        };
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "UI controls output must be new; preserve earlier failures");
+        const std::vector<char> originalBytes = fileBytes(input);
+        std::string error;
+        const std::optional<GameSaveData> source = loadGameDataFromPath(input, error);
+        require(source && source->party.members.size() == 4 && !source->heldInventoryItemActive,
+            "Expected unchanged empty-handed normal132 input: " + error);
+        std::filesystem::create_directories(output);
+        std::filesystem::current_path(output);
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings(output / "settings.ini", settings, error), "Cannot write isolated UI settings");
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM UI Controls191";
+        config.assetRoot = runtime.string();
+        config.activeWorldId = source->mapFileName.starts_with("7") ? "mm7" : "mm6";
+        config.startupMapFileOverride = source->mapFileName;
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        GameInputSystem componentInput;
+        std::unique_ptr<ArcomageScreen> component;
+        constexpr uint32_t Seed = 191;
+        uint32_t houseId = 0, playedCardId = 0, discardedCardId = 0;
+        size_t playedHandIndex = 0, discardedHandIndex = 0;
+        unsigned frames = 0, captures = 0, readyFrame = 6, playFrame = 0;
+        int drawableWidth = 0, drawableHeight = 0;
+        bool pressedWithoutPlaying = false, playedOnRelease = false, opponentPlayed = false;
+        bool humanTurnReturned = false, completedSwipe = false, resigned = false, complete = false;
+        std::string phase = "warmup", pendingCapture;
+        std::array<float, 2> tapPoint{};
+        std::array<float, 2> swipeStart{}, swipeRelease{};
+        std::vector<uint8_t> loadedPartyBytes;
+        double loadedMinutes = 0.0;
+        std::ofstream trace(output / "trace.jsonl");
+        trace << std::boolalpha;
+        const auto report = [&](bool passed, const std::string &failure)
+        {
+            std::ofstream(output / "result.json") << std::boolalpha
+                << "{\"passed\":" << passed << ",\"failure\":" << jsonText(failure)
+                << ",\"phase\":" << jsonText(phase) << ",\"seed\":" << Seed << ",\"house_id\":" << houseId
+                << ",\"frames\":" << frames << ",\"elapsed_ms\":" << elapsedMs() << ",\"captures\":" << captures
+                << ",\"drawable\":[" << drawableWidth << ',' << drawableHeight << ']'
+                << ",\"press_did_not_play\":" << pressedWithoutPlaying
+                << ",\"release_played_card\":" << playedOnRelease << ",\"played_card_id\":" << playedCardId
+                << ",\"opponent_played\":" << opponentPlayed << ",\"human_turn_returned\":" << humanTurnReturned
+                << ",\"same_batch_swipe_discarded\":" << completedSwipe
+                << ",\"discarded_card_id\":" << discardedCardId << ",\"resigned_to_opponent\":" << resigned
+                << ",\"direct_component\":true,\"actual_tavern_entry\":false,\"party_defeat_accounting\":false,"
+                   "\"save_write\":false,\"campaign_frames\":0,\"new_unit_cases\":0,\"device\":false,"
+                   "\"visual_review\":\"required\"}\n";
+        };
+        const auto logicalPoint = [](float x, float y, int width, int height)
+        {
+            const float scale = std::min(width / 640.0f, height / 480.0f);
+            return std::array<float, 2>{(width - 640.0f * scale) * 0.5f + x * scale,
+                (height - 480.0f * scale) * 0.5f + y * scale};
+        };
+        const auto handPoint = [&](size_t handIndex, int width, int height)
+        {
+            const auto &hand = component->state().players[0].hand;
+            const size_t count = size_t(std::count_if(hand.begin(), hand.end(), [](int id) { return id >= 0; }));
+            require(count > 0 && handIndex < hand.size() && hand[handIndex] >= 0, "Missing actual hand target");
+            const float spacing = (640.0f - 96.0f * float(count)) / float(count + 1);
+            size_t ordinal = 0;
+            for (size_t index = 0; index < handIndex; ++index) if (hand[index] >= 0) ++ordinal;
+            return logicalPoint(spacing + float(ordinal) * (spacing + 96.0f) + 48.0f,
+                327.0f + 64.0f, width, height);
+        };
+        const auto queueFinger = [&](Uint32 type, const std::array<float, 2> &point)
+        {
+            SDL_Event event{};
+            event.type = type;
+            event.tfinger.windowID = SDL_GetWindowID(captureWindow());
+            event.tfinger.touchID = 191;
+            event.tfinger.fingerID = 191;
+            event.tfinger.x = point[0] / float(drawableWidth);
+            event.tfinger.y = point[1] / float(drawableHeight);
+            event.tfinger.pressure = type == SDL_EVENT_FINGER_UP ? 0.0f : 1.0f;
+            require(SDL_PushEvent(&event), "Cannot queue actual SDL finger event");
+        };
+        const auto capture = [&](const char *pName)
+        {
+            require(pendingCapture.empty() && captures < 2, "UI controls screenshot limit exceeded");
+            pendingCapture = pName;
+            bgfx::requestScreenShot(BGFX_INVALID_HANDLE, pendingCapture.c_str());
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal, "Actual Metal renderer required");
+                    require(game.initializeRenderer() && game.loadSessionFromPath(input),
+                        "Cannot load normal132 input");
+                    GameplayScreenRuntime &screen = game.m_gameSession.gameplayScreenRuntime();
+                    require(screen.ensureGameplayLayoutsLoaded(), "Cannot load production localized UI table");
+                    const ArcomageLibrary &library = game.m_gameDataLoader.getArcomageLibrary();
+                    require(!library.tavernRulesByHouseId.empty(), "Original Arcomage tavern rules are absent");
+                    houseId = std::min_element(library.tavernRulesByHouseId.begin(), library.tavernRulesByHouseId.end(),
+                        [](const auto &left, const auto &right) { return left.first < right.first; })->first;
+                    component = std::make_unique<ArcomageScreen>(*game.m_pAssetFileSystem, nullptr, library,
+                        houseId, "原档角色", "原酒馆对手", 0, Seed, screen.gameplayUiRuntime().uiTextTable());
+                    require(!component->shouldClose(), "Original rule could not initialize the component");
+                    loadedPartyBytes = encodePartySnapshotForComparison(game.m_pMapSceneRuntime->party().snapshot());
+                    loadedMinutes = game.m_gameSession.activeWorldRuntime()->gameMinutes();
+                    std::ofstream(output / "fixture.json")
+                        << "{\"scope\":\"Direct production ArcomageScreen component after loading a preserved "
+                           "normal132 save. No GameApplication render/update frames, actual tavern entrance, "
+                           "Party result accounting, save writes, altered rules or altered hands. SDL finger events "
+                           "pass through a GameInputSystem with gameplay touch, jump, flight and inspection disabled. "
+                           "Press and release one affordable non-repeat card, allow the original AI to return the "
+                           "human turn, discard with one same-batch upward swipe, and click the visible resign "
+                           "button. Component animation/AI advances at1/30s only while waiting; UI captures use0. "
+                           "Small-viewport inspect previews are outside this mode.\",\"runtime\":"
+                        << jsonText(runtime.string()) << ",\"input\":" << jsonText(input.string())
+                        << ",\"house_id\":" << houseId << ",\"seed\":" << Seed
+                        << ",\"wall_limit_seconds\":60,\"frame_limit\":600,\"capture_limit\":2,"
+                           "\"window_points\":[1210,834],\"new_unit_cases\":0,\"device\":false}\n";
+                    return true;
+                },
+                [&](const SDL_Event &event) { componentInput.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames <= 600 && elapsedMs() < 60000, "UI controls capture exceeded its bound");
+                    drawableWidth = width;
+                    drawableHeight = height;
+                    require(component != nullptr && width > 0 && height > 0, "Missing production component viewport");
+                    componentInput.updateFromEngineInput(width, height, wheel, settings,
+                        false, false, false, false, false);
+                    const GameplayInputFrame &frame = componentInput.frame();
+                    if (phase == "swipe-check")
+                    {
+                        require(frame.pointerFromTouch && frame.mobileTouchDragStarted && frame.mobileTouchDragReleased
+                            && std::abs(frame.mobileTouchDragStartX - swipeStart[0]) < 0.5f
+                            && std::abs(frame.mobileTouchDragStartY - swipeStart[1]) < 0.5f
+                            && std::abs(frame.pointerX - swipeRelease[0]) < 0.5f
+                            && std::abs(frame.pointerY - swipeRelease[1]) < 0.5f,
+                            "Same-batch swipe did not preserve real start/release coordinates");
+                    }
+                    const float delta = phase == "wait-human" || phase == "discard-animation" ? 1.0f / 30.0f : 0.0f;
+                    component->renderFrame(width, height, frame, delta);
+                    const ArcomageState &state = component->state();
+                    trace << "{\"frame\":" << frames << ",\"phase\":" << jsonText(phase)
+                        << ",\"player\":" << state.currentPlayerIndex
+                        << ",\"needs_turn_start\":" << state.needsTurnStart
+                        << ",\"touch\":" << frame.pointerFromTouch << ",\"left_held\":" << frame.leftMouseButton.held
+                        << ",\"drag_released\":" << frame.mobileTouchDragReleased << ",\"finished\":"
+                        << state.result.finished << "}\n";
+                    trace.flush();
+                    if (!pendingCapture.empty())
+                    {
+                        if (const auto image = Engine::BgfxContext::consumeScreenshot(pendingCapture))
+                        {
+                            SDL_Surface *pSurface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()),
+                                int(image->width * 4));
+                            require(pSurface != nullptr, "Cannot wrap UI controls screenshot");
+                            const bool saved = SDL_SaveBMP(pSurface, (output / (pendingCapture + ".bmp")).c_str());
+                            SDL_DestroySurface(pSurface);
+                            require(saved, "Cannot preserve UI controls screenshot");
+                            pendingCapture.clear();
+                            ++captures;
+                        }
+                    }
+                    const ArcomageLibrary &library = game.m_gameDataLoader.getArcomageLibrary();
+                    const ArcomageRules rules;
+                    if (phase == "warmup" && frames >= readyFrame)
+                    {
+                        require(state.currentPlayerIndex == 0 && !state.needsTurnStart && !state.result.finished,
+                            "Original component did not start a normal human turn");
+                        bool found = false;
+                        for (size_t index = 0; index < state.players[0].hand.size(); ++index)
+                        {
+                            const int id = state.players[0].hand[index];
+                            const ArcomageCardDefinition *pCard = id >= 0 ? library.cardById(uint32_t(id)) : nullptr;
+                            if (pCard != nullptr && !pCard->primary.playAgain && !pCard->secondary.playAgain
+                                && pCard->primary.extraDraw == 0 && pCard->secondary.extraDraw == 0
+                                && rules.canPlayCard(library, state, 0, index))
+                            {
+                                playedHandIndex = index;
+                                playedCardId = uint32_t(id);
+                                found = true;
+                                break;
+                            }
+                        }
+                        require(found && !state.lastPlayedCard,
+                            "Seed has no affordable ordinary card; retain this failure");
+                        tapPoint = handPoint(playedHandIndex, width, height);
+                        queueFinger(SDL_EVENT_FINGER_DOWN, tapPoint);
+                        phase = "press-check";
+                    }
+                    else if (phase == "press-check")
+                    {
+                        require(frame.pointerFromTouch && frame.leftMouseButton.held && !state.lastPlayedCard
+                            && state.players[0].hand[playedHandIndex] == int(playedCardId),
+                            "Touch press played or changed a card before release");
+                        pressedWithoutPlaying = true;
+                        capture("arcomage-touch-hints");
+                        phase = "hint-capture";
+                    }
+                    else if (phase == "hint-capture" && pendingCapture.empty())
+                    {
+                        queueFinger(SDL_EVENT_FINGER_UP, tapPoint);
+                        phase = "release-check";
+                    }
+                    else if (phase == "release-check")
+                    {
+                        require(frame.pointerFromTouch && frame.leftMouseButton.released
+                            && state.lastPlayedCard && state.lastPlayedCard->playerIndex == 0
+                            && state.lastPlayedCard->cardId == playedCardId && !state.lastPlayedCard->discarded
+                            && state.players[0].hand[playedHandIndex] != int(playedCardId)
+                            && state.currentPlayerIndex == 1 && !state.result.finished,
+                            "Actual touch release did not play exactly the selected ordinary card");
+                        playedOnRelease = true;
+                        playFrame = frames;
+                        phase = "wait-human";
+                    }
+                    else if (phase == "wait-human")
+                    {
+                        require(frames - playFrame <= 300 && !state.result.finished,
+                            "Original AI did not return a bounded turn");
+                        opponentPlayed = opponentPlayed
+                            || (state.lastPlayedCard && state.lastPlayedCard->playerIndex == 1);
+                        if (opponentPlayed && state.currentPlayerIndex == 0 && !state.needsTurnStart)
+                        {
+                            humanTurnReturned = true;
+                            bool found = false;
+                            for (size_t index = 0; index < state.players[0].hand.size(); ++index)
+                            {
+                                if (rules.canDiscardCard(library, state, 0, index))
+                                {
+                                    discardedHandIndex = index;
+                                    discardedCardId = uint32_t(state.players[0].hand[index]);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            require(found, "Returned original hand has no discardable card");
+                            swipeStart = handPoint(discardedHandIndex, width, height);
+                            swipeRelease = swipeStart;
+                            swipeRelease[1] -= 72.0f * std::min(width / 640.0f, height / 480.0f);
+                            queueFinger(SDL_EVENT_FINGER_DOWN, swipeStart);
+                            queueFinger(SDL_EVENT_FINGER_MOTION, swipeRelease);
+                            queueFinger(SDL_EVENT_FINGER_UP, swipeRelease);
+                            phase = "swipe-check";
+                        }
+                    }
+                    else if (phase == "swipe-check")
+                    {
+                        require(state.lastPlayedCard && state.lastPlayedCard->playerIndex == 0
+                            && state.lastPlayedCard->cardId == discardedCardId && state.lastPlayedCard->discarded
+                            && state.players[0].hand[discardedHandIndex] != int(discardedCardId),
+                            "Completed upward SDL swipe did not really discard the selected card");
+                        completedSwipe = true;
+                        phase = "discard-animation";
+                        readyFrame = frames + 18;
+                    }
+                    else if (phase == "discard-animation" && frames >= readyFrame)
+                    {
+                        require(state.lastPlayedCard && state.lastPlayedCard->discarded
+                            && state.lastPlayedCard->cardId == discardedCardId,
+                            "Discard table changed before its image");
+                        capture("arcomage-touch-discarded");
+                        phase = "discard-capture";
+                    }
+                    else if (phase == "discard-capture" && pendingCapture.empty())
+                    {
+                        const auto resignPoint = logicalPoint(594.0f, 296.0f, width, height);
+                        queueFinger(SDL_EVENT_FINGER_DOWN, resignPoint);
+                        queueFinger(SDL_EVENT_FINGER_UP, resignPoint);
+                        phase = "resign-check";
+                        readyFrame = frames + 3;
+                    }
+                    else if (phase == "resign-check" && frames >= readyFrame)
+                    {
+                        require(component->shouldClose() && state.result.finished && state.result.winnerIndex == 1
+                            && state.result.victoryKind == ArcomageVictoryKind::Resigned,
+                            "Visible resign button did not finish with the opponent as winner");
+                        resigned = true;
+                        require(captures == 2 && fileBytes(input) == originalBytes,
+                            "Capture count or preserved input changed");
+                        require(encodePartySnapshotForComparison(game.m_pMapSceneRuntime->party().snapshot())
+                                == loadedPartyBytes
+                            && game.m_gameSession.activeWorldRuntime()->gameMinutes() == loadedMinutes,
+                            "Direct component changed the loaded Party or campaign clock");
+                        complete = true;
+                        phase = "complete";
+                        SDL_Event quit{};
+                        quit.type = SDL_EVENT_QUIT;
+                        require(SDL_PushEvent(&quit), "Cannot queue normal component exit");
+                    }
+                },
+                [&]() { component.reset(); game.shutdownApplication(); });
+            require(app.run() == 0 && complete && elapsedMs() < 60000,
+                "UI controls component stopped before bounded completion");
+            require(fileBytes(input) == originalBytes, "Preserved source save changed during shutdown");
+            report(true, "");
+            return 0;
+        }
+        catch (const std::exception &failure)
+        {
+            report(false, failure.what());
+            throw;
+        }
+    }
+
     // A separate four-image preview for the newly localized labels; no reader/save replay.
     static int previewUiText(std::filesystem::path runtime, std::filesystem::path input,
         std::filesystem::path output)
@@ -270,6 +598,155 @@ struct ApplicationCaptureTestAccess
             << ",\"elapsed_ms\":" << elapsedMs()
             << ",\"visual_review\":\"required\",\"device\":false,\"campaign_replay\":false,"
                "\"save_write\":false,\"normal_frames\":0,\"new_unit_cases\":0}\n";
+        return 0;
+    }
+
+    static int previewSmallDetails(std::filesystem::path runtime, std::filesystem::path input,
+        std::filesystem::path output)
+    {
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "Detail preview output must be new");
+        const std::vector<char> originalBytes = fileBytes(input);
+        std::string error;
+        const auto source = loadGameDataFromPath(input, error);
+        require(source.has_value(), "Cannot read normal source save: " + error);
+        std::filesystem::create_directories(output);
+        std::filesystem::current_path(output);
+        std::ofstream(output / "fixture.json")
+            << "{\"scope\":\"Three direct inspect overlays on original normal132 input, original item514, "
+               "Learning skill and spell31 text. Small actual drawable; UI time0; no interactions, "
+               "campaign progression or save writes. Original save bytes retained.\",\"device\":false}\n";
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings(output / "settings.ini", settings, error), "Cannot save isolated settings");
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM small detail preview";
+        config.assetRoot = runtime.string();
+        config.activeWorldId = "mm7";
+        config.startupMapFileOverride = source->mapFileName;
+        config.windowWidth = 160;
+        config.windowHeight = 120;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        const std::array<const char *, 3> names{"small-item", "small-skill", "small-spell"};
+        unsigned frames = 0, readyFrame = 8, captured = 0;
+        int drawableWidth = 0, drawableHeight = 0;
+        bool complete = false;
+        std::string pending;
+        const auto started = std::chrono::steady_clock::now();
+        Engine::EngineApplication app(config,
+            [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+            [&]()
+            {
+                require(bgfx::getRendererType() == bgfx::RendererType::Metal, "Actual Metal renderer required");
+                return game.initializeRenderer() && game.loadSessionFromPath(input);
+            },
+            [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+            [&](int width, int height, float wheel, float)
+            {
+                require(++frames <= 180 && std::chrono::steady_clock::now() - started < std::chrono::seconds(45),
+                    "Small detail preview exceeded bound");
+                require(width > 0 && width < 385 && height > 0 && height <= 300,
+                    "Actual drawable must be smaller than the original detail root");
+                drawableWidth = width;
+                drawableHeight = height;
+                GameplayScreenRuntime &screen = game.m_gameSession.gameplayScreenRuntime();
+                screen.itemInspectOverlay() = {};
+                screen.characterInspectOverlay() = {};
+                screen.spellInspectOverlay() = {};
+                game.renderFrame(width, height, wheel, 0.0f);
+                if (complete) return;
+                if (captured == 0)
+                {
+                    auto &overlay = screen.itemInspectOverlay();
+                    overlay.active = true;
+                    overlay.objectDescriptionId = 514;
+                    overlay.sourceX = float(width) * 0.7f;
+                    overlay.sourceY = float(height) * 0.4f;
+                    overlay.sourceWidth = 24;
+                    overlay.sourceHeight = 24;
+                    GameplayPartyOverlayRenderer::renderItemInspectOverlay(screen, width, height);
+                }
+                else if (captured == 1)
+                {
+                    const auto *entry = screen.characterInspectTable()->getSkill("Learning");
+                    require(entry != nullptr, "Original Learning description missing");
+                    auto &overlay = screen.characterInspectOverlay();
+                    overlay.active = true;
+                    overlay.title = entry->name;
+                    overlay.body = entry->description;
+                    overlay.normal = {entry->normalDescription, 1, true};
+                    overlay.expert = {entry->expertDescription, 1, true};
+                    overlay.master = {entry->masterDescription, 1, true};
+                    overlay.grandmaster = {entry->grandmasterDescription, 1, true};
+                    overlay.sourceX = float(width) * 0.7f;
+                    overlay.sourceY = float(height) * 0.4f;
+                    overlay.sourceWidth = 24;
+                    overlay.sourceHeight = 24;
+                    GameplayPartyOverlayRenderer::renderCharacterInspectOverlay(screen, width, height);
+                }
+                else
+                {
+                    const auto *entry = screen.spellTable()->findById(31);
+                    require(entry != nullptr, "Original spell31 description missing");
+                    auto &overlay = screen.spellInspectOverlay();
+                    overlay.active = true;
+                    overlay.spellId = 31;
+                    overlay.school = entry->schoolName;
+                    overlay.hasManaCost = true;
+                    overlay.manaCost = entry->normalManaCost;
+                    overlay.title = entry->name;
+                    overlay.body = entry->description;
+                    overlay.normal = entry->normalText;
+                    overlay.expert = entry->expertText;
+                    overlay.master = entry->masterText;
+                    overlay.grandmaster = entry->grandmasterText;
+                    overlay.sourceX = float(width) * 0.7f;
+                    overlay.sourceY = float(height) * 0.4f;
+                    overlay.sourceWidth = 24;
+                    overlay.sourceHeight = 24;
+                    GameplayPartyOverlayRenderer::renderSpellInspectOverlay(screen, width, height);
+                }
+                if (!pending.empty())
+                {
+                    if (const auto image = Engine::BgfxContext::consumeScreenshot(pending))
+                    {
+                        SDL_Surface *surface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                            SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()),
+                            int(image->width * 4));
+                        require(surface != nullptr, "Cannot wrap detail image");
+                        const bool saved = SDL_SaveBMP(surface, (output / (pending + ".bmp")).c_str());
+                        SDL_DestroySurface(surface);
+                        require(saved, "Cannot write detail image");
+                        pending.clear();
+                        ++captured;
+                        readyFrame = frames + 4;
+                        if (captured == names.size())
+                        {
+                            require(fileBytes(input) == originalBytes, "Original save changed");
+                            complete = true;
+                            SDL_Event quit{};
+                            quit.type = SDL_EVENT_QUIT;
+                            require(SDL_PushEvent(&quit), "Cannot queue detail preview exit");
+                        }
+                    }
+                }
+                else if (frames >= readyFrame)
+                {
+                    pending = names[captured];
+                    bgfx::requestScreenShot(BGFX_INVALID_HANDLE, pending.c_str());
+                }
+            }, [&]() { game.shutdownApplication(); });
+        require(app.run() == 0 && complete, "Small detail preview incomplete");
+        std::ofstream(output / "result.json")
+            << "{\"passed\":true,\"frames\":" << frames << ",\"captures\":" << captured
+            << ",\"drawable\":[" << drawableWidth << ',' << drawableHeight
+            << "],\"visual_review\":\"required\",\"save_write\":false,\"normal_frames\":0,\"device\":false}\n";
         return 0;
     }
 
@@ -968,11 +1445,15 @@ int main(int argc, char **argv)
 {
     try
     {
+        if (argc == 5 && std::string_view(argv[4]) == "--small-details-only")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::previewSmallDetails(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string_view(argv[4]) == "--ui-text-only")
             return OpenYAMM::Game::ApplicationCaptureTestAccess::previewUiText(argv[1], argv[2], argv[3]);
+        if (argc == 5 && std::string_view(argv[4]) == "--ui-controls-only")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::previewUiControls(argv[1], argv[2], argv[3]);
         if (argc != 4)
             throw std::runtime_error("readable_scroll_capture COMPLETE_RUNTIME READONLY_NORMAL132_SEED NEW_OUTPUT "
-                "[--ui-text-only]");
+                "[--ui-text-only|--ui-controls-only|--small-details-only]");
         return OpenYAMM::Game::ApplicationCaptureTestAccess::run(argv[1], argv[2], argv[3]);
     }
     catch (const std::exception &failure)

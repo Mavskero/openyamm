@@ -1,6 +1,7 @@
 #include "game/ui/screens/ArcomageScreen.h"
 
 #include "game/audio/GameAudioSystem.h"
+#include "game/tables/UiTextTable.h"
 
 #include <SDL3/SDL.h>
 
@@ -27,9 +28,7 @@ constexpr float PlayCardMoveToTableSeconds = 7.0f * AnimationTickSeconds;
 constexpr float DiscardCardAnimationSeconds = 14.0f * AnimationTickSeconds;
 constexpr float AiTurnDelaySeconds = 0.75f;
 constexpr float ResultAutoCloseSeconds = 1.0f;
-#if defined(__ANDROID__)
-constexpr float AndroidDiscardSwipeDistance = 40.0f;
-#endif
+constexpr float TouchDiscardSwipeDistance = 40.0f;
 constexpr uint32_t GrayTintColorAbgr = 0xff9c9c9cu;
 constexpr uint32_t OeTextColorAbgr = 0xffffffffu;
 constexpr char ComicFontName[] = "comic";
@@ -127,10 +126,14 @@ ArcomageScreen::ArcomageScreen(
     const std::string &playerName,
     const std::string &opponentName,
     int winGoldReward,
-    uint32_t randomSeed)
+    uint32_t randomSeed,
+    const UiTextTable &uiText)
     : MenuScreenBase(assetFileSystem)
     , m_pGameAudioSystem(pGameAudioSystem)
     , m_pLibrary(&library)
+    , m_resignText(uiText.text(UiTextTable::Message::ArcomageResign))
+    , m_touchHintText(uiText.text(UiTextTable::Message::ArcomageTouchHint))
+    , m_discardHintText(uiText.text(UiTextTable::Message::ArcomageDiscardHint))
     , m_winGoldReward(winGoldReward)
 {
     if (!m_rules.initializeMatch(library, houseId, playerName, opponentName, randomSeed, m_state))
@@ -169,6 +172,7 @@ void ArcomageScreen::drawScreen(float deltaSeconds)
             static_cast<float>(frameHeight()) / LogicalHeight)
     };
 
+    m_touchInputUsed = m_touchInputUsed || inputFrame().pointerFromTouch;
     startTurnIfNeeded();
 
     drawTexture("Layout", Rect{layout.rootX, layout.rootY, LogicalWidth * layout.scale, LogicalHeight * layout.scale});
@@ -177,6 +181,20 @@ void ArcomageScreen::drawScreen(float deltaSeconds)
     drawShownCards(layout);
     const std::vector<HandCardPlacement> handPlacements = drawCurrentHand(layout);
     drawAnimatedCard(layout);
+
+    const bool resignInputConsumed = drawResignButton(layout);
+    if (m_shouldClose)
+    {
+        return;
+    }
+    if (resignInputConsumed || hasCardAnimation() || m_state.result.finished || m_state.currentPlayerIndex != 0)
+    {
+        m_touchPressedHandIndex.reset();
+    }
+    if (resignInputConsumed)
+    {
+        m_hoveredHandIndex.reset();
+    }
 
     if (hasCardAnimation())
     {
@@ -192,7 +210,10 @@ void ArcomageScreen::drawScreen(float deltaSeconds)
     }
     else if (m_state.currentPlayerIndex == 0)
     {
-        updateHumanInput(layout, handPlacements);
+        if (!resignInputConsumed)
+        {
+            updateHumanInput(layout, handPlacements);
+        }
     }
     else
     {
@@ -206,12 +227,18 @@ void ArcomageScreen::drawScreen(float deltaSeconds)
         drawScreenText(layout, ArrusFontName, hoverText, LogicalWidth * 0.5f, 458.0f, true);
     }
 
-#if !defined(__ANDROID__)
-    if (m_state.mustDiscard)
+    if (m_touchInputUsed && !m_state.result.finished && m_state.currentPlayerIndex == 0 && !hasCardAnimation())
+    {
+        constexpr float HintScale = 0.75f;
+        const float hintY = HandY - 10.0f - static_cast<float>(fontHeight(ArrusFontName)) * HintScale - 2.0f;
+        drawScreenText(layout, ArrusFontName,
+            m_state.mustDiscard ? m_discardHintText : m_touchHintText,
+            LogicalWidth * 0.5f, hintY, true, OeTextColorAbgr, HintScale);
+    }
+    else if (!m_touchInputUsed && m_state.mustDiscard)
     {
         drawScreenText(layout, ArrusFontName, "Right-click a card to discard.", LogicalWidth * 0.5f, 306.0f, true);
     }
-#endif
 }
 
 MenuScreenBase::Rect ArcomageScreen::scaleLogicalRect(const LogicalLayout &layout, const Rect &logicalRect) const
@@ -404,6 +431,52 @@ void ArcomageScreen::drawPanels(const LogicalLayout &layout)
         drawScreenText(layout, ComicFontName, std::to_string(player.recruits), 10.0f, 253.0f, false, OeTextColorAbgr);
         drawScreenText(layout, ComicFontName, std::to_string(enemy.recruits), 557.0f, 253.0f, false, OeTextColorAbgr);
     }
+}
+
+bool ArcomageScreen::drawResignButton(const LogicalLayout &layout)
+{
+    if (m_state.result.finished)
+    {
+        m_resignButtonPressed = false;
+        return false;
+    }
+
+    const Rect logicalRect = {555.0f, 280.0f, 78.0f, 32.0f};
+    const Rect buttonRect = scaleLogicalRect(layout, logicalRect);
+    const bool hovered = hitTest(buttonRect);
+    drawTextureRegionColor("Sprites", SourceRect{283.0f, 166.0f, 78.0f, 24.0f}, buttonRect,
+        m_resignButtonPressed && hovered ? GrayTintColorAbgr : OeTextColorAbgr);
+    drawScreenText(layout, ComicFontName, m_resignText,
+        logicalRect.x + logicalRect.width * 0.5f,
+        logicalRect.y + (logicalRect.height - static_cast<float>(fontHeight(ComicFontName))) * 0.5f,
+        true, OeTextColorAbgr);
+
+    if (leftMouseJustPressed() && hovered)
+    {
+        m_resignButtonPressed = true;
+        m_touchPressedHandIndex.reset();
+    }
+    if (!m_resignButtonPressed)
+    {
+        return false;
+    }
+
+    const GameplayInputFrame &input = inputFrame();
+    if (input.mobileTouchDragReleased)
+    {
+        m_resignButtonPressed = false;
+        return true;
+    }
+    if (!leftMouseDown())
+    {
+        m_resignButtonPressed = false;
+        if (hovered && m_rules.resign(0, m_state))
+        {
+            m_hoveredHandIndex.reset();
+            m_shouldClose = true;
+        }
+    }
+    return true;
 }
 
 void ArcomageScreen::drawShownCards(const LogicalLayout &layout)
@@ -707,21 +780,25 @@ void ArcomageScreen::updateHumanInput(
     if (inputFrame().scancodePressCount(SDL_SCANCODE_ESCAPE) != 0 || (escapeDown && !m_escapeLatch))
     {
         m_rules.resign(0, m_state);
+        m_touchPressedHandIndex.reset();
+        m_escapeLatch = escapeDown;
+        return;
     }
 
     m_escapeLatch = escapeDown;
 
-    if (!m_hoveredHandIndex.has_value() || m_pLibrary == nullptr)
+    if (inputFrame().pointerFromTouch || inputFrame().mobileTouchDragReleased)
     {
-#if defined(__ANDROID__)
-        updateAndroidHumanInput(layout, handPlacements);
-#endif
+        updateTouchHumanInput(layout, handPlacements);
         return;
     }
 
-#if defined(__ANDROID__)
-    updateAndroidHumanInput(layout, handPlacements);
-#else
+    m_touchPressedHandIndex.reset();
+    if (!m_hoveredHandIndex.has_value() || m_pLibrary == nullptr)
+    {
+        return;
+    }
+
     if (leftMouseJustPressed())
     {
         for (const HandCardPlacement &placement : handPlacements)
@@ -737,7 +814,6 @@ void ArcomageScreen::updateHumanInput(
             }
         }
     }
-#endif
 
     if (rightMouseJustPressed())
     {
@@ -752,13 +828,18 @@ void ArcomageScreen::updateHumanInput(
     }
 }
 
-#if defined(__ANDROID__)
-void ArcomageScreen::updateAndroidHumanInput(
+void ArcomageScreen::updateTouchHumanInput(
     const LogicalLayout &layout,
     const std::vector<HandCardPlacement> &handPlacements)
 {
     const GameplayInputFrame &input = inputFrame();
+    if (input.pointerX < 0.0f || input.pointerY < 0.0f)
+    {
+        m_touchPressedHandIndex.reset();
+        return;
+    }
 
+    // A complete swipe may arrive before any press frame was published.
     if (input.mobileTouchDragReleased)
     {
         const float logicalStartX = (input.mobileTouchDragStartX - layout.rootX) / layout.scale;
@@ -770,12 +851,15 @@ void ArcomageScreen::updateAndroidHumanInput(
 
         for (const HandCardPlacement &placement : handPlacements)
         {
-            if (logicalStartX >= placement.logicalRect.x
-                && logicalStartX <= placement.logicalRect.x + placement.logicalRect.width
-                && logicalStartY >= placement.logicalRect.y
-                && logicalStartY <= placement.logicalRect.y + placement.logicalRect.height)
+            const bool startedOnCard = m_touchPressedHandIndex
+                ? placement.handIndex == *m_touchPressedHandIndex
+                : logicalStartX >= placement.logicalRect.x
+                    && logicalStartX <= placement.logicalRect.x + placement.logicalRect.width
+                    && logicalStartY >= placement.logicalRect.y
+                    && logicalStartY <= placement.logicalRect.y + placement.logicalRect.height;
+            if (startedOnCard)
             {
-                if (upwardDistance >= AndroidDiscardSwipeDistance && upwardDistance >= horizontalDistance)
+                if (upwardDistance >= TouchDiscardSwipeDistance && upwardDistance >= horizontalDistance)
                 {
                     startCardAnimation(CardAnimationKind::DiscardCard, placement.handIndex, placement.logicalRect);
                 }
@@ -784,13 +868,13 @@ void ArcomageScreen::updateAndroidHumanInput(
             }
         }
 
-        m_androidPressedHandIndex.reset();
+        m_touchPressedHandIndex.reset();
         return;
     }
 
     if (leftMouseJustPressed())
     {
-        m_androidPressedHandIndex = m_hoveredHandIndex;
+        m_touchPressedHandIndex = m_hoveredHandIndex;
         return;
     }
 
@@ -799,12 +883,12 @@ void ArcomageScreen::updateAndroidHumanInput(
         return;
     }
 
-    if (m_androidPressedHandIndex.has_value()
-        && m_hoveredHandIndex == m_androidPressedHandIndex)
+    if (m_touchPressedHandIndex.has_value()
+        && m_hoveredHandIndex == m_touchPressedHandIndex)
     {
         for (const HandCardPlacement &placement : handPlacements)
         {
-            if (placement.handIndex == *m_androidPressedHandIndex)
+            if (placement.handIndex == *m_touchPressedHandIndex)
             {
                 startCardAnimation(
                     m_state.mustDiscard ? CardAnimationKind::DiscardCard : CardAnimationKind::PlayCard,
@@ -816,9 +900,8 @@ void ArcomageScreen::updateAndroidHumanInput(
         }
     }
 
-    m_androidPressedHandIndex.reset();
+    m_touchPressedHandIndex.reset();
 }
-#endif
 
 void ArcomageScreen::updateAiTurn(float deltaSeconds)
 {

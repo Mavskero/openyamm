@@ -9744,7 +9744,8 @@ bool GameApplication::processPendingArcomageGame()
         playerName,
         opponentName,
         winGoldReward,
-        SDL_GetTicks()
+        SDL_GetTicks(),
+        m_gameSession.gameplayScreenRuntime().gameplayUiRuntime().uiTextTable()
     ));
 
     return true;

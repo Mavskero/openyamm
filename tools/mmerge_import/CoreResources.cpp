@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 10> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 20> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -246,10 +246,23 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::Hours, 110},
         {UiMessage::Minute, 437},
         {UiMessage::Minutes, 436},
+        {UiMessage::ItemTypeFormat, 463},
+        {UiMessage::ItemStolen, 187},
+        {UiMessage::SpellSpCost, 522},
+        {UiMessage::ItemPower, 449},
+        {UiMessage::ItemAttack, 18},
+        {UiMessage::ItemShoot, 203},
+        {UiMessage::ItemDamage, 53},
+        {UiMessage::ItemCharges, 464},
+        {UiMessage::ItemArmor, 11},
+        {UiMessage::ItemValue, 465},
     }};
     // These short UI captions have no translated equivalents in the original GlobalTxt.
-    constexpr std::array<std::pair<UiMessage, const char *>, 3> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 6> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
+        {UiMessage::ArcomageResign, "认输"},
+        {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
+        {UiMessage::ArcomageDiscardHint, "请选择要弃掉的牌"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

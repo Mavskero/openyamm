@@ -1,0 +1,279 @@
+{
+  "checkpoint": 191,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-29T05:07:36.917509+00:00",
+  "source_base": "0ae6d1425948a7dca547c3678e431a834e65d154",
+  "scope": "Shared Arcomage touch play/discard, visible resign, viewport-fitting item/skill/spell details and original localized detail labels",
+  "runtime": "local-data/validation/ui-function-completion-191/runtime-005",
+  "actual_runtime": "local-data/validation/ui-function-completion-191/runtime-004",
+  "prior_accepted_results": [
+    "scoped-result.json",
+    "ui-text-result.json"
+  ],
+  "changes": [
+    "Replace Android-only touch policy with pointer-source-based handling: release to play, upward swipe to discard, including same-batch drag start/end. Cancel/invalid pointer clears selection; existing mouse controls retained.",
+    "Visible localized Resign button consumes its own gesture and calls existing rules/resign and application close/accounting path.",
+    "Measure complete item, skill and spell detail content at preferred scale, then uniformly fit to actual drawable viewport before valid pixel-bound placement.",
+    "Use original GlobalTxt for type, stolen marker, mana cost and seven observed item attribute captions, preserving numeric formatting. Typed table accepts current26 or complete legacy13/16/19 schemas with explicit defaults; reject other malformed tables."
+  ],
+  "checks": {
+    "build-native-014": {
+      "record": "local-data/validation/ui-function-completion-191/build-native-014.command.json",
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "readable_scroll_capture",
+        "core_import",
+        "-j3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 68.919
+    },
+    "core-import-002": {
+      "record": "local-data/validation/ui-function-completion-191/core-import-002.command.json",
+      "argv": [
+        "openyamm/build-apple/core_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "local-data/validation/ui-function-completion-191/core-ui-text-002"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.241
+    },
+    "assemble-runtime-004": {
+      "record": "local-data/validation/ui-function-completion-191/assemble-runtime-004.command.json",
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-191/assemble_runtime_controls.py"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.008
+    },
+    "ui-controls-preview-001": {
+      "record": "local-data/validation/ui-function-completion-191/ui-controls-preview-001.command.json",
+      "argv": [
+        "openyamm/build-apple/readable_scroll_capture",
+        "local-data/validation/ui-function-completion-191/runtime-004",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-191/ui-controls-001",
+        "--ui-controls-only"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 14.974
+    },
+    "small-details-preview-001": {
+      "record": "local-data/validation/ui-function-completion-191/small-details-preview-001.command.json",
+      "argv": [
+        "openyamm/build-apple/readable_scroll_capture",
+        "local-data/validation/ui-function-completion-191/runtime-004",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-191/small-details-001",
+        "--small-details-only"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 13.109
+    },
+    "build-native-015": {
+      "record": "local-data/validation/ui-function-completion-191/build-native-015.command.json",
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "readable_scroll_capture",
+        "core_import",
+        "-j3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 65.368
+    },
+    "core-import-003": {
+      "record": "local-data/validation/ui-function-completion-191/core-import-003.command.json",
+      "argv": [
+        "openyamm/build-apple/core_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "local-data/validation/ui-function-completion-191/core-ui-text-003"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.143
+    },
+    "assemble-runtime-005": {
+      "record": "local-data/validation/ui-function-completion-191/assemble-runtime-005.command.json",
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-191/assemble_runtime_detail_text.py"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.18
+    },
+    "build-ios-003": {
+      "record": "local-data/validation/ui-function-completion-191/build-ios-003.command.json",
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 48.427
+    }
+  },
+  "actual_arcomage": {
+    "passed": true,
+    "failure": "",
+    "phase": "complete",
+    "seed": 191,
+    "house_id": 228,
+    "frames": 201,
+    "elapsed_ms": 14853,
+    "captures": 2,
+    "drawable": [
+      2420,
+      1668
+    ],
+    "press_did_not_play": true,
+    "release_played_card": true,
+    "played_card_id": 49,
+    "opponent_played": true,
+    "human_turn_returned": true,
+    "same_batch_swipe_discarded": true,
+    "discarded_card_id": 32,
+    "resigned_to_opponent": true,
+    "direct_component": true,
+    "actual_tavern_entry": false,
+    "party_defeat_accounting": false,
+    "save_write": false,
+    "campaign_frames": 0,
+    "new_unit_cases": 0,
+    "device": false,
+    "visual_review": "required"
+  },
+  "actual_small_details": {
+    "passed": true,
+    "frames": 22,
+    "captures": 3,
+    "drawable": [
+      320,
+      240
+    ],
+    "visual_review": "required",
+    "save_write": false,
+    "normal_frames": 0,
+    "device": false
+  },
+  "fixtures": {
+    "arcomage": "Production Arcomage component with original rules/library, seed191 and house228, direct component entry. SDL finger events pass through GameInputSystem. No hand/rule/Party fixture; component animation/AI delta1/30 while waiting, capture delta0. Original normal132 file loaded but campaign update/render bypassed.",
+    "small_details": "Original normal132 loaded; direct item514, Learning skill and spell31 detail overlays at actual320x240 drawable. UI delta0; no inventory/skillbook/spellbook entry claim, no campaign time or save write.",
+    "original_input_files_preserved": true,
+    "gameplay_fixtures_shipped": false
+  },
+  "visual_review": "controls-visual-review.json",
+  "reviewed_images": 5,
+  "runtime_diffs": [
+    {
+      "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/core-ui-text-002/core_conversion.json",
+      "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-003",
+      "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-004",
+      "added_members": [],
+      "changed_members": [
+        "data_tables/ui_text.txt"
+      ],
+      "ui_text_sha256": "55f0b43ceada00953f93060c6bde4a512b3c2ebf0110c0d60da12ee88f49498d",
+      "all_other_archive_members_retained": true,
+      "controlled_gameplay_fixtures": false,
+      "release_created": false
+    },
+    {
+      "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/core-ui-text-003/core_conversion.json",
+      "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-004",
+      "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-005",
+      "added_members": [],
+      "changed_members": [
+        "data_tables/ui_text.txt"
+      ],
+      "ui_text_sha256": "ab97c9101fe415446307a9b50ec3ae68f812e3a04dec4bf062d664efd845f116",
+      "all_other_archive_members_retained": true,
+      "controlled_gameplay_fixtures": false,
+      "release_created": false
+    }
+  ],
+  "text_sources": {
+    "table": "data_tables/ui_text.txt",
+    "count": 26,
+    "original_globaltxt_count": 20,
+    "project_translation_count": 6,
+    "new_original_globaltxt_ids": {
+      "item_type": 463,
+      "item_stolen": 187,
+      "spell_sp_cost": 522,
+      "power": 449,
+      "attack": 18,
+      "shoot": 203,
+      "damage": 53,
+      "charges": 464,
+      "armor": 11,
+      "value": 465
+    },
+    "new_project_translations": {
+      "ui.arcomage_resign": "认输",
+      "ui.arcomage_touch_hint": "轻点出牌，上划弃牌",
+      "ui.arcomage_discard_hint": "请选择要弃掉的牌"
+    },
+    "legacy_complete_schemas": [
+      13,
+      16,
+      19
+    ],
+    "format_safety": "Item type accepts one %s and no other percent; substitutes strings without printf."
+  },
+  "source_build_only": [
+    "Final seven item attribute translations (runtime005), no repeat App check",
+    "Legacy schema migration and malformed-table rejection",
+    "Mouse/cancel/AI/result input variants outside executed touch flow",
+    "GameApplication Party defeat accounting after actual tavern entry"
+  ],
+  "limitations": [
+    "Direct component flow does not prove tavern entry or Party accounting.",
+    "Second Arcomage image has no discarded-card overlay; discard is verified by executed input/state assertions.",
+    "Small-detail source entry fixture supplies school text; no production spellbook school-label claim.",
+    "Earlier accepted flows are preserved without replay on final runtime005.",
+    "Final builds retain existing compiler warnings.",
+    "RC3 release attachments do not contain190/191 changes."
+  ],
+  "new_unit_cases": 0,
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "device_or_simulator": false,
+  "new_release": false,
+  "runtime_uploaded": false,
+  "save_version": 103,
+  "save_version_changed": false,
+  "full_goal_complete": false,
+  "all_ui_complete": false,
+  "natural_campaign": false,
+  "owned_jobs": [],
+  "agents": "All three Sol6.1/max writers completed/frozen; main integrated, built and inspected."
+}

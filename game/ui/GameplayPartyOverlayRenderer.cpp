@@ -2329,7 +2329,10 @@ std::string formatItemInspectDamageText(const std::string &damageDice, int bonus
     return damageDice + "+" + std::to_string(bonus);
 }
 
-std::string resolveItemInspectDetailText(const InventoryItem *pItemState, const ItemDefinition &itemDefinition)
+std::string resolveItemInspectDetailText(
+    const UiTextTable &uiText,
+    const InventoryItem *pItemState,
+    const ItemDefinition &itemDefinition)
 {
     const bool isBroken = pItemState != nullptr && pItemState->broken;
     const std::string &equipStat = itemDefinition.equipStat;
@@ -2340,12 +2343,12 @@ std::string resolveItemInspectDetailText(const InventoryItem *pItemState, const 
 
     if (equipStat == "Bottle" && pItemState != nullptr && pItemState->standardEnchantPower > 0)
     {
-        return "Power: " + std::to_string(pItemState->standardEnchantPower);
+        return uiText.text(UiTextTable::Message::ItemPower) + ": " + std::to_string(pItemState->standardEnchantPower);
     }
 
     if (equipStat == "Reagent" && hasMod1Int && mod1Value > 0)
     {
-        return "Power: " + std::to_string(mod1Value);
+        return uiText.text(UiTextTable::Message::ItemPower) + ": " + std::to_string(mod1Value);
     }
 
     if (equipStat == "Weapon" || equipStat == "Weapon2" || equipStat == "Weapon1or2")
@@ -2358,7 +2361,8 @@ std::string resolveItemInspectDetailText(const InventoryItem *pItemState, const 
             return isBroken ? "Broken" : std::string {};
         }
 
-        const std::string detail = "Attack: +" + std::to_string(attackBonus) + "   Damage: " + damageText;
+        const std::string detail = uiText.text(UiTextTable::Message::ItemAttack) + ": +" + std::to_string(attackBonus)
+            + "   " + uiText.text(UiTextTable::Message::ItemDamage) + ": " + damageText;
         return isBroken ? "Broken   " + detail : detail;
     }
 
@@ -2372,7 +2376,8 @@ std::string resolveItemInspectDetailText(const InventoryItem *pItemState, const 
             return isBroken ? "Broken" : std::string {};
         }
 
-        const std::string detail = "Shoot: +" + std::to_string(shootBonus) + "   Damage: " + damageText;
+        const std::string detail = uiText.text(UiTextTable::Message::ItemShoot) + ": +" + std::to_string(shootBonus)
+            + "   " + uiText.text(UiTextTable::Message::ItemDamage) + ": " + damageText;
         return isBroken ? "Broken   " + detail : detail;
     }
 
@@ -2390,7 +2395,8 @@ std::string resolveItemInspectDetailText(const InventoryItem *pItemState, const 
         if (maxCharges > 0)
         {
             const std::string detail =
-                "Charges: " + std::to_string(currentCharges) + "/" + std::to_string(maxCharges);
+                uiText.text(UiTextTable::Message::ItemCharges) + ": " + std::to_string(currentCharges)
+                + "/" + std::to_string(maxCharges);
             return isBroken ? "Broken   " + detail : detail;
         }
 
@@ -2411,7 +2417,7 @@ std::string resolveItemInspectDetailText(const InventoryItem *pItemState, const 
 
         if (armorValue > 0)
         {
-            const std::string detail = "Armor: +" + std::to_string(armorValue);
+            const std::string detail = uiText.text(UiTextTable::Message::ItemArmor) + ": +" + std::to_string(armorValue);
             return isBroken ? "Broken   " + detail : detail;
         }
 
@@ -2467,6 +2473,44 @@ std::string formatItemInspectDuration(float remainingSeconds)
     }
 
     return text;
+}
+
+std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> fitInspectPopupRootRect(
+    const GameplayUiViewportRect &viewport,
+    const GameplayScreenRuntime::ResolvedHudLayoutElement &source,
+    float preferredWidth,
+    float preferredHeight,
+    float preferredScale)
+{
+    const float left = std::ceil(viewport.x);
+    const float top = std::ceil(viewport.y);
+    const float right = std::floor(viewport.x + viewport.width);
+    const float bottom = std::floor(viewport.y + viewport.height);
+    const float availableWidth = right - left;
+    const float availableHeight = bottom - top;
+    if (availableWidth < 1.0f || availableHeight < 1.0f || preferredWidth <= 0.0f || preferredHeight <= 0.0f)
+    {
+        return std::nullopt;
+    }
+
+    // Logical wrap widths stay fixed; callers apply this fit to every measured section.
+    const float fit = std::min({1.0f, availableWidth / preferredWidth, availableHeight / preferredHeight});
+    const float scale = preferredScale * fit;
+    const float width = std::clamp(std::round(preferredWidth * fit), 1.0f, availableWidth);
+    const float height = std::clamp(std::round(preferredHeight * fit), 1.0f, availableHeight);
+    const float gap = 12.0f * scale;
+    float x = source.x + source.width + gap;
+    if (x + width > right)
+    {
+        x = source.x - width - gap;
+    }
+    const float y = source.y + (source.height - preferredHeight * fit) * 0.5f;
+    return GameplayScreenRuntime::ResolvedHudLayoutElement{
+        std::clamp(std::round(x), left, right - width),
+        std::clamp(std::round(y), top, bottom - height),
+        width,
+        height,
+        scale};
 }
 
 float resolvedLayoutFontScale(const GameplayScreenRuntime::HudLayoutElement &layout, float scale)
@@ -5708,7 +5752,8 @@ void GameplayPartyOverlayRenderer::renderItemInspectOverlay(GameplayScreenRuntim
 
     const GameplayUiViewportRect uiViewport = GameplayHudCommon::computeUiViewportRect(width, height);
     const float baseScale = std::min(uiViewport.width / HudReferenceWidth, uiViewport.height / HudReferenceHeight);
-    const float popupScale = std::clamp(baseScale, pRootLayout->minScale, pRootLayout->maxScale);
+    const float sizingScale = std::clamp(baseScale, pRootLayout->minScale, pRootLayout->maxScale);
+    const UiTextTable &uiText = context.gameplayUiRuntime().uiTextTable();
     const InventoryItem *pItemState = overlay.hasItemState ? &overlay.itemState : nullptr;
     InventoryItem defaultItemState = {};
     defaultItemState.objectDescriptionId = overlay.objectDescriptionId;
@@ -5732,7 +5777,7 @@ void GameplayPartyOverlayRenderer::renderItemInspectOverlay(GameplayScreenRuntim
     const std::string itemDetail =
         showBrokenOnly || showUnidentifiedOnly
             ? std::string {}
-            : resolveItemInspectDetailText(pItemState, *pItemDefinition);
+            : resolveItemInspectDetailText(uiText, pItemState, *pItemDefinition);
     const std::string enchantDescription = ItemEnchantRuntime::buildEnchantDescription(
         resolvedItemState,
         context.standardItemEnchantTable(),
@@ -5809,8 +5854,8 @@ void GameplayPartyOverlayRenderer::renderItemInspectOverlay(GameplayScreenRuntim
             : std::nullopt;
     const std::optional<GameplayScreenRuntime::HudFontHandle> bodyFont = context.findHudFont("SMALLNUM");
     const GameplayScreenRuntime::HudFontHandle *pBodyFont = bodyFont ? &*bodyFont : nullptr;
-    const float bodyLineHeight =
-        pBodyFont != nullptr ? static_cast<float>(pBodyFont->fontHeight) * popupScale : 12.0f * popupScale;
+    const float sizingBodyLineHeight =
+        pBodyFont != nullptr ? static_cast<float>(pBodyFont->fontHeight) * sizingScale : 12.0f * sizingScale;
 
     const GameplayScreenRuntime::HudLayoutElement *pPreviewLayout = context.findHudLayoutElement("ItemInspectPreviewImage");
     const GameplayScreenRuntime::HudLayoutElement *pTypeLayout = context.findHudLayoutElement("ItemInspectType");
@@ -5829,137 +5874,144 @@ void GameplayPartyOverlayRenderer::renderItemInspectOverlay(GameplayScreenRuntim
         return;
     }
 
-    const float previewImageWidth =
-        itemTexture ? static_cast<float>(itemTexture->width) * popupScale : pPreviewLayout->width * popupScale;
-    const float previewImageHeight =
-        itemTexture ? static_cast<float>(itemTexture->height) * popupScale : pPreviewLayout->height * popupScale;
+    const float sizingPreviewImageWidth =
+        itemTexture ? static_cast<float>(itemTexture->width) * sizingScale : pPreviewLayout->width * sizingScale;
+    const float sizingPreviewImageHeight =
+        itemTexture ? static_cast<float>(itemTexture->height) * sizingScale : pPreviewLayout->height * sizingScale;
     const GameplayScreenRuntime::ResolvedHudLayoutElement provisionalRoot = {
         0.0f,
         0.0f,
-        pRootLayout->width * popupScale,
-        pRootLayout->height * popupScale,
-        popupScale
+        pRootLayout->width * sizingScale,
+        pRootLayout->height * sizingScale,
+        sizingScale
     };
     const GameplayScreenRuntime::ResolvedHudLayoutElement previewRectForSizing =
         GameplayHudCommon::resolveAttachedHudLayoutRect(
             pPreviewLayout->attachTo,
             provisionalRoot,
-            previewImageWidth,
-            previewImageHeight,
+            sizingPreviewImageWidth,
+            sizingPreviewImageHeight,
             pPreviewLayout->gapX,
             pPreviewLayout->gapY,
-            popupScale);
+            sizingScale);
     const GameplayScreenRuntime::ResolvedHudLayoutElement typeRectForSizing =
         GameplayHudCommon::resolveAttachedHudLayoutRect(
             pTypeLayout->attachTo,
             provisionalRoot,
-            pTypeLayout->width * popupScale,
-            pTypeLayout->height * popupScale,
+            pTypeLayout->width * sizingScale,
+            pTypeLayout->height * sizingScale,
             pTypeLayout->gapX,
             pTypeLayout->gapY,
-            popupScale);
+            sizingScale);
     const GameplayScreenRuntime::ResolvedHudLayoutElement descriptionRectForSizing =
         GameplayHudCommon::resolveAttachedHudLayoutRect(
             pDescriptionLayout->attachTo,
             provisionalRoot,
-            pDescriptionLayout->width * popupScale,
-            pDescriptionLayout->height * popupScale,
+            pDescriptionLayout->width * sizingScale,
+            pDescriptionLayout->height * sizingScale,
             pDescriptionLayout->gapX,
             pDescriptionLayout->gapY,
-            popupScale);
+            sizingScale);
     const float descriptionWidthScaled =
-        std::max(0.0f, descriptionRectForSizing.width - std::abs(pDescriptionLayout->textPadX * popupScale) * 2.0f);
-    const float descriptionWidth = std::max(0.0f, descriptionWidthScaled / std::max(1.0f, popupScale));
+        std::max(0.0f, descriptionRectForSizing.width - std::abs(pDescriptionLayout->textPadX * sizingScale) * 2.0f);
+    const float descriptionWidth = std::max(0.0f, descriptionWidthScaled / sizingScale);
     const std::vector<std::string> descriptionLines =
         pBodyFont != nullptr
             ? context.wrapHudTextToWidth(*pBodyFont, itemDescription, descriptionWidth)
             : std::vector<std::string>{itemDescription};
     const bool showDetail = !itemDetail.empty();
     const bool showSpecialDetail = !itemSpecialDetail.empty();
-    const float descriptionHeight =
-        itemDescription.empty() || descriptionLines.empty() ? 0.0f : bodyLineHeight * static_cast<float>(descriptionLines.size());
-    const float detailRowHeight = pDetailRowLayout->height * popupScale;
+    const float sizingDescriptionHeight = itemDescription.empty() || descriptionLines.empty()
+        ? 0.0f : sizingBodyLineHeight * static_cast<float>(descriptionLines.size());
+    const float sizingDetailRowHeight = pDetailRowLayout->height * sizingScale;
     const std::optional<GameplayScreenRuntime::HudFontHandle> detailFont =
         context.findHudFont(pDetailValueLayout->fontName);
     const GameplayScreenRuntime::HudFontHandle *pDetailFont = detailFont ? &*detailFont : nullptr;
-    float detailFontScale = popupScale * std::max(0.1f, pDetailValueLayout->textScale);
+    float sizingDetailFontScale = sizingScale * std::max(0.1f, pDetailValueLayout->textScale);
 
-    if (detailFontScale >= 1.0f)
+    if (sizingDetailFontScale >= 1.0f)
     {
-        detailFontScale = snappedHudFontScale(detailFontScale);
+        sizingDetailFontScale = snappedHudFontScale(sizingDetailFontScale);
     }
     else
     {
-        detailFontScale = std::max(0.5f, detailFontScale);
+        sizingDetailFontScale = std::max(0.5f, sizingDetailFontScale);
     }
 
-    const float detailLineHeight =
-        pDetailFont != nullptr ? static_cast<float>(pDetailFont->fontHeight) * detailFontScale : detailRowHeight;
+    const float sizingDetailLineHeight =
+        pDetailFont != nullptr
+            ? static_cast<float>(pDetailFont->fontHeight) * sizingDetailFontScale : sizingDetailRowHeight;
     const float detailTextWidthScaled = std::max(
         0.0f,
-        pDetailValueLayout->width * popupScale - std::abs(pDetailValueLayout->textPadX * popupScale) * 2.0f);
-    const float detailTextWidth = std::max(0.0f, detailTextWidthScaled / std::max(0.1f, detailFontScale));
+        pDetailValueLayout->width * sizingScale - std::abs(pDetailValueLayout->textPadX * sizingScale) * 2.0f);
+    const float detailTextWidth = std::max(0.0f, detailTextWidthScaled / sizingDetailFontScale);
     const std::vector<std::string> specialDetailLines =
         showSpecialDetail && pDetailFont != nullptr
             ? context.wrapHudTextToWidth(*pDetailFont, itemSpecialDetail, detailTextWidth)
             : std::vector<std::string>{itemSpecialDetail};
-    const float specialDetailHeight = showSpecialDetail
+    const float sizingSpecialDetailHeight = showSpecialDetail
         ? std::max(
-            detailRowHeight,
-            detailLineHeight * static_cast<float>(std::max<size_t>(1, specialDetailLines.size())))
+            sizingDetailRowHeight,
+            sizingDetailLineHeight * static_cast<float>(std::max<size_t>(1, specialDetailLines.size())))
         : 0.0f;
-    const float valueFontScale = resolvedLayoutFontScale(*pValueLayout, popupScale);
+    const float sizingValueFontScale = resolvedLayoutFontScale(*pValueLayout, sizingScale);
     const std::optional<GameplayScreenRuntime::HudFontHandle> valueFont =
         context.findHudFont(pValueLayout->fontName);
     const float valueLineHeight =
-        valueFont ? static_cast<float>(valueFont->fontHeight) * valueFontScale : pValueLayout->height * popupScale;
-    const float durationHeight = showDuration ? valueLineHeight : 0.0f;
+        valueFont
+            ? static_cast<float>(valueFont->fontHeight) * sizingValueFontScale : pValueLayout->height * sizingScale;
+    const float sizingDurationHeight = showDuration ? valueLineHeight : 0.0f;
     const int detailRowCount = (showDetail ? 1 : 0) + (showSpecialDetail ? 1 : 0);
     static constexpr float ItemInspectTypeToDetailGap = 3.0f;
     static constexpr float ItemInspectDetailToDescriptionGap = 8.0f;
     static constexpr float ItemInspectDescriptionToValueGap = 8.0f;
     static constexpr float ItemInspectBottomPadding = 8.0f;
-    const float detailSectionHeight = detailRowCount > 0
-        ? ItemInspectTypeToDetailGap * popupScale
-            + (showDetail ? detailRowHeight : 0.0f)
-            + (showSpecialDetail ? specialDetailHeight : 0.0f)
-            + ItemInspectTypeToDetailGap * popupScale * static_cast<float>(detailRowCount - 1)
+    const float sizingDetailSectionHeight = detailRowCount > 0
+        ? ItemInspectTypeToDetailGap * sizingScale
+            + (showDetail ? sizingDetailRowHeight : 0.0f)
+            + (showSpecialDetail ? sizingSpecialDetailHeight : 0.0f)
+            + ItemInspectTypeToDetailGap * sizingScale * static_cast<float>(detailRowCount - 1)
         : 0.0f;
-    const float descriptionSectionHeight =
-        descriptionHeight > 0.0f ? ItemInspectDetailToDescriptionGap * popupScale + descriptionHeight : 0.0f;
-    const float previewContentHeight = previewImageHeight + 20.0f * popupScale;
-    const float statusContentHeight = previewImageHeight + 54.0f * popupScale;
+    const float descriptionSectionHeight = sizingDescriptionHeight > 0.0f
+        ? ItemInspectDetailToDescriptionGap * sizingScale + sizingDescriptionHeight : 0.0f;
+    const float previewContentHeight = sizingPreviewImageHeight + 20.0f * sizingScale;
+    const float statusContentHeight = sizingPreviewImageHeight + 54.0f * sizingScale;
     const float textContentHeight =
         typeRectForSizing.y
         + typeRectForSizing.height
-        + detailSectionHeight
+        + sizingDetailSectionHeight
         + descriptionSectionHeight
-        + ItemInspectDescriptionToValueGap * popupScale
-        + durationHeight
-        + pValueLayout->height * popupScale
-        + ItemInspectBottomPadding * popupScale;
-    const float rootWidth = provisionalRoot.width;
-    const float rootHeight = showStatusOnly
+        + ItemInspectDescriptionToValueGap * sizingScale
+        + sizingDurationHeight
+        + pValueLayout->height * sizingScale
+        + ItemInspectBottomPadding * sizingScale;
+    const float preferredRootHeight = showStatusOnly
         ? std::max(statusContentHeight, previewContentHeight)
         : std::max(previewContentHeight, textContentHeight);
-    const float popupGap = 12.0f * popupScale;
-    float rootX = overlay.sourceX + overlay.sourceWidth + popupGap;
-
-    if (rootX + rootWidth > uiViewport.x + uiViewport.width)
+    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> fittedRoot = fitInspectPopupRootRect(
+        uiViewport,
+        {overlay.sourceX, overlay.sourceY, overlay.sourceWidth, overlay.sourceHeight, sizingScale},
+        provisionalRoot.width,
+        preferredRootHeight,
+        sizingScale);
+    if (!fittedRoot)
     {
-        rootX = overlay.sourceX - rootWidth - popupGap;
+        return;
     }
-
-    rootX = std::clamp(rootX, uiViewport.x, uiViewport.x + uiViewport.width - rootWidth);
-    float rootY = overlay.sourceY + (overlay.sourceHeight - rootHeight) * 0.5f;
-    rootY = std::clamp(rootY, uiViewport.y, uiViewport.y + uiViewport.height - rootHeight);
-    const GameplayScreenRuntime::ResolvedHudLayoutElement rootRect = {
-        std::round(rootX),
-        std::round(rootY),
-        std::round(rootWidth),
-        std::round(rootHeight),
-        popupScale
-    };
+    const GameplayScreenRuntime::ResolvedHudLayoutElement rootRect = *fittedRoot;
+    const float popupScale = rootRect.scale;
+    const float viewportFit = popupScale / sizingScale;
+    const float bodyLineHeight = sizingBodyLineHeight * viewportFit;
+    const float previewImageWidth = sizingPreviewImageWidth * viewportFit;
+    const float previewImageHeight = sizingPreviewImageHeight * viewportFit;
+    const float descriptionHeight = sizingDescriptionHeight * viewportFit;
+    const float detailRowHeight = sizingDetailRowHeight * viewportFit;
+    const float detailFontScale = sizingDetailFontScale * viewportFit;
+    const float detailLineHeight = sizingDetailLineHeight * viewportFit;
+    const float specialDetailHeight = sizingSpecialDetailHeight * viewportFit;
+    const float valueFontScale = sizingValueFontScale * viewportFit;
+    const float durationHeight = sizingDurationHeight * viewportFit;
+    const float detailSectionHeight = sizingDetailSectionHeight * viewportFit;
 
     setupHudProjection(width, height);
 
@@ -6158,7 +6210,7 @@ void GameplayPartyOverlayRenderer::renderItemInspectOverlay(GameplayScreenRuntim
         return;
     }
 
-    renderSingleLine("ItemInspectType", "Type: " + itemType);
+    renderSingleLine("ItemInspectType", uiText.formatItemType(itemType));
 
     const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> typeRect =
         resolveItemInspectLayout("ItemInspectType");
@@ -6308,7 +6360,7 @@ void GameplayPartyOverlayRenderer::renderItemInspectOverlay(GameplayScreenRuntim
             context.renderLayoutLabel(*pValueLayout, durationRect, durationText);
         }
 
-        const std::string valueText = "Value: " + itemValue;
+        const std::string valueText = uiText.text(UiTextTable::Message::ItemValue) + ": " + itemValue;
         context.renderLayoutLabel(*pValueLayout, valueRect, valueText);
 
         if (showStolen && valueFont)
@@ -6321,7 +6373,9 @@ void GameplayPartyOverlayRenderer::renderItemInspectOverlay(GameplayScreenRuntim
                 valueRect.y
                 + (valueRect.height - static_cast<float>(valueFont->fontHeight) * valueFontScale) * 0.5f
                 + pValueLayout->textPadY * popupScale);
-            context.renderHudTextLine(pValueLayout->fontName, 0xff0000ffu, "Stolen", stolenX, stolenY, valueFontScale);
+            context.renderHudTextLine(
+                pValueLayout->fontName, 0xff0000ffu, uiText.text(UiTextTable::Message::ItemStolen),
+                stolenX, stolenY, valueFontScale);
         }
     }
 }
@@ -6363,34 +6417,35 @@ void GameplayPartyOverlayRenderer::renderCharacterInspectOverlay(GameplayScreenR
 
     const GameplayUiViewportRect uiViewport = GameplayHudCommon::computeUiViewportRect(width, height);
     const float baseScale = std::min(uiViewport.width / HudReferenceWidth, uiViewport.height / HudReferenceHeight);
-    const float popupScale = std::clamp(baseScale, pRootLayout->minScale, pRootLayout->maxScale);
+    const float sizingScale = std::clamp(baseScale, pRootLayout->minScale, pRootLayout->maxScale);
     const GameplayScreenRuntime::ResolvedHudLayoutElement provisionalRoot = {
         0.0f,
         0.0f,
-        pRootLayout->width * popupScale,
-        pRootLayout->height * popupScale,
-        popupScale
+        pRootLayout->width * sizingScale,
+        pRootLayout->height * sizingScale,
+        sizingScale
     };
     const std::optional<GameplayScreenRuntime::HudFontHandle> bodyFont = context.findHudFont("SMALLNUM");
     const GameplayScreenRuntime::HudFontHandle *pBodyFont = bodyFont ? &*bodyFont : nullptr;
-    const float bodyLineHeight =
-        pBodyFont != nullptr ? static_cast<float>(pBodyFont->fontHeight) * popupScale : 12.0f * popupScale;
+    const float sizingBodyLineHeight =
+        pBodyFont != nullptr ? static_cast<float>(pBodyFont->fontHeight) * sizingScale : 12.0f * sizingScale;
     const GameplayScreenRuntime::ResolvedHudLayoutElement bodyRectForSizing = GameplayHudCommon::resolveAttachedHudLayoutRect(
         pBodyLayout->attachTo,
         provisionalRoot,
-        pBodyLayout->width * popupScale,
-        pBodyLayout->height * popupScale,
+        pBodyLayout->width * sizingScale,
+        pBodyLayout->height * sizingScale,
         pBodyLayout->gapX,
         pBodyLayout->gapY,
-        popupScale);
+        sizingScale);
     const float bodyWidthScaled =
-        std::max(0.0f, bodyRectForSizing.width - std::abs(pBodyLayout->textPadX * popupScale) * 2.0f);
-    const float bodyWidth = std::max(0.0f, bodyWidthScaled / std::max(1.0f, popupScale));
+        std::max(0.0f, bodyRectForSizing.width - std::abs(pBodyLayout->textPadX * sizingScale) * 2.0f);
+    const float bodyWidth = std::max(0.0f, bodyWidthScaled / sizingScale);
     const std::vector<std::string> bodyLines =
         pBodyFont != nullptr
             ? context.wrapHudTextToWidth(*pBodyFont, overlay.body, bodyWidth)
             : std::vector<std::string>{overlay.body};
-    const float bodyHeight = bodyLines.empty() ? bodyLineHeight : bodyLineHeight * static_cast<float>(bodyLines.size());
+    const float sizingBodyHeight = bodyLines.empty()
+        ? sizingBodyLineHeight : sizingBodyLineHeight * static_cast<float>(bodyLines.size());
     const bool showNormal = overlay.normal.visible && !overlay.normal.text.empty();
     const bool showExpert = overlay.expert.visible && !overlay.expert.text.empty();
     const bool showMaster = overlay.master.visible && !overlay.master.text.empty();
@@ -6402,7 +6457,9 @@ void GameplayPartyOverlayRenderer::renderCharacterInspectOverlay(GameplayScreenR
     static constexpr float CharacterInspectBottomPadding = 15.0f;
 
     const auto resolveWrappedMasteryLines =
-        [&context, popupScale](const GameplayScreenRuntime::HudLayoutElement &layout, const std::string &text) -> std::vector<std::string>
+        [&context, sizingScale](
+            const GameplayScreenRuntime::HudLayoutElement &layout,
+            const std::string &text) -> std::vector<std::string>
         {
             const std::optional<GameplayScreenRuntime::HudFontHandle> font = context.findHudFont(layout.fontName);
             const GameplayScreenRuntime::HudFontHandle *pFont = font ? &*font : nullptr;
@@ -6413,18 +6470,20 @@ void GameplayPartyOverlayRenderer::renderCharacterInspectOverlay(GameplayScreenR
             }
 
             const float maxWidthScaled =
-                std::max(0.0f, layout.width * popupScale - std::abs(layout.textPadX * popupScale) * 2.0f);
-            const float maxWidth = std::max(0.0f, maxWidthScaled / std::max(1.0f, popupScale));
+                std::max(0.0f, layout.width * sizingScale - std::abs(layout.textPadX * sizingScale) * 2.0f);
+            const float maxWidth = std::max(0.0f, maxWidthScaled / sizingScale);
             return context.wrapHudTextToWidth(*pFont, text, maxWidth);
         };
 
     const auto masteryRowHeight =
-        [&context, popupScale](const GameplayScreenRuntime::HudLayoutElement &layout, const std::vector<std::string> &lines) -> float
+        [&context, sizingScale](
+            const GameplayScreenRuntime::HudLayoutElement &layout,
+            const std::vector<std::string> &lines) -> float
         {
             const std::optional<GameplayScreenRuntime::HudFontHandle> font = context.findHudFont(layout.fontName);
             const GameplayScreenRuntime::HudFontHandle *pFont = font ? &*font : nullptr;
             const float lineHeight =
-                pFont != nullptr ? static_cast<float>(pFont->fontHeight) * popupScale : layout.height * popupScale;
+                pFont != nullptr ? static_cast<float>(pFont->fontHeight) * sizingScale : layout.height * sizingScale;
             return std::max(lineHeight, lineHeight * static_cast<float>(std::max<size_t>(1, lines.size())));
         };
 
@@ -6465,37 +6524,33 @@ void GameplayPartyOverlayRenderer::renderCharacterInspectOverlay(GameplayScreenR
         {
             masteryHeight += (pLayout == pSkillBonusLayout
                 ? CharacterInspectSkillBonusGap
-                : CharacterInspectRowGap) * popupScale;
+                : CharacterInspectRowGap) * sizingScale;
         }
 
         masteryHeight += masteryRowHeight(*pLayout, *pLines);
         hasAnyMasteryRows = true;
     }
 
-    const float rootWidth = provisionalRoot.width;
-    const float rootHeight =
+    const float preferredRootHeight =
         bodyRectForSizing.y
-        + bodyHeight
-        + (hasAnyMasteryRows ? CharacterInspectBodyToRowsGap * popupScale + masteryHeight : 0.0f)
-        + CharacterInspectBottomPadding * popupScale;
-    const float popupGap = 12.0f * popupScale;
-    float rootX = overlay.sourceX + overlay.sourceWidth + popupGap;
-
-    if (rootX + rootWidth > uiViewport.x + uiViewport.width)
+        + sizingBodyHeight
+        + (hasAnyMasteryRows ? CharacterInspectBodyToRowsGap * sizingScale + masteryHeight : 0.0f)
+        + CharacterInspectBottomPadding * sizingScale;
+    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> fittedRoot = fitInspectPopupRootRect(
+        uiViewport,
+        {overlay.sourceX, overlay.sourceY, overlay.sourceWidth, overlay.sourceHeight, sizingScale},
+        provisionalRoot.width,
+        preferredRootHeight,
+        sizingScale);
+    if (!fittedRoot)
     {
-        rootX = overlay.sourceX - rootWidth - popupGap;
+        return;
     }
-
-    rootX = std::clamp(rootX, uiViewport.x, uiViewport.x + uiViewport.width - rootWidth);
-    float rootY = overlay.sourceY + (overlay.sourceHeight - rootHeight) * 0.5f;
-    rootY = std::clamp(rootY, uiViewport.y, uiViewport.y + uiViewport.height - rootHeight);
-    const GameplayScreenRuntime::ResolvedHudLayoutElement rootRect = {
-        std::round(rootX),
-        std::round(rootY),
-        std::round(rootWidth),
-        std::round(rootHeight),
-        popupScale
-    };
+    const GameplayScreenRuntime::ResolvedHudLayoutElement rootRect = *fittedRoot;
+    const float popupScale = rootRect.scale;
+    const float viewportFit = popupScale / sizingScale;
+    const float bodyLineHeight = sizingBodyLineHeight * viewportFit;
+    const float bodyHeight = sizingBodyHeight * viewportFit;
 
     setupHudProjection(width, height);
 
@@ -6865,40 +6920,43 @@ void GameplayPartyOverlayRenderer::renderSpellInspectOverlay(GameplayScreenRunti
 
     const GameplayUiViewportRect uiViewport = GameplayHudCommon::computeUiViewportRect(width, height);
     const float baseScale = std::min(uiViewport.width / HudReferenceWidth, uiViewport.height / HudReferenceHeight);
-    const float popupScale = std::clamp(baseScale, pRootLayout->minScale, pRootLayout->maxScale);
+    const float sizingScale = std::clamp(baseScale, pRootLayout->minScale, pRootLayout->maxScale);
     const GameplayScreenRuntime::ResolvedHudLayoutElement provisionalRoot = {
         0.0f,
         0.0f,
-        pRootLayout->width * popupScale,
-        pRootLayout->height * popupScale,
-        popupScale
+        pRootLayout->width * sizingScale,
+        pRootLayout->height * sizingScale,
+        sizingScale
     };
     const std::optional<GameplayScreenRuntime::HudFontHandle> bodyFont = context.findHudFont("SMALLNUM");
     const GameplayScreenRuntime::HudFontHandle *pBodyFont = bodyFont ? &*bodyFont : nullptr;
-    const float bodyLineHeight =
-        pBodyFont != nullptr ? static_cast<float>(pBodyFont->fontHeight) * popupScale : 12.0f * popupScale;
+    const float sizingBodyLineHeight =
+        pBodyFont != nullptr ? static_cast<float>(pBodyFont->fontHeight) * sizingScale : 12.0f * sizingScale;
     const GameplayScreenRuntime::ResolvedHudLayoutElement bodyRectForSizing = GameplayHudCommon::resolveAttachedHudLayoutRect(
         pBodyLayout->attachTo,
         provisionalRoot,
-        pBodyLayout->width * popupScale,
-        pBodyLayout->height * popupScale,
+        pBodyLayout->width * sizingScale,
+        pBodyLayout->height * sizingScale,
         pBodyLayout->gapX,
         pBodyLayout->gapY,
-        popupScale);
+        sizingScale);
     const float bodyWidthScaled =
-        std::max(0.0f, bodyRectForSizing.width - std::abs(pBodyLayout->textPadX * popupScale) * 2.0f);
-    const float bodyWidth = std::max(0.0f, bodyWidthScaled / std::max(1.0f, popupScale));
+        std::max(0.0f, bodyRectForSizing.width - std::abs(pBodyLayout->textPadX * sizingScale) * 2.0f);
+    const float bodyWidth = std::max(0.0f, bodyWidthScaled / sizingScale);
     const std::vector<std::string> bodyLines =
         pBodyFont != nullptr
             ? context.wrapHudTextToWidth(*pBodyFont, overlay.body, bodyWidth)
             : std::vector<std::string>{overlay.body};
-    const float bodyHeight = bodyLines.empty() ? bodyLineHeight : bodyLineHeight * static_cast<float>(bodyLines.size());
+    const float sizingBodyHeight = bodyLines.empty()
+        ? sizingBodyLineHeight : sizingBodyLineHeight * static_cast<float>(bodyLines.size());
     static constexpr float SpellInspectBodyToRowsGap = 10.0f;
     static constexpr float SpellInspectRowGap = 2.0f;
     static constexpr float SpellInspectBottomPadding = 15.0f;
 
     const auto resolveWrappedLines =
-        [&context, popupScale](const GameplayScreenRuntime::HudLayoutElement &layout, const std::string &text) -> std::vector<std::string>
+        [&context, sizingScale](
+            const GameplayScreenRuntime::HudLayoutElement &layout,
+            const std::string &text) -> std::vector<std::string>
         {
             const std::optional<GameplayScreenRuntime::HudFontHandle> font = context.findHudFont(layout.fontName);
             const GameplayScreenRuntime::HudFontHandle *pFont = font ? &*font : nullptr;
@@ -6909,18 +6967,20 @@ void GameplayPartyOverlayRenderer::renderSpellInspectOverlay(GameplayScreenRunti
             }
 
             const float maxWidthScaled =
-                std::max(0.0f, layout.width * popupScale - std::abs(layout.textPadX * popupScale) * 2.0f);
-            const float maxWidth = std::max(0.0f, maxWidthScaled / std::max(1.0f, popupScale));
+                std::max(0.0f, layout.width * sizingScale - std::abs(layout.textPadX * sizingScale) * 2.0f);
+            const float maxWidth = std::max(0.0f, maxWidthScaled / sizingScale);
             return context.wrapHudTextToWidth(*pFont, text, maxWidth);
         };
 
     const auto rowHeight =
-        [&context, popupScale](const GameplayScreenRuntime::HudLayoutElement &layout, const std::vector<std::string> &lines) -> float
+        [&context, sizingScale](
+            const GameplayScreenRuntime::HudLayoutElement &layout,
+            const std::vector<std::string> &lines) -> float
         {
             const std::optional<GameplayScreenRuntime::HudFontHandle> font = context.findHudFont(layout.fontName);
             const GameplayScreenRuntime::HudFontHandle *pFont = font ? &*font : nullptr;
             const float lineHeight =
-                pFont != nullptr ? static_cast<float>(pFont->fontHeight) * popupScale : layout.height * popupScale;
+                pFont != nullptr ? static_cast<float>(pFont->fontHeight) * sizingScale : layout.height * sizingScale;
             return std::max(lineHeight, lineHeight * static_cast<float>(std::max<size_t>(1, lines.size())));
         };
 
@@ -6956,37 +7016,33 @@ void GameplayPartyOverlayRenderer::renderSpellInspectOverlay(GameplayScreenRunti
 
         if (hasRows)
         {
-            rowsHeight += SpellInspectRowGap * popupScale;
+            rowsHeight += SpellInspectRowGap * sizingScale;
         }
 
         rowsHeight += rowHeight(*pLayout, *pLines);
         hasRows = true;
     }
 
-    const float rootWidth = provisionalRoot.width;
-    const float rootHeight =
+    const float preferredRootHeight =
         bodyRectForSizing.y
-        + bodyHeight
-        + (hasRows ? SpellInspectBodyToRowsGap * popupScale + rowsHeight : 0.0f)
-        + SpellInspectBottomPadding * popupScale;
-    const float popupGap = 12.0f * popupScale;
-    float rootX = overlay.sourceX + overlay.sourceWidth + popupGap;
-
-    if (rootX + rootWidth > uiViewport.x + uiViewport.width)
+        + sizingBodyHeight
+        + (hasRows ? SpellInspectBodyToRowsGap * sizingScale + rowsHeight : 0.0f)
+        + SpellInspectBottomPadding * sizingScale;
+    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> fittedRoot = fitInspectPopupRootRect(
+        uiViewport,
+        {overlay.sourceX, overlay.sourceY, overlay.sourceWidth, overlay.sourceHeight, sizingScale},
+        provisionalRoot.width,
+        preferredRootHeight,
+        sizingScale);
+    if (!fittedRoot)
     {
-        rootX = overlay.sourceX - rootWidth - popupGap;
+        return;
     }
-
-    rootX = std::clamp(rootX, uiViewport.x, uiViewport.x + uiViewport.width - rootWidth);
-    float rootY = overlay.sourceY + (overlay.sourceHeight - rootHeight) * 0.5f;
-    rootY = std::clamp(rootY, uiViewport.y, uiViewport.y + uiViewport.height - rootHeight);
-    const GameplayScreenRuntime::ResolvedHudLayoutElement rootRect = {
-        std::round(rootX),
-        std::round(rootY),
-        std::round(rootWidth),
-        std::round(rootHeight),
-        popupScale
-    };
+    const GameplayScreenRuntime::ResolvedHudLayoutElement rootRect = *fittedRoot;
+    const float popupScale = rootRect.scale;
+    const float viewportFit = popupScale / sizingScale;
+    const float bodyLineHeight = sizingBodyLineHeight * viewportFit;
+    const float bodyHeight = sizingBodyHeight * viewportFit;
 
     setupHudProjection(width, height);
 
@@ -7114,7 +7170,8 @@ void GameplayPartyOverlayRenderer::renderSpellInspectOverlay(GameplayScreenRunti
 
     renderSingleLine("SpellInspectTitle", overlay.title);
     renderSingleLine("SpellInspectSchool", overlay.school);
-    renderSingleLine("SpellInspectSpCostLabel", overlay.hasManaCost ? "SP Cost" : "");
+    renderSingleLine("SpellInspectSpCostLabel", overlay.hasManaCost
+        ? context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::SpellSpCost) : "");
     renderSingleLine("SpellInspectSpCostValue", overlay.hasManaCost ? std::to_string(overlay.manaCost) : "");
 
     if (pBodyFont != nullptr)

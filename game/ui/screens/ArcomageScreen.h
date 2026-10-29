@@ -8,6 +8,7 @@
 namespace OpenYAMM::Game
 {
 class GameAudioSystem;
+class UiTextTable;
 
 class ArcomageScreen : public MenuScreenBase
 {
@@ -20,7 +21,8 @@ public:
         const std::string &playerName,
         const std::string &opponentName,
         int winGoldReward,
-        uint32_t randomSeed);
+        uint32_t randomSeed,
+        const UiTextTable &uiText);
 
     AppMode mode() const override;
 
@@ -70,6 +72,7 @@ private:
         std::optional<size_t> hoveredHandIndex) const;
     void drawBuildings(const LogicalLayout &layout);
     void drawPanels(const LogicalLayout &layout);
+    bool drawResignButton(const LogicalLayout &layout);
     void drawShownCards(const LogicalLayout &layout);
     void drawAnimatedCard(const LogicalLayout &layout);
     std::vector<HandCardPlacement> drawCurrentHand(const LogicalLayout &layout);
@@ -83,11 +86,9 @@ private:
         uint32_t colorAbgr = 0xffffffffu,
         float scale = 1.0f);
     void updateHumanInput(const LogicalLayout &layout, const std::vector<HandCardPlacement> &handPlacements);
-#if defined(__ANDROID__)
-    void updateAndroidHumanInput(
+    void updateTouchHumanInput(
         const LogicalLayout &layout,
         const std::vector<HandCardPlacement> &handPlacements);
-#endif
     void updateAiTurn(float deltaSeconds);
     void updateResultDelay(float deltaSeconds);
     void updateCardAnimation(float deltaSeconds);
@@ -111,13 +112,16 @@ private:
 
     GameAudioSystem *m_pGameAudioSystem = nullptr;
     const ArcomageLibrary *m_pLibrary = nullptr;
+    std::string m_resignText;
+    std::string m_touchHintText;
+    std::string m_discardHintText;
     ArcomageRules m_rules;
     ArcomageAi m_ai;
     ArcomageState m_state = {};
     mutable std::optional<size_t> m_hoveredHandIndex;
-#if defined(__ANDROID__)
-    std::optional<size_t> m_androidPressedHandIndex;
-#endif
+    std::optional<size_t> m_touchPressedHandIndex;
+    bool m_touchInputUsed = false;
+    bool m_resignButtonPressed = false;
     bool m_escapeLatch = false;
     bool m_shouldClose = false;
     std::optional<CardAnimation> m_cardAnimation;

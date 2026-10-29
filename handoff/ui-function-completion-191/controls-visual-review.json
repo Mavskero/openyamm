@@ -1,0 +1,36 @@
+{
+  "reviewed_at": "2026-10-29T05:02:51.359063+00:00",
+  "method": "Main inspected all five actual Metal PNGs via view_image; lossless sips conversion from BMP.",
+  "images": [
+    {
+      "file": "local-data/validation/ui-function-completion-191/ui-controls-001/arcomage-touch-hints.png",
+      "sha256": "6fef7614a3b1c687722802a81dcdb4a0b8707e053ca4dbb4b9509bf5347f88b4",
+      "accepted_scoped": true,
+      "observation": "Chinese touch hint and visible Resign button fit above the hand; actual card faces visible. Fixture player/opponent names are not accepted as name-layout coverage."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/ui-controls-001/arcomage-touch-discarded.png",
+      "sha256": "6a602d4618a33964f390e6d68d5ba7b6c74898c75bd8ac71b26e1591e7cbb78d",
+      "accepted_scoped": true,
+      "observation": "Opponent-turn card backs and visible Resign button are present. No discarded-card overlay is visible in this capture; discard is accepted from executed input/state assertions only."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/small-details-001/small-item.png",
+      "sha256": "704e7173f4ef396b99bea7968eb8b89594652c19408807f9def451c23149ab7c",
+      "accepted_scoped": true,
+      "observation": "Actual320x240: complete item panel and Chinese title/type/body remain inside screen; Armor/Value English captions prompted final source-localization follow-up, not a replay."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/small-details-001/small-skill.png",
+      "sha256": "3a4e9ea53bed80d9e57e46af65e6e5ad4ceec676604bcf23203f418af3be793c",
+      "accepted_scoped": true,
+      "observation": "Actual320x240: skill panel, original Learning description and four mastery rows remain inside screen."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/small-details-001/small-spell.png",
+      "sha256": "4b78ab47b3b538ed031a108d82cc9553f72f99d2a4cdb17f76745eef416b62a7",
+      "accepted_scoped": true,
+      "observation": "Actual320x240: spell panel, original spell31 description/mastery rows and Chinese SP cost label remain inside screen. School text comes directly from the declared entry fixture; no production spellbook school claim."
+    }
+  ]
+}
