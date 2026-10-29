@@ -10,6 +10,7 @@ These rules apply to all AI-generated contributions in this repository.
   Save105(reads104). Production8cdae9215; UI214/Combat223/navigation222. Fixed214/195/RC1–3 retained.
   No newbuild/App/case/device/campaign replay or device matrix. Later receipt-only commits do not retarget
   release source. FullgoalACTIVE/~85%lowconfidence; natural campaign andnewtarget-iPad acceptance unproved.
+  Notification failed: Codex app-server unavailable; GitHub delivery is complete, do not claim message sent.
 
 - 229 ACCEPTED_SCOPED: `handoff/paperdoll-left-arm-229/scoped-result.json`.
   Original early/late left-arm model nowshared bycomposite/fallback:Down LHd/LHo,Up LHu/LHc,Out LHo/LHf;

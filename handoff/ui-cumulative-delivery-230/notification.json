@@ -1,0 +1,23 @@
+{
+  "attempted_at": "2026-10-29T20:14:51.106Z",
+  "thread_id": "01a182d6-6146-7813-a3fe-b25ff695a1f5",
+  "host_id": "remote-control:env_e_6a81fa1c1e70832ba41378f19f596343",
+  "authorization": "User explicitly requested notification in the designated thread after upload.",
+  "status": "FAILED_APP_SERVER_UNAVAILABLE",
+  "delivered": false,
+  "tool_result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Codex app-server is not available"
+      }
+    ],
+    "isError": true
+  },
+  "release_tag": "ipados-ui-cumulative-229-20261030",
+  "source_head": "6f2c6216471d709bdf4cb136cfc6f1fdfebd6a6b",
+  "receipt_commit": "05b0907bba4c29cd72d096c1b967640f9115f6cc",
+  "all16_artifacts_verified": true,
+  "new_device_matrix_requested": false,
+  "retry_attempts": 0
+}

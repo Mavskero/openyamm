@@ -33,7 +33,7 @@
     "Original App/runtime",
     "All original saves"
   ],
-  "notification_status": "NOT_YET_ATTEMPTED",
+  "notification_status": "FAILED_APP_SERVER_UNAVAILABLE",
   "goal_status": "active",
   "engineering_estimate_percent": 85,
   "estimate_confidence": "low",
@@ -48,5 +48,8 @@
     "published": "remote-published-verification.json",
     "final": "remote-final-verification.json",
     "receipt": "delivery.json"
-  }
+  },
+  "notification_record": "notification.json",
+  "receipt_commit": "05b0907bba4c29cd72d096c1b967640f9115f6cc",
+  "receipt_push_exit_code": 0
 }
