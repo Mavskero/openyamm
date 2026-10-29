@@ -82,6 +82,8 @@ private:
 
     GameplayInputFrame m_frame = {};
     uint64_t m_inputFrameId = 0;
+    uint64_t m_keyboardFocusGeneration = 0;
+    bool m_keyboardFocusActive = true;
     std::string m_pendingTextInput;
     std::array<uint16_t, SDL_SCANCODE_COUNT> m_pendingKeyboardPressCounts = {};
     std::deque<SDL_MouseButtonEvent> m_pendingMouseButtons;

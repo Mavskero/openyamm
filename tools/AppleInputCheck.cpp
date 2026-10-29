@@ -691,6 +691,10 @@ elements:
         std::cout << "World attack input passed: transient tap, release, modal cancellation, hold and inspect.\n";
 
         {
+            SDL_Event yellFocusGained = {};
+            yellFocusGained.type = SDL_EVENT_WINDOW_FOCUS_GAINED;
+            input.handleSdlEvent(yellFocusGained);
+            update();
             struct YellWorld : OpenYAMM::Tests::PartySpellTestWorldRuntime
             {
                 int fleeCalls = 0;
@@ -739,6 +743,8 @@ elements:
                     "Configured Yell tap was not preserved as one input edge");
                 yellFrame(input.frame());
             };
+            // Establish the new session's focus generation before its first action.
+            yellFrame(input.frame());
             makeInvisible();
             const int initialMana = yellParty.activeMember()->spellPoints;
             const float initialRecovery = yellParty.activeMember()->recoverySecondsRemaining;
@@ -782,9 +788,50 @@ elements:
                 && yellParty.activeMember()->recoverySecondsRemaining == turnRecovery,
                 "Turn-based Yell must only break invisibility without fleeing or spending the turn");
             yellCombat.end(&yellParty);
+
+            // A held-frame fixture exercises the actual monotonic repeat timer.
+            // SDL event injection above supplies taps, not native held-key polling.
+            GameplayInputFrame repeatingYell = input.frame();
+            repeatingYell.actions[keyboardActionIndex(KeyboardAction::Yell)] = {};
+            repeatingYell.keyboardHeld[SDL_SCANCODE_V] = false;
+            ++repeatingYell.frameId;
+            yellFrame(repeatingYell);
+            const int beforeHoldCalls = yellWorld.fleeCalls;
+            repeatingYell.actions[keyboardActionIndex(KeyboardAction::Yell)].pressed = true;
+            repeatingYell.actions[keyboardActionIndex(KeyboardAction::Yell)].held = true;
+            repeatingYell.keyboardHeld[SDL_SCANCODE_V] = true;
+            ++repeatingYell.frameId;
+            yellFrame(repeatingYell);
+            require(yellWorld.fleeCalls == beforeHoldCalls + 1, "Held Yell lost its initial press");
+            repeatingYell.actions[keyboardActionIndex(KeyboardAction::Yell)].pressed = false;
+            ++repeatingYell.frameId;
+            yellFrame(repeatingYell);
+            require(yellWorld.fleeCalls == beforeHoldCalls + 1, "Held Yell repeated before its first delay");
+            SDL_Delay(550);
+            ++repeatingYell.frameId;
+            yellFrame(repeatingYell);
+            require(yellWorld.fleeCalls == beforeHoldCalls + 2, "Held Yell missed its first repeat");
+            yellFrame(repeatingYell);
+            require(yellWorld.fleeCalls == beforeHoldCalls + 2, "Yell repeated twice for one input frame");
+            SDL_Delay(90);
+            ++repeatingYell.frameId;
+            yellFrame(repeatingYell);
+            require(yellWorld.fleeCalls == beforeHoldCalls + 3, "Held Yell missed its subsequent repeat");
+            input.handleSdlEvent(focusLost);
+            input.handleSdlEvent(yellFocusGained);
+            update();
+            repeatingYell.keyboardFocusGeneration = input.frame().keyboardFocusGeneration;
+            repeatingYell.keyboardFocusActive = input.frame().keyboardFocusActive;
+            ++repeatingYell.frameId;
+            yellFrame(repeatingYell);
+            SDL_Delay(90);
+            ++repeatingYell.frameId;
+            yellFrame(repeatingYell);
+            require(yellWorld.fleeCalls == beforeHoldCalls + 3,
+                "Focus loss and gain between frames resumed the old held Yell");
             settings.keyboard.setBinding(KeyboardAction::Yell, originalYellBinding);
             yellSession.bindActiveWorldRuntime(nullptr);
-            std::cout << "Yell input passed: configured tap, held fixture, modal, incapacity and turn-based rules.\n";
+            std::cout << "Yell input passed: configured tap, held timer fixture, focus interruption, modal, incapacity and turn-based rules.\n";
         }
 
         const auto restFrame = [&]()

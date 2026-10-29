@@ -1,5 +1,7 @@
 # Implement the configured Yell action 211
 
+Followups: [213 actual outdoor response](../yell-actual-213/README.md) and [214 hold-repeat](../yell-repeat-214/README.md) supersede the initial fresh-press-only limit below. Original211 results remain historical.
+
 The Keyboard page offered Yell, but no gameplay consumer handled it. A fresh press now requires normal gameplay and an active character who can act, removes party Invisibility, and requests the existing Yell speech/portrait reaction. Real-time play also asks the active world to apply the nearby-actor response. Turn-based play keeps speech and invisibility removal without actor flight or turn/recovery cost.
 
 Input gating checks both before and after UI handling so closing a modal does not pass the same gesture through. Existing source-action gating and settings bindings are respected. Holding the key does not repeat; the original OpenEnroth 500 ms/67 ms key-repeat behavior is intentionally outside this first implementation.

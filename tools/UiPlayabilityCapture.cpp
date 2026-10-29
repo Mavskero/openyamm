@@ -17,16 +17,21 @@
 #include "game/ui/Utf8Text.h"
 #include "game/ui/screens/LoadGameScreen.h"
 #include "game/ui/screens/NewGameScreen.h"
+#include <CommonCrypto/CommonDigest.h>
 #include <SDL3/SDL.h>
 #include <bgfx/bgfx.h>
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <limits>
+#include <sstream>
 #include <stdexcept>
+#include <vector>
 
 namespace OpenYAMM::Game
 {
@@ -99,6 +104,271 @@ struct NewGameScreenTestAccess
 };
 struct ApplicationCaptureTestAccess
 {
+    static int runYell(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
+    {
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "Yell output must be new");
+        const auto fileHash = [](const std::filesystem::path &path)
+        {
+            const uintmax_t length = std::filesystem::file_size(path);
+            require(length > 0 && length <= 64 * 1024 * 1024, "Unexpected Yell save size");
+            std::vector<uint8_t> bytes(size_t(length), 0);
+            std::ifstream file(path, std::ios::binary);
+            require(bool(file.read(reinterpret_cast<char *>(bytes.data()), std::streamsize(bytes.size()))),
+                "Cannot read Yell input for SHA256");
+            std::array<unsigned char, CC_SHA256_DIGEST_LENGTH> digest{};
+            CC_SHA256(bytes.data(), CC_LONG(bytes.size()), digest.data());
+            std::ostringstream hash;
+            for (unsigned char byte : digest)
+                hash << std::hex << std::setfill('0') << std::setw(2) << unsigned(byte);
+            return hash.str();
+        };
+        const std::string inputHash = fileHash(input);
+        std::string error;
+        const auto source = loadGameDataFromPath(input, error);
+        require(source && source->currentSceneKind == SceneKind::Outdoor && source->mapFileName == "oute3.odm",
+            "Expected original normal132 MM6 oute3 input");
+        std::filesystem::create_directories(output / "saves");
+        std::filesystem::copy_file(input, output / "input.oysav");
+        require(fileHash(output / "input.oysav") == inputHash, "Yell input copy changed");
+        std::filesystem::current_path(output);
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings("settings.ini", settings, error), "Cannot write isolated Yell settings");
+        std::ofstream("fixture.txt") << "211 first actual Yell: normal132 MM6 oute3 save copied unchanged. "
+            "Select nearest original friendly, living, visible, mobile, nonstationary, nonflying actor without fear/stun/paralysis; "
+            "no actor/HP/AI/quest edits. Only party position 320 units south of that actor and camera yaw pi/2, pitch0 "
+            "are fixtures. Initialization/captures use delta0, then180normal1/60frames. Actual SDL configured Yell "
+            "down/up once; no direct action call or repeat.2screenshots/<60seconds; new isolated settings/saves only. "
+            "Dummy audio: no audible speech/device/natural campaign acceptance. Failures retained without retry.\n";
+        std::ofstream("input.json") << "{\"path\":" << std::quoted(input.string())
+            << ",\"sha256\":" << std::quoted(inputHash) << ",\"map\":" << std::quoted(source->mapFileName) << "}\n";
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM Yell211";
+        config.assetRoot = runtime.string();
+        config.activeWorldId = "mm6";
+        config.startupMapFileOverride = source->mapFileName;
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        unsigned phase = 0, frames = 0, captures = 0, normalFrames = 0;
+        size_t actorIndex = static_cast<size_t>(-1);
+        OutdoorWorldRuntime::MapActorState originalActor;
+        SDL_Scancode yellBinding = SDL_SCANCODE_UNKNOWN;
+        bool complete = false;
+        std::string pending;
+        std::ofstream trace("observations.jsonl");
+        trace << std::setprecision(9);
+        const auto started = std::chrono::steady_clock::now();
+        const auto screen = [&]() -> GameplayScreenRuntime & { return game.m_gameSession.gameplayScreenRuntime(); };
+        const auto selectedActor = [&]()
+        {
+            require(game.m_pOutdoorWorldRuntime != nullptr, "Yell outdoor runtime disappeared");
+            const auto *actor = game.m_pOutdoorWorldRuntime->mapActorState(actorIndex);
+            require(actor && actor->actorId == originalActor.actorId && actor->monsterId == originalActor.monsterId,
+                "Yell selected actor identity changed");
+            return actor;
+        };
+        const auto observe = [&](const char *stage)
+        {
+            const auto *actor = selectedActor();
+            trace << "{\"stage\":" << std::quoted(stage) << ",\"frame\":" << frames << ",\"phase\":" << phase
+                << ",\"normal_frames\":" << normalFrames << ",\"actor_index\":" << actorIndex
+                << ",\"actor_id\":" << actor->actorId << ",\"monster_id\":" << actor->monsterId
+                << ",\"ai_state\":" << int(actor->aiState) << ",\"animation\":" << int(actor->animation)
+                << ",\"hp\":" << actor->currentHp << ",\"dead\":" << actor->isDead
+                << ",\"removed\":" << actor->isSourceRemoved() << ",\"hostility\":" << unsigned(actor->hostilityType)
+                << ",\"hostile_to_party\":" << actor->hostileToParty << ",\"ally\":" << actor->ally
+                << ",\"action_seconds\":" << actor->actionSeconds << ",\"move_speed\":" << actor->moveSpeed
+                << ",\"immobile\":" << actor->immobile << ",\"can_fly\":" << actor->canFly
+                << ",\"paralyze_seconds\":" << actor->paralyzeRemainingSeconds
+                << ",\"fear_seconds\":" << actor->fearRemainingSeconds << ",\"stun_seconds\":" << actor->stunRemainingSeconds
+                << ",\"name\":" << std::quoted(actor->displayName)
+                << ",\"actor_pose\":[" << actor->preciseX << ',' << actor->preciseY << ',' << actor->preciseZ
+                << "],\"party_pose\":[" << game.m_pOutdoorPartyRuntime->partyX() << ','
+                << game.m_pOutdoorPartyRuntime->partyY() << ',' << game.m_pOutdoorPartyRuntime->partyFootZ()
+                << "],\"camera\":[" << game.m_outdoorGameView.cameraYawRadians() << ','
+                << game.m_outdoorGameView.cameraPitchRadians() << "]}\n";
+            trace.flush();
+        };
+        const auto capture = [&](const char *name)
+        {
+            require(pending.empty() && captures < 2, "Yell capture budget exceeded");
+            pending = name;
+            bgfx::requestScreenShot(BGFX_INVALID_HANDLE, name);
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(game.initializeRenderer() && game.loadSessionFromPath(output / "input.oysav"),
+                        "Yell initial load failed");
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal, "Metal required");
+                    require(game.m_pOutdoorWorldRuntime && game.m_pOutdoorPartyRuntime, "Yell outdoor scene missing");
+                    const auto &monsters = game.m_gameDataRepository.monsterTable();
+                    float nearestDistanceSquared = std::numeric_limits<float>::max();
+                    for (size_t i = 0; i < game.m_pOutdoorWorldRuntime->mapActorCount(); ++i)
+                    {
+                        const auto *actor = game.m_pOutdoorWorldRuntime->mapActorState(i);
+                        if (!actor || actor->isSourceRemoved() || actor->isDead || actor->isInvisible
+                            || actor->currentHp <= 0 || actor->hostileToParty || actor->hostilityType != 0
+                            || actor->immobile || actor->canFly || actor->moveSpeed == 0
+                            || actor->paralyzeRemainingSeconds > 0 || actor->fearRemainingSeconds > 0
+                            || actor->stunRemainingSeconds > 0
+                            || actor->aiState == OutdoorWorldRuntime::ActorAiState::Fleeing
+                            || actor->aiState == OutdoorWorldRuntime::ActorAiState::Dying
+                            || actor->aiState == OutdoorWorldRuntime::ActorAiState::Dead) continue;
+                        const auto *stats = monsters.findStatsById(actor->monsterId);
+                        if (!stats || stats->movementType == MonsterTable::MonsterMovementType::Stationary) continue;
+                        const float dx = actor->preciseX - game.m_pOutdoorPartyRuntime->partyX();
+                        const float dy = actor->preciseY - game.m_pOutdoorPartyRuntime->partyY();
+                        const float dz = actor->preciseZ - game.m_pOutdoorPartyRuntime->partyFootZ();
+                        const float distanceSquared = dx * dx + dy * dy + dz * dz;
+                        if (distanceSquared < nearestDistanceSquared)
+                        {
+                            nearestDistanceSquared = distanceSquared;
+                            actorIndex = i;
+                            originalActor = *actor;
+                        }
+                    }
+                    require(actorIndex != static_cast<size_t>(-1), "No original eligible friendly Yell actor");
+                    observe("original_loaded");
+                    game.m_pOutdoorPartyRuntime->setPositionForEvents(
+                        originalActor.preciseX, originalActor.preciseY - 320.0f, originalActor.preciseZ);
+                    game.m_outdoorGameView.setCameraAngles(1.57079632679f, 0.0f);
+                    observe("party_camera_fixture");
+                    require(screen().ensureGameplayLayoutsLoaded(), "Yell layouts unavailable");
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames < 1200 && std::chrono::steady_clock::now() - started < std::chrono::seconds(60),
+                        "Yell capture exceeded bound");
+                    game.renderFrame(width, height, wheel, phase == 4 ? 1.0f / 60.0f : 0.0f);
+                    if (phase == 4) ++normalFrames;
+                    observe("frame");
+                    if (!pending.empty())
+                    {
+                        if (const auto image = Engine::BgfxContext::consumeScreenshot(pending))
+                        {
+                            SDL_Surface *surface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()), int(image->width * 4));
+                            require(surface && SDL_SaveBMP(surface, (pending + ".bmp").c_str()), "Yell screenshot failed");
+                            SDL_DestroySurface(surface);
+                            pending.clear();
+                            ++captures;
+                        }
+                    }
+                    if (frames < 6 || !pending.empty()) return;
+                    require(screen().currentHudScreenState() == GameplayHudScreenState::Gameplay
+                        && !screen().turnBasedCombatRuntime().active(), "Yell left normal realtime gameplay");
+                    switch (phase)
+                    {
+                    case 0:
+                    {
+                        const Party *party = screen().party();
+                        require(party && party->canSelectMemberInGameplay(party->activeMemberIndex()),
+                            "Original active member cannot Yell");
+                        yellBinding = screen().settingsSnapshot().keyboard.keyboardBinding(KeyboardAction::Yell);
+                        require(yellBinding != SDL_SCANCODE_UNKNOWN, "Configured Yell binding missing");
+                        const auto *actor = selectedActor();
+                        const float dx = actor->preciseX - game.m_pOutdoorPartyRuntime->partyX();
+                        const float dy = actor->preciseY - game.m_pOutdoorPartyRuntime->partyY();
+                        const float dz = actor->preciseZ - game.m_pOutdoorPartyRuntime->partyFootZ();
+                        require(dx * dx + dy * dy + dz * dz < 512.0f * 512.0f, "Yell pose outside original range");
+                        std::ofstream("fixture.txt", std::ios::app) << "Configured Yell scancode=" << int(yellBinding)
+                            << "; actor_index=" << actorIndex << "; AI enums Fleeing="
+                            << int(OutdoorWorldRuntime::ActorAiState::Fleeing) << ", Walking="
+                            << int(OutdoorWorldRuntime::ActorAnimation::Walking) << ".\n";
+                        observe("before_yell");
+                        capture("yell-before");
+                        phase = 1;
+                        break;
+                    }
+                    case 1:
+                        key(yellBinding);
+                        phase = 2;
+                        break;
+                    case 2:
+                    {
+                        const auto *actor = selectedActor();
+                        require(game.m_gameInputSystem.frame().action(KeyboardAction::Yell).pressed,
+                            "SDL configured Yell press not delivered");
+                        require(actor->aiState == OutdoorWorldRuntime::ActorAiState::Fleeing
+                            && actor->animation == OutdoorWorldRuntime::ActorAnimation::Walking
+                            && actor->actionSeconds > 0 && actor->actionSeconds <= 2.0f,
+                            "Actual Yell did not start finite Fleeing/Walking");
+                        require(actor->hostilityType == originalActor.hostilityType && actor->ally == originalActor.ally
+                            && actor->hostileToParty == originalActor.hostileToParty,
+                            "Yell changed original friendliness or ally");
+                        observe("after_yell");
+                        capture("yell-fleeing");
+                        phase = 3;
+                        break;
+                    }
+                    case 3:
+                        phase = 4;
+                        break;
+                    case 4:
+                    {
+                        if (normalFrames < 180) break;
+                        const auto *actor = selectedActor();
+                        const float dx = actor->preciseX - originalActor.preciseX;
+                        const float dy = actor->preciseY - originalActor.preciseY;
+                        const float dz = actor->preciseZ - originalActor.preciseZ;
+                        const float displacementSquared = dx * dx + dy * dy + dz * dz;
+                        require(std::isfinite(displacementSquared) && displacementSquared > 0.01f
+                            && displacementSquared < 2048.0f * 2048.0f, "Yell actor did not move a finite local distance");
+                        require(!actor->isDead && !actor->isSourceRemoved() && actor->currentHp > 0
+                            && actor->aiState != OutdoorWorldRuntime::ActorAiState::Dying
+                            && actor->aiState != OutdoorWorldRuntime::ActorAiState::Dead
+                            && actor->aiState != OutdoorWorldRuntime::ActorAiState::Fleeing,
+                            "Yell actor did not survive and recover after three normal seconds");
+                        observe("recovered");
+                        require(game.quickSaveToPath(output / "continued.oysav"), "Yell continued save failed");
+                        const auto continued = loadGameDataFromPath(output / "continued.oysav", error);
+                        require(continued && continued->currentSceneKind == SceneKind::Outdoor
+                            && continued->mapFileName == source->mapFileName && continued->hasOutdoorRuntimeState
+                            && actorIndex < continued->outdoorWorld.mapActors.size(), "Yell continued save decode failed");
+                        const auto &savedActor = continued->outdoorWorld.mapActors[actorIndex];
+                        require(savedActor.actorId == actor->actorId && savedActor.currentHp == actor->currentHp
+                            && savedActor.aiState == actor->aiState && savedActor.preciseX == actor->preciseX
+                            && savedActor.preciseY == actor->preciseY && savedActor.preciseZ == actor->preciseZ,
+                            "Recovered Yell actor did not persist in continued save");
+                        require(fileHash(input) == inputHash && fileHash(output / "input.oysav") == inputHash,
+                            "Original or copied Yell input changed");
+                        complete = true;
+                        phase = 5;
+                        { SDL_Event quit{}; quit.type = SDL_EVENT_QUIT; SDL_PushEvent(&quit); }
+                        break;
+                    }
+                    default: break;
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete && captures == 2, "Yell capture ended early");
+            std::ofstream("result.json") << "{\"passed\":true,\"checkpoint\":211,\"frames\":" << frames
+                << ",\"captures\":" << captures << ",\"normal_frames\":" << normalFrames
+                << ",\"input_sha256\":" << std::quoted(inputHash)
+                << ",\"input_sha256_after\":" << std::quoted(fileHash(input))
+                << ",\"new_unit_cases\":0,\"device\":false,\"natural_campaign\":false}\n";
+            return 0;
+        }
+        catch (const std::exception &exception)
+        {
+            std::ofstream("failure.txt") << "phase=" << phase << " frame=" << frames << " " << exception.what() << '\n';
+            throw;
+        }
+    }
     static int runKeyboard(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output,
         bool finishOnly = false)
     {
@@ -1695,7 +1965,9 @@ int main(int argc, char **argv)
 {
     try
     {
-        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only|--journal-party-save|--video-brightness|--monster-tint|--keyboard]");
+        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only|--journal-party-save|--video-brightness|--monster-tint|--keyboard|--yell]");
+        if (argc == 5 && std::string(argv[4]) == "--yell")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::runYell(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--keyboard")
             return OpenYAMM::Game::ApplicationCaptureTestAccess::runKeyboard(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--keyboard-finish")

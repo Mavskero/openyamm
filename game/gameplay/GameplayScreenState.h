@@ -78,6 +78,11 @@ public:
         bool inspectKeyboardActivateLatch = false;
         uint64_t keyboardUseNextRepeatTickNanoseconds = 0;
         uint64_t inspectKeyboardActivateNextRepeatTickNanoseconds = 0;
+        bool yellRepeatArmed = false;
+        bool yellSuppressUntilRelease = false;
+        uint64_t yellNextRepeatTickNanoseconds = 0;
+        uint64_t yellLastInputFrameId = 0;
+        uint64_t yellKeyboardFocusGeneration = 0;
         bool heldInventoryDropLatch = false;
         bool inspectMouseActivateLatch = false;
         GameplayWorldHit pressedWorldHit;

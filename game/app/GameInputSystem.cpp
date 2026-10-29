@@ -80,6 +80,8 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
 {
     if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
     {
+        m_keyboardFocusActive = false;
+        ++m_keyboardFocusGeneration;
         suppressMouseButtonsUntilReleased();
         m_mouseInputCanceled = true;
         m_pendingKeyboardPressCounts.fill(0);
@@ -90,6 +92,8 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
 
     if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED)
     {
+        m_keyboardFocusActive = true;
+        ++m_keyboardFocusGeneration;
         resetRelativeMouseMotion();
         return;
     }
@@ -380,6 +384,8 @@ void GameInputSystem::updateFromEngineInput(
         ++m_inputFrameId;
     }
     m_frame.frameId = m_inputFrameId;
+    m_frame.keyboardFocusActive = m_keyboardFocusActive;
+    m_frame.keyboardFocusGeneration = m_keyboardFocusGeneration;
     m_frame.screenWidth = screenWidth;
     m_frame.screenHeight = screenHeight;
     m_frame.mouseWheelDelta = blockGameplayInput ? 0.0f : mouseWheelDelta;

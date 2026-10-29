@@ -1,0 +1,351 @@
+{
+  "accepted_at": "2026-10-29T14:40:44.324990+00:00",
+  "source_base": "977ba80a10bf6b06870e3665d2ed525889bf5af5",
+  "built_source": {
+    "base": "977ba80a10bf6b06870e3665d2ed525889bf5af5",
+    "diff_sha256": "b2e1cdb95b1846033420bb33381f95cd15955d66755f6bcce696e3975d6eb6f7",
+    "all_writers_frozen": true,
+    "files": {
+      "game/app/GameInputSystem.cpp": "0e6368862d4a132fe1d76aa4a123e73c6c3f129896d0d3854bbf0199e67eff09",
+      "game/app/GameInputSystem.h": "cb68438a011417e90ae57db8f273217030f36aaf9e6d77024d80404f361a82a2",
+      "game/gameplay/GameplayInputController.cpp": "56a64b0ad4c26c2a49c82af443bc757e8af1295f09aadcd3d3abd0411fd45df6",
+      "game/gameplay/GameplayInputFrame.h": "3773bc00282603e5d6de7ca861fef347629e0f3605a7f6035b6008b560503875",
+      "game/gameplay/GameplayScreenState.h": "b1d11353e956c47a3db997704356e0fe0fd6926ce2afc8686afb84ca4cd3b3e2",
+      "tools/AppleInputCheck.cpp": "3a6d1c9bc83eff3e6a121543b2d7595c775481c9a6188b21c79f4eb6c67cdf9e",
+      "tools/UiPlayabilityCapture.cpp": "10f9c3887b64ec2582e38be754f98cf42537a5a2574d2235af5bc3478afd95b7"
+    }
+  },
+  "checks": {
+    "yell-repeat-214/build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "openyamm_input_check",
+        "ui_playability_capture",
+        "-j",
+        "3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 64982,
+      "started_at": "2026-10-29T14:23:27.682503+00:00",
+      "finished_at": "2026-10-29T14:24:43.520989+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-repeat-214/build-native-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "yell-repeat-214/input-check-001": {
+      "argv": [
+        "openyamm/build-apple/openyamm_input_check"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 68182,
+      "started_at": "2026-10-29T14:27:35.527352+00:00",
+      "finished_at": "2026-10-29T14:27:36.359869+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 60.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-repeat-214/input-check-001.log",
+      "executed_binary": "openyamm/build-apple/openyamm_input_check",
+      "executed_binary_sha256": "5e69d1cce974a7f20a997fcdb319248bcde732bdb42a28d2346128901e4a900f",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "yell-repeat-214/build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 70038,
+      "started_at": "2026-10-29T14:30:04.515720+00:00",
+      "finished_at": "2026-10-29T14:30:58.041585+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-repeat-214/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "yell-actual-213/actual-001": {
+      "argv": [
+        "openyamm/build-apple/ui_playability_capture",
+        "local-data/validation/ui-function-completion-207/runtime-001",
+        "local-data/validation/batch-integration-132/mm6-smoke-002/mm6-goblinwatch-reload-complete.oysav",
+        "local-data/validation/yell-actual-213/actual-001",
+        "--yell"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 68379,
+      "started_at": "2026-10-29T14:27:50.934095+00:00",
+      "finished_at": "2026-10-29T14:28:04.455990+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 60.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-actual-213/actual-001.log",
+      "executed_binary": "openyamm/build-apple/ui_playability_capture",
+      "executed_binary_sha256": "23580704c4388213b403bb61c7d0568d4f411875ff891b966f7268837b15cacc",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "runtime": "local-data/validation/ui-function-completion-207/runtime-001",
+  "save_version": 104,
+  "full_goal_complete": false,
+  "new_test_suites": 0,
+  "campaign_replays": 0,
+  "cold_runs": 0,
+  "device_or_simulator_operations": 0,
+  "release195_unchanged": true,
+  "checkpoint": 213,
+  "status": "ACCEPTED_SCOPED",
+  "actual": {
+    "passed": true,
+    "checkpoint": 211,
+    "frames": 192,
+    "captures": 2,
+    "normal_frames": 180,
+    "input_sha256": "183e0f4ba9942ccc011a07aac5c706894cf94a1410a7c6eb20c6dd7eb49b726a",
+    "input_sha256_after": "183e0f4ba9942ccc011a07aac5c706894cf94a1410a7c6eb20c6dd7eb49b726a",
+    "new_unit_cases": 0,
+    "device": false,
+    "natural_campaign": false
+  },
+  "stages": {
+    "original_loaded": {
+      "stage": "original_loaded",
+      "frame": 0,
+      "phase": 0,
+      "normal_frames": 0,
+      "actor_index": 3,
+      "actor_id": 3,
+      "monster_id": 608,
+      "ai_state": 1,
+      "animation": 1,
+      "hp": 6,
+      "dead": 0,
+      "removed": 0,
+      "hostility": 0,
+      "hostile_to_party": 0,
+      "ally": 0,
+      "action_seconds": 0.190848351,
+      "move_speed": 140,
+      "immobile": 0,
+      "can_fly": 0,
+      "paralyze_seconds": 0,
+      "fear_seconds": 0,
+      "stun_seconds": 0,
+      "name": "农夫",
+      "actor_pose": [
+        -10529.3418,
+        -6443.25195,
+        160
+      ],
+      "party_pose": [
+        -10985.9883,
+        -6560.14209,
+        177
+      ],
+      "camera": [
+        3.04683399,
+        -0.189729229
+      ]
+    },
+    "party_camera_fixture": {
+      "stage": "party_camera_fixture",
+      "frame": 0,
+      "phase": 0,
+      "normal_frames": 0,
+      "actor_index": 3,
+      "actor_id": 3,
+      "monster_id": 608,
+      "ai_state": 1,
+      "animation": 1,
+      "hp": 6,
+      "dead": 0,
+      "removed": 0,
+      "hostility": 0,
+      "hostile_to_party": 0,
+      "ally": 0,
+      "action_seconds": 0.190848351,
+      "move_speed": 140,
+      "immobile": 0,
+      "can_fly": 0,
+      "paralyze_seconds": 0,
+      "fear_seconds": 0,
+      "stun_seconds": 0,
+      "name": "农夫",
+      "actor_pose": [
+        -10529.3418,
+        -6443.25195,
+        160
+      ],
+      "party_pose": [
+        -10529.3418,
+        -6763.25195,
+        160
+      ],
+      "camera": [
+        1.57079637,
+        0
+      ]
+    },
+    "before_yell": {
+      "stage": "before_yell",
+      "frame": 6,
+      "phase": 0,
+      "normal_frames": 0,
+      "actor_index": 3,
+      "actor_id": 3,
+      "monster_id": 608,
+      "ai_state": 1,
+      "animation": 1,
+      "hp": 6,
+      "dead": 0,
+      "removed": 0,
+      "hostility": 0,
+      "hostile_to_party": 0,
+      "ally": 0,
+      "action_seconds": 0.190848351,
+      "move_speed": 140,
+      "immobile": 0,
+      "can_fly": 0,
+      "paralyze_seconds": 0,
+      "fear_seconds": 0,
+      "stun_seconds": 0,
+      "name": "农夫",
+      "actor_pose": [
+        -10529.3418,
+        -6443.25195,
+        160
+      ],
+      "party_pose": [
+        -10529.3418,
+        -6763.25195,
+        160
+      ],
+      "camera": [
+        1.57079637,
+        0
+      ]
+    },
+    "after_yell": {
+      "stage": "after_yell",
+      "frame": 9,
+      "phase": 2,
+      "normal_frames": 0,
+      "actor_index": 3,
+      "actor_id": 3,
+      "monster_id": 608,
+      "ai_state": 3,
+      "animation": 1,
+      "hp": 6,
+      "dead": 0,
+      "removed": 0,
+      "hostility": 0,
+      "hostile_to_party": 0,
+      "ally": 0,
+      "action_seconds": 2,
+      "move_speed": 140,
+      "immobile": 0,
+      "can_fly": 0,
+      "paralyze_seconds": 0,
+      "fear_seconds": 0,
+      "stun_seconds": 0,
+      "name": "农夫",
+      "actor_pose": [
+        -10529.3418,
+        -6443.25195,
+        160
+      ],
+      "party_pose": [
+        -10529.3418,
+        -6763.25195,
+        160
+      ],
+      "camera": [
+        1.57079637,
+        0
+      ]
+    },
+    "recovered": {
+      "stage": "recovered",
+      "frame": 191,
+      "phase": 4,
+      "normal_frames": 180,
+      "actor_index": 3,
+      "actor_id": 3,
+      "monster_id": 608,
+      "ai_state": 1,
+      "animation": 1,
+      "hp": 6,
+      "dead": 0,
+      "removed": 0,
+      "hostility": 0,
+      "hostile_to_party": 0,
+      "ally": 0,
+      "action_seconds": 5.7434411,
+      "move_speed": 140,
+      "immobile": 0,
+      "can_fly": 0,
+      "paralyze_seconds": 0,
+      "fear_seconds": 0,
+      "stun_seconds": 0,
+      "name": "农夫",
+      "actor_pose": [
+        -10374.8418,
+        -6393.12695,
+        160
+      ],
+      "party_pose": [
+        -10529.3418,
+        -6763.25195,
+        161
+      ],
+      "camera": [
+        1.57079637,
+        0
+      ]
+    }
+  },
+  "actor_displacement": 162.42772431146108,
+  "images_reviewed": 2,
+  "save_decode": "Recovered actor identity/HP/pose/state matches actual continued.oysav decode",
+  "audio": "malea04a.wav decoded for playback, audio driver dummy; no listening claim",
+  "fixtures": "Source normal132 input copied; original farmer selected, only party/camera pose; delta0 during stills then180normalframes",
+  "limitations": [
+    "One original outdoor farmer; no indoor/mobility matrix",
+    "No physical hold-key or device acceptance",
+    "No natural campaign claim"
+  ]
+}

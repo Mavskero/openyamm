@@ -20,6 +20,9 @@ namespace OpenYAMM::Game
 {
 namespace
 {
+constexpr uint64_t YellFirstRepeatNanoseconds = 500 * 1000 * 1000;
+constexpr uint64_t YellRepeatNanoseconds = 67 * 1000 * 1000;
+
 bool isActionNewlyPressed(GameplayScreenRuntime &context, KeyboardAction action, const bool *pKeyboardState)
 {
     if (pKeyboardState == nullptr)
@@ -648,6 +651,41 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
     GameplayScreenState::GameplayMouseLookState &gameplayMouseLookState = screenState.gameplayMouseLookState();
     const bool normalGameplayBeforeInput = context.isNormalGameplayScreen()
         && !config.isUtilitySpellModalActive && !config.isReadableScrollOverlayActive;
+    GameplayScreenState::WorldInteractionInputState &yellState = screenState.worldInteractionInputState();
+    const bool yellHeld = config.pInputFrame != nullptr
+        ? config.pInputFrame->action(KeyboardAction::Yell).held
+        : context.mutableSettings().keyboard.isPressed(KeyboardAction::Yell, config.pKeyboardState);
+    const bool yellHasFrameClock = config.pInputFrame != nullptr && config.pInputFrame->frameId != 0;
+    const bool yellSameFrame = yellHasFrameClock
+        && yellState.yellLastInputFrameId == config.pInputFrame->frameId;
+    const bool yellFrameGap = yellHasFrameClock && yellState.yellLastInputFrameId != 0
+        && !yellSameFrame && config.pInputFrame->frameId != yellState.yellLastInputFrameId + 1;
+    const bool yellFocusInterrupted = config.pInputFrame != nullptr
+        && (!config.pInputFrame->keyboardFocusActive
+            || config.pInputFrame->keyboardFocusGeneration != yellState.yellKeyboardFocusGeneration);
+    const auto cancelYellRepeat = [&]()
+    {
+        yellState.yellRepeatArmed = false;
+        yellState.yellNextRepeatTickNanoseconds = 0;
+        yellState.yellSuppressUntilRelease = yellHeld;
+    };
+    yellState.yellLastInputFrameId = yellHasFrameClock ? config.pInputFrame->frameId : 0;
+    yellState.yellKeyboardFocusGeneration = config.pInputFrame != nullptr
+        ? config.pInputFrame->keyboardFocusGeneration : 0;
+    if (!yellHeld)
+    {
+        cancelYellRepeat();
+    }
+    if (!yellHasFrameClock)
+    {
+        yellState.yellRepeatArmed = false;
+        yellState.yellNextRepeatTickNanoseconds = 0;
+    }
+    if (yellFrameGap || yellFocusInterrupted || !normalGameplayBeforeInput
+        || !config.processSharedGameplayHotkeys)
+    {
+        cancelYellRepeat();
+    }
 
     GameplayInputFrame fallbackReaderInput = {};
     if (config.pInputFrame == nullptr)
@@ -667,6 +705,7 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
     const GameplayInputFrame &readerInput = config.pInputFrame != nullptr ? *config.pInputFrame : fallbackReaderInput;
     if (GameplayPartyOverlayInputController::handleReadableScrollOverlayInput(context, readerInput))
     {
+        cancelYellRepeat();
         gameplayMouseLookState.clear();
         context.updatePreviousKeyboardStateSnapshot(readerInput.keyboardState());
         frameResult.journalInputConsumed = true;
@@ -791,6 +830,7 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
 
     if (frameResult.journalInputConsumed)
     {
+        cancelYellRepeat();
         if (context.readableScrollOverlayReadOnly().persistent)
         {
             gameplayMouseLookState.clear();
@@ -918,12 +958,32 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
 
     frameResult.worldInputBlocked = hasActiveLootView || worldInputGateResult.blocked;
 
-    // Yell is a fresh-press action. Closing a modal must not pass its gesture
-    // through to the world, and holding the binding does not repeat the action.
-    if (config.processSharedGameplayHotkeys && normalGameplayBeforeInput
+    const bool canRunYell = config.processSharedGameplayHotkeys && normalGameplayBeforeInput
         && canRunStandardGameplayAction && !frameResult.worldInputBlocked
         && !pendingSpellCast.active && context.isNormalGameplayScreen()
-        && isActionNewlyPressed(context, KeyboardAction::Yell, config.pInputFrame, config.pKeyboardState))
+        && !yellFocusInterrupted && !yellFrameGap;
+    bool yellRequested = false;
+    if (!canRunYell)
+    {
+        cancelYellRepeat();
+    }
+    else if (!yellSameFrame && !yellState.yellSuppressUntilRelease)
+    {
+        const bool yellPressed =
+            isActionNewlyPressed(context, KeyboardAction::Yell, config.pInputFrame, config.pKeyboardState);
+        const uint64_t nowNanoseconds = SDL_GetTicksNS();
+        if (yellPressed || (yellHasFrameClock && yellHeld && yellState.yellRepeatArmed
+                && nowNanoseconds >= yellState.yellNextRepeatTickNanoseconds))
+        {
+            yellRequested = true;
+            yellState.yellRepeatArmed = yellHasFrameClock && yellHeld;
+            // Schedule from now so a stalled frame never replays accumulated repeats.
+            yellState.yellNextRepeatTickNanoseconds = yellState.yellRepeatArmed
+                ? nowNanoseconds + (yellPressed ? YellFirstRepeatNanoseconds : YellRepeatNanoseconds) : 0;
+        }
+    }
+
+    if (yellRequested)
     {
         Party *pParty = context.party();
         if (pParty != nullptr && pParty->canSelectMemberInGameplay(pParty->activeMemberIndex())

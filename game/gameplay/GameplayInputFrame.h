@@ -50,6 +50,10 @@ struct GameplayInputFrame
     // Nonzero IDs identify one input update, including copies dispatched to different UI layers.
     // Zero preserves held-key semantics for callers that construct input without a frame clock.
     uint64_t frameId = 0;
+    // Event generations retain interruptions even when focus is lost and regained between frames.
+    // Callers without a window remain usable until an actual focus event says otherwise.
+    uint64_t keyboardFocusGeneration = 0;
+    bool keyboardFocusActive = true;
 
     const bool *keyboardState() const
     {
