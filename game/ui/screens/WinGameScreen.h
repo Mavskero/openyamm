@@ -11,11 +11,13 @@ namespace OpenYAMM::Game
 {
 struct WinGameCertificate
 {
+    std::string title = "Congratulations!";
     std::string characterLine;
     std::string endingText;
     std::string totalTimeLine;
     std::string scoreLine;
     std::string backgroundTexture = "winBG";
+    uint32_t textColorAbgr = 0xff202020u;
 };
 
 class WinGameScreen : public MenuScreenBase

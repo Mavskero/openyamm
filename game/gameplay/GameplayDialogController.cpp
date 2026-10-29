@@ -28,6 +28,7 @@
 #include "game/party/Party.h"
 #include "game/party/SpellIds.h"
 #include "game/tables/RosterTable.h"
+#include "game/tables/UiTextTable.h"
 
 #include <algorithm>
 #include <array>
@@ -4093,7 +4094,8 @@ GameplayDialogController::PresentPendingDialogResult GameplayDialogController::p
         context.pTeacherTopicTable,
         context.pContinentSettingTable,
         context.pCharacterInspectTable,
-        context.pHouseServiceTextTable
+        context.pHouseServiceTextTable,
+        context.pScreenRuntime != nullptr ? &context.pScreenRuntime->gameplayUiRuntime().uiTextTable() : nullptr
     ));
 
     if (context.pParty != nullptr && context.activeEventDialog.displayedNpcGreetingCount.has_value())
@@ -4662,18 +4664,23 @@ bool GameplayDialogController::refreshHouseBankInputDialog(Context &context, boo
         return false;
     }
 
-    const std::string promptLabel =
-        houseBankState.inputMode == GameplayUiController::HouseBankInputMode::Deposit ? "Deposit" : "Withdraw";
+    static const UiTextTable englishText;
+    const UiTextTable &text = context.pScreenRuntime != nullptr
+        ? context.pScreenRuntime->gameplayUiRuntime().uiTextTable() : englishText;
+    const std::string promptLabel = text.text(
+        houseBankState.inputMode == GameplayUiController::HouseBankInputMode::Deposit
+            ? UiTextTable::Message::BankDeposit : UiTextTable::Message::BankWithdraw);
     const std::string enteredText = houseBankState.inputText.empty()
         ? (showCursor ? "_" : "")
         : (houseBankState.inputText + (showCursor ? "_" : ""));
 
     context.activeEventDialog.lines.clear();
     context.activeEventDialog.lines.push_back(
-        "Balance: " + std::to_string(context.pParty != nullptr ? context.pParty->bankGold() : 0));
+        text.text(UiTextTable::Message::BankBalance) + ": "
+        + std::to_string(context.pParty != nullptr ? context.pParty->bankGold() : 0));
     context.activeEventDialog.lines.push_back(std::string {});
     context.activeEventDialog.lines.push_back(promptLabel);
-    context.activeEventDialog.lines.push_back("How Much?");
+    context.activeEventDialog.lines.push_back(text.text(UiTextTable::Message::BankHowMuch));
     context.activeEventDialog.lines.push_back(std::string {});
     context.activeEventDialog.lines.push_back(enteredText);
     context.activeEventDialog.actions.clear();

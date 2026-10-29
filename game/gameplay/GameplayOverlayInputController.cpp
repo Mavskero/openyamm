@@ -25,6 +25,7 @@
 #include <optional>
 #include <random>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace OpenYAMM::Game
@@ -377,6 +378,34 @@ struct HouseShopItemDrawRect
     float width = 0.0f;
     float height = 0.0f;
 };
+
+bool sameShopInventoryTarget(
+    const GameplayShopInventoryPointerTarget &left,
+    const GameplayShopInventoryPointerTarget &right)
+{
+    if (!left.active || !right.active || left.houseId != right.houseId || left.mode != right.mode
+        || left.memberIndex != right.memberIndex || left.memberId != right.memberId)
+    {
+        return false;
+    }
+
+    const InventoryItem &a = left.item;
+    const InventoryItem &b = right.item;
+    return std::tie(a.objectDescriptionId, a.quantity, a.width, a.height, a.gridX, a.gridY,
+               a.identified, a.broken, a.stolen, a.standardEnchantId, a.standardEnchantPower,
+               a.specialEnchantId, a.artifactId, a.rarity, a.currentCharges, a.maxCharges,
+               a.temporaryBonusRemainingSeconds)
+        == std::tie(b.objectDescriptionId, b.quantity, b.width, b.height, b.gridX, b.gridY,
+               b.identified, b.broken, b.stolen, b.standardEnchantId, b.standardEnchantPower,
+               b.specialEnchantId, b.artifactId, b.rarity, b.currentCharges, b.maxCharges,
+               b.temporaryBonusRemainingSeconds);
+}
+
+void clearShopInventoryGesture(GameplayScreenRuntime &view)
+{
+    view.interactionState().shopInventoryClickLatch = false;
+    view.interactionState().shopInventoryPressedTarget = {};
+}
 
 template <typename Target, typename ResolveTargetFn, typename ActivateTargetFn>
 void handlePointerClickRelease(
@@ -1626,16 +1655,6 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
             view.commitSettingsChange();
             return true;
         }
-
-        if (input.leftMouseButton.pressed)
-        {
-            view.mutableSettings().keyboard.setBinding(
-                keyboardScreen.pendingAction,
-                mouseButtonInputBinding(SDL_BUTTON_LEFT));
-            keyboardScreen.waitingForBinding = false;
-            view.commitSettingsChange();
-            return true;
-        }
     }
 
     const HudPointerState pointerState = pointerStateFromInput(input);
@@ -1706,12 +1725,6 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
     const auto findPointerTarget =
         [&resolveLayoutTarget, &resolveBindingRowTarget](float pointerX, float pointerY) -> GameplayKeyboardPointerTarget
         {
-            if (const GameplayKeyboardPointerTarget bindingTarget = resolveBindingRowTarget(pointerX, pointerY);
-                bindingTarget.type != GameplayKeyboardPointerTargetType::None)
-            {
-                return bindingTarget;
-            }
-
             static const std::pair<const char *, GameplayKeyboardPointerTargetType> Targets[] = {
                 {"KeyboardPage1Button", GameplayKeyboardPointerTargetType::Page1Button},
                 {"KeyboardPage2Button", GameplayKeyboardPointerTargetType::Page2Button},
@@ -1731,8 +1744,20 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
                 }
             }
 
-            return {};
+            return resolveBindingRowTarget(pointerX, pointerY);
         };
+
+    if (keyboardScreen.waitingForBinding && input.leftMouseButton.pressed
+        && findPointerTarget(input.pointerX, input.pointerY).type == GameplayKeyboardPointerTargetType::None)
+    {
+        // Footer navigation and binding rows keep their visible actions while a
+        // binding is pending. A click in the remaining area binds the mouse.
+        view.mutableSettings().keyboard.setBinding(
+            keyboardScreen.pendingAction, mouseButtonInputBinding(SDL_BUTTON_LEFT));
+        keyboardScreen.waitingForBinding = false;
+        view.commitSettingsChange();
+        return true;
+    }
 
     handlePointerClickRelease(
         pointerState,
@@ -2921,6 +2946,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
 
     if (bankInputActive)
     {
+        clearShopInventoryGesture(view);
         appendDigitTextInput(view.houseBankState().inputText, input.textInput, 10);
 
         static constexpr SDL_Scancode DigitScancodes[10] = {
@@ -3005,13 +3031,25 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
 
         const HudPointerState pointerState = pointerStateFromInput(input);
         const GameplayDialoguePointerTarget noneDialogueTarget = {};
-        const auto findDialogueCloseTarget =
+        const auto findBankPointerTarget =
             [&view, screenWidth, screenHeight](float mouseX, float mouseY) -> GameplayDialoguePointerTarget
             {
+                const GameplayScreenRuntime::HudLayoutElement *pSubmitLayout =
+                    view.findHudLayoutElement("DialogueOkButton");
+                const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedSubmit =
+                    pSubmitLayout != nullptr && pSubmitLayout->visible && pSubmitLayout->interactive
+                    ? view.resolveHudLayoutElement(
+                        "DialogueOkButton", screenWidth, screenHeight, pSubmitLayout->width, pSubmitLayout->height)
+                    : std::nullopt;
+                if (resolvedSubmit && view.isPointerInsideResolvedElement(*resolvedSubmit, mouseX, mouseY))
+                {
+                    return {GameplayDialoguePointerTargetType::Action, 0};
+                }
+
                 const GameplayScreenRuntime::HudLayoutElement *pGoodbyeLayout =
                     view.findHudLayoutElement("DialogueGoodbyeButton");
                 const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedGoodbye =
-                    pGoodbyeLayout != nullptr
+                    pGoodbyeLayout != nullptr && pGoodbyeLayout->visible && pGoodbyeLayout->interactive
                     ? view.resolveHudLayoutElement(
                         "DialogueGoodbyeButton",
                         screenWidth,
@@ -3037,10 +3075,14 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
             view.interactionState().dialogueClickLatch,
             view.interactionState().dialoguePressedTarget,
             noneDialogueTarget,
-            findDialogueCloseTarget,
+            findBankPointerTarget,
             [&view](const GameplayDialoguePointerTarget &target)
             {
-                if (target.type == GameplayDialoguePointerTargetType::CloseButton)
+                if (target.type == GameplayDialoguePointerTargetType::Action)
+                {
+                    view.confirmHouseBankInput();
+                }
+                else if (target.type == GameplayDialoguePointerTargetType::CloseButton)
                 {
                     view.interactionState().dialogueTopicContentKey.clear();
                     view.handleDialogueCloseRequest();
@@ -3068,7 +3110,18 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         return;
     }
 
-    if (!view.activeEventDialog().actions.empty() && !isResidentSelectionMode)
+    const bool shopItemOverlayActive = view.houseShopOverlay().active
+        && (view.houseShopOverlay().mode == GameplayUiController::HouseShopMode::BuyStandard
+            || view.houseShopOverlay().mode == GameplayUiController::HouseShopMode::BuySpecial
+            || view.houseShopOverlay().mode == GameplayUiController::HouseShopMode::BuySpellbooks);
+    const bool shopServiceInventoryActive = view.inventoryNestedOverlay().active
+        && (view.inventoryNestedOverlay().mode == GameplayUiController::InventoryNestedOverlayMode::ShopSell
+            || view.inventoryNestedOverlay().mode == GameplayUiController::InventoryNestedOverlayMode::ShopIdentify
+            || view.inventoryNestedOverlay().mode == GameplayUiController::InventoryNestedOverlayMode::ShopRepair);
+    const bool allowTopicKeyboardInput =
+        !isResidentSelectionMode && !shopItemOverlayActive && !shopServiceInventoryActive;
+
+    if (!view.activeEventDialog().actions.empty() && allowTopicKeyboardInput)
     {
         const bool upHeld = input.isScancodeHeld(SDL_SCANCODE_UP);
         const bool downHeld = input.isScancodeHeld(SDL_SCANCODE_DOWN);
@@ -3098,6 +3151,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
 
     if (hasPendingInputPrompt(view))
     {
+        clearShopInventoryGesture(view);
         view.interactionState().eventDialogAcceptLatch = true;
         view.interactionState().dialogueClickLatch = false;
         view.interactionState().dialoguePressedTarget = {};
@@ -3135,12 +3189,13 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         && (input.scancodePressCount(SDL_SCANCODE_RETURN) != 0 || input.scancodePressCount(SDL_SCANCODE_SPACE) != 0);
     const bool acceptConsumedThisFrame = hasInputFrameId
         && view.interactionState().eventDialogAcceptConsumedFrameId == input.frameId;
-    const bool acceptRequested = !isResidentSelectionMode && !acceptConsumedThisFrame
+    const bool acceptRequested = allowTopicKeyboardInput && !acceptConsumedThisFrame
         && (acceptPressed || (acceptHeld && !view.interactionState().eventDialogAcceptLatch));
     view.interactionState().eventDialogAcceptLatch = !isResidentSelectionMode && acceptHeld;
 
     if (acceptRequested)
     {
+        clearShopInventoryGesture(view);
         if (hasInputFrameId)
         {
             view.interactionState().eventDialogAcceptConsumedFrameId = input.frameId;
@@ -3388,29 +3443,73 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
     {
         const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedInventoryGrid =
             view.resolveInventoryNestedOverlayGridArea(screenWidth, screenHeight);
-
-        if (resolvedInventoryGrid
-            && isLeftMousePressed
-            && !view.interactionState().inventoryNestedOverlayItemClickLatch
-            && dialogMouseX >= resolvedInventoryGrid->x
-            && dialogMouseX < resolvedInventoryGrid->x + resolvedInventoryGrid->width
-            && dialogMouseY >= resolvedInventoryGrid->y
-            && dialogMouseY < resolvedInventoryGrid->y + resolvedInventoryGrid->height)
+        const auto resolveInventoryTarget = [&view, &resolvedInventoryGrid, pDialogueHouseEntry](
+            float pointerX, float pointerY) -> GameplayShopInventoryPointerTarget
         {
+            const Party *pParty = view.partyReadOnly();
+            const Character *pMember = pParty != nullptr ? pParty->activeMember() : nullptr;
+            if (!resolvedInventoryGrid || pMember == nullptr
+                || !view.isPointerInsideResolvedElement(*resolvedInventoryGrid, pointerX, pointerY))
+            {
+                return {};
+            }
+
             const InventoryGridMetrics gridMetrics = computeInventoryGridMetrics(
-                resolvedInventoryGrid->x,
-                resolvedInventoryGrid->y,
-                resolvedInventoryGrid->width,
-                resolvedInventoryGrid->height,
-                resolvedInventoryGrid->scale);
+                resolvedInventoryGrid->x, resolvedInventoryGrid->y,
+                resolvedInventoryGrid->width, resolvedInventoryGrid->height, resolvedInventoryGrid->scale);
             const uint8_t gridX = static_cast<uint8_t>(std::clamp(
-                static_cast<int>((dialogMouseX - resolvedInventoryGrid->x) / gridMetrics.cellWidth),
-                0,
-                Character::InventoryWidth - 1));
+                static_cast<int>((pointerX - resolvedInventoryGrid->x) / gridMetrics.cellWidth),
+                0, Character::InventoryWidth - 1));
             const uint8_t gridY = static_cast<uint8_t>(std::clamp(
-                static_cast<int>((dialogMouseY - resolvedInventoryGrid->y) / gridMetrics.cellHeight),
-                0,
-                Character::InventoryHeight - 1));
+                static_cast<int>((pointerY - resolvedInventoryGrid->y) / gridMetrics.cellHeight),
+                0, Character::InventoryHeight - 1));
+            const InventoryItem *pItem = pMember->inventoryItemAt(gridX, gridY);
+            if (pItem == nullptr)
+            {
+                return {};
+            }
+
+            GameplayShopInventoryPointerTarget target = {};
+            target.active = true;
+            target.houseId = pDialogueHouseEntry->id;
+            target.mode = view.inventoryNestedOverlay().mode;
+            target.memberIndex = pParty->activeMemberIndex();
+            target.memberId = pMember->memberId;
+            target.item = *pItem;
+            return target;
+        };
+
+        GameplayOverlayInteractionState &interaction = view.interactionState();
+        const GameplayShopInventoryPointerTarget hoveredTarget = resolveInventoryTarget(dialogMouseX, dialogMouseY);
+        if (input.leftMouseButton.pressed
+            || (input.frameId == 0 && isLeftMousePressed && !interaction.shopInventoryClickLatch))
+        {
+            interaction.shopInventoryClickLatch = true;
+            interaction.shopInventoryPressedTarget = hoveredTarget;
+        }
+
+        if (input.mobileTouchDragStarted || input.mobileTouchDragActive || input.mobileTouchDragReleased
+            || (isLeftMousePressed
+                && !sameShopInventoryTarget(interaction.shopInventoryPressedTarget, hoveredTarget)))
+        {
+            interaction.shopInventoryPressedTarget = {};
+        }
+
+        GameplayShopInventoryPointerTarget releasedTarget = {};
+        if (!isLeftMousePressed && interaction.shopInventoryClickLatch)
+        {
+            if (sameShopInventoryTarget(interaction.shopInventoryPressedTarget, hoveredTarget))
+            {
+                releasedTarget = interaction.shopInventoryPressedTarget;
+            }
+            interaction.shopInventoryClickLatch = false;
+            interaction.shopInventoryPressedTarget = {};
+        }
+
+        if (releasedTarget.active)
+        {
+            const uint8_t gridX = releasedTarget.item.gridX;
+            const uint8_t gridY = releasedTarget.item.gridY;
             std::string statusText;
             HouseServiceRuntime::ShopItemServiceResult serviceResult =
                 HouseServiceRuntime::ShopItemServiceResult::None;
@@ -3423,7 +3522,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                     *view.standardItemEnchantTable(),
                     *view.specialItemEnchantTable(),
                     *pDialogueHouseEntry,
-                    view.partyReadOnly()->activeMemberIndex(),
+                    releasedTarget.memberIndex,
                     gridX,
                     gridY,
                     statusText,
@@ -3440,7 +3539,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                     *view.standardItemEnchantTable(),
                     *view.specialItemEnchantTable(),
                     *pDialogueHouseEntry,
-                    view.partyReadOnly()->activeMemberIndex(),
+                    releasedTarget.memberIndex,
                     gridX,
                     gridY,
                     statusText,
@@ -3458,7 +3557,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                     *view.standardItemEnchantTable(),
                     *view.specialItemEnchantTable(),
                     *pDialogueHouseEntry,
-                    view.partyReadOnly()->activeMemberIndex(),
+                    releasedTarget.memberIndex,
                     gridX,
                     gridY,
                     statusText,
@@ -3527,13 +3626,11 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
             {
                 view.setStatusBarEvent(statusText);
             }
-
-            view.interactionState().inventoryNestedOverlayItemClickLatch = true;
         }
-        else if (!isLeftMousePressed)
-        {
-            view.interactionState().inventoryNestedOverlayItemClickLatch = false;
-        }
+    }
+    else
+    {
+        clearShopInventoryGesture(view);
     }
 
     const auto findDialoguePointerTarget =
@@ -3759,6 +3856,10 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         findDialoguePointerTarget,
         [&view, screenWidth, screenHeight](const GameplayDialoguePointerTarget &target)
         {
+            if (target.type != GameplayDialoguePointerTargetType::None)
+            {
+                clearShopInventoryGesture(view);
+            }
             if (target.type == GameplayDialoguePointerTargetType::Action
                 && target.index < view.activeEventDialog().actions.size())
             {
@@ -3795,6 +3896,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
 
     if (closePressed)
     {
+        clearShopInventoryGesture(view);
         if (!view.interactionState().closeOverlayLatch)
         {
             view.interactionState().dialogueTopicContentKey.clear();

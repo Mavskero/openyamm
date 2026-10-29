@@ -1,0 +1,35 @@
+{
+  "reviewed_at": "2026-10-29T06:42:49.740348+00:00",
+  "reviewer": "main actual pixels",
+  "images": [
+    {
+      "file": "local-data/validation/ui-function-completion-192/actual-003/new-game-cancel-gameplay-menu.png",
+      "sha256": "9debedf0fd87a579fc10c929c59e4b41cde6642ea08840bfb0bb4740d871edaf",
+      "observation": "Original gameplay menu restored; six controls within viewport."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-192/actual-003/resource-load-failure-retained-load-menu.png",
+      "sha256": "9096ad3ab7f322474de39e7ebbe2bdcdc4b3adfe128ab4d42c5a11493a65db42",
+      "observation": "Load menu remains visible after deliberate failure; long valid fixture save name overflows row into preview. Fix required."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-192/actual-003/rollback-normal-gameplay.png",
+      "sha256": "21e73d748231e9f061f2208f91bac9169082a937e0cf71b592c256673bfac194",
+      "observation": "Original castle scene, four portraits, map and cursor scroll visible; failure status is still within its five-second lifetime."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-192/actual-003/localized-certificate-long-name.png",
+      "sha256": "561848265d10dd54e83ca4e13bbad0bfc27e2d96ae65d15ece3a3bba5f1fee2f",
+      "observation": "Localized paragraphs, duration and literal-percent long name fit; original background missing and viewport black. Fix required."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-192/actual-003/bank-amount-pointer-controls.png",
+      "sha256": "9c650795a327898f5b1889999095d22f9f255efd75c09c2539512a00981f5e4a",
+      "observation": "Original bank with Chinese balance/deposit/amount and typed1 visible; icon controls visible but intended text absent due empty authored font. Fix required."
+    }
+  ],
+  "reviewed_images": 5,
+  "functional_result": "passed",
+  "visual_completion": false,
+  "next": "Three affected visual fixes only; no replay of passed lifecycle or transaction flow"
+}

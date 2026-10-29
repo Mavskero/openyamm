@@ -1,0 +1,17 @@
+{
+  "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-002",
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-003",
+  "added_members": [
+    "icons/winbg.pcx"
+  ],
+  "changed_members": [
+    "ui/gameplay/dialogue.yml"
+  ],
+  "all_other_archive_members_retained": true,
+  "controlled_gameplay_fixtures": false,
+  "release_created": false,
+  "members_sha256": {
+    "icons/winbg.pcx": "d62057f5fc9e3416fc090dc99f8427f85a320f208e2036eca6cf87ec23e37a19",
+    "ui/gameplay/dialogue.yml": "52862c3b7fbdbd19c8d933e0305dacc6d3155c8eef71d1a91eb0236d7b8fc562"
+  }
+}

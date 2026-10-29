@@ -931,7 +931,8 @@ EventDialogContent buildEventDialogContent(
     const MergedTeacherTopicTable *pTeacherTopicTable,
     const MergedContinentSettingTable *pContinentSettingTable,
     const CharacterInspectTable *pCharacterInspectTable,
-    const HouseServiceTextTable *pHouseServiceTextTable
+    const HouseServiceTextTable *pHouseServiceTextTable,
+    const UiTextTable *pUiTextTable
 )
 {
     EventDialogContent dialog = {};
@@ -964,7 +965,8 @@ EventDialogContent buildEventDialogContent(
                 currentGameMinutes,
                 currentHouseServiceMenuId(eventRuntimeState),
                 pCharacterInspectTable,
-                pHouseServiceTextTable
+                pHouseServiceTextTable,
+                pUiTextTable
             );
             const std::optional<uint32_t> residentNpcId = singleSelectableResidentNpcId(
                 *pHouseEntry,
@@ -1293,7 +1295,8 @@ EventDialogContent buildEventDialogContent(
                 currentGameMinutes,
                 houseServiceMenuId,
                 pCharacterInspectTable,
-                pHouseServiceTextTable
+                pHouseServiceTextTable,
+                pUiTextTable
             );
 
             for (const HouseActionOption &houseAction : houseActions)
@@ -1845,7 +1848,8 @@ EventDialogContent buildEventDialogContent(
                     pParty,
                     pClassSkillTable,
                     menuId,
-                    pHouseServiceTextTable);
+                    pHouseServiceTextTable,
+                    pUiTextTable);
             }
         }
     }

@@ -1,0 +1,31 @@
+{
+  "reviewed_at": "2026-10-29T07:05:23.384845+00:00",
+  "reviewer": "main actual pixels",
+  "images": [
+    {
+      "file": "local-data/validation/ui-function-completion-192/visual-001/visual-load-long-label.png",
+      "sha256": "7eba334541e7a643a7b8df7b7b9151469670ef1ac337ff9ad9c33713889609c9",
+      "observation": "Long Chinese save name ends with ellipsis within the list row; preview and buttons unobscured."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-192/visual-001/visual-certificate-winbg.png",
+      "sha256": "562cfb6eedb3624457cf3703e4510b80a35495ba665b7ee4d76a58d9d2b9722d",
+      "observation": "Original parchment and title restored, long name/body/time fit; white text has insufficient contrast on pale parchment. Followup changes only normal certificate text to dark, preserving dark Merge artwork white text."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-192/visual-001/visual-bank-amount-labels.png",
+      "sha256": "c4785c98ed884aec6cdc6afd0961c98e49e1f37fe008234c1c3ce9a8d6555972",
+      "observation": "Chinese Submit/Cancel are legible over original button art; amount1, balance and prompt visible. Actual Cancel returned without transferring gold."
+    }
+  ],
+  "reviewed_images": 3,
+  "accepted": [
+    "long-save-label",
+    "bank-button-labels",
+    "certificate-original-background"
+  ],
+  "pending": [
+    "certificate-text-contrast"
+  ],
+  "fixture_note": "visual-only mode inherited immortal/unlimited-mana defaults; delta0 and0normalframes/no combat/cast/transaction claims. Future preview explicitly disables both."
+}

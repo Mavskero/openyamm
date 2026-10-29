@@ -1,0 +1,11 @@
+{
+  "reviewed_at": "2026-10-29T07:38:53.239853+00:00",
+  "reviewer": "main actual pixels",
+  "file": "local-data/validation/ui-function-completion-192/certificate-001/visual-certificate-winbg.png",
+  "sha256": "b1856bb6ea90ee80d0dd871deeb32769803a20220b7915d889b7e1202d7a6171",
+  "observation": "Original pale parchment is present; dark Chinese title, literal-percent long name, body, duration and score are readable within viewport. No missing resource/font warning.",
+  "certificate_only": true,
+  "reviewed_images": 1,
+  "new_campaign_ending": false,
+  "merge_dark_art": "Original winbg2 decoded and viewed separately; its existing white text branch retained without replay."
+}

@@ -20,6 +20,7 @@ namespace OpenYAMM::Game
 class Party;
 class CharacterInspectTable;
 class HouseServiceTextTable;
+class UiTextTable;
 class MergedNpcProfessionTable;
 class MergedNewsProfessionTopicTable;
 class MergedNpcBtbTable;
@@ -160,6 +161,7 @@ EventDialogContent buildEventDialogContent(
     const MergedTeacherTopicTable *pTeacherTopicTable = nullptr,
     const MergedContinentSettingTable *pContinentSettingTable = nullptr,
     const CharacterInspectTable *pCharacterInspectTable = nullptr,
-    const HouseServiceTextTable *pHouseServiceTextTable = nullptr
+    const HouseServiceTextTable *pHouseServiceTextTable = nullptr,
+    const UiTextTable *pUiTextTable = nullptr
 );
 }

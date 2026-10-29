@@ -1,6 +1,7 @@
 #include "game/ui/screens/LoadGameScreen.h"
 
 #include "game/maps/SaveGame.h"
+#include "game/ui/Utf8Text.h"
 
 #include <SDL3/SDL.h>
 
@@ -377,9 +378,18 @@ std::optional<ResolvedLayoutElement> resolveLayoutElementRecursive(
         return resolved;
     }
 
+    const float rootWidth = element.width > 0.0f ? element.width : fallbackWidth;
+    const float rootHeight = element.height > 0.0f ? element.height : fallbackHeight;
     resolved.scale = std::clamp(baseScale, element.minScale, element.maxScale);
-    resolved.width = (element.width > 0.0f ? element.width : fallbackWidth) * resolved.scale;
-    resolved.height = (element.height > 0.0f ? element.height : fallbackHeight) * resolved.scale;
+    if (rootWidth >= ReferenceWidth && rootHeight >= ReferenceHeight)
+    {
+        const float fitScale = std::min(
+            static_cast<float>(screenWidth) / rootWidth,
+            static_cast<float>(screenHeight) / rootHeight);
+        resolved.scale = std::min(resolved.scale, std::max(0.0f, fitScale));
+    }
+    resolved.width = rootWidth * resolved.scale;
+    resolved.height = rootHeight * resolved.scale;
 
     switch (element.anchor)
     {
@@ -967,7 +977,27 @@ void LoadGameScreen::drawLayoutText(
     float drawX = resolved->x + padX;
     float drawY = resolved->y + padY;
     LoadGameScreen *pMutableScreen = const_cast<LoadGameScreen *>(this);
-    const float textWidth = pMutableScreen->measureTextWidth(fontName, text, fontScale);
+    std::string displayText = text;
+    if (layoutId.starts_with("LoadGameSlotRow"))
+    {
+        const float availableWidth = std::max(
+            0.0f, resolved->width - 2.0f * std::abs(padX) - 4.0f - std::max(1.0f, fontScale));
+        if (pMutableScreen->measureTextWidth(fontName, displayText, fontScale) > availableWidth)
+        {
+            const std::string ellipsis = "...";
+            while (!displayText.empty()
+                && pMutableScreen->measureTextWidth(fontName, displayText + ellipsis, fontScale) > availableWidth)
+            {
+                if (!eraseLastUtf8Character(displayText))
+                {
+                    displayText.clear();
+                }
+            }
+            displayText = pMutableScreen->measureTextWidth(fontName, ellipsis, fontScale) <= availableWidth
+                ? displayText + ellipsis : std::string();
+        }
+    }
+    const float textWidth = pMutableScreen->measureTextWidth(fontName, displayText, fontScale);
     const float textHeight = static_cast<float>(pMutableScreen->fontHeight(fontName)) * fontScale;
 
     if (pLayout->textAlignX == UiLayoutManager::TextAlignX::Center)
@@ -988,6 +1018,6 @@ void LoadGameScreen::drawLayoutText(
         drawY = resolved->y + resolved->height - textHeight - padY;
     }
 
-    pMutableScreen->drawText(fontName, text, drawX, drawY, color, fontScale);
+    pMutableScreen->drawText(fontName, displayText, drawX, drawY, color, fontScale);
 }
 }

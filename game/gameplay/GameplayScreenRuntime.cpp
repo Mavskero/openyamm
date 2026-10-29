@@ -3928,6 +3928,17 @@ bool GameplayScreenRuntime::ensureDimensionDoorDestinationsLoaded()
         m_dimensionDoorState.active ? m_dimensionDoorState.destinationDayIndex : dayIndex);
 }
 
+GameplayScreenRuntime::TransientTravelState GameplayScreenRuntime::captureTransientTravelState() const
+{
+    return {m_townPortalContactState, m_dimensionDoorState};
+}
+
+void GameplayScreenRuntime::restoreTransientTravelState(const TransientTravelState &state)
+{
+    m_townPortalContactState = state.townPortalContact;
+    m_dimensionDoorState = state.dimensionDoor;
+}
+
 void GameplayScreenRuntime::resetTownPortalContact()
 {
     m_townPortalContactState = {};

@@ -411,6 +411,7 @@ void GameplaySpellService::armPendingTargetSelection(
     pendingTargetState.skillMasteryOverride = request.skillMasteryOverride;
     pendingTargetState.spendMana = request.spendMana;
     pendingTargetState.applyRecovery = request.applyRecovery;
+    pendingTargetState.bypassRequiredMastery = request.bypassRequiredMastery;
     pendingTargetState.targetKind = targetKind;
     pendingTargetState.spellName = spellName;
     showPendingTargetSelectionPrompt(runtime);
@@ -440,6 +441,7 @@ PartySpellCastRequest GameplaySpellService::makePendingTargetSelectionRequest() 
     request.skillMasteryOverride = pendingTargetState.skillMasteryOverride;
     request.spendMana = pendingTargetState.spendMana;
     request.applyRecovery = pendingTargetState.applyRecovery;
+    request.bypassRequiredMastery = pendingTargetState.bypassRequiredMastery;
     return request;
 }
 
@@ -758,12 +760,27 @@ bool GameplaySpellService::tryOpenSelectionUi(
     {
         const Party *pParty = runtime.partyReadOnly();
         const Character *pCaster = pParty != nullptr ? pParty->member(request.casterMemberIndex) : nullptr;
+        bool hasRecallableBeacon = lloydsBeaconHasRecallableBeacon(pCaster);
+        if (pCaster != nullptr && request.skillLevelOverride > 0 && request.skillMasteryOverride != SkillMastery::None)
+        {
+            hasRecallableBeacon = false;
+            const size_t slotCount = lloydsBeaconMaxSlotsForMastery(request.skillMasteryOverride);
+            for (size_t index = 0; index < slotCount && index < pCaster->lloydsBeacons.size(); ++index)
+            {
+                const std::optional<LloydBeacon> &beacon = pCaster->lloydsBeacons[index];
+                if (beacon.has_value() && beacon->remainingSeconds > 0.0f)
+                {
+                    hasRecallableBeacon = true;
+                    break;
+                }
+            }
+        }
 
         runtime.openUtilitySpellOverlay(
             GameplayUiController::UtilitySpellOverlayMode::LloydsBeacon,
             request.spellId,
             request.casterMemberIndex,
-            lloydsBeaconHasRecallableBeacon(pCaster));
+            hasRecallableBeacon);
         preserveUtilitySpellCastContext(runtime, request);
         runtime.resetUtilitySpellOverlayInteractionState();
         runtime.setStatusBarEvent("Set or recall beacon", 4.0f);

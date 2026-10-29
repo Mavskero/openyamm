@@ -191,34 +191,16 @@ bool pointInsideRect(float x, float y, float rectX, float rectY, float rectWidth
     return x >= rectX && x < rectX + rectWidth && y >= rectY && y < rectY + rectHeight;
 }
 
-size_t maxLloydBeaconSlots(const Character *pCharacter)
+size_t maxLloydBeaconSlots(
+    const Character *pCharacter,
+    const GameplayUiController::UtilitySpellOverlayState &overlay)
 {
-    if (pCharacter == nullptr)
+    if (overlay.skillLevelOverride > 0 && overlay.skillMasteryOverride != SkillMastery::None)
     {
-        return 1;
+        return lloydsBeaconMaxSlotsForMastery(overlay.skillMasteryOverride);
     }
 
-    const CharacterSkill *pWaterSkill = pCharacter->findSkill("WaterMagic");
-
-    if (pWaterSkill == nullptr)
-    {
-        return 1;
-    }
-
-    switch (pWaterSkill->mastery)
-    {
-        case SkillMastery::Grandmaster:
-        case SkillMastery::Master:
-            return 5;
-
-        case SkillMastery::Expert:
-            return 3;
-
-        case SkillMastery::Normal:
-        case SkillMastery::None:
-        default:
-            return 1;
-    }
+    return lloydsBeaconMaxSlotsForCharacter(pCharacter);
 }
 
 bool isTownPortalOverlayMode(GameplayUiController::UtilitySpellOverlayMode mode)
@@ -836,7 +818,7 @@ void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
                     context.partyReadOnly() != nullptr
                         ? context.partyReadOnly()->member(context.utilitySpellOverlayReadOnly().casterMemberIndex)
                         : nullptr;
-                const size_t slotCount = lloydsBeaconMaxSlotsForCharacter(pCaster);
+                const size_t slotCount = maxLloydBeaconSlots(pCaster, context.utilitySpellOverlayReadOnly());
 
                 for (size_t index = 0; index < slotCount; ++index)
                 {
@@ -941,6 +923,7 @@ void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
                 PartySpellCastRequest request = {};
                 request.casterMemberIndex = context.utilitySpellOverlayReadOnly().casterMemberIndex;
                 request.spellId = context.utilitySpellOverlayReadOnly().spellId;
+                applyUtilitySpellOverlayCastOverrides(request, context.utilitySpellOverlayReadOnly());
                 request.utilitySlotIndex = static_cast<uint8_t>(target.index);
 
                 if (context.utilitySpellOverlayReadOnly().lloydRecallMode)
@@ -1005,7 +988,7 @@ void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
                     context.partyReadOnly() != nullptr
                         ? context.partyReadOnly()->member(context.utilitySpellOverlayReadOnly().casterMemberIndex)
                         : nullptr;
-                const size_t slotCount = maxLloydBeaconSlots(pCaster);
+                const size_t slotCount = maxLloydBeaconSlots(pCaster, context.utilitySpellOverlayReadOnly());
 
                 for (size_t index = 0; index < slotCount; ++index)
                 {
@@ -1681,7 +1664,11 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
     const float mouseX = input.pointerX;
     const float mouseY = input.pointerY;
     const bool isLeftMousePressed = input.leftMouseButton.held;
-    const bool rightMousePressed = input.rightMouseButton.pressed;
+    const bool rightMouseHeld = input.rightMouseButton.held;
+    if (!rightMouseHeld)
+    {
+        context.interactionState().inventoryItemRightClickUseLatch = false;
+    }
 
     const auto resolveCharacterInventoryGrid =
         [&context, screenWidth, screenHeight]() -> std::optional<GameplayResolvedHudLayoutElement>
@@ -2428,7 +2415,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             return;
         }
 
-        if (rightMousePressed
+        if (rightMouseHeld
+            && !context.interactionState().inventoryItemRightClickUseLatch
             && context.heldInventoryItem().active
             && !isInventorySpellTargetMode
             && (hoveredCharacterTarget.type == GameplayCharacterPointerTargetType::InventoryItem
@@ -2440,14 +2428,19 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
                     ? pHoveredCharacter->inventoryItemAt(hoveredCharacterTarget.gridX, hoveredCharacterTarget.gridY)
                     : nullptr;
 
-            if (pTargetItem != nullptr
-                && context.itemService().tryUseHeldItemOnInventoryItem(
+            if (pTargetItem != nullptr)
+            {
+                // A touch inspect modifier starts before its target finger.
+                // Consume only an occupied inventory target, once per hold.
+                context.interactionState().inventoryItemRightClickUseLatch = true;
+                if (context.itemService().tryUseHeldItemOnInventoryItem(
                     context,
                     selectedPartyMemberIndex,
                     pTargetItem->gridX,
                     pTargetItem->gridY))
-            {
-                return;
+                {
+                    return;
+                }
             }
         }
     }

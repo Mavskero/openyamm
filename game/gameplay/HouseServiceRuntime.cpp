@@ -1785,22 +1785,14 @@ bool HouseServiceRuntime::tryStealStockItem(
 
     const int itemValue =
         PriceCalculator::itemValue(item, *pItemDefinition, &standardItemEnchantTable, &specialItemEnchantTable);
-    const Party::Snapshot snapshot = party.snapshot();
-    const bool inventoryHasRoom = party.tryGrantInventoryItemStartingAt(party.activeMemberIndex(), item);
-    party.restoreSnapshot(snapshot);
-    pMember = party.activeMember();
-
-    if (pMember == nullptr)
-    {
-        statusText = "That item is unavailable.";
-
-        if (pResult != nullptr)
+    // Probe the same placement rule on copies. Restoring the live Party would
+    // recreate house stock and invalidate pStock before a successful theft.
+    const bool inventoryHasRoom = item.quantity != 0
+        && std::any_of(party.members().begin(), party.members().end(), [&item](const Character &member)
         {
-            *pResult = ShopItemServiceResult::Unavailable;
-        }
-
-        return false;
-    }
+            Character capacityProbe = member;
+            return capacityProbe.addInventoryItem(item);
+        });
 
     StealingAttemptInput input = {};
     input.targetKind = StealingTargetKind::Shop;

@@ -1,4 +1,5 @@
 #include "game/gameplay/HouseInteraction.h"
+#include "game/tables/UiTextTable.h"
 
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/BountyHuntRuntime.h"
@@ -1062,7 +1063,8 @@ std::vector<std::string> buildHouseServiceInfoLines(
     const Party *pParty,
     const ClassSkillTable *pClassSkillTable,
     DialogueMenuId menuId,
-    const HouseServiceTextTable *pHouseServiceTextTable
+    const HouseServiceTextTable *pHouseServiceTextTable,
+    const UiTextTable *pUiTextTable
 )
 {
     std::vector<std::string> lines;
@@ -1078,7 +1080,9 @@ std::vector<std::string> buildHouseServiceInfoLines(
 
     if (serviceType == HouseServiceType::Bank && menuId == DialogueMenuId::None)
     {
-        lines.push_back("Balance: " + std::to_string(pParty != nullptr ? pParty->bankGold() : 0));
+        const std::string balance = pUiTextTable != nullptr
+            ? pUiTextTable->text(UiTextTable::Message::BankBalance) : "Balance";
+        lines.push_back(balance + ": " + std::to_string(pParty != nullptr ? pParty->bankGold() : 0));
         return lines;
     }
 
@@ -1130,7 +1134,8 @@ std::vector<HouseActionOption> buildHouseActionOptions(
     float currentGameMinutes,
     DialogueMenuId menuId,
     const CharacterInspectTable *pCharacterInspectTable,
-    const HouseServiceTextTable *pHouseServiceTextTable
+    const HouseServiceTextTable *pHouseServiceTextTable,
+    const UiTextTable *pUiTextTable
 )
 {
     std::vector<HouseActionOption> options;
@@ -1501,10 +1506,15 @@ std::vector<HouseActionOption> buildHouseActionOptions(
 
     if (serviceType == HouseServiceType::Bank)
     {
-        HouseActionOption deposit = makeOption(HouseActionId::BankDepositAll, "Deposit", isHouseOpenNow, closedReason);
+        const std::string depositLabel = pUiTextTable != nullptr
+            ? pUiTextTable->text(UiTextTable::Message::BankDeposit) : "Deposit";
+        const std::string withdrawLabel = pUiTextTable != nullptr
+            ? pUiTextTable->text(UiTextTable::Message::BankWithdraw) : "Withdraw";
+        HouseActionOption deposit = makeOption(
+            HouseActionId::BankDepositAll, depositLabel, isHouseOpenNow, closedReason);
         HouseActionOption withdraw = makeOption(
             HouseActionId::BankWithdrawAll,
-            "Withdraw",
+            withdrawLabel,
             isHouseOpenNow,
             closedReason);
 

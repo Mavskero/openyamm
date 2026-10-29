@@ -408,8 +408,21 @@ void ArcomageScreen::drawPanels(const LogicalLayout &layout)
             opponentName += "***";
         }
 
-        drawScreenText(layout, ComicFontName, playerName, 47.0f, 18.0f, true, OeTextColorAbgr);
-        drawScreenText(layout, ComicFontName, opponentName, 595.0f, 18.0f, true, OeTextColorAbgr);
+        const auto drawName = [this, &layout](const std::string &name, float centerX)
+        {
+            // Creation accepts fifteen UTF-8 characters; fit the name and turn marker into the original panel.
+            const float availableWidth = 70.0f * layout.scale;
+            float nameScale = 1.0f;
+            float width = measureTextWidth(ComicFontName, name, layout.scale);
+            for (unsigned fit = 0; fit < 8 && width > availableWidth; ++fit)
+            {
+                nameScale *= availableWidth / width;
+                width = measureTextWidth(ComicFontName, name, layout.scale * nameScale);
+            }
+            drawScreenText(layout, ComicFontName, name, centerX, 18.0f, true, OeTextColorAbgr, nameScale);
+        };
+        drawName(playerName, 47.0f);
+        drawName(opponentName, 594.0f);
         drawScreenText(layout, ComicFontName, std::to_string(m_state.players[0].tower), 123.0f, 305.0f, true, OeTextColorAbgr);
         drawScreenText(layout, ComicFontName, std::to_string(m_state.players[1].tower), 515.0f, 305.0f, true, OeTextColorAbgr);
         drawScreenText(layout, ComicFontName, std::to_string(m_state.players[0].wall), 188.0f, 305.0f, true, OeTextColorAbgr);

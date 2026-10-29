@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 20> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 32> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -256,13 +256,30 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::ItemCharges, 464},
         {UiMessage::ItemArmor, 11},
         {UiMessage::ItemValue, 465},
+        {UiMessage::Congratulations, 9},
+        {UiMessage::TotalTime, 37},
+        {UiMessage::ScoreFormat, 94},
+        {UiMessage::CharacterFormat, 129},
+        {UiMessage::Year, 245},
+        {UiMessage::Years, 132},
+        {UiMessage::Month, 146},
+        {UiMessage::Months, 148},
+        {UiMessage::BankBalance, 25},
+        {UiMessage::BankDeposit, 60},
+        {UiMessage::BankWithdraw, 244},
+        {UiMessage::BankHowMuch, 112},
     }};
-    // These short UI captions have no translated equivalents in the original GlobalTxt.
-    constexpr std::array<std::pair<UiMessage, const char *>, 6> projectUiTranslations{{
+    // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
+    // Their Chinese text is a project translation, recorded separately in the manifest.
+    constexpr std::array<std::pair<UiMessage, const char *>, 7> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
         {UiMessage::ArcomageDiscardHint, "请选择要弃掉的牌"},
+        {UiMessage::WinEnding,
+            "干得好！你挫败了世界毁灭者，将你的世界从永恒毁灭的边缘拯救了回来。"
+            "生命得以延续，贾达姆也迎来了新的和平。"
+            "你缔结的强大联盟将确保这片土地得到重建，并最终走向繁荣。"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

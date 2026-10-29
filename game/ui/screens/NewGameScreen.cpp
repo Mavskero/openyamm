@@ -507,9 +507,19 @@ std::optional<ResolvedLayoutElement> resolveLayoutElementRecursive(
         return resolved;
     }
 
+    const float rootWidth = element.width > 0.0f ? element.width : fallbackWidth;
+    const float rootHeight = element.height > 0.0f ? element.height : fallbackHeight;
     resolved.scale = std::clamp(baseScale, element.minScale, element.maxScale);
-    resolved.width = (element.width > 0.0f ? element.width : fallbackWidth) * resolved.scale;
-    resolved.height = (element.height > 0.0f ? element.height : fallbackHeight) * resolved.scale;
+    if (rootWidth >= RootWidth && rootHeight >= RootHeight)
+    {
+        // Full-screen layouts must still fit when the drawable is smaller than their authored minimum scale.
+        const float fitScale = std::min(
+            static_cast<float>(screenWidth) / rootWidth,
+            static_cast<float>(screenHeight) / rootHeight);
+        resolved.scale = std::min(resolved.scale, std::max(0.0f, fitScale));
+    }
+    resolved.width = rootWidth * resolved.scale;
+    resolved.height = rootHeight * resolved.scale;
 
     switch (element.anchor)
     {

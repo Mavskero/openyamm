@@ -38,6 +38,7 @@ public:
         SkillMastery skillMasteryOverride = SkillMastery::None;
         bool spendMana = true;
         bool applyRecovery = true;
+        bool bypassRequiredMastery = false;
         PartySpellCastTargetKind targetKind = PartySpellCastTargetKind::None;
         std::string spellName;
         bool clickLatch = false;

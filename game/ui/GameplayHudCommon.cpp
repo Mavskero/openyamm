@@ -672,6 +672,15 @@ std::optional<GameplayResolvedHudLayoutElement> GameplayHudCommon::resolveHudLay
             }
 
             resolved.scale = std::clamp(baseScale, element.minScale, element.maxScale);
+            if (element.parentId.empty()
+                && effectiveWidth >= HudReferenceWidth
+                && effectiveHeight >= HudReferenceHeight)
+            {
+                const float fitScale = std::min(
+                    anchorRect.width / effectiveWidth,
+                    anchorRect.height / effectiveHeight);
+                resolved.scale = std::min(resolved.scale, std::max(0.0f, fitScale));
+            }
             resolved.width = effectiveWidth * resolved.scale;
             resolved.height = effectiveHeight * resolved.scale;
 

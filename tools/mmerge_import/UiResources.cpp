@@ -266,8 +266,8 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
         images.insert(dimensionDoorImageReferences.begin(), dimensionDoorImageReferences.end());
     }
 
-    // Menu and gameplay overlays select this original side-panel image outside the YAML layouts.
-    const std::set<std::string> requiredDynamicImageReferences = {"ui-parch"};
+    // Menu overlays and WinGameScreen select these original images outside the YAML layouts.
+    const std::set<std::string> requiredDynamicImageReferences = {"ui-parch", "winbg"};
     images.insert(requiredDynamicImageReferences.begin(), requiredDynamicImageReferences.end());
 
     // LoadingOverlayScreen selects these original images dynamically, outside the YAML layouts.

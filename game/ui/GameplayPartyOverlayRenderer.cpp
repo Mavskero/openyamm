@@ -1062,34 +1062,16 @@ bool isUtilityTownPortalDestinationUnlocked(
     return pParty->hasQuestBit(destination.unlockQBitId);
 }
 
-size_t utilityOverlayMaxLloydBeaconSlots(const Character *pCharacter)
+size_t utilityOverlayMaxLloydBeaconSlots(
+    const Character *pCharacter,
+    const GameplayUiController::UtilitySpellOverlayState &overlay)
 {
-    if (pCharacter == nullptr)
+    if (overlay.skillLevelOverride > 0 && overlay.skillMasteryOverride != SkillMastery::None)
     {
-        return 1;
+        return lloydsBeaconMaxSlotsForMastery(overlay.skillMasteryOverride);
     }
 
-    const CharacterSkill *pWaterSkill = pCharacter->findSkill("WaterMagic");
-
-    if (pWaterSkill == nullptr)
-    {
-        return 1;
-    }
-
-    switch (pWaterSkill->mastery)
-    {
-        case SkillMastery::Master:
-        case SkillMastery::Grandmaster:
-            return 5;
-
-        case SkillMastery::Expert:
-            return 3;
-
-        case SkillMastery::Normal:
-        case SkillMastery::None:
-        default:
-            return 1;
-    }
+    return lloydsBeaconMaxSlotsForCharacter(pCharacter);
 }
 
 std::string formatUtilityDurationText(float remainingSeconds)
@@ -3784,10 +3766,11 @@ void GameplayPartyOverlayRenderer::renderSaveLoadOverlay(
             label = context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::EmptySlot);
         }
 
-        if (std::strcmp(pScreenName, "SaveGame") == 0
+        const bool editingRow = std::strcmp(pScreenName, "SaveGame") == 0
             && pSaveGameScreen != nullptr
             && pSaveGameScreen->editActive
-            && slotIndex == pSaveGameScreen->editSlotIndex)
+            && slotIndex == pSaveGameScreen->editSlotIndex;
+        if (editingRow)
         {
             label = pSaveGameScreen->editBuffer;
 
@@ -3804,6 +3787,42 @@ void GameplayPartyOverlayRenderer::renderSaveLoadOverlay(
 
         GameplayScreenRuntime::HudLayoutElement rowLayout = *pLayout;
         rowLayout.textColorAbgr = slotIndex == clampedSelectedIndex ? selectedRowColor : rowColor;
+        float fontScale = resolved->scale * std::max(0.1f, rowLayout.textScale);
+        fontScale = fontScale >= 1.0f
+            ? GameplayHudCommon::snappedHudFontScale(fontScale) : std::max(0.5f, fontScale);
+        const float availableWidth = std::max(0.0f, resolved->width
+            - 2.0f * std::abs(rowLayout.textPadX * resolved->scale) - 4.0f - std::max(1.0f, fontScale));
+        const auto measureLabel = [&context, &rowLayout, fontScale](const std::string &text)
+        {
+            return context.measureHudTextWidth(rowLayout.fontName, text) * fontScale;
+        };
+        if (measureLabel(label) > availableWidth)
+        {
+            const std::string ellipsis = "...";
+            std::string shortened = label;
+            while (!shortened.empty()
+                && measureLabel(editingRow ? ellipsis + shortened : shortened + ellipsis) > availableWidth)
+            {
+                if (editingRow)
+                {
+                    size_t byteCount = 0;
+                    if (decodeUtf8Character(shortened, byteCount))
+                    {
+                        shortened.erase(0, byteCount);
+                    }
+                    else
+                    {
+                        shortened.clear();
+                    }
+                }
+                else if (!eraseLastUtf8Character(shortened))
+                {
+                    shortened.clear();
+                }
+            }
+            label = measureLabel(ellipsis) <= availableWidth
+                ? (editingRow ? ellipsis + shortened : shortened + ellipsis) : std::string();
+        }
         context.renderLayoutLabel(rowLayout, *resolved, label);
     }
 
@@ -4760,7 +4779,7 @@ void GameplayPartyOverlayRenderer::renderUtilitySpellOverlay(GameplayScreenRunti
             context.partyReadOnly() != nullptr
                 ? context.partyReadOnly()->member(context.utilitySpellOverlayReadOnly().casterMemberIndex)
                 : nullptr;
-        const size_t slotCount = lloydsBeaconMaxSlotsForCharacter(pCaster);
+        const size_t slotCount = utilityOverlayMaxLloydBeaconSlots(pCaster, context.utilitySpellOverlayReadOnly());
         const bool recallMode = context.utilitySpellOverlayReadOnly().lloydRecallMode;
         const uint32_t slotBorderColor = makeAbgrColor(42, 32, 20);
         const uint32_t slotBackgroundColor = makeAbgrColor(9, 8, 7);
@@ -5133,7 +5152,7 @@ void GameplayPartyOverlayRenderer::renderUtilitySpellOverlay(GameplayScreenRunti
         context.partyReadOnly() != nullptr
             ? context.partyReadOnly()->member(context.utilitySpellOverlayReadOnly().casterMemberIndex)
             : nullptr;
-    const size_t slotCount = utilityOverlayMaxLloydBeaconSlots(pCaster);
+    const size_t slotCount = utilityOverlayMaxLloydBeaconSlots(pCaster, context.utilitySpellOverlayReadOnly());
 
     for (size_t index = 0; index < slotCount; ++index)
     {

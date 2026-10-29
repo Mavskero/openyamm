@@ -618,6 +618,16 @@ struct GameplayInventoryNestedOverlayPointerTarget
     bool operator==(const GameplayInventoryNestedOverlayPointerTarget &other) const = default;
 };
 
+struct GameplayShopInventoryPointerTarget
+{
+    bool active = false;
+    uint32_t houseId = 0;
+    GameplayUiController::InventoryNestedOverlayMode mode = GameplayUiController::InventoryNestedOverlayMode::None;
+    size_t memberIndex = 0;
+    uint64_t memberId = 0;
+    InventoryItem item = {};
+};
+
 struct GameplayOverlayInteractionState
 {
     bool closeOverlayLatch = false;
@@ -659,6 +669,7 @@ struct GameplayOverlayInteractionState
     bool characterClickLatch = false;
     GameplayCharacterPointerTarget characterPressedTarget = {};
     bool characterTouchItemDragActive = false;
+    bool inventoryItemRightClickUseLatch = false;
     bool characterMemberCycleLatch = false;
     std::optional<size_t> pendingCharacterDismissMemberIndex = std::nullopt;
     uint64_t pendingCharacterDismissExpiresTicks = 0;
@@ -692,6 +703,8 @@ struct GameplayOverlayInteractionState
     bool dialogueTopicPageDownLatch = false;
     bool houseShopClickLatch = false;
     size_t houseShopPressedSlotIndex = static_cast<size_t>(-1);
+    bool shopInventoryClickLatch = false;
+    GameplayShopInventoryPointerTarget shopInventoryPressedTarget = {};
     bool chestClickLatch = false;
     bool chestItemClickLatch = false;
     GameplayChestPointerTarget chestPressedTarget = {};

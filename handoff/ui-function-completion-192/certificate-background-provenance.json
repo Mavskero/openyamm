@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "scope": "single-original-certificate-background",
+  "source_archive": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/local-data/validation/mm8-runtime-076/source-001/Data/icons.lod",
+  "source_archive_format": "MMVI",
+  "source_member": "winBG.PCX",
+  "source_header_name": "winBG.PCX",
+  "source_wrapped_bytes": 785124,
+  "source_wrapped_sha256": "fcdf04d5574db5df2a3df563127993531c8554abb403501369e7c15d2a83f49e",
+  "operation": "Remove original LOD language wrapper and inflate its payload; preserve PCX bytes unchanged. This matches convertLodImages for wrapped PCX.",
+  "output": "/Volumes/NVMeSSD/Projects/openyamm-\u2160pados/local-data/validation/ui-function-completion-192/certificate-background-001/engine/icons/winbg.pcx",
+  "runtime_member": "engine.zip::icons/winbg.pcx",
+  "width": 640,
+  "height": 480,
+  "bytes": 1395423,
+  "sha256": "d62057f5fc9e3416fc090dc99f8427f85a320f208e2036eca6cf87ec23e37a19",
+  "runtime_modified": false,
+  "generated_art": false,
+  "builds": 0,
+  "app_runs": 0,
+  "tests": 0
+}

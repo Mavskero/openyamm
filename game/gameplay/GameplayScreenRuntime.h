@@ -73,6 +73,11 @@ public:
         std::filesystem::path path;
         std::string saveName;
     };
+    struct TransientTravelState
+    {
+        TownPortalContactState townPortalContact;
+        DimensionDoorState dimensionDoor;
+    };
     struct SharedUiBootstrapConfig
     {
         const Engine::AssetFileSystem *pAssetFileSystem = nullptr;
@@ -426,6 +431,8 @@ public:
     void collectGameplayMinimapMarkers(std::vector<GameplayMinimapMarkerState> &markers) const;
     bool ensureTownPortalDestinationsLoaded();
     bool ensureDimensionDoorDestinationsLoaded();
+    TransientTravelState captureTransientTravelState() const;
+    void restoreTransientTravelState(const TransientTravelState &state);
     void resetTownPortalContact();
     bool tryInterruptTownPortalForVerdant(bool dimensionDoorEligible);
     void activateDimensionDoor(

@@ -17,6 +17,7 @@ class CharacterInspectTable;
 class ClassSkillTable;
 class HouseServiceTextTable;
 class NpcDialogTable;
+class UiTextTable;
 
 enum class HouseServiceType : uint32_t
 {
@@ -146,7 +147,8 @@ std::vector<std::string> buildHouseServiceInfoLines(
     const Party *pParty,
     const ClassSkillTable *pClassSkillTable,
     DialogueMenuId menuId,
-    const HouseServiceTextTable *pHouseServiceTextTable = nullptr
+    const HouseServiceTextTable *pHouseServiceTextTable = nullptr,
+    const UiTextTable *pUiTextTable = nullptr
 );
 
 std::vector<HouseActionOption> buildHouseActionOptions(
@@ -157,7 +159,8 @@ std::vector<HouseActionOption> buildHouseActionOptions(
     float currentGameMinutes,
     DialogueMenuId menuId,
     const CharacterInspectTable *pCharacterInspectTable = nullptr,
-    const HouseServiceTextTable *pHouseServiceTextTable = nullptr
+    const HouseServiceTextTable *pHouseServiceTextTable = nullptr,
+    const UiTextTable *pUiTextTable = nullptr
 );
 
 HouseActionResult performHouseAction(

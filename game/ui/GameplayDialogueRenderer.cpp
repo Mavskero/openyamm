@@ -1060,7 +1060,7 @@ void GameplayDialogueRenderer::renderDialogueOverlay(
 
     if (view.houseBankState().inputActive())
     {
-        dialogueResponseHintText = "Type amount  Enter accept  E/Esc cancel";
+        dialogueResponseHintText = view.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::BankHowMuch);
     }
 
     if (view.statusBarEventRemainingSeconds() > 0.0f && !view.statusBarEventText().empty())
@@ -1240,7 +1240,7 @@ void GameplayDialogueRenderer::renderDialogueOverlay(
         dialogueResponseHintText,
         renderAboveHud);
 
-    if (pendingInputPromptHint(view))
+    if (pendingInputPromptHint(view) || view.houseBankState().inputActive())
     {
         const UiTextTable &text = view.gameplayUiRuntime().uiTextTable();
         renderDialogueLabelById(view, "DialogueOkButton", text.text(UiTextTable::Message::Submit),
@@ -1752,7 +1752,8 @@ void GameplayDialogueRenderer::renderDialogueTextureElement(
 
     if (normalizedLayoutId == "dialogueokbutton"
         && view.activeEventDialog().presentation != EventDialogPresentation::Transition
-        && !pendingInputPromptHint(view))
+        && !pendingInputPromptHint(view)
+        && !view.houseBankState().inputActive())
     {
         return;
     }

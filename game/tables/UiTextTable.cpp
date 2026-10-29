@@ -1,6 +1,7 @@
 #include "game/tables/UiTextTable.h"
 
 #include <algorithm>
+#include <initializer_list>
 #include <string_view>
 #include <utility>
 
@@ -41,7 +42,38 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.item_charges", "Charges"},
     {"ui.item_armor", "Armor"},
     {"ui.item_value", "Value"},
+    {"ui.win_congratulations", "Congratulations!"},
+    {"ui.win_total_time", "Total Time:"},
+    {"ui.win_score", "Your score: %lu"},
+    {"ui.win_character", "%s the Level %u %s"},
+    {"ui.year", "Year"},
+    {"ui.years", "Years"},
+    {"ui.month", "Month"},
+    {"ui.months", "Months"},
+    {"ui.win_ending",
+        "Excellent work! By thwarting the Destroyer of Worlds, you have pulled your world from the brink of "
+        "unending oblivion. Not only may life continue, but a new peace reigns over Jadame. The mighty alliance "
+        "you forged will see to the land's restoration and eventual prosperity."},
+    {"ui.bank_balance", "Balance"},
+    {"ui.bank_deposit", "Deposit"},
+    {"ui.bank_withdraw", "Withdraw"},
+    {"ui.bank_how_much", "How Much?"},
 }};
+
+bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
+{
+    size_t nextOffset = 0;
+    for (const std::string_view parameter : parameters)
+    {
+        const size_t offset = format.find('%', nextOffset);
+        if (offset == std::string::npos || format.compare(offset, parameter.size(), parameter) != 0)
+        {
+            return false;
+        }
+        nextOffset = offset + parameter.size();
+    }
+    return format.find('%', nextOffset) == std::string::npos;
+}
 
 size_t itemTypeParameterOffset(const std::string &format)
 {
@@ -64,15 +96,20 @@ UiTextTable::UiTextTable()
 bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows)
 {
     // Migrate only complete older prefixes: the original 13 captions, the 16 with
-    // Arcomage and the 19 with initial inspect labels. Other missing-key shapes remain errors.
+    // Arcomage, the 19 with initial inspect labels, the 26 with item details and the 35 with win text.
+    // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
     constexpr size_t InspectMessageCount = size_t(Message::ItemPower);
+    constexpr size_t ItemDetailMessageCount = size_t(Message::Congratulations);
+    constexpr size_t WinMessageCount = size_t(Message::BankBalance);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
         && schemaMessageCount != ArcomageMessageCount
-        && schemaMessageCount != InspectMessageCount)
+        && schemaMessageCount != InspectMessageCount
+        && schemaMessageCount != ItemDetailMessageCount
+        && schemaMessageCount != WinMessageCount)
     {
         return false;
     }
@@ -95,7 +132,9 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         const size_t index = size_t(found - Definitions.begin());
         if (index >= schemaMessageCount || !texts[index].empty()
             || (index == size_t(Message::ItemTypeFormat)
-                && itemTypeParameterOffset(row[1]) == std::string::npos))
+                && itemTypeParameterOffset(row[1]) == std::string::npos)
+            || (index == size_t(Message::ScoreFormat) && !hasExpectedParameters(row[1], {"%lu"}))
+            || (index == size_t(Message::CharacterFormat) && !hasExpectedParameters(row[1], {"%s", "%u", "%s"})))
         {
             return false;
         }
@@ -125,6 +164,35 @@ std::string UiTextTable::formatItemType(const std::string &type) const
         return {};
     }
     result.replace(offset, 2, type);
+    return result;
+}
+
+std::string UiTextTable::formatWinScore(uint64_t score) const
+{
+    std::string result = text(Message::ScoreFormat);
+    if (!hasExpectedParameters(result, {"%lu"}))
+    {
+        return {};
+    }
+    result.replace(result.find("%lu"), 3, std::to_string(score));
+    return result;
+}
+
+std::string UiTextTable::formatWinCharacter(
+    const std::string &name, uint32_t level, const std::string &className) const
+{
+    std::string result = text(Message::CharacterFormat);
+    if (!hasExpectedParameters(result, {"%s", "%u", "%s"}))
+    {
+        return {};
+    }
+    const size_t nameOffset = result.find("%s");
+    const size_t levelOffset = result.find("%u", nameOffset + 2);
+    const size_t classOffset = result.find("%s", levelOffset + 2);
+    // Replace from right to left so percent signs in player names remain literal.
+    result.replace(classOffset, 2, className);
+    result.replace(levelOffset, 2, std::to_string(level));
+    result.replace(nameOffset, 2, name);
     return result;
 }
 

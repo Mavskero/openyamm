@@ -1,0 +1,481 @@
+{
+  "checkpoint": 192,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-29T07:42:44.008913+00:00",
+  "source_base": "aed3ab2da56568be9bd52893955557fee1a3c20e",
+  "scope": "Consolidated device-independent session recovery, spell contexts, inventory/shop/bank controls, keyboard navigation and menu/certificate presentation",
+  "full_goal_complete": false,
+  "all_ui_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "new_release": false,
+  "runtime_uploaded": false,
+  "save_version": 103,
+  "save_version_changed": false,
+  "runtime": "local-data/validation/ui-function-completion-192/runtime-003",
+  "runtime_changes": [
+    {
+      "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/core-ui-text-002/core_conversion.json",
+      "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-005",
+      "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-002",
+      "added_members": [],
+      "changed_members": [
+        "data_tables/ui_text.txt"
+      ],
+      "ui_text_sha256": "b23f943d9d0ca35c866bbb6e9c0596d4b7964de9417d0715fdbc3352d13736ec",
+      "all_other_archive_members_retained": true,
+      "controlled_gameplay_fixtures": false,
+      "release_created": false
+    },
+    {
+      "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-002",
+      "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-003",
+      "added_members": [
+        "icons/winbg.pcx"
+      ],
+      "changed_members": [
+        "ui/gameplay/dialogue.yml"
+      ],
+      "all_other_archive_members_retained": true,
+      "controlled_gameplay_fixtures": false,
+      "release_created": false,
+      "members_sha256": {
+        "icons/winbg.pcx": "d62057f5fc9e3416fc090dc99f8427f85a320f208e2036eca6cf87ec23e37a19",
+        "ui/gameplay/dialogue.yml": "52862c3b7fbdbd19c8d933e0305dacc6d3155c8eef71d1a91eb0236d7b8fc562"
+      }
+    }
+  ],
+  "changes": [
+    "NewGame cancellation returns to the original gameplay menu; accepted creation and load resource failures restore the prior live session without replaying AfterLoad or timed respawn.",
+    "Rollback restores raw live Party without class dependency reinitialization; retains cursor item, world, path, transient travel state and event pending output.",
+    "F9/F10 complete taps survive; Lloyd scroll slots/cast and targeted scroll selection preserve effective mastery, mana and recovery context.",
+    "Shop theft capacity probe uses Character copies, keeping stock pointer valid; Sell/Identify/Repair commit only on matching release and cancel on target change/drag.",
+    "Held-item use/mix can acquire its occupied target after the touch inspect modifier starts, once per hold.",
+    "Bank amounts have visible Submit/Cancel, original-language labels and text-input avoidance bounds; hidden shop parent topics no longer react to keyboard navigation.",
+    "Pending key binding preserves visible footer/page navigation; full-screen roots fit small viewports.",
+    "Long save rows truncate at UTF-8 boundaries while preserving saved/edit text; editing shows the tail and cursor.",
+    "Certificate localized text and long names fit; original winBG is required by importer; pale certificate uses dark text and dark Merge endcard retains white.",
+    "Bank/question buttons have authored fonts; Arcomage long player names fit their existing panels."
+  ],
+  "commands": {
+    "build-native-006": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "ui_continuation_capture",
+        "-j3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 22474,
+      "started_at": "2026-10-29T07:17:09.414215+00:00",
+      "finished_at": "2026-10-29T07:17:21.764743+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 900.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/build-native-006.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "build-ios-002": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 26896,
+      "started_at": "2026-10-29T07:22:53.628626+00:00",
+      "finished_at": "2026-10-29T07:23:06.152852+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 900.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/build-ios-002.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "core-import-002": {
+      "argv": [
+        "openyamm/build-apple/core_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "local-data/validation/ui-function-completion-192/core-ui-text-002"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 85359,
+      "started_at": "2026-10-29T06:29:16.130602+00:00",
+      "finished_at": "2026-10-29T06:29:16.264007+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 180.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/core-import-002.log",
+      "executed_binary": "openyamm/build-apple/core_import",
+      "executed_binary_sha256": "e8da7f374ba53db91ea3555bed40acac667595f5736e6115d2368b8587a4734c",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "ui-import-001": {
+      "argv": [
+        "openyamm/build-apple/ui_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "openyamm/assets_dev/engine/ui/gameplay",
+        "3",
+        "local-data/validation/ui-function-completion-192/ui-certificate-001"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 8502,
+      "started_at": "2026-10-29T06:58:50.495828+00:00",
+      "finished_at": "2026-10-29T06:58:51.158582+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 180.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/ui-import-001.log",
+      "executed_binary": "openyamm/build-apple/ui_import",
+      "executed_binary_sha256": "c6827a69aea75586ac5f26eac84a7ff67183220dc70f0fee57d222a3421992b7",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "assemble-runtime-002": {
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-192/assemble_runtime_002.py"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 85446,
+      "started_at": "2026-10-29T06:29:21.580189+00:00",
+      "finished_at": "2026-10-29T06:29:23.756452+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 180.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/assemble-runtime-002.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/python3",
+      "executed_binary_sha256": "30b2a6bf9706029b609327ca5db722cd458239df96efc87e1f8e37beed49db2e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "assemble-runtime-003": {
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-192/assemble_runtime_003.py"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 8646,
+      "started_at": "2026-10-29T06:58:58.777327+00:00",
+      "finished_at": "2026-10-29T06:59:00.792123+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 180.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/assemble-runtime-003.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/python3",
+      "executed_binary_sha256": "30b2a6bf9706029b609327ca5db722cd458239df96efc87e1f8e37beed49db2e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "stealing-check-001": {
+      "argv": [
+        "openyamm/build-apple/shop_stealing_check",
+        "--test-case=MMerge shop stealing integrates with stock and reputation"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 65413,
+      "started_at": "2026-10-29T06:04:51.142391+00:00",
+      "finished_at": "2026-10-29T06:04:52.830398+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 60.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/stealing-check-001.log",
+      "executed_binary": "openyamm/build-apple/shop_stealing_check",
+      "executed_binary_sha256": "6542ad644dfcfa9ed64afc97272494fd3183f9305bffe815d0e8778049d8cdd2",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "OPENYAMM_REGRESSION_RUNTIME_ROOT": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-001"
+      }
+    },
+    "actual-003": {
+      "argv": [
+        "openyamm/build-apple/ui_continuation_capture",
+        "local-data/validation/ui-function-completion-192/runtime-resource-fault-002",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-192/actual-003"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 88680,
+      "started_at": "2026-10-29T06:33:29.235863+00:00",
+      "finished_at": "2026-10-29T06:33:44.768307+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 110.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/actual-003.log",
+      "executed_binary": "openyamm/build-apple/ui_continuation_capture",
+      "executed_binary_sha256": "a7ba082042afba8927307b2b6a9d88ea6900e71d31ec928395189b096d770396",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "visual-001": {
+      "argv": [
+        "openyamm/build-apple/ui_continuation_capture",
+        "local-data/validation/ui-function-completion-192/runtime-003",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-192/visual-001",
+        "--visual-only"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 8801,
+      "started_at": "2026-10-29T06:59:09.131906+00:00",
+      "finished_at": "2026-10-29T06:59:21.025247+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 60.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/visual-001.log",
+      "executed_binary": "openyamm/build-apple/ui_continuation_capture",
+      "executed_binary_sha256": "8e9be72d2cdd443cc31b7d05e35def892cd7031397b35c15826ca99c6df5bdc0",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "certificate-001": {
+      "argv": [
+        "openyamm/build-apple/ui_continuation_capture",
+        "local-data/validation/ui-function-completion-192/runtime-003",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-192/certificate-001",
+        "--certificate-only"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 23437,
+      "started_at": "2026-10-29T07:18:21.361030+00:00",
+      "finished_at": "2026-10-29T07:18:33.070531+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 45.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/certificate-001.log",
+      "executed_binary": "openyamm/build-apple/ui_continuation_capture",
+      "executed_binary_sha256": "4c74c39ebc114d4414c415d9d86f1f15cbdfda627c7a5e89e4dbea2c76d91d89",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "actual": {
+    "passed": true,
+    "failure": "",
+    "phase": "complete",
+    "frames": 86,
+    "elapsed_ms": 15408,
+    "captures": 5,
+    "drawable": [
+      2420,
+      1668
+    ],
+    "new_game_cancel_restored_gameplay_menu": true,
+    "actual_quick_load_failed": true,
+    "failed_load_restored_state": true,
+    "resource_failure_reconstructed": true,
+    "teardown_generation_before": 6,
+    "teardown_generation_after": 9,
+    "runtime_inspection_only": true,
+    "fault_map": "7d24.blv",
+    "load_cancel_restored_gameplay_menu": true,
+    "direct_service_context_round_trip": true,
+    "new_game_failure_restored": true,
+    "direct_quick_key_edges_checked": true,
+    "actual_target_cast": false,
+    "sdl_escape_pairs": 4,
+    "normal_frames": 30,
+    "portrait_only_comparisons": 5,
+    "bank_direct_entry_fixture": true,
+    "bank_house_id": 281,
+    "bank_deposit_topic_clicks": 1,
+    "bank_submit_clicks": 1,
+    "bank_goodbye_clicks": 1,
+    "bank_input_area_checked": true,
+    "bank_one_gold_submitted": true,
+    "bank_cash_before": 128,
+    "bank_balance_before": 0,
+    "direct_small_root_layout_check": true,
+    "actual_small_viewport": false,
+    "normal_seconds": 0.5,
+    "normal_start_minutes": 75325.21875,
+    "normal_end_minutes": 75325.46875,
+    "fixture_save_write": true,
+    "source_save_write": false,
+    "new_unit_cases": 0,
+    "natural_campaign": false,
+    "device": false,
+    "visual_review": "required"
+  },
+  "visual_followup": {
+    "passed": true,
+    "failure": "",
+    "mode": "visual-only",
+    "phase": "complete",
+    "frames": 29,
+    "elapsed_ms": 11780,
+    "captures": 3,
+    "drawable": [
+      1210,
+      816
+    ],
+    "bank_house_id": 281,
+    "bank_amount_canceled": true,
+    "bank_transactions": 0,
+    "normal_frames": 0,
+    "lifecycle_replay": false,
+    "fixture_save_write": true,
+    "source_save_write": false,
+    "new_unit_cases": 0,
+    "natural_campaign": false,
+    "device": false,
+    "visual_review": "required"
+  },
+  "certificate_followup": {
+    "passed": true,
+    "failure": "",
+    "mode": "certificate-only",
+    "phase": "complete",
+    "frames": 8,
+    "elapsed_ms": 11629,
+    "captures": 1,
+    "drawable": [
+      2420,
+      1668
+    ],
+    "bank_house_id": 0,
+    "bank_amount_canceled": false,
+    "bank_transactions": 0,
+    "normal_frames": 0,
+    "lifecycle_replay": false,
+    "fixture_save_write": false,
+    "immortal": false,
+    "unlimited_mana": false,
+    "source_save_write": false,
+    "new_unit_cases": 0,
+    "natural_campaign": false,
+    "device": false,
+    "visual_review": "required"
+  },
+  "test_scope": {
+    "existing_cases": 1,
+    "assertions": 10,
+    "new_cases": 0,
+    "old_campaign_replays": 0,
+    "cold_replays": 0,
+    "test_name": "MMerge shop stealing integrates with stock and reputation"
+  },
+  "image_reviews": [
+    "visual-review-003.json",
+    "visual-review-001.json",
+    "certificate-visual-review.json"
+  ],
+  "reviewed_actual_images": 9,
+  "preserved_attempts": {
+    "actual-001": {
+      "classification": "validation-fixture-too-strict",
+      "observation": "Across-render paused comparison included portrait animation driven by wall time.",
+      "resolution": "Normalize exactly four source-proven presentation fields only across frames; record all differences, keep synchronous comparison exact."
+    },
+    "actual-002": {
+      "classification": "production-rollback-order-defect",
+      "observation": "Synchronous new-session failure restoration copied old Party, then bindPartyDependencies called setClassSkillTable and reset portrait state. Same setter can normalize skills/resources.",
+      "resolution": "Remove extra binding after raw liveParty copy; retained app-lifetime data repository references remain valid. Existing renderer recreation already binds dependencies.",
+      "source": "game/party/Party.cpp initializePortraitRuntimeState; Party::setClassSkillTable; game/app/GameApplication.cpp restoreSessionReplacementBackup"
+    },
+    "actual-003": {
+      "classification": "functional-pass-with-confirmed-visual-gaps",
+      "result": "actual-003/result.json",
+      "visual_review": "visual-review-003.json",
+      "followup": "Original WinBG import, authored button fonts, fit long save row names; visual-only recheck."
+    }
+  },
+  "additional_preserved_failure": "build-targeted-tests-001 requested a target unavailable in the Apple config; no source compilation attempted there. Replaced by standalone existing-case target.",
+  "source_only_or_build_limited": [
+    "Lloyd actual set/recall and targeted actual spell cast",
+    "shop release/drag gestures and held-item touch modifier",
+    "keyboard binding/footer navigation and hidden-topic guards",
+    "NewGame/Load/Save/settings small-window actual pixels (three shared roots checked analytically at320x240)",
+    "shared Save edit-tail clipping and Arcomage long-name rendering",
+    "target iPad keyboard/IME/touch/background behavior"
+  ],
+  "fixture_boundaries": [
+    "actual003 uses an isolated runtime omitting exactly known7d24 map assets; complete runtime untouched.",
+    "Normal132 MM7 source save unchanged; direct menu entries, failed accepted-start request and held-scroll2125 are declared fixtures.",
+    "Bank281 HouseService is directly declared; Deposit/Submit/Goodbye are actual SDL clicks. No natural door visit claim.",
+    "Certificate is directly previewed using the production builder with a display-only long name; no campaign ending replay.",
+    "Across rendered frames only four wall-clock portrait presentation fields are normalized; synchronous rollback Party is byte-exact.",
+    "visual001 inherited default immortal/unlimitedMana settings withdelta0/0normalframes; previews now explicitly disable both; no combat/spell/transaction claim.",
+    "No screenshot-only or source/build result is promoted to full natural campaign or iPad acceptance."
+  ],
+  "first_playable_estimate": {
+    "range_percent": [
+      80,
+      85
+    ],
+    "confidence": "low",
+    "not_quest_or_map_coverage": true
+  },
+  "all_owned_processes_collected": true,
+  "source_sha256": {
+    "assets_dev/engine/ui/gameplay/dialogue.yml": "52862c3b7fbdbd19c8d933e0305dacc6d3155c8eef71d1a91eb0236d7b8fc562",
+    "game/app/GameApplication.cpp": "74abe1cdac9d5dfb6d99d391654639e162d0baa8f9cf4f4de6c4ac9320057259",
+    "game/app/GameApplication.h": "6d2b7610ba163a635e7f55fe9cea0690a062c32a3fb916548f854f3b18a1b89a",
+    "game/events/EventDialogContent.cpp": "f76fed1c0cc4f4fbb3418ea4cd8276bc5632274962932af18179c134092c929c",
+    "game/events/EventDialogContent.h": "438fbec6b9523cb79a82a74bf8a1dad20a42c3577daf3945f26631f52e1f8b69",
+    "game/gameplay/GameplayDialogController.cpp": "eef742d684b416ccd3b29348e73b684ead846100ff5e81daa7eda08e295e60e2",
+    "game/gameplay/GameplayOverlayInputController.cpp": "ad8f974bdbe4e0680dd6b05ddef0a0f2e6cc65a999ea1e8d152be98f51f3ae3f",
+    "game/gameplay/GameplayPartyOverlayInputController.cpp": "921a05de76e45994bf21082e98111eea1adb1013172a36758e1de151ad3502aa",
+    "game/gameplay/GameplayScreenRuntime.cpp": "7ac79597bdf67b2ba381d1d64b1fa6ca798c8db3e15a9c99c42cbd4c43fe3652",
+    "game/gameplay/GameplayScreenRuntime.h": "6e7aaffaecacfc5f102a2c6bd5daab9d593bf20090899266e9d81f867a02f6a0",
+    "game/gameplay/GameplayScreenState.h": "ea3ccc2801d3540245c9edcb36d08cda25124f737a720d4f8b1a0d3810d8258a",
+    "game/gameplay/GameplaySpellService.cpp": "c02b441e41f4e85c07f07fc6b149bbdff10bfb7b6897d4a9282d76d37ffda4bc",
+    "game/gameplay/HouseInteraction.cpp": "c961dc87e5e1be957c8b4e0556e97b8b6281cc35f0ddf62d80f17c3a1871dfac",
+    "game/gameplay/HouseInteraction.h": "c3d0dc39e72d6e391ac832504a16c7298723b5d7bffd4da5bd7523eb8ae10cfb",
+    "game/gameplay/HouseServiceRuntime.cpp": "2dd656eab8aa08b34cf90b9eea81b574be22b2bdcf219096b98e446b61f8244e",
+    "game/tables/UiTextTable.cpp": "00c82018166f2297f38476a257d1c279b7ac7d3cf630f39ecdaf3524c93233fc",
+    "game/tables/UiTextTable.h": "d4740ef03dd6cc54dceadb458ebbe4861127a6e6cba957148bf6096d7bd190bf",
+    "game/ui/GameplayDialogueRenderer.cpp": "258708919974261ac56798d795ac55a34f8f74132e3677a9bb7351e45e816ba8",
+    "game/ui/GameplayHudCommon.cpp": "0e78bdc40e1b09c5915c83e2ae5c00fdca3f0ec5e835a27d3729a1beac10e7a8",
+    "game/ui/GameplayOverlayTypes.h": "a54adca3c3a18a9f15ed46d67c029cc71b974747d4e2bf96f40da2c34f6401c1",
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "3570013af7c01bfab9b51151b8eb13bec0ae9aeb76c95bc80852f98fb3569b96",
+    "game/ui/screens/ArcomageScreen.cpp": "05c7a920e00746f75bbfb61d37e396aaa285cd37e54877694d3624a2aa66d820",
+    "game/ui/screens/LoadGameScreen.cpp": "766a0fd1f26d9281e0ea2a21a940c97914d9e3c8f2748cfdf114c9cc79de9016",
+    "game/ui/screens/NewGameScreen.cpp": "34cce9fe023a46446c3b5f54265e84fb680daa44bb44596d720fe2ac08427e25",
+    "game/ui/screens/WinGameScreen.cpp": "0b9fbb3fe5faa3f5acea4201a35bbba83d31743801964f43e6e449d385b0b247",
+    "game/ui/screens/WinGameScreen.h": "8ab089a76160bcb9df96500e23923a8275763ac49fc1ec9985fe9132e902e29a",
+    "tools/mmerge_import/CoreResources.cpp": "6a471942ac3fd7f5c6a79292311466f7450f36a0a60d5b831095b86ed9f5d723",
+    "tools/mmerge_import/UiResources.cpp": "4e2579220fe578fff033886e7e7e5a2891776ef33414a7044566f4af692f3e50"
+  }
+}

@@ -233,8 +233,12 @@ private:
         const std::string &saveName = "",
         const std::vector<uint8_t> &previewBmp = {},
         std::string *pError = nullptr);
+    struct SessionReplacementBackup;
+    SessionReplacementBackup captureSessionReplacementBackup();
+    bool restoreSessionReplacementBackup(const SessionReplacementBackup &backup, bool initializeView);
     bool quickLoadFromPath(const std::filesystem::path &path, bool initializeView);
     void openMainMenuScreen();
+    void reopenGameplayMenu();
     void openLoadGameScreen(bool returnToGameplayMenu = false, const std::string &source = "main_menu");
     void openNewGameScreen(const std::string &source = "main_menu");
     void processPendingBreachAlvarCompanionRequest();
@@ -252,7 +256,8 @@ private:
         const std::vector<Character> &characters,
         uint32_t continentId,
         bool preserveDebugLoadout,
-        bool initializeView);
+        bool initializeView,
+        bool returnToGameplayMenuOnFailure = true);
     bool loadSessionFromPath(const std::filesystem::path &path);
     void beginLoadingOverlay(
         LoadingOverlayScreen::Presentation presentation = LoadingOverlayScreen::Presentation::Fullscreen);
@@ -339,6 +344,8 @@ private:
     PendingInputPointerTarget m_pendingInputPressedTarget = PendingInputPointerTarget::None;
     bool m_skipGameplayUpdateUntilPromptSubmitKeysReleased = false;
     bool m_loadingSavedGameRuntime = false;
+    bool m_restoringSessionAfterReplacementFailure = false;
+    uint64_t m_runtimeTeardownGeneration = 0;
     FramePerformanceDiagnostics m_framePerformanceDiagnostics;
     uint32_t m_lastFramePerformanceLogTick = 0;
     DebugConsole m_debugConsole;

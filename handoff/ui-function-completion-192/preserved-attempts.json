@@ -1,0 +1,19 @@
+{
+  "actual-001": {
+    "classification": "validation-fixture-too-strict",
+    "observation": "Across-render paused comparison included portrait animation driven by wall time.",
+    "resolution": "Normalize exactly four source-proven presentation fields only across frames; record all differences, keep synchronous comparison exact."
+  },
+  "actual-002": {
+    "classification": "production-rollback-order-defect",
+    "observation": "Synchronous new-session failure restoration copied old Party, then bindPartyDependencies called setClassSkillTable and reset portrait state. Same setter can normalize skills/resources.",
+    "resolution": "Remove extra binding after raw liveParty copy; retained app-lifetime data repository references remain valid. Existing renderer recreation already binds dependencies.",
+    "source": "game/party/Party.cpp initializePortraitRuntimeState; Party::setClassSkillTable; game/app/GameApplication.cpp restoreSessionReplacementBackup"
+  },
+  "actual-003": {
+    "classification": "functional-pass-with-confirmed-visual-gaps",
+    "result": "actual-003/result.json",
+    "visual_review": "visual-review-003.json",
+    "followup": "Original WinBG import, authored button fonts, fit long save row names; visual-only recheck."
+  }
+}

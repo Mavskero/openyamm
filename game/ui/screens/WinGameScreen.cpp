@@ -19,7 +19,6 @@ constexpr float ReferenceWidth = 640.0f;
 constexpr float ReferenceHeight = 480.0f;
 constexpr float MaxUiScale = 8.0f;
 constexpr const char *EndgameFontName = "ENDGAME";
-constexpr uint32_t TextColor = 0xffffffffu;
 }
 
 WinGameScreen::WinGameScreen(
@@ -68,10 +67,17 @@ void WinGameScreen::drawCenteredText(
     float viewportWidth,
     uint32_t colorAbgr)
 {
-    const float textWidth = measureTextWidth(fontName, text, scale);
+    const float availableWidth = std::max(1.0f, viewportWidth - 48.0f * scale);
+    float fittedScale = scale;
+    float textWidth = measureTextWidth(fontName, text, fittedScale);
+    for (unsigned fit = 0; fit < 8 && textWidth > availableWidth; ++fit)
+    {
+        fittedScale *= availableWidth / textWidth;
+        textWidth = measureTextWidth(fontName, text, fittedScale);
+    }
     const float x = std::round(viewportX + (viewportWidth - textWidth) * 0.5f);
     const float y = std::round(viewportY + logicalY * scale);
-    drawText(fontName, text, x, y, colorAbgr, scale, false);
+    drawText(fontName, text, x, y, colorAbgr, fittedScale, false);
 }
 
 std::vector<std::string> WinGameScreen::wrapText(
@@ -118,6 +124,7 @@ std::vector<std::string> WinGameScreen::wrapText(
 
 void WinGameScreen::drawScreen(float)
 {
+    const uint32_t textColor = m_certificate.textColorAbgr;
     const Rect fullFrame = {0.0f, 0.0f, static_cast<float>(frameWidth()), static_cast<float>(frameHeight())};
     drawPixelsBgra("__wingame_black__", 1, 1, m_blackPixel, fullFrame);
 
@@ -135,7 +142,7 @@ void WinGameScreen::drawScreen(float)
     drawTexture(m_certificate.backgroundTexture, viewport);
 
     drawCenteredText(
-        EndgameFontName, "Congratulations!", 155.0f, scale, viewportX, viewportY, viewportWidth, TextColor);
+        EndgameFontName, m_certificate.title, 155.0f, scale, viewportX, viewportY, viewportWidth, textColor);
     drawCenteredText(
         EndgameFontName,
         m_certificate.characterLine,
@@ -144,7 +151,7 @@ void WinGameScreen::drawScreen(float)
         viewportX,
         viewportY,
         viewportWidth,
-        TextColor);
+        textColor);
 
     constexpr float EndingTop = 230.0f;
     constexpr float TotalTimeTop = 355.0f;
@@ -176,7 +183,7 @@ void WinGameScreen::drawScreen(float)
     for (const std::string &line : endingLines)
     {
         drawCenteredText(
-            EndgameFontName, line, endingY / endingScale, endingScale, viewportX, viewportY, viewportWidth, TextColor);
+            EndgameFontName, line, endingY / endingScale, endingScale, viewportX, viewportY, viewportWidth, textColor);
         endingY += lineHeight;
     }
 
@@ -188,7 +195,7 @@ void WinGameScreen::drawScreen(float)
         viewportX,
         viewportY,
         viewportWidth,
-        TextColor);
+        textColor);
     drawCenteredText(
         EndgameFontName,
         m_certificate.scoreLine,
@@ -197,6 +204,6 @@ void WinGameScreen::drawScreen(float)
         viewportX,
         viewportY,
         viewportWidth,
-        TextColor);
+        textColor);
 }
 }
