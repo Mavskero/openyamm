@@ -26,7 +26,7 @@ const std::array<KeyboardBindingDefinition, KeyboardActionCount> KeyboardBinding
     {KeyboardAction::Right, "right", "Right", KeyboardBindingPage::Page1, KeyboardBindingColumn::Left, 3,
         {InputBindingKind::Keyboard, SDL_SCANCODE_D, 0}, true},
     {KeyboardAction::Yell, "yell", "Yell", KeyboardBindingPage::Page1, KeyboardBindingColumn::Left, 4,
-        {InputBindingKind::Keyboard, SDL_SCANCODE_Y, 0}, false},
+        {InputBindingKind::Keyboard, SDL_SCANCODE_Y, 0}, true},
     {KeyboardAction::Jump, "jump", "Jump", KeyboardBindingPage::Page1, KeyboardBindingColumn::Left, 5,
         {InputBindingKind::Keyboard, SDL_SCANCODE_X, 0}, true},
     {KeyboardAction::Combat, "combat", "Combat", KeyboardBindingPage::Page1, KeyboardBindingColumn::Left, 6,

@@ -760,6 +760,7 @@ public:
     bool isChestOpened(uint32_t chestId) const;
     size_t mapActorCount() const override;
     bool actorRuntimeState(size_t actorIndex, GameplayRuntimeActorState &state) const override;
+    void fleeNearbyActorsFromParty() override;
     bool setMapActorPosition(size_t actorIndex, float x, float y, float z) override;
     bool setMapMonsterAiType(uint32_t monsterId, uint32_t aiType) override;
     bool isMapActorHostile(size_t actorIndex) const override;

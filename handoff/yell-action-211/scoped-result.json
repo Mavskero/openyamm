@@ -1,0 +1,178 @@
+{
+  "checkpoint": 211,
+  "status": "ACCEPTED_INPUT_SOURCE_SCOPED",
+  "accepted_at": "2026-10-29T14:05:39.911515+00:00",
+  "source_base": "14137bad3eecd04568e7176603a5fe7fb4dc203f",
+  "plan": {
+    "status": "integrated_native_build_running",
+    "defect": "KeyboardAction::Yell exists, default Y/implemented=false, but no action consumer",
+    "original_commit": "87b3e29b51b931cc5f0e8998f238a686cafa86a4",
+    "source_urls": [
+      "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Io/KeyboardInputHandler.cpp#L181",
+      "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Engine/Party.cpp#L524",
+      "https://github.com/OpenEnroth/OpenEnroth/blob/87b3e29b51b931cc5f0e8998f238a686cafa86a4/src/Engine/Objects/Actor.cpp#L1878"
+    ],
+    "confirmed_semantics": [
+      "Requires active CanAct character, not zero recovery",
+      "Clear party invisibility and speech Yell even turnbased",
+      "Realtime actors CanAct, hostilityType != Long4, movementType != Stationary5, exact3Ddistance<512",
+      "No LOS or permanent hostility/reputation change"
+    ],
+    "proposed_reuse": [
+      "isActionNewlyPressed; current gameplay/modal gating",
+      "Party::clearPartyBuff(Invisibility), canSelectMemberInGameplay, playSpeechReaction",
+      "IGameplayWorldRuntime optional virtual plus two WorldRuntime overrides",
+      "Existing Fleeing/Walking/actionSeconds/AI_ContinueFlee/collision navigation"
+    ],
+    "implementation_caveats": [
+      "No independent actor stone state currently modeled",
+      "Original repeat500ms then67ms; proposed first scope one press edge",
+      "Flee duration/Treant branch under narrowly bounded source check",
+      "Do not use MM9 civilian flee because it can summon guards"
+    ],
+    "save_schema_change": false,
+    "production_edits": false,
+    "source_base": "14137bad3eecd04568e7176603a5fe7fb4dc203f",
+    "owners": {
+      "sol_spell_playability_193": [
+        "GameplayInputController.cpp",
+        "KeyboardBindings.cpp"
+      ],
+      "sol_travel_ui_193": [
+        "GameplayRuntimeInterfaces.h",
+        "IndoorWorldRuntime.h/.cpp",
+        "OutdoorWorldRuntime.h/.cpp",
+        "one shared pure helper"
+      ],
+      "main": [
+        "integration/validation"
+      ],
+      "sol_party_ui_193": [
+        "separate212 completed HudOverlaySupport.cpp"
+      ]
+    },
+    "original_flee_duration": "min(256, int(horizontalDistance*128)/moveSpeed) ticks at128ticks/sec; speed0=>0, no artificial minimum",
+    "original_yaw": "targetYaw + HalfPi + random(Pi), normalized",
+    "treant": "OriginalMM7 IDs253..255 require source mapping, not merged ID comparison; special stand/bored",
+    "accepted_scope_decision": {
+      "treant": "Preserve existing immobility; do not invent merged sourceID mapping or claim original Treant StandOrBored animation",
+      "stone": "No new actor stone model",
+      "rng": "Reuse existing bound EventRuntime state; no-op if unbound, random draw only after actor eligibility",
+      "motion": "Existing XY flee/navigation; no new pitch state or source flight-pitch parity claim",
+      "key_repeat": "Fresh press once; original hold-repeat excluded"
+    },
+    "validation": "One combined native/app+existing input target; existing input check extended by one isolated Yell flow, then unsigned generic iOS. No App/campaign/device replay."
+  },
+  "checks": {
+    "build-native-002": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "openyamm_input_check",
+        "-j",
+        "3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 47172,
+      "started_at": "2026-10-29T14:00:30.837208+00:00",
+      "finished_at": "2026-10-29T14:01:04.984236+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-action-211/build-native-002.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "input-check-001": {
+      "argv": [
+        "openyamm/build-apple/openyamm_input_check"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 48427,
+      "started_at": "2026-10-29T14:02:01.190171+00:00",
+      "finished_at": "2026-10-29T14:02:01.322660+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 60.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-action-211/input-check-001.log",
+      "executed_binary": "openyamm/build-apple/openyamm_input_check",
+      "executed_binary_sha256": "1b75052550d6f89572f0ed39b17eb9029f101b6674635db678d1f448dde48d39",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 48532,
+      "started_at": "2026-10-29T14:02:07.583462+00:00",
+      "finished_at": "2026-10-29T14:03:25.548975+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-action-211/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "failure_preserved": {
+    "attempt": "build-native-001",
+    "status": "failed_compile",
+    "error": "Outdoor MapActorState has no specialState member",
+    "repair": "Removed impossible outdoor materialization-field access; kept existing outdoor availability/paralysis gates and indoor existing materialization gate",
+    "outdoor_materialization_model_added": false,
+    "original_log_preserved": true,
+    "runtime_checks_before_repair": 0
+  },
+  "input_check": {
+    "existing_target": "openyamm_input_check",
+    "new_yell_flow": "Configured SDL V tap; invisibility/flee request; explicit held-frame fixture; menu/incapacity gates; turn-based no flee/no cost",
+    "world": "PartySpellTestWorldRuntime subclass counts requests, not actual actor simulation",
+    "speech_audio": "Not listened to",
+    "runs": 1
+  },
+  "limitations": [
+    "Actor fleeing and spell-school pixels have source/build evidence only; no new App/device observation.",
+    "Original Treant StandOrBored animation and source flight pitch are not implemented; current movement constraints remain.",
+    "No independent actor stone/outdoor materialization state added.",
+    "Held key does not repeat; original500ms/67ms repetition is excluded.",
+    "Full natural campaign completion remains unproved."
+  ],
+  "runtime": "local-data/validation/ui-function-completion-207/runtime-001",
+  "save_version": 104,
+  "new_test_suites": 0,
+  "existing_check_extended": true,
+  "app_runs": 0,
+  "campaign_replays": 0,
+  "device_or_simulator_operations": 0,
+  "release195_unchanged": true,
+  "full_goal_complete": false
+}

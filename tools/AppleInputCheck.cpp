@@ -690,6 +690,103 @@ elements:
         worldFrame({});
         std::cout << "World attack input passed: transient tap, release, modal cancellation, hold and inspect.\n";
 
+        {
+            struct YellWorld : OpenYAMM::Tests::PartySpellTestWorldRuntime
+            {
+                int fleeCalls = 0;
+                void fleeNearbyActorsFromParty() override { ++fleeCalls; }
+            } yellWorld;
+            PartySeed yellSeed;
+            yellSeed.members.push_back(OpenYAMM::Tests::makeSpellRegressionPartyMember(
+                "Yell input", "Sorcerer", "PC07-01", 7));
+            Party yellParty;
+            yellParty.seed(yellSeed);
+            yellParty.activeMember()->recoverySecondsRemaining = 4.0f;
+            yellWorld.bindParty(&yellParty);
+            GameSession yellSession;
+            yellSession.bindActiveWorldRuntime(&yellWorld);
+            GameplayScreenRuntime &yellRuntime = yellSession.gameplayScreenRuntime();
+            yellRuntime.bindSettings(&settings);
+            const InputBinding originalYellBinding = settings.keyboard.binding(KeyboardAction::Yell);
+            settings.keyboard.setBinding(KeyboardAction::Yell, keyboardInputBinding(SDL_SCANCODE_V));
+            const auto makeInvisible = [&]()
+            {
+                yellParty.applyPartyBuff(PartyBuffId::Invisibility, 60.0f, 1, 19, 1, SkillMastery::Master, 0);
+            };
+            const auto isInvisible = [&]()
+            {
+                const PartyBuffState *pBuff = yellParty.partyBuff(PartyBuffId::Invisibility);
+                return pBuff != nullptr && pBuff->active();
+            };
+            const auto yellFrame = [&](const GameplayInputFrame &frame)
+            {
+                GameplaySharedInputFrameConfig config;
+                config.pInputFrame = &frame;
+                config.pKeyboardState = frame.keyboardState();
+                config.screenWidth = frame.screenWidth;
+                config.screenHeight = frame.screenHeight;
+                config.processStandardUiInput = false;
+                config.processQuickCast = false;
+                return GameplayInputController::updateSharedGameplayInputFrame(
+                    yellSession.gameplayScreenState(), yellRuntime, yellSession.gameplaySpellService(), config);
+            };
+            const auto tapYell = [&]()
+            {
+                keyTap(settings.keyboard.keyboardBinding(KeyboardAction::Yell));
+                update();
+                require(input.frame().action(KeyboardAction::Yell).pressed
+                    && !input.frame().action(KeyboardAction::Yell).held,
+                    "Configured Yell tap was not preserved as one input edge");
+                yellFrame(input.frame());
+            };
+            makeInvisible();
+            const int initialMana = yellParty.activeMember()->spellPoints;
+            const float initialRecovery = yellParty.activeMember()->recoverySecondsRemaining;
+            require(initialMana > 0 && initialRecovery > 0, "Yell fixture needs mana and nonzero recovery");
+            tapYell();
+            require(!isInvisible() && yellWorld.fleeCalls == 1
+                && yellParty.activeMember()->spellPoints == initialMana
+                && yellParty.activeMember()->recoverySecondsRemaining == initialRecovery,
+                "Yell did not clear invisibility/flee once without spending mana or recovery");
+
+            makeInvisible();
+            // Like heldAttack above, this is an explicit held-frame fixture;
+            // queued SDL key events do not change the native keyboard state.
+            GameplayInputFrame heldYell = {};
+            heldYell.actions[keyboardActionIndex(KeyboardAction::Yell)].held = true;
+            heldYell.keyboardHeld[SDL_SCANCODE_V] = true;
+            yellFrame(heldYell);
+            require(isInvisible() && yellWorld.fleeCalls == 1, "Held Yell repeated without a new press");
+            update();
+            yellFrame(input.frame());
+
+            yellRuntime.openMenuOverlay();
+            tapYell();
+            require(isInvisible() && yellWorld.fleeCalls == 1, "Modal UI accepted a Yell action");
+            yellRuntime.closeMenuOverlay();
+            yellParty.activeMember()->conditions.set(static_cast<size_t>(CharacterCondition::Asleep));
+            tapYell();
+            require(isInvisible() && yellWorld.fleeCalls == 1, "Incapacitated active member could yell");
+            yellParty.activeMember()->conditions.reset(static_cast<size_t>(CharacterCondition::Asleep));
+
+            TurnBasedCombatRuntime &yellCombat = yellRuntime.turnBasedCombatRuntime();
+            require(yellCombat.begin(yellParty, nullptr), "Cannot begin turn-based Yell check");
+            const TurnBasedCombatStage initialStage = yellCombat.stage();
+            const int initialMovementPoints = yellCombat.movementActionPoints();
+            const float turnRecovery = yellParty.activeMember()->recoverySecondsRemaining;
+            const int turnMana = yellParty.activeMember()->spellPoints;
+            tapYell();
+            require(!isInvisible() && yellWorld.fleeCalls == 1
+                && yellCombat.stage() == initialStage && yellCombat.movementActionPoints() == initialMovementPoints
+                && yellParty.activeMember()->spellPoints == turnMana
+                && yellParty.activeMember()->recoverySecondsRemaining == turnRecovery,
+                "Turn-based Yell must only break invisibility without fleeing or spending the turn");
+            yellCombat.end(&yellParty);
+            settings.keyboard.setBinding(KeyboardAction::Yell, originalYellBinding);
+            yellSession.bindActiveWorldRuntime(nullptr);
+            std::cout << "Yell input passed: configured tap, held fixture, modal, incapacity and turn-based rules.\n";
+        }
+
         const auto restFrame = [&]()
         {
             GameplayStandardUiHotkeyConfig config = {};

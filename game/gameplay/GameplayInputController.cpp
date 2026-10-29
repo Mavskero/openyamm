@@ -646,6 +646,8 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
     GameplayScreenState::PendingSpellTargetState &pendingSpellCast = screenState.pendingSpellTarget();
     GameplayScreenState::QuickSpellState &quickSpellState = screenState.quickSpellState();
     GameplayScreenState::GameplayMouseLookState &gameplayMouseLookState = screenState.gameplayMouseLookState();
+    const bool normalGameplayBeforeInput = context.isNormalGameplayScreen()
+        && !config.isUtilitySpellModalActive && !config.isReadableScrollOverlayActive;
 
     GameplayInputFrame fallbackReaderInput = {};
     if (config.pInputFrame == nullptr)
@@ -915,6 +917,34 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
             });
 
     frameResult.worldInputBlocked = hasActiveLootView || worldInputGateResult.blocked;
+
+    // Yell is a fresh-press action. Closing a modal must not pass its gesture
+    // through to the world, and holding the binding does not repeat the action.
+    if (config.processSharedGameplayHotkeys && normalGameplayBeforeInput
+        && canRunStandardGameplayAction && !frameResult.worldInputBlocked
+        && !pendingSpellCast.active && context.isNormalGameplayScreen()
+        && isActionNewlyPressed(context, KeyboardAction::Yell, config.pInputFrame, config.pKeyboardState))
+    {
+        Party *pParty = context.party();
+        if (pParty != nullptr && pParty->canSelectMemberInGameplay(pParty->activeMemberIndex())
+            && context.allowSourceGameplayAction(SourceActionCustomDialogButton))
+        {
+            // Source hooks can change the active party or open a modal.
+            pParty = context.party();
+            IGameplayWorldRuntime *pYellWorld = context.worldRuntime();
+            if (pParty != nullptr && pYellWorld != nullptr
+                && context.isNormalGameplayScreen() && !pendingSpellCast.active
+                && pParty->canSelectMemberInGameplay(pParty->activeMemberIndex()))
+            {
+                pParty->clearPartyBuff(PartyBuffId::Invisibility);
+                if (!context.turnBasedCombatRuntime().active())
+                {
+                    pYellWorld->fleeNearbyActorsFromParty();
+                }
+                context.playSpeechReaction(pParty->activeMemberIndex(), SpeechId::Yell, true);
+            }
+        }
+    }
     return frameResult;
 }
 } // namespace OpenYAMM::Game

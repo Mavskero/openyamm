@@ -5,6 +5,7 @@
 #include "game/tables/ChestTable.h"
 #include "game/fx/ParticleRecipes.h"
 #include "game/fx/WorldFxSystem.h"
+#include "game/gameplay/ActorFleeReaction.h"
 #include "game/gameplay/BountyHuntRuntime.h"
 #include "game/gameplay/ChestRuntime.h"
 #include "game/gameplay/CorpseLootRuntime.h"
@@ -14547,6 +14548,43 @@ bool OutdoorWorldRuntime::actorRuntimeState(size_t actorIndex, GameplayRuntimeAc
         && pActor->hasDetectedParty
         && (pActor->aiState == ActorAiState::Pursuing || pActor->aiState == ActorAiState::Attacking);
     return true;
+}
+
+void OutdoorWorldRuntime::fleeNearbyActorsFromParty()
+{
+    EventRuntimeState *pEventState = eventRuntimeState();
+    if (m_pPartyRuntime == nullptr || m_pMonsterTable == nullptr || pEventState == nullptr)
+    {
+        return;
+    }
+
+    const GameplayWorldPoint partyPosition = {partyX(), partyY(), partyFootZ()};
+    for (MapActorState &actor : m_mapActors)
+    {
+        const GameplayWorldPoint actorPosition = {actor.preciseX, actor.preciseY, actor.preciseZ};
+        if (actor.hostilityType == 4 || actor.immobile || isActorUnavailableForCombat(actor)
+            || actor.paralyzeRemainingSeconds > 0.0f
+            || !isWithinPartyYellRange(actorPosition, partyPosition))
+        {
+            continue;
+        }
+
+        const MonsterTable::MonsterStatsEntry *pStats = m_pMonsterTable->findStatsById(actor.monsterId);
+        if (pStats == nullptr || pStats->movementType == MonsterTable::MonsterMovementType::Stationary)
+        {
+            continue;
+        }
+
+        const ActorFleeReaction reaction = partyYellFleeReaction(
+            actorPosition, partyPosition, actor.moveSpeed, EventRuntime::randomValue(*pEventState, 0));
+        actor.aiState = ActorAiState::Fleeing;
+        actor.animation = ActorAnimation::Walking;
+        actor.animationTimeTicks = 0.0f;
+        actor.actionSeconds = reaction.actionSeconds;
+        actor.yawRadians = reaction.yawRadians;
+        actor.moveDirectionX = reaction.moveDirectionX;
+        actor.moveDirectionY = reaction.moveDirectionY;
+    }
 }
 
 bool OutdoorWorldRuntime::setMapActorPosition(size_t actorIndex, float x, float y, float z)

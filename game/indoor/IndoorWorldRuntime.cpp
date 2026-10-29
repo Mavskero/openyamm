@@ -11,6 +11,7 @@
 #include "game/events/GameTime.h"
 #include "game/StringUtils.h"
 #include "game/fx/ParticleRecipes.h"
+#include "game/gameplay/ActorFleeReaction.h"
 #include "game/gameplay/BountyHuntRuntime.h"
 #include "game/gameplay/ChestRuntime.h"
 #include "game/gameplay/CorpseLootRuntime.h"
@@ -11930,6 +11931,59 @@ bool IndoorWorldRuntime::actorRuntimeState(size_t actorIndex, GameplayRuntimeAct
         && (pAiState->motionState == ActorAiMotionState::Pursuing
             || pAiState->motionState == ActorAiMotionState::Attacking);
     return true;
+}
+
+void IndoorWorldRuntime::fleeNearbyActorsFromParty()
+{
+    MapDeltaData *pMapDeltaData = mapDeltaData();
+    EventRuntimeState *pEventState = eventRuntimeState();
+    if (m_pPartyRuntime == nullptr || m_pMonsterTable == nullptr
+        || pMapDeltaData == nullptr || pEventState == nullptr)
+    {
+        return;
+    }
+
+    const GameplayWorldPoint partyPosition = {partyX(), partyY(), partyFootZ()};
+    const GameplayActorService fallbackActorService = {};
+    const GameplayActorService &actorService = m_pGameplayActorService != nullptr
+        ? *m_pGameplayActorService : fallbackActorService;
+    const size_t actorCount = std::min(pMapDeltaData->actors.size(), m_mapActorAiStates.size());
+    for (size_t actorIndex = 0; actorIndex < actorCount; ++actorIndex)
+    {
+        MapDeltaActor &actor = pMapDeltaData->actors[actorIndex];
+        MapActorAiState &aiState = m_mapActorAiStates[actorIndex];
+        const GameplayWorldPoint actorPosition = {aiState.preciseX, aiState.preciseY, aiState.preciseZ};
+        if (actor.hostilityType == 4 || actor.immobile
+            || indoorActorUnavailableForCombat(actor, aiState, actorService)
+            || aiState.spellEffects.paralyzeRemainingSeconds > 0.0f
+            || !isWithinPartyYellRange(actorPosition, partyPosition))
+        {
+            continue;
+        }
+
+        const MonsterTable::MonsterStatsEntry *pStats = actorStats(aiState);
+        if (pStats == nullptr || pStats->movementType == MonsterTable::MonsterMovementType::Stationary)
+        {
+            continue;
+        }
+        const MonsterEntry *pMonsterEntry = resolveRuntimeMonsterEntry(*m_pMonsterTable, actor);
+        const GameplayMonsterBolsterResult &bolster = resolvedActorBolster(aiState, &actor, *pStats, pMonsterEntry);
+        if (bolster.immobile)
+        {
+            continue;
+        }
+
+        const ActorFleeReaction reaction = partyYellFleeReaction(
+            actorPosition, partyPosition, aiState.movementSpeed, EventRuntime::randomValue(*pEventState, 0));
+        aiState.motionState = ActorAiMotionState::Fleeing;
+        aiState.animationState = ActorAiAnimationState::Walking;
+        aiState.animationTimeTicks = 0.0f;
+        aiState.actionSeconds = reaction.actionSeconds;
+        aiState.yawRadians = reaction.yawRadians;
+        aiState.moveDirectionX = reaction.moveDirectionX;
+        aiState.moveDirectionY = reaction.moveDirectionY;
+        actor.currentActionAnimation = indoorActionAnimationFromActorAi(aiState.animationState);
+    }
 }
 
 bool IndoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successRoll, uint32_t caughtRoll)

@@ -687,6 +687,7 @@ public:
         int32_t toZ) = 0;
     virtual size_t mapActorCount() const = 0;
     virtual bool actorRuntimeState(size_t actorIndex, GameplayRuntimeActorState &state) const = 0;
+    virtual void fleeNearbyActorsFromParty() {}
     virtual bool tryStealFromActor(size_t actorIndex, uint32_t successRoll, uint32_t caughtRoll)
     {
         (void)actorIndex;

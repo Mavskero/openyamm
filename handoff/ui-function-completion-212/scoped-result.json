@@ -1,0 +1,107 @@
+{
+  "checkpoint": 212,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "accepted_at": "2026-10-29T14:05:39.911515+00:00",
+  "plan": {
+    "checkpoint": 212,
+    "status": "integrated_pending_combined211build",
+    "source_base": "14137bad3eecd04568e7176603a5fe7fb4dc203f",
+    "evidence": "Receiving195 report said BodyMagic; current source confirms exact remaining Body Magic in spell-detail school line",
+    "scope": "GameplayHudOverlaySupport.cpp only: canonical spell skill maps to existing CharacterInspectTable localized name, original English fallback retained",
+    "already_localized": [
+      "Character skill rows",
+      "creation skill list and popup"
+    ],
+    "runtime_unchanged": "local-data/validation/ui-function-completion-207/runtime-001",
+    "validation": "Combined211native/unsignediOS; no new tests/App/device/campaign",
+    "save_version": 104
+  },
+  "checks": {
+    "build-native-002": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "openyamm_input_check",
+        "-j",
+        "3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 47172,
+      "started_at": "2026-10-29T14:00:30.837208+00:00",
+      "finished_at": "2026-10-29T14:01:04.984236+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-action-211/build-native-002.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "input-check-001": {
+      "argv": [
+        "openyamm/build-apple/openyamm_input_check"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 48427,
+      "started_at": "2026-10-29T14:02:01.190171+00:00",
+      "finished_at": "2026-10-29T14:02:01.322660+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 60.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-action-211/input-check-001.log",
+      "executed_binary": "openyamm/build-apple/openyamm_input_check",
+      "executed_binary_sha256": "1b75052550d6f89572f0ed39b17eb9029f101b6674635db678d1f448dde48d39",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 48532,
+      "started_at": "2026-10-29T14:02:07.583462+00:00",
+      "finished_at": "2026-10-29T14:03:25.548975+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/yell-action-211/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "runtime": "local-data/validation/ui-function-completion-207/runtime-001",
+  "save_version": 104,
+  "new_unit_cases": 0,
+  "app_runs": 0,
+  "device_or_simulator_operations": 0,
+  "visual_confirmation": false,
+  "release195_unchanged": true,
+  "full_goal_complete": false
+}

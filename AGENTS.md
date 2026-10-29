@@ -4,6 +4,12 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 211/212 add functional Yell and localized spell-detail school names; see `handoff/yell-action-211/README.md`
+  and `handoff/ui-function-completion-212/README.md`. Native/input/genericunsignediOS pass; one compact Yell flow
+  extends existinginputcheck (counterworld/heldfixture),0App/campaign/device. Worldflee is source/buildonly;
+  originalholdrepeat/Treantanimation/flightpitch are explicit limits. Runtime207/Save104/remote195 remainfixed.
+  Fullgoalactive/~85%; bounded compiler-warning source followup only, no broad replay.
+
 - 210 merges receiving195 fix7aba6c0c and reportdcae3d56; see `handoff/device-feedback-210/README.md`.
   Touchinspect/emptyname/100save slots coexist with196–209 UI fixes. Native/existinginputcheck/genericunsignediOS pass;
   no localdevice/App/campaign replay. Receiving ordinarytravel/ChineseSave104/Home/independentload/audio pass reported;

@@ -1110,7 +1110,11 @@ void GameplayHudOverlaySupport::updateSpellInspectOverlay(
             context.partyReadOnly() != nullptr ? context.partyReadOnly()->activeMember() : nullptr;
         const SkillMastery casterMastery = spellInspectCasterMasteryForSpell(pActiveMember, spellId);
 
-        overlay.school = spellbookSchoolDisplayName(spellSchool);
+        const std::optional<std::string> skillName = resolveMagicSkillName(spellId);
+        const SkillInspectEntry *pSkillEntry = skillName && context.characterInspectTable() != nullptr
+            ? context.characterInspectTable()->getSkill(*skillName) : nullptr;
+        overlay.school = pSkillEntry != nullptr && !pSkillEntry->name.empty()
+            ? pSkillEntry->name : spellbookSchoolDisplayName(spellSchool);
         overlay.manaCost = std::max(0, spellInspectManaCostForMastery(*pSpellEntry, casterMastery));
         overlay.hasManaCost = true;
         overlay.title = pSpellEntry->name;
