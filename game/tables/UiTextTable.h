@@ -8,6 +8,8 @@
 
 namespace OpenYAMM::Game
 {
+enum class SkillMastery;
+
 class UiTextTable
 {
 public:
@@ -125,18 +127,25 @@ public:
         JournalCurrentQuests,
         JournalHistory,
         JournalNotes,
+        InventoryTargetHint,
+        SkillTrainingOffer,
+        SkillTrainingLearned,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
-    // Validate the current schema or migrate a complete 13-, 16-, 19-, 26-, 35-, 39-, 45-, 72- or 103-key schema.
+    // Validate the current schema or migrate a complete 13-, 16-, 19-, 26-, 35-, 39-, 45-, 72-, 103- or 112-key schema.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
+    const std::string &skillMasteryName(SkillMastery mastery) const;
     std::string formatItemType(const std::string &type) const;
     std::string formatWinScore(uint64_t score) const;
     std::string formatWinCharacter(const std::string &name, uint32_t level, const std::string &className) const;
     std::string formatMasteryDescription(Message mastery, const std::string &description) const;
+    std::string formatSkillTrainingOffer(const std::string &mastery, const std::string &skill, uint32_t cost) const;
+    std::string formatSkillTrainingLearned(
+        const std::string &name, const std::string &mastery, const std::string &skill) const;
     static const char *key(Message message);
 
 private:

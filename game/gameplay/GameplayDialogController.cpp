@@ -19,6 +19,7 @@
 #include "game/gameplay/ReputationRuntime.h"
 #include "game/items/PriceCalculator.h"
 #include "game/party/EventSpellBuffs.h"
+#include "game/tables/CharacterInspectTable.h"
 #include "game/tables/HouseTable.h"
 #include "game/tables/MapStats.h"
 #include "game/tables/MergedBaseTables.h"
@@ -813,6 +814,15 @@ uint32_t continentForMap(
     return 0;
 }
 
+std::string masteryTeacherSkillName(
+    const std::string &skillName,
+    const CharacterInspectTable *pCharacterInspectTable)
+{
+    const SkillInspectEntry *pSkill =
+        pCharacterInspectTable != nullptr ? pCharacterInspectTable->getSkill(skillName) : nullptr;
+    return pSkill != nullptr && !pSkill->name.empty() ? pSkill->name : displaySkillName(skillName);
+}
+
 bool tryAddRuntimeMapNote(
     EventRuntimeState &eventRuntimeState,
     const MasteryTeacherTopicDefinition &teacherTopic,
@@ -820,6 +830,8 @@ bool tryAddRuntimeMapNote(
     const MapStatsEntry *pCurrentMap,
     const IGameplayWorldRuntime *pWorldRuntime,
     const Party *pParty,
+    const CharacterInspectTable *pCharacterInspectTable,
+    const UiTextTable *pUiTextTable,
     bool queueAutonoteFx = true)
 {
     if (pCurrentMap == nullptr || pCurrentMap->fileName.empty() || continent == 0)
@@ -829,6 +841,11 @@ bool tryAddRuntimeMapNote(
 
     const uint32_t noteId = continent * 1000 + teacherTopic.masteryRank * 100 + teacherTopic.skillId;
     const std::string noteMapFileName = toLowerCopy(pCurrentMap->fileName);
+    const bool hasTextTables = pCharacterInspectTable != nullptr && pUiTextTable != nullptr;
+    const std::string noteText = hasTextTables
+        ? masteryTeacherSkillName(teacherTopic.skillName, pCharacterInspectTable)
+            + " - " + pUiTextTable->skillMasteryName(teacherTopic.targetMastery)
+        : displaySkillName(teacherTopic.skillName) + " - " + masteryDisplayName(teacherTopic.targetMastery);
     const std::optional<EventRuntimeState::MapNoteSourcePoint> mapNoteSourcePoint =
         eventRuntimeState.pendingDialogueContext
             ? eventRuntimeState.pendingDialogueContext->mapNoteSourcePoint
@@ -839,6 +856,10 @@ bool tryAddRuntimeMapNote(
         && noteIt->second.active
         && toLowerCopy(noteIt->second.mapFileName) == noteMapFileName)
     {
+        if (hasTextTables)
+        {
+            noteIt->second.text = noteText;
+        }
         if (mapNoteSourcePoint)
         {
             noteIt->second.x = mapNoteSourcePoint->x;
@@ -850,7 +871,7 @@ bool tryAddRuntimeMapNote(
 
     EventRuntimeState::RuntimeMapNote note = {};
     note.id = noteId;
-    note.text = displaySkillName(teacherTopic.skillName) + " - " + masteryDisplayName(teacherTopic.targetMastery);
+    note.text = noteText;
     note.active = true;
     note.mapFileName = noteMapFileName;
 
@@ -883,7 +904,9 @@ bool tryRegisterTrainerNote(
     const MapStatsEntry *pCurrentMap,
     const MergedBolsterMapTable *pBolsterMapTable,
     const IGameplayWorldRuntime *pWorldRuntime,
-    const Party *pParty)
+    const Party *pParty,
+    const CharacterInspectTable *pCharacterInspectTable,
+    const UiTextTable *pUiTextTable)
 {
     const std::optional<MasteryTeacherTopicDefinition> teacherTopic =
         resolveMasteryTeacherTopic(topicId, pTeacherTopicTable);
@@ -905,7 +928,9 @@ bool tryRegisterTrainerNote(
             continentForMap(pCurrentMap, pBolsterMapTable),
             pCurrentMap,
             pWorldRuntime,
-            pParty);
+            pParty,
+            pCharacterInspectTable,
+            pUiTextTable);
     }
 
     const uint32_t rawId = (*autonoteId << 16) | AutoNoteVariableTag;
@@ -928,6 +953,8 @@ bool tryRegisterTrainerNote(
                 pCurrentMap,
                 pWorldRuntime,
                 pParty,
+                pCharacterInspectTable,
+                pUiTextTable,
                 false)
             || changed;
     }
@@ -1165,7 +1192,9 @@ void registerTrainerNotesForNpc(
     const MapStatsEntry *pCurrentMap,
     const MergedBolsterMapTable *pBolsterMapTable,
     const IGameplayWorldRuntime *pWorldRuntime,
-    const Party *pParty)
+    const Party *pParty,
+    const CharacterInspectTable *pCharacterInspectTable,
+    const UiTextTable *pUiTextTable)
 {
     EventRuntimeState npcRuntimeState = eventRuntimeState;
 
@@ -1190,7 +1219,9 @@ void registerTrainerNotesForNpc(
             pCurrentMap,
             pBolsterMapTable,
             pWorldRuntime,
-            pParty);
+            pParty,
+            pCharacterInspectTable,
+            pUiTextTable);
     }
 }
 
@@ -3330,7 +3361,10 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
             context.pCurrentMap,
             context.pBolsterMapTable,
             context.pWorldRuntime,
-            context.pParty);
+            context.pParty,
+            context.pCharacterInspectTable,
+            context.pScreenRuntime != nullptr
+                ? &context.pScreenRuntime->gameplayUiRuntime().uiTextTable() : nullptr);
 
         EventRuntimeState::DialogueOfferState offer = {};
         offer.kind = DialogueOfferKind::MasteryTeacher;
@@ -3368,6 +3402,25 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 context.pTeacherTopicTable,
                 message))
         {
+            if (context.pScreenRuntime != nullptr && context.pCharacterInspectTable != nullptr)
+            {
+                const std::optional<MasteryTeacherTopicDefinition> teacherTopic = resolveMasteryTeacherTopic(
+                    context.eventRuntimeState.dialogueState.currentOffer->topicId,
+                    context.pTeacherTopicTable);
+                const Character *pCharacter = context.pParty->activeMember();
+                if (teacherTopic && pCharacter != nullptr)
+                {
+                    const UiTextTable &text = context.pScreenRuntime->gameplayUiRuntime().uiTextTable();
+                    const std::string learnedText = text.formatSkillTrainingLearned(
+                        pCharacter->name,
+                        text.skillMasteryName(teacherTopic->targetMastery),
+                        masteryTeacherSkillName(teacherTopic->skillName, context.pCharacterInspectTable));
+                    if (!learnedText.empty())
+                    {
+                        message = learnedText;
+                    }
+                }
+            }
             if (!message.empty())
             {
                 context.uiController.setStatusBarEvent(message);
@@ -3942,7 +3995,10 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                     context.pCurrentMap,
                     context.pBolsterMapTable,
                     context.pWorldRuntime,
-                    context.pParty);
+                    context.pParty,
+                    context.pCharacterInspectTable,
+                    context.pScreenRuntime != nullptr
+                        ? &context.pScreenRuntime->gameplayUiRuntime().uiTextTable() : nullptr);
                 context.eventRuntimeState.messages.push_back(topic->text);
                 executed = true;
             }
@@ -4122,7 +4178,10 @@ GameplayDialogController::PresentPendingDialogResult GameplayDialogController::p
                 context.pCurrentMap,
                 context.pBolsterMapTable,
                 context.pWorldRuntime,
-                context.pParty);
+                context.pParty,
+                context.pCharacterInspectTable,
+                context.pScreenRuntime != nullptr
+                    ? &context.pScreenRuntime->gameplayUiRuntime().uiTextTable() : nullptr);
         }
     }
 

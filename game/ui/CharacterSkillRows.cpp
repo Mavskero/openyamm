@@ -2,6 +2,7 @@
 
 #include "game/party/Party.h"
 #include "game/tables/CharacterInspectTable.h"
+#include "game/tables/UiTextTable.h"
 
 #include <algorithm>
 #include <unordered_set>
@@ -63,7 +64,8 @@ CharacterSkillUiRow makeRow(
     const CharacterSkill &skill,
     const std::string &canonicalName,
     const CharacterInspectTable *pTable,
-    bool allowUpgradeInteraction)
+    bool allowUpgradeInteraction,
+    const UiTextTable *pUiTextTable)
 {
     CharacterSkillUiRow row = {};
     row.canonicalName = canonicalName;
@@ -71,8 +73,16 @@ CharacterSkillUiRow makeRow(
     row.label = pEntry != nullptr && !pEntry->name.empty() ? pEntry->name : displaySkillName(skill.name);
     if (skill.mastery != SkillMastery::None && skill.mastery != SkillMastery::Normal)
     {
-        const std::string mastery = masteryDisplayName(skill.mastery);
-        row.label += " " + (mastery == "Grandmaster" ? std::string("Grand") : mastery);
+        std::string mastery = masteryDisplayName(skill.mastery);
+        if (pUiTextTable != nullptr)
+        {
+            mastery = pUiTextTable->skillMasteryName(skill.mastery);
+        }
+        else if (mastery == "Grandmaster")
+        {
+            mastery = "Grand";
+        }
+        row.label += " " + mastery;
     }
     row.level = std::to_string(skill.level);
     row.upgradeable = character.skillPoints > skill.level;
@@ -84,7 +94,8 @@ CharacterSkillUiRow makeRow(
 CharacterSkillUiData buildCharacterSkillUiData(
     const Character *pCharacter,
     const CharacterInspectTable *pTable,
-    bool allowUpgradeInteraction)
+    bool allowUpgradeInteraction,
+    const UiTextTable *pUiTextTable)
 {
     CharacterSkillUiData data = {};
     if (pCharacter == nullptr)
@@ -99,7 +110,7 @@ CharacterSkillUiData buildCharacterSkillUiData(
             const CharacterSkill *pSkill = pCharacter->findSkillByCanonicalName(pName);
             if (pSkill != nullptr)
             {
-                rows.push_back(makeRow(*pCharacter, *pSkill, pName, pTable, allowUpgradeInteraction));
+                rows.push_back(makeRow(*pCharacter, *pSkill, pName, pTable, allowUpgradeInteraction, pUiTextTable));
                 shownSkillNames.insert(pName);
             }
         }
@@ -114,7 +125,8 @@ CharacterSkillUiData buildCharacterSkillUiData(
     {
         if (!shownSkillNames.contains(canonicalName))
         {
-            extraRows.push_back(makeRow(*pCharacter, skill, canonicalName, pTable, allowUpgradeInteraction));
+            extraRows.push_back(
+                makeRow(*pCharacter, skill, canonicalName, pTable, allowUpgradeInteraction, pUiTextTable));
         }
     }
     // Keep extra-skill ordering stable when display language changes.

@@ -1597,7 +1597,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             ? pCharacterDollTable->getDollType(pActiveCharacterDollEntry->dollTypeId)
             : nullptr;
     const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(
-        pActiveCharacter, context.characterInspectTable(), !isReadOnlyAdventurersInnView);
+        pActiveCharacter, context.characterInspectTable(), !isReadOnlyAdventurersInnView,
+        &context.gameplayUiRuntime().uiTextTable());
     const std::optional<GameplayHudFontHandle> skillRowFont = context.findHudFont("Lucida");
     const float naturalSkillRowHeight =
         skillRowFont.has_value() ? static_cast<float>(std::max(1, skillRowFont->fontHeight - 3)) : 11.0f;

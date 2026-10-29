@@ -1,0 +1,56 @@
+{
+  "checkpoint": 216,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-29T15:29:46.537877+00:00",
+  "source_base": "8b774eefa0bac2652ccadbdf6201e1eb47bb59c1",
+  "scope": [
+    "Localized mastery suffixes in shared character skill rows",
+    "Approved teacher quote using originalGlobalTxt534",
+    "Localized training success and teacher map notes; existing note refreshed on revisit",
+    "Input-neutral inventory item spell hint"
+  ],
+  "ui_text_count": 115,
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:24:17.466369+00:00",
+      "finished_at": "2026-10-29T15:25:33.034652+00:00"
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:25:49.615355+00:00",
+      "finished_at": "2026-10-29T15:25:49.854932+00:00"
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:25:56.238715+00:00",
+      "finished_at": "2026-10-29T15:25:58.448671+00:00"
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:26:34.279951+00:00",
+      "finished_at": "2026-10-29T15:27:33.938879+00:00"
+    }
+  },
+  "runtime": "local-data/validation/ui-function-completion-216/runtime-001",
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "all_other_runtime_members_retained": true,
+  "save_version": 104,
+  "new_unit_cases": 0,
+  "app_runs": 0,
+  "campaign_replays": 0,
+  "device_or_simulator_operations": 0,
+  "new_release": false,
+  "fixed_release_preserved": "ipados-ui-cumulative-214-20261029",
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "Source/build acceptance only; no new pixel/device acceptance",
+    "Three special training base-stat failure messages remain hardcoded English and are being addressed separately",
+    "Full natural campaign and all-UI acceptance unproved"
+  ]
+}

@@ -4,6 +4,12 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 216 ACCEPTED_SOURCE_SCOPED: `local-data/validation/ui-function-completion-216/scoped-result.json`.
+  Skill mastery suffixes, original534 approved teacher quote, success/map notes and input-neutral item target hint
+  use currentUI names. Native75.568s/coreimport0.240s/unsignediOS59.659s pass,115typedkeys;0newcases/App/device/campaign.
+  Defaultcomplete216/runtime-001 changesonlyui_text;Save104 and214/195/RCs fixed. FullgoalACTIVE/~85%lowconfidence.
+  Continue known three special training-failure English messages; no broad NPC audit or new device matrix.
+
 - 215 PUBLISHED_VERIFIED: `ipados-ui-cumulative-214-20261029`, source3aee33974a7cb1d90e26e4fb8257e341e8256a8b.
   See `handoff/ui-cumulative-delivery-215/README.md` and delivery/final-verification JSON. All16 remote attachments
   match SHA256/size; complete runtime207 sixfiles,2319-sourcefile snapshot,unsigned214iOS,Save104.195/RC1–3fixed.

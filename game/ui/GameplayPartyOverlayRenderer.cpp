@@ -8347,7 +8347,8 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
         }
     }
 
-    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(pCharacter, context.characterInspectTable());
+    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(
+        pCharacter, context.characterInspectTable(), true, &context.gameplayUiRuntime().uiTextTable());
     const std::optional<GameplayHudFontHandle> skillRowFont = context.findHudFont("Lucida");
     const float naturalSkillRowHeight =
         skillRowFont.has_value() ? static_cast<float>(std::max(1, skillRowFont->fontHeight - 3)) : 11.0f;
@@ -9671,7 +9672,8 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
         promptRect.width = uiViewport.width;
         promptRect.height = std::round(24.0f * overlayScale);
         promptRect.scale = overlayScale;
-        context.renderLayoutLabel(promptLayout, promptRect, "Select item target  LMB cast  Esc cancel");
+        context.renderLayoutLabel(promptLayout, promptRect,
+            context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::InventoryTargetHint));
     }
 
     const auto renderSkillGroup =

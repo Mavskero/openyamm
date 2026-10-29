@@ -8,7 +8,9 @@
 #include "game/gameplay/MercenaryRecruitmentRuntime.h"
 #include "game/gameplay/ReputationRuntime.h"
 #include "game/StringUtils.h"
+#include "game/tables/CharacterInspectTable.h"
 #include "game/tables/MergedBaseTables.h"
+#include "game/tables/UiTextTable.h"
 
 #include <algorithm>
 #include <array>
@@ -1485,6 +1487,20 @@ EventDialogContent buildEventDialogContent(
                     learnAction.kind = EventDialogActionKind::MasteryTeacherLearn;
                     learnAction.id = pCurrentOffer->topicId;
                     learnAction.label = evaluation->displayText;
+                    if (evaluation->approved && pUiTextTable != nullptr && pCharacterInspectTable != nullptr)
+                    {
+                        const SkillInspectEntry *pSkill = pCharacterInspectTable->getSkill(evaluation->skillName);
+                        const std::string skillName = pSkill != nullptr && !pSkill->name.empty()
+                            ? pSkill->name : displaySkillName(evaluation->skillName);
+                        const std::string offerText = pUiTextTable->formatSkillTrainingOffer(
+                            pUiTextTable->skillMasteryName(evaluation->targetMastery),
+                            skillName,
+                            evaluation->cost);
+                        if (!offerText.empty())
+                        {
+                            learnAction.label = offerText;
+                        }
+                    }
                     dialog.actions.push_back(std::move(learnAction));
                 }
             }

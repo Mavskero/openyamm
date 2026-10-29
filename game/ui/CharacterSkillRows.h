@@ -7,6 +7,7 @@ namespace OpenYAMM::Game
 {
 struct Character;
 class CharacterInspectTable;
+class UiTextTable;
 
 struct CharacterSkillUiRow
 {
@@ -28,5 +29,6 @@ struct CharacterSkillUiData
 CharacterSkillUiData buildCharacterSkillUiData(
     const Character *pCharacter,
     const CharacterInspectTable *pTable,
-    bool allowUpgradeInteraction = true);
+    bool allowUpgradeInteraction = true,
+    const UiTextTable *pUiTextTable = nullptr);
 }

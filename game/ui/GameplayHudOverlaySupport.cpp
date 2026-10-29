@@ -481,7 +481,8 @@ void GameplayHudOverlaySupport::updateCharacterInspectOverlay(
         return;
     }
 
-    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(pCharacter, context.characterInspectTable());
+    const CharacterSkillUiData skillUiData = buildCharacterSkillUiData(
+        pCharacter, context.characterInspectTable(), true, &context.gameplayUiRuntime().uiTextTable());
     const std::optional<GameplayScreenRuntime::HudFontHandle> skillRowFont = context.findHudFont("Lucida");
     const float naturalSkillRowHeight =
         skillRowFont.has_value() ? static_cast<float>(std::max(1, skillRowFont->fontHeight - 3)) : 11.0f;

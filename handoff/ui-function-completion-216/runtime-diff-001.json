@@ -1,0 +1,13 @@
+{
+  "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-216/core-ui-text-001/core_conversion.json",
+  "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-207/runtime-001",
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-216/runtime-001",
+  "added_members": [],
+  "changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "ui_text_sha256": "9baaf93feaa9f27cac8524c43406ac979d539819248e0ed85152293b77d1bfff",
+  "all_other_archive_members_retained": true,
+  "controlled_gameplay_fixtures": false,
+  "release_created": false
+}
