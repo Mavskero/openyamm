@@ -189,7 +189,7 @@ public:
         OutdoorSceneData &sceneData,
         const std::string &yamlText,
         std::string &errorMessage) const;
-    // Augment the ODM/DDM with mechanisms and optional runtime restrictions.
+    // Augment the ODM/DDM with mechanisms, runtime restrictions or imported local terrain rules.
     bool applyMechanismsFromText(
         OutdoorMapData &outdoorMapData,
         MapDeltaData &mapDeltaData,

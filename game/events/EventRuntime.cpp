@@ -2317,6 +2317,7 @@ EventRuntime::VariableRef EventRuntime::decodeVariable(uint32_t rawId)
         case EvtVariable::Counter9:
         case EvtVariable::Counter10:
         case EvtVariable::ReputationInCurrentLocation:
+        case EvtVariable::ReputationIs:
         case EvtVariable::Unknown1:
         case EvtVariable::NumDeaths:
         case EvtVariable::NumBounties:
@@ -2783,6 +2784,8 @@ int32_t EventRuntime::getVariableValue(
 
             case EvtVariable::ReputationInCurrentLocation:
                 return runtimeState.currentLocationReputation;
+            case EvtVariable::ReputationIs:
+                return -runtimeState.currentLocationReputation;
 
             case EvtVariable::Unknown1:
             case EvtVariable::NumDeaths:
@@ -3522,6 +3525,11 @@ void EventRuntime::setVariableValue(
             runtimeState.currentLocationReputation = clampReputation(value);
             return;
         }
+        if (variableId == EvtVariable::ReputationIs)
+        {
+            runtimeState.currentLocationReputation = -clampReputation(value);
+            return;
+        }
 
         if (pParty != nullptr)
         {
@@ -3795,6 +3803,29 @@ void EventRuntime::addVariableValue(
                 PortraitFxAction::Add);
         }
 
+        return;
+    }
+
+    // EVT 0x04/0x06 are the source HasFullHP/HasFullSP operations when added with zero.
+    if (value == 0 && (variable.kind == VariableKind::MaxHealth || variable.kind == VariableKind::MaxSpellPoints))
+    {
+        if (pParty != nullptr)
+        {
+            for (size_t index : targetMemberIndices)
+            {
+                if (Character *pMember = pParty->member(index))
+                {
+                    if (variable.kind == VariableKind::MaxHealth)
+                    {
+                        pMember->health = resolveCharacterEffectiveMaxHealth(*pMember);
+                    }
+                    else
+                    {
+                        pMember->spellPoints = resolveCharacterEffectiveMaxSpellPoints(*pMember);
+                    }
+                }
+            }
+        }
         return;
     }
 
@@ -4090,6 +4121,12 @@ void EventRuntime::addVariableValue(
         if (variableId == EvtVariable::ReputationInCurrentLocation)
         {
             runtimeState.currentLocationReputation = clampReputation(runtimeState.currentLocationReputation + value);
+            return;
+        }
+        if (variableId == EvtVariable::ReputationIs)
+        {
+            runtimeState.currentLocationReputation =
+                clampReputation(runtimeState.currentLocationReputation - clampReputation(value));
             return;
         }
 
@@ -4548,6 +4585,12 @@ void EventRuntime::subtractVariableValue(
         if (variableId == EvtVariable::ReputationInCurrentLocation)
         {
             runtimeState.currentLocationReputation = clampReputation(runtimeState.currentLocationReputation - value);
+            return;
+        }
+        if (variableId == EvtVariable::ReputationIs)
+        {
+            runtimeState.currentLocationReputation =
+                clampReputation(runtimeState.currentLocationReputation + clampReputation(value));
             return;
         }
 
@@ -5070,6 +5113,38 @@ int luaHasItemAnywhere(lua_State *pLuaState)
     const Party *pParty = readableParty(pLuaState);
     const uint32_t itemId = static_cast<uint32_t>(luaL_checkinteger(pLuaState, 1));
     lua_pushboolean(pLuaState, pParty != nullptr && pParty->hasItemAnywhere(itemId));
+    return 1;
+}
+
+int luaFindPartyMemberInventoryItem(lua_State *pLuaState)
+{
+    const Party *pParty = readableParty(pLuaState);
+    const lua_Integer index = luaL_checkinteger(pLuaState, 1);
+    luaL_checktype(pLuaState, 2, LUA_TTABLE);
+    std::unordered_set<uint32_t> candidates;
+    const size_t count = lua_rawlen(pLuaState, 2);
+    for (size_t entry = 1; entry <= count; ++entry)
+    {
+        lua_rawgeti(pLuaState, 2, static_cast<lua_Integer>(entry));
+        const lua_Integer itemId = luaL_checkinteger(pLuaState, -1);
+        if (itemId > 0 && itemId <= UINT32_MAX)
+        {
+            candidates.insert(static_cast<uint32_t>(itemId));
+        }
+        lua_pop(pLuaState, 1);
+    }
+    if (pParty != nullptr && index >= 0 && size_t(index) < pParty->memberCount())
+    {
+        for (const InventoryItem &item : pParty->members()[size_t(index)].inventory)
+        {
+            if (candidates.contains(item.objectDescriptionId))
+            {
+                lua_pushinteger(pLuaState, item.objectDescriptionId);
+                return 1;
+            }
+        }
+    }
+    lua_pushinteger(pLuaState, 0);
     return 1;
 }
 
@@ -6350,7 +6425,7 @@ int luaGetHeldItemId(lua_State *pLuaState)
     return 1;
 }
 
-int luaSetHeldItem(lua_State *pLuaState)
+int queueLuaHeldItem(lua_State *pLuaState, bool replaceMouseItem)
 {
     EventRuntimeState *pRuntimeState = writableRuntimeState(pLuaState);
     Party *pParty = writableParty(pLuaState);
@@ -6359,6 +6434,10 @@ int luaSetHeldItem(lua_State *pLuaState)
     if (pRuntimeState == nullptr || itemId == 0)
     {
         return 0;
+    }
+    if (replaceMouseItem && pParty == nullptr)
+    {
+        return luaL_error(pLuaState, "ReplaceMouseItem requires an active party item owner");
     }
 
     std::optional<InventoryItem> item = createGrantedEventItem(*pRuntimeState, pParty, 0, 1, 0, itemId);
@@ -6413,11 +6492,27 @@ int luaSetHeldItem(lua_State *pLuaState)
         lua_pop(pLuaState, 1);
     }
 
-    if (!retainGrantedEventItem(*pRuntimeState, pParty, *item))
+    // Mouse.ReleaseItem uses the source TakeOrDrop policy before publishing the new cursor item.
+    // The existing durable queue keeps both items owned if inventory placement and world dropping fail.
+    // Generic SetHeldItem retains its existing NoDrop and identification policy.
+    const bool retained = replaceMouseItem
+        ? pParty->grantOwnedQuestItem(*item, -1, true)
+        : retainGrantedEventItem(*pRuntimeState, pParty, *item);
+    if (!retained)
     {
         return luaL_error(pLuaState, "Pending event item delivery capacity exhausted");
     }
     return 0;
+}
+
+int luaSetHeldItem(lua_State *pLuaState)
+{
+    return queueLuaHeldItem(pLuaState, false);
+}
+
+int luaReplaceMouseItem(lua_State *pLuaState)
+{
+    return queueLuaHeldItem(pLuaState, true);
 }
 
 int luaClearHeldItem(lua_State *pLuaState)
@@ -6457,6 +6552,41 @@ std::string partyPortraitTextureName(uint32_t pictureId)
     char buffer[16] = {};
     std::snprintf(buffer, sizeof(buffer), "PC%02u-01", static_cast<unsigned>(pictureId + 1u));
     return buffer;
+}
+
+int luaGetPartyMemberRosterId(lua_State *pLuaState)
+{
+    const Party *pParty = readableParty(pLuaState);
+    const lua_Integer index = luaL_checkinteger(pLuaState, 1);
+    const Character *pMember = pParty != nullptr && index >= 0 ? pParty->member(size_t(index)) : nullptr;
+    lua_pushinteger(pLuaState, pMember != nullptr ? static_cast<lua_Integer>(pMember->rosterId) : -1);
+    return 1;
+}
+
+int luaSetTemporaryPartyPortrait(lua_State *pLuaState)
+{
+    EventRuntimeState *pState = writableRuntimeState(pLuaState);
+    const Party *pParty = readableParty(pLuaState);
+    const lua_Integer index = luaL_checkinteger(pLuaState, 1);
+    const Character *pMember = pParty != nullptr && index >= 0 ? pParty->member(size_t(index)) : nullptr;
+    if (pState == nullptr || pMember == nullptr)
+    {
+        return luaL_error(pLuaState, "Temporary portrait requires a current party member");
+    }
+    if (lua_isnoneornil(pLuaState, 2))
+    {
+        pState->temporaryPartyPortraits.erase(pMember->memberId);
+    }
+    else
+    {
+        const lua_Integer portraitId = luaL_checkinteger(pLuaState, 2);
+        if (portraitId < 0 || portraitId > UINT32_MAX)
+        {
+            return luaL_error(pLuaState, "Invalid temporary portrait ID");
+        }
+        pState->temporaryPartyPortraits[pMember->memberId] = uint32_t(portraitId);
+    }
+    return 0;
 }
 
 int luaGetPartyMemberPortraitId(lua_State *pLuaState)
@@ -6924,6 +7054,172 @@ int luaMoveNpc(lua_State *pLuaState)
     return 0;
 }
 
+int luaStartMapTimer(lua_State *pLuaState)
+{
+    EventRuntimeState *pState = writableRuntimeState(pLuaState);
+    LuaExecutionContext *pContext = executionContextFromLua(pLuaState);
+    const lua_Integer eventId = luaL_checkinteger(pLuaState, 1);
+    const double interval = luaL_checknumber(pLuaState, 2);
+    if (pState == nullptr || pContext == nullptr || pContext->pSceneEventContext == nullptr
+        || eventId <= 0 || eventId > 65535)
+    {
+        return luaL_error(pLuaState, "Invalid dynamic map timer context");
+    }
+    DynamicScriptedEventTimerOptions options;
+    options.scope = pContext->executingGlobalHandler ? ScriptedEventScope::Global : ScriptedEventScope::Map;
+    if (lua_type(pLuaState, 3) == LUA_TNUMBER)
+    {
+        options.absoluteStartGameMinutes = luaL_checknumber(pLuaState, 3);
+    }
+    else if (lua_isboolean(pLuaState, 3))
+    {
+        options.pastAware = lua_toboolean(pLuaState, 3) != 0;
+    }
+    if (!lua_isnoneornil(pLuaState, 4))
+    {
+        options.initialDelayGameMinutes = luaL_checknumber(pLuaState, 4);
+    }
+    if (const MapDeltaData *pDelta = pContext->pSceneEventContext->mapDeltaData())
+    {
+        options.lastVisitGameMinutes = pDelta->locationTime.lastVisitTime == 0 ? -1.0 / 256.0
+            : legacyTimerGameMinutesFromTicks(pDelta->locationTime.lastVisitTime);
+    }
+    if (!startDynamicScriptedEventTimer(pState->dynamicMapTimers, static_cast<uint16_t>(eventId), interval,
+        pContext->pSceneEventContext->currentGameMinutesPrecise(), options))
+    {
+        return luaL_error(pLuaState, "Invalid dynamic map timer registration");
+    }
+    return 0;
+}
+
+int luaDelayMapEvent(lua_State *pLuaState)
+{
+    EventRuntimeState *pState = writableRuntimeState(pLuaState);
+    const LuaExecutionContext *pContext = executionContextFromLua(pLuaState);
+    const lua_Integer eventId = luaL_checkinteger(pLuaState, 1);
+    const double delay = luaL_checknumber(pLuaState, 2);
+    if (pState == nullptr || pContext == nullptr || eventId <= 0 || eventId > 65535
+        || !delayDynamicScriptedEvent(pState->dynamicMapTimers, uint16_t(eventId), delay,
+            pContext->executingGlobalHandler ? ScriptedEventScope::Global : ScriptedEventScope::Map))
+    {
+        return luaL_error(pLuaState, "Invalid delayed map event registration");
+    }
+    return 0;
+}
+
+int luaStopMapTimer(lua_State *pLuaState)
+{
+    EventRuntimeState *pState = writableRuntimeState(pLuaState);
+    const LuaExecutionContext *pContext = executionContextFromLua(pLuaState);
+    const lua_Integer eventId = luaL_checkinteger(pLuaState, 1);
+    if (pState == nullptr || pContext == nullptr || eventId <= 0 || eventId > 65535)
+    {
+        return luaL_error(pLuaState, "Invalid dynamic timer removal");
+    }
+    const ScriptedEventScope scope =
+        pContext->executingGlobalHandler ? ScriptedEventScope::Global : ScriptedEventScope::Map;
+    for (DynamicScriptedEventTimer &timer : pState->dynamicMapTimers.instances)
+    {
+        if (!timer.removed && timer.eventId == eventId && timer.scope == scope)
+        {
+            timer.removed = true;
+            break;
+        }
+    }
+    return 0;
+}
+
+int luaStopCurrentMapTimer(lua_State *pLuaState)
+{
+    EventRuntimeState *pState = writableRuntimeState(pLuaState);
+    if (pState == nullptr)
+    {
+        return luaL_error(pLuaState, "Dynamic map timers require a writable event context");
+    }
+    stopCurrentDynamicScriptedEventTimer(pState->dynamicMapTimers);
+    return 0;
+}
+
+int luaGetNpcHouse(lua_State *pLuaState)
+{
+    const uint32_t npcId = static_cast<uint32_t>(luaL_checkinteger(pLuaState, 1));
+    const EventRuntimeState *pState = readableRuntimeState(pLuaState);
+    if (pState != nullptr)
+    {
+        const auto found = pState->npcHouseOverrides.find(npcId);
+        if (found != pState->npcHouseOverrides.end())
+        {
+            lua_pushinteger(pLuaState, found->second);
+            return 1;
+        }
+    }
+    const EventRuntime *pRuntime = readableEventRuntime(pLuaState);
+    const NpcDialogTable *pTable = pRuntime != nullptr ? pRuntime->npcDialogTable() : nullptr;
+    const NpcEntry *pNpc = pTable != nullptr ? pTable->getNpc(npcId) : nullptr;
+    lua_pushinteger(pLuaState, pNpc != nullptr ? pNpc->houseId : 0);
+    return 1;
+}
+
+int luaGetNpcTopic(lua_State *pLuaState)
+{
+    const uint32_t npcId = static_cast<uint32_t>(luaL_checkinteger(pLuaState, 1));
+    const uint32_t slot = static_cast<uint32_t>(luaL_checkinteger(pLuaState, 2));
+    const EventRuntimeState *pState = readableRuntimeState(pLuaState);
+    if (pState != nullptr)
+    {
+        const auto npc = pState->npcTopicOverrides.find(npcId);
+        if (npc != pState->npcTopicOverrides.end())
+        {
+            const auto found = npc->second.find(slot);
+            if (found != npc->second.end())
+            {
+                lua_pushinteger(pLuaState, found->second);
+                return 1;
+            }
+        }
+    }
+    const EventRuntime *pRuntime = readableEventRuntime(pLuaState);
+    const NpcDialogTable *pTable = pRuntime != nullptr ? pRuntime->npcDialogTable() : nullptr;
+    const NpcEntry *pNpc = pTable != nullptr ? pTable->getNpc(npcId) : nullptr;
+    lua_pushinteger(pLuaState, pNpc != nullptr && slot < pNpc->topicIds.size() ? pNpc->topicIds[slot] : 0);
+    return 1;
+}
+
+int luaHasOwnedAward(lua_State *pLuaState)
+{
+    const uint32_t awardId = static_cast<uint32_t>(luaL_checkinteger(pLuaState, 1));
+    const Party *pParty = readableParty(pLuaState);
+    bool found = false;
+    if (pParty != nullptr)
+    {
+        found = std::ranges::any_of(pParty->members(), [awardId](const Character &member)
+            { return member.awards.contains(awardId); })
+            || std::ranges::any_of(pParty->adventurersInnMembers(), [awardId](const AdventurersInnMember &member)
+                { return member.character.awards.contains(awardId); })
+            || std::ranges::any_of(pParty->detachedMembers(), [awardId](const Party::DetachedPartyMember &member)
+                { return member.character.awards.contains(awardId); });
+    }
+    lua_pushboolean(pLuaState, found);
+    return 1;
+}
+
+int luaSetHouseVideo(lua_State *pLuaState)
+{
+    EventRuntimeState *pState = writableRuntimeState(pLuaState);
+    const uint32_t houseId = static_cast<uint32_t>(luaL_checkinteger(pLuaState, 1));
+    const EventRuntime *pRuntime = readableEventRuntime(pLuaState);
+    const HouseTable *pTable = pRuntime != nullptr ? pRuntime->houseTable() : nullptr;
+    const std::string stem = luaL_checkstring(pLuaState, 2);
+    if (pState == nullptr || pTable == nullptr || pTable->get(houseId) == nullptr || stem.empty() || stem.size() > 128
+        || stem.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+            != std::string::npos)
+    {
+        return luaL_error(pLuaState, "Invalid house video override");
+    }
+    pState->houseVideoOverrides[houseId] = stem;
+    return 0;
+}
+
 int luaRandomJump(lua_State *pLuaState)
 {
     const uint16_t eventId = static_cast<uint16_t>(luaL_checkinteger(pLuaState, 1));
@@ -6990,6 +7286,24 @@ int luaDamagePlayer(lua_State *pLuaState)
 
     const PartySelector selector = decodePartySelector(static_cast<uint32_t>(luaL_checkinteger(pLuaState, 1)));
     const int damage = static_cast<int>(luaL_checkinteger(pLuaState, 3));
+    const int rawDamageType = static_cast<int>(luaL_checkinteger(pLuaState, 2));
+    CombatDamageType damageType = CombatDamageType::Physical;
+    switch (rawDamageType)
+    {
+        case 0: damageType = CombatDamageType::Fire; break;
+        case 1: damageType = CombatDamageType::Air; break;
+        case 2: damageType = CombatDamageType::Water; break;
+        case 3: damageType = CombatDamageType::Earth; break;
+        case 4: damageType = CombatDamageType::Physical; break;
+        case 5: damageType = CombatDamageType::Magic; break;
+        case 6: damageType = CombatDamageType::Spirit; break;
+        case 7: damageType = CombatDamageType::Mind; break;
+        case 8: damageType = CombatDamageType::Body; break;
+        case 9: damageType = CombatDamageType::Light; break;
+        case 10: damageType = CombatDamageType::Dark; break;
+        case 12: damageType = CombatDamageType::Energy; break;
+        default: return luaL_error(pLuaState, "Unsupported source event damage type");
+    }
     std::vector<size_t> targets = resolveTargetMemberIndices(selector, pParty);
 
     if (targets.empty())
@@ -7002,9 +7316,38 @@ int luaDamagePlayer(lua_State *pLuaState)
 
     for (size_t memberIndex : targets)
     {
-        pParty->applyDamageToMember(memberIndex, damage, status, allowUnconscious);
+        const Character *pMember = pParty->member(memberIndex);
+        if (pMember == nullptr) continue;
+        const LuaExecutionContext *pContext = executionContextFromLua(pLuaState);
+        EventRuntimeState *pState = writableRuntimeState(pLuaState);
+        std::mt19937 rng(nextEventRandom(pContext != nullptr ? pContext->currentEventId : 0,
+            static_cast<uint8_t>(memberIndex), *pState));
+        const int resolvedDamage = GameMechanics::resolveCharacterIncomingDamage(*pMember,
+            pParty->itemTable(), pParty->standardItemEnchantTable(), pParty->specialItemEnchantTable(),
+            damage, damageType, rng);
+        pParty->applyDamageToMember(memberIndex, resolvedDamage, status, allowUnconscious);
     }
 
+    return 0;
+}
+
+int luaSetOutdoorWeatherEnabled(lua_State *pLuaState)
+{
+    EventRuntimeState *pState = writableRuntimeState(pLuaState);
+    if (pState == nullptr)
+    {
+        return luaL_error(pLuaState, "Weather policy requires a writable event context");
+    }
+    const bool enabled = luaEventBoolean(pLuaState, 1);
+    pState->outdoorWeatherEnabledOverride = enabled;
+    if (enabled)
+    {
+        pState->outdoorSkyTextureOverride.reset();
+        pState->outdoorFogWeakDistanceOverride.reset();
+        pState->outdoorFogStrongDistanceOverride.reset();
+        pState->snowEnabled.reset();
+        pState->rainEnabled.reset();
+    }
     return 0;
 }
 
@@ -7266,6 +7609,28 @@ int luaSetDeathMovieSuppressed(lua_State *pLuaState)
     EventRuntimeState *pState = writableRuntimeState(pLuaState);
     pState->namedMapVars["OpenYAMM.SuppressDeathMovie"] = luaEventBoolean(pLuaState, 1) ? 1 : 0;
     return 0;
+}
+
+int luaFindMapDecorationByEventId(lua_State *pLuaState)
+{
+    const lua_Integer eventId = luaL_checkinteger(pLuaState, 1);
+    const LuaExecutionContext *pContext = executionContextFromLua(pLuaState);
+    const OutdoorWorldRuntime *pWorld = pContext != nullptr
+        ? dynamic_cast<const OutdoorWorldRuntime *>(pContext->pSceneEventContext) : nullptr;
+    const OutdoorMapData *pMap = pWorld != nullptr ? pWorld->mapData() : nullptr;
+    if (pMap != nullptr && eventId > 0 && eventId <= UINT16_MAX)
+    {
+        for (size_t index = 0; index < pMap->entities.size(); ++index)
+        {
+            if (pMap->entities[index].eventIdSecondary == eventId)
+            {
+                lua_pushinteger(pLuaState, static_cast<lua_Integer>(index));
+                return 1;
+            }
+        }
+    }
+    lua_pushinteger(pLuaState, -1);
+    return 1;
 }
 
 int luaSetMapDecorationVisible(lua_State *pLuaState)
@@ -7910,6 +8275,21 @@ int luaGetPlayerExperience(lua_State *pLuaState)
         lua_pushinteger(pLuaState, pParty->members()[size_t(index)].experience);
     }
     return 1;
+}
+
+int luaEnsureChestItemRecord(lua_State *pLuaState)
+{
+    EventRuntimeState *pState = writableRuntimeState(pLuaState);
+    const lua_Integer chestId = luaL_checkinteger(pLuaState, 1);
+    const lua_Integer itemId = luaL_checkinteger(pLuaState, 2);
+    const lua_Integer recordIndex = luaL_checkinteger(pLuaState, 3);
+    if (pState == nullptr || chestId < 0 || chestId > UINT32_MAX || itemId <= 0 || itemId > UINT32_MAX
+        || recordIndex < 0 || recordIndex > UINT32_MAX)
+    {
+        return luaL_error(pLuaState, "Invalid chest item record repair");
+    }
+    pState->pendingChestItemInsertions.push_back({uint32_t(chestId), uint32_t(itemId), uint32_t(recordIndex)});
+    return 0;
 }
 
 int luaEnsureChestItem(lua_State *pLuaState)
@@ -9570,6 +9950,7 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "Cmp", luaCompare);
     registerLuaFunction(pLuaState, "HasEverOwnedItem", luaHasEverOwnedItem);
     registerLuaFunction(pLuaState, "HasItemAnywhere", luaHasItemAnywhere);
+    registerLuaFunction(pLuaState, "FindPartyMemberInventoryItem", luaFindPartyMemberInventoryItem);
     registerLuaFunction(pLuaState, "CanQueueItemDeliveries", luaCanQueueItemDeliveries);
     registerLuaFunction(pLuaState, "HasQuestBit", luaHasQuestBit);
     registerLuaFunction(pLuaState, "SetQuestBit", luaSetQuestBit);
@@ -9618,6 +9999,7 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "SetGlobalVar", luaSetGlobalVar);
     registerLuaFunction(pLuaState, "GetHeldItemId", luaGetHeldItemId);
     registerLuaFunction(pLuaState, "SetHeldItem", luaSetHeldItem);
+    registerLuaFunction(pLuaState, "ReplaceMouseItem", luaReplaceMouseItem);
     registerLuaFunction(pLuaState, "ClearHeldItem", luaClearHeldItem);
     registerLuaFunction(pLuaState, "GetPartyMemberCount", luaGetPartyMemberCount);
     registerLuaFunction(pLuaState, "GetCurrentPlayerIndex", luaGetCurrentPlayerIndex);
@@ -9679,6 +10061,7 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "SetDeathMovieSuppressed", luaSetDeathMovieSuppressed);
     registerLuaFunction(pLuaState, "SetSprite", luaSetSprite);
     registerLuaFunction(pLuaState, "SetMapDecorationVisible", luaSetMapDecorationVisible);
+    registerLuaFunction(pLuaState, "FindMapDecorationByEventId", luaFindMapDecorationByEventId);
     registerLuaFunction(pLuaState, "SetDoorState", luaSetDoorState);
     registerLuaFunction(pLuaState, "RegisterOutdoorModelMechanism", luaRegisterOutdoorModelMechanism);
     registerLuaFunction(pLuaState, "SetOutdoorModelMechanismState", luaSetOutdoorModelMechanismState);
@@ -9701,6 +10084,17 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "SummonObject", luaSummonObject);
     registerLuaFunction(pLuaState, "SetNPCTopic", luaSetNpcTopic);
     registerLuaFunction(pLuaState, "MoveNPC", luaMoveNpc);
+    registerLuaFunction(pLuaState, "StartMapTimer", luaStartMapTimer);
+    registerLuaFunction(pLuaState, "DelayMapEvent", luaDelayMapEvent);
+    registerLuaFunction(pLuaState, "StopMapTimer", luaStopMapTimer);
+    registerLuaFunction(pLuaState, "SetOutdoorWeatherEnabled", luaSetOutdoorWeatherEnabled);
+    registerLuaFunction(pLuaState, "GetPartyMemberRosterId", luaGetPartyMemberRosterId);
+    registerLuaFunction(pLuaState, "SetTemporaryPartyPortrait", luaSetTemporaryPartyPortrait);
+    registerLuaFunction(pLuaState, "StopCurrentMapTimer", luaStopCurrentMapTimer);
+    registerLuaFunction(pLuaState, "GetNPCHouse", luaGetNpcHouse);
+    registerLuaFunction(pLuaState, "GetNPCTopic", luaGetNpcTopic);
+    registerLuaFunction(pLuaState, "HasOwnedAward", luaHasOwnedAward);
+    registerLuaFunction(pLuaState, "SetHouseVideo", luaSetHouseVideo);
     registerLuaFunction(pLuaState, "GiveItem", luaGiveItem);
     registerLuaFunction(pLuaState, "ChangeEvent", luaChangeEvent);
     registerLuaFunction(pLuaState, "CheckSkill", luaCheckSkill);
@@ -9725,6 +10119,7 @@ void registerEventBindings(LuaSessionCache &session)
     registerLuaFunction(pLuaState, "SetMonGroupBit", luaSetMonGroupBit);
     registerLuaFunction(pLuaState, "SetChestBit", luaSetChestBit);
     registerLuaFunction(pLuaState, "EnsureChestItem", luaEnsureChestItem);
+    registerLuaFunction(pLuaState, "EnsureChestItemRecord", luaEnsureChestItemRecord);
     registerLuaFunction(pLuaState, "InsertChestItem", luaInsertChestItem);
     registerLuaFunction(pLuaState, "GetPlayerExperience", luaGetPlayerExperience);
     registerLuaFunction(pLuaState, "RemoveFollowerProfession", luaRemoveFollowerProfession);
@@ -10153,6 +10548,10 @@ bool EventRuntimeState::hasFacetInvisibleOverride(uint32_t faceId) const
 
 void clearTransientEventRuntimeState(EventRuntimeState &runtimeState)
 {
+    runtimeState.dynamicMapTimers = {};
+    runtimeState.houseVideoOverrides.clear();
+    runtimeState.temporaryPartyPortraits.clear();
+    runtimeState.outdoorWeatherEnabledOverride.reset();
     runtimeState.npcPrimaryGreetingTextOverrides.clear();
     runtimeState.normalGameplayScreen = false;
     runtimeState.dimensionDoorActive = false;

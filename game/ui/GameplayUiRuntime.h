@@ -287,7 +287,8 @@ public:
     void resetPortraitPresentationState(size_t memberCount);
     GameplayPortraitPresentationState &portraitPresentationState();
     const GameplayPortraitPresentationState &portraitPresentationState() const;
-    std::string resolvePortraitTextureName(const Character &character) const;
+    std::string resolvePortraitTextureName(
+        const Character &character, std::optional<uint32_t> temporaryPictureId = std::nullopt) const;
     bool triggerPortraitFxAnimation(const std::string &animationName, const std::vector<size_t> &memberIndices);
     void triggerPortraitSpellFx(const PartySpellCastResult &result);
     const PortraitFxEventEntry *findPortraitFxEvent(PortraitFxEventKind kind) const;

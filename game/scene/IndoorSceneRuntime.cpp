@@ -739,6 +739,10 @@ void IndoorSceneRuntime::restoreSnapshot(const Snapshot &snapshot)
     m_mapDeltaData = snapshot.mapDeltaData;
     if (m_mapDeltaData && m_pIndoorMapData != nullptr)
     {
+        for (MapDeltaDoor &door : m_mapDeltaData->doors)
+        {
+            door.attributes |= m_pIndoorMapData->requiredDoorAttributes;
+        }
         normalizeIndoorDoorTextureDeltas(*m_mapDeltaData, *m_pIndoorMapData);
     }
 
@@ -1034,15 +1038,7 @@ bool IndoorSceneRuntime::updateTimers(float deltaGameMinutes)
         initializeTimers(static_cast<double>(m_worldRuntime.gameMinutes()) - deltaGameMinutes);
     }
 
-    if (m_timers.empty())
-    {
-        return false;
-    }
-
-    return updateScriptedEventTimers(
-        m_timers,
-        static_cast<double>(m_worldRuntime.gameMinutes()),
-        [this](const ScriptedEventTimerDefinition &definition)
+    const auto executeTimer = [this](const ScriptedEventTimerDefinition &definition)
         {
             GAMEPLAY_DEBUG_TRACE(
                 "timer_event_fired world=indoor event_id=" + std::to_string(definition.eventId)
@@ -1069,7 +1065,11 @@ bool IndoorSceneRuntime::updateTimers(float deltaGameMinutes)
             }
 
             return executed;
-        });
+        };
+    const double gameMinutes = m_worldRuntime.gameMinutes();
+    const bool staticExecuted = updateScriptedEventTimers(m_timers, gameMinutes, executeTimer);
+    return updateDynamicScriptedEventTimers(m_eventRuntimeState->dynamicMapTimers, gameMinutes, executeTimer)
+        || staticExecuted;
 }
 
 void IndoorSceneRuntime::initializeTimers(double registrationGameMinutes)

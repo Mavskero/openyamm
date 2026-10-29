@@ -123,6 +123,12 @@ struct OutdoorTerrainFootstepSoundOverride
     uint32_t runSoundId = 0;
 };
 
+struct OutdoorTerrainTextureOverride
+{
+    uint8_t tileId = 0;
+    std::string textureName;
+};
+
 struct OutdoorTextureFootstepSoundOverride
 {
     std::string textureName;
@@ -284,6 +290,8 @@ struct OutdoorMapData
     std::vector<uint32_t> decorationMap;
     std::vector<OutdoorSpawn> spawns;
     std::vector<OutdoorTerrainFootstepSoundOverride> terrainFootstepSoundOverrides;
+    // Bitmap-only local palette overrides. The shared descriptor loader retains flags, tileset and variant.
+    std::vector<OutdoorTerrainTextureOverride> terrainTextureOverrides;
     std::vector<OutdoorTextureFootstepSoundOverride> textureFootstepSoundOverrides;
     std::vector<OutdoorBModelMechanism> mechanisms;
     std::vector<OutdoorDestructible> destructibles;

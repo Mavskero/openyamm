@@ -692,6 +692,14 @@ MonsterTable::LootPrototype gameplayBolsterLootPrototype(
     return result;
 }
 
+bool gameplayBolsterExcludesUniqueName(const GameplayBolsterRuntimeContext &context)
+{
+    return context.uniqueNameId >= 0
+        && context.uniqueNameId <= std::numeric_limits<uint16_t>::max()
+        && std::find(context.excludedUniqueNameIds.begin(), context.excludedUniqueNameIds.end(),
+            static_cast<uint16_t>(context.uniqueNameId)) != context.excludedUniqueNameIds.end();
+}
+
 GameplayMonsterBolsterResult resolveGameplayMonsterBolster(
     const GameplayBolsterRuntimeContext &context,
     const MonsterTable::MonsterStatsEntry &stats,
@@ -717,6 +725,7 @@ GameplayMonsterBolsterResult resolveGameplayMonsterBolster(
         || context.pBolsterMapTable == nullptr
         || context.pBolsterMonsterTable == nullptr
         || !context.bolsterMonstersEnabled
+        || gameplayBolsterExcludesUniqueName(context)
         || stats.id == 0)
     {
         return result;

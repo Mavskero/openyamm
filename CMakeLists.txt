@@ -178,8 +178,16 @@ if (APPLE)
         tools/mmerge_import/HarmondaleCastleResources.cpp
         tools/mmerge_import/LambentCastleResources.cpp
         tools/mmerge_import/StoneCityResources.cpp
+        tools/mmerge_import/ArtifactMessengerResources.cpp
         tools/mmerge_import/EmeraldIslandTravelResources.cpp
         tools/mmerge_import/FreeHavenTempleResources.cpp
+        tools/mmerge_import/Mm6QuestContinuityResources.cpp
+        tools/mmerge_import/RegnaCannonResources.cpp
+        tools/mmerge_import/Mm6LostShieldResources.cpp
+        tools/mmerge_import/PostQuestVisitResources.cpp
+        tools/mmerge_import/Mm8RemainingMapResources.cpp
+        tools/mmerge_import/Mm6RemainingMapResources.cpp
+        tools/mmerge_import/Mm7RemainingMapResources.cpp
         tools/mmerge_import/TownPortalVisitResources.cpp
         tools/mmerge_import/SubmarineTravelResources.cpp
         tools/mmerge_import/StoneStatueResources.cpp
@@ -622,6 +630,8 @@ if (APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
     target_link_libraries(lambent_castle_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(archibald_capture tools/ArchibaldCapture.cpp)
     target_link_libraries(archibald_capture PRIVATE openyamm_game openyamm_engine)
+    add_executable(council_capture tools/CouncilCapture.cpp)
+    target_link_libraries(council_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(regna_cannon_capture tools/RegnaCannonCapture.cpp)
     target_link_libraries(regna_cannon_capture PRIVATE openyamm_game openyamm_engine)
     add_executable(temple_bottle_capture tools/TempleBottleCapture.cpp)

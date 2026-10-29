@@ -1862,13 +1862,13 @@ void IndoorGameView::updateDialogueVideoPlayback(float deltaSeconds)
         return;
     }
 
-    if (pHostHouseEntry == nullptr || pHostHouseEntry->videoName.empty())
+    if (pHostHouseEntry == nullptr || resolveHouseVideoName(*pHostHouseEntry, pEventRuntimeState).empty())
     {
         screenRuntime.stopHouseVideoPlayback();
         return;
     }
 
-    screenRuntime.playHouseVideo(pHostHouseEntry->videoName);
+    screenRuntime.playHouseVideo(resolveHouseVideoName(*pHostHouseEntry, pEventRuntimeState));
     screenRuntime.updateHouseVideoPlayback(deltaSeconds);
 }
 

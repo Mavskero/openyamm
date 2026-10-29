@@ -143,6 +143,7 @@ enum class EvtVariable : uint16_t
     IsLuckMoreThanBase = 0x00E6,
     PlayerBits = 0x00E7,
     Npcs2 = 0x00E8,
+    ReputationIs = 0x00EB, // Merge's inverted reputation selector from ExtEvt.lua.
     IsFlying = 0x00F0,
     HiredNpcHasSpeciality = 0x00F1,
     CircusPrises = 0x00F2,

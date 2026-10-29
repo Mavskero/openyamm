@@ -8,6 +8,7 @@
 #include <cctype>
 #include <charconv>
 #include <iostream>
+#include <set>
 
 namespace OpenYAMM::Game
 {
@@ -229,6 +230,18 @@ std::optional<std::vector<TerrainTileDescriptor>> loadTerrainTileDescriptors(
         }
 
         tileDescriptors[tileIndex] = descriptors[*descriptorIndex];
+    }
+
+    std::set<uint8_t> overriddenTiles;
+    for (const OutdoorTerrainTextureOverride &overrideEntry : outdoorMapData.terrainTextureOverrides)
+    {
+        if (overrideEntry.tileId >= 234 || overrideEntry.textureName.empty()
+            || !overriddenTiles.insert(overrideEntry.tileId).second)
+        {
+            std::cout << "Invalid map-local terrain bitmap override for " << outdoorMapData.fileName << '\n';
+            return std::nullopt;
+        }
+        tileDescriptors[overrideEntry.tileId].textureName = overrideEntry.textureName;
     }
 
     return tileDescriptors;

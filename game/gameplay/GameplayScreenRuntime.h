@@ -98,6 +98,7 @@ public:
     IGameplayWorldRuntime *worldRuntime() const;
     Party *party() const;
     const Party *partyReadOnly() const;
+    bool allowSourceGameplayAction(uint32_t actionId, uint32_t menuId = 0);
     bool mobileFlightControlsAvailable() const;
     bool mobileInspectControlAvailable() const;
     float partyX() const;

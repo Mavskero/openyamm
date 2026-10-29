@@ -70,6 +70,12 @@ bool insertChestItemOnce(
     std::optional<GameplayChestViewState> &view,
     uint32_t itemId,
     const ItemTable *pItemTable);
+bool ensureChestItemRecord(
+    MapDeltaChest &chest,
+    std::optional<GameplayChestViewState> &view,
+    uint32_t itemId,
+    uint32_t recordIndex,
+    const ItemTable *pItemTable);
 void applyPendingChestItemInsertions(
     EventRuntimeState &state,
     std::vector<MapDeltaChest> &chests,

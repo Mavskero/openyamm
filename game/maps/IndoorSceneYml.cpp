@@ -11,6 +11,8 @@
 #include <cmath>
 #include <cstring>
 #include <exception>
+#include <limits>
+#include <set>
 #include <sstream>
 #include <vector>
 
@@ -613,6 +615,203 @@ void applyIndoorSceneFaceOverride(const IndoorSceneFaceAttributeOverride &overri
     if (overrideEntry.cogTriggerType.has_value())
     {
         face.cogTriggerType = *overrideEntry.cogTriggerType;
+    }
+}
+
+bool IndoorSceneYmlLoader::applyMapRulesFromText(
+    IndoorMapData &indoorMapData,
+    MapDeltaData &mapDeltaData,
+    MapRuntimeRestrictions &runtimeRestrictions,
+    const std::string &yamlText,
+    const std::string &mapFileName,
+    std::string &errorMessage) const
+{
+    try
+    {
+        const YAML::Node rootNode = YAML::Load(yamlText);
+        const auto checkFields = [&errorMessage](const YAML::Node &node,
+            const std::set<std::string> &allowed, const char *context)
+        {
+            if (!node.IsMap())
+            {
+                errorMessage = std::string(context) + " must be a map";
+                return false;
+            }
+            std::set<std::string> seen;
+            for (const auto &entry : node)
+            {
+                if (!entry.first.IsScalar())
+                {
+                    errorMessage = std::string(context) + " field names must be scalars";
+                    return false;
+                }
+                const std::string key = entry.first.as<std::string>();
+                if (!allowed.contains(key) || !seen.insert(key).second)
+                {
+                    errorMessage = std::string(context) + " has an unknown or duplicate field: " + key;
+                    return false;
+                }
+            }
+            return true;
+        };
+        if (!checkFields(rootNode, {"format_version", "kind", "map", "source", "face_count", "faces",
+                "bolster_excluded_unique_name_ids", "runtime_restrictions", "door_flags"}, "indoor map rules"))
+        {
+            return false;
+        }
+        int formatVersion = 0;
+        std::string kind;
+        std::string map;
+        size_t faceCount = 0;
+        if (!readScalarNode(rootNode, "format_version", formatVersion, errorMessage)
+            || !readScalarNode(rootNode, "kind", kind, errorMessage)
+            || !readScalarNode(rootNode, "map", map, errorMessage)
+            || !readScalarNode(rootNode, "face_count", faceCount, errorMessage))
+        {
+            return false;
+        }
+        if (formatVersion != 1 || kind != "indoor_map_rules" || toLowerCopy(map) != toLowerCopy(mapFileName)
+            || faceCount != indoorMapData.faces.size())
+        {
+            errorMessage = "indoor map rules version, map or face count does not match loaded geometry";
+            return false;
+        }
+        if (const YAML::Node source = rootNode["source"])
+        {
+            std::string script;
+            std::string digest;
+            if (!checkFields(source, {"script", "sha256"}, "indoor map rules source")
+                || !readScalarNode(source, "script", script, errorMessage)
+                || !readScalarNode(source, "sha256", digest, errorMessage))
+            {
+                return false;
+            }
+            if (script.empty() || digest.size() != 64
+                || digest.find_first_not_of("0123456789abcdef") != std::string::npos)
+            {
+                errorMessage = "indoor map rules source fingerprint is invalid";
+                return false;
+            }
+        }
+
+        std::vector<IndoorSceneFaceAttributeOverride> faces;
+        std::set<size_t> faceIndices;
+        const YAML::Node facesNode = rootNode["faces"];
+        if (facesNode)
+        {
+            if (!facesNode.IsSequence())
+            {
+                errorMessage = "indoor map rule faces must be a sequence";
+                return false;
+            }
+            for (const YAML::Node &node : facesNode)
+            {
+                if (!checkFields(node, {"face_index", "expected_facet_type", "facet_type"}, "indoor face rule"))
+                {
+                    return false;
+                }
+                size_t faceIndex = 0;
+                unsigned expectedType = 0;
+                unsigned facetType = 0;
+                if (!readScalarNode(node, "face_index", faceIndex, errorMessage)
+                    || !readScalarNode(node, "expected_facet_type", expectedType, errorMessage)
+                    || !readScalarNode(node, "facet_type", facetType, errorMessage))
+                {
+                    return false;
+                }
+                if (faceIndex >= faceCount || expectedType > 6 || facetType > 6
+                    || !faceIndices.insert(faceIndex).second
+                    || (indoorMapData.faces[faceIndex].facetType != expectedType
+                        && indoorMapData.faces[faceIndex].facetType != facetType))
+                {
+                    errorMessage = "indoor face rule index, type or original geometry does not match";
+                    return false;
+                }
+                IndoorSceneFaceAttributeOverride entry;
+                entry.faceIndex = faceIndex;
+                entry.facetType = uint8_t(facetType);
+                faces.push_back(entry);
+            }
+        }
+        std::vector<uint16_t> bolsterExcludedIds;
+        const YAML::Node bolsterNode = rootNode["bolster_excluded_unique_name_ids"];
+        if (bolsterNode)
+        {
+            if (!bolsterNode.IsSequence())
+            {
+                errorMessage = "bolster_excluded_unique_name_ids must be a sequence";
+                return false;
+            }
+            std::set<uint16_t> ids;
+            for (const YAML::Node &node : bolsterNode)
+            {
+                const uint32_t id = node.as<uint32_t>();
+                if (id == 0 || id > std::numeric_limits<uint16_t>::max() || !ids.insert(uint16_t(id)).second)
+                {
+                    errorMessage = "bolster exclusion unique-name ID is invalid or duplicated";
+                    return false;
+                }
+                bolsterExcludedIds.push_back(uint16_t(id));
+            }
+        }
+
+        MapRuntimeRestrictions restrictions = runtimeRestrictions;
+        const YAML::Node restrictionsNode = rootNode["runtime_restrictions"];
+        if (restrictionsNode)
+        {
+            if (!checkFields(restrictionsNode, {"allow_save_game", "allow_lloyds_beacon", "allow_rest", "arena",
+                    "town_portal_uses_dimension_door"}, "indoor runtime restrictions")
+                || !readScalarNode(restrictionsNode, "allow_save_game", restrictions.allowSaveGame, errorMessage, false)
+                || !readScalarNode(restrictionsNode, "allow_lloyds_beacon",
+                    restrictions.allowLloydsBeacon, errorMessage, false)
+                || !readScalarNode(restrictionsNode, "allow_rest", restrictions.allowRest, errorMessage, false)
+                || !readScalarNode(restrictionsNode, "arena", restrictions.isArena, errorMessage, false)
+                || !readScalarNode(restrictionsNode, "town_portal_uses_dimension_door",
+                    restrictions.townPortalUsesDimensionDoor, errorMessage, false))
+            {
+                return false;
+            }
+        }
+        uint32_t doorAttributes = 0;
+        const YAML::Node doorNode = rootNode["door_flags"];
+        if (doorNode)
+        {
+            bool noSound = false;
+            bool silentMove = false;
+            if (!checkFields(doorNode, {"no_sound", "silent_move"}, "indoor door flags")
+                || !readScalarNode(doorNode, "no_sound", noSound, errorMessage, false)
+                || !readScalarNode(doorNode, "silent_move", silentMove, errorMessage, false))
+            {
+                return false;
+            }
+            // Original common structs.lua DoorBits: SilentMove=0x2, NoSound=0x4.
+            doorAttributes = (silentMove ? 0x2u : 0u) | (noSound ? 0x4u : 0u);
+        }
+        if (faces.empty() && !bolsterNode && !restrictionsNode && doorAttributes == 0)
+        {
+            errorMessage = "indoor map rules contain no supported changes";
+            return false;
+        }
+        for (const IndoorSceneFaceAttributeOverride &entry : faces)
+        {
+            applyIndoorSceneFaceOverride(entry, indoorMapData.faces[entry.faceIndex]);
+        }
+        if (bolsterNode)
+        {
+            indoorMapData.bolsterExcludedUniqueNameIds.swap(bolsterExcludedIds);
+        }
+        indoorMapData.requiredDoorAttributes |= doorAttributes;
+        for (MapDeltaDoor &door : mapDeltaData.doors)
+        {
+            door.attributes |= indoorMapData.requiredDoorAttributes;
+        }
+        runtimeRestrictions = restrictions;
+        return true;
+    }
+    catch (const std::exception &exception)
+    {
+        errorMessage = exception.what();
+        return false;
     }
 }
 

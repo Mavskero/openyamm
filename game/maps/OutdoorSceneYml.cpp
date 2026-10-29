@@ -2493,7 +2493,7 @@ bool OutdoorSceneYmlLoader::applyMechanismsFromText(
     }
     const std::set<std::string> rootFields = {
         "format_version", "kind", "map", "source", "mechanisms", "runtime_restrictions",
-        "texture_footstep_sound_overrides"};
+        "texture_footstep_sound_overrides", "terrain_footstep_sound_overrides", "terrain_texture_overrides"};
     std::set<std::string> presentRootFields;
     for (const auto &field : rootNode)
     {
@@ -2581,6 +2581,93 @@ bool OutdoorSceneYmlLoader::applyMechanismsFromText(
             textureFootsteps.push_back(std::move(entry));
         }
     }
+    const YAML::Node terrainFootstepsNode = rootNode["terrain_footstep_sound_overrides"];
+    std::vector<OutdoorTerrainFootstepSoundOverride> terrainFootsteps;
+    if (terrainFootstepsNode)
+    {
+        if (!terrainFootstepsNode.IsSequence())
+        {
+            errorMessage = "terrain_footstep_sound_overrides must be a sequence";
+            return false;
+        }
+        const std::set<std::string> allowedFields = {"tile_id", "walk_sound_id", "run_sound_id"};
+        std::set<uint8_t> tileIds;
+        for (const YAML::Node &entryNode : terrainFootstepsNode)
+        {
+            if (!entryNode.IsMap())
+            {
+                errorMessage = "terrain footstep sound override must be a map";
+                return false;
+            }
+            std::set<std::string> presentFields;
+            for (const auto &field : entryNode)
+            {
+                if (!field.first.IsScalar() || !allowedFields.contains(field.first.Scalar())
+                    || !presentFields.insert(field.first.Scalar()).second)
+                {
+                    errorMessage = "terrain footstep override contains an unsupported or duplicate field";
+                    return false;
+                }
+            }
+            int64_t tileId = 0, walkSoundId = 0, runSoundId = 0;
+            if (!readScalarNode(entryNode, "tile_id", tileId, errorMessage)
+                || !readScalarNode(entryNode, "walk_sound_id", walkSoundId, errorMessage)
+                || !readScalarNode(entryNode, "run_sound_id", runSoundId, errorMessage)) return false;
+            if (tileId < 0 || tileId >= 234 || walkSoundId <= 0 || runSoundId <= 0
+                || uint64_t(walkSoundId) > std::numeric_limits<uint32_t>::max()
+                || uint64_t(runSoundId) > std::numeric_limits<uint32_t>::max()
+                || !tileIds.insert(static_cast<uint8_t>(tileId)).second)
+            {
+                errorMessage = "terrain footstep override requires a unique valid tile and positive sound IDs";
+                return false;
+            }
+            terrainFootsteps.push_back({static_cast<uint8_t>(tileId),
+                static_cast<uint32_t>(walkSoundId), static_cast<uint32_t>(runSoundId)});
+        }
+    }
+    const YAML::Node terrainTexturesNode = rootNode["terrain_texture_overrides"];
+    std::vector<OutdoorTerrainTextureOverride> terrainTextures;
+    if (terrainTexturesNode)
+    {
+        if (!terrainTexturesNode.IsSequence())
+        {
+            errorMessage = "terrain_texture_overrides must be a sequence";
+            return false;
+        }
+        const std::set<std::string> allowedFields = {"tile_id", "texture"};
+        std::set<uint8_t> tileIds;
+        for (const YAML::Node &entryNode : terrainTexturesNode)
+        {
+            if (!entryNode.IsMap())
+            {
+                errorMessage = "terrain texture override must be a map";
+                return false;
+            }
+            std::set<std::string> presentFields;
+            for (const auto &field : entryNode)
+            {
+                if (!field.first.IsScalar() || !allowedFields.contains(field.first.Scalar())
+                    || !presentFields.insert(field.first.Scalar()).second)
+                {
+                    errorMessage = "terrain texture override contains an unsupported or duplicate field";
+                    return false;
+                }
+            }
+            int64_t tileId = 0;
+            std::string texture;
+            if (!readScalarNode(entryNode, "tile_id", tileId, errorMessage)
+                || !readScalarNode(entryNode, "texture", texture, errorMessage)) return false;
+            texture = toLowerCopy(texture);
+            if (tileId < 0 || tileId >= 234 || !tileIds.insert(static_cast<uint8_t>(tileId)).second
+                || texture.empty() || texture.size() > 64
+                || texture.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_-") != std::string::npos)
+            {
+                errorMessage = "terrain texture override requires a unique valid tile and safe texture name";
+                return false;
+            }
+            terrainTextures.push_back({static_cast<uint8_t>(tileId), std::move(texture)});
+        }
+    }
     MapRuntimeRestrictions candidateRestrictions = runtimeRestrictions;
     const YAML::Node restrictionsNode = rootNode["runtime_restrictions"];
     if (restrictionsNode)
@@ -2615,14 +2702,16 @@ bool OutdoorSceneYmlLoader::applyMechanismsFromText(
         }
     }
     const YAML::Node mechanismsNode = rootNode["mechanisms"];
-    if (!mechanismsNode || !mechanismsNode.IsSequence() || mechanismsNode.size() == 0)
+    if ((mechanismsNode && !mechanismsNode.IsSequence())
+        || ((!mechanismsNode || mechanismsNode.size() == 0) && terrainFootsteps.empty()
+            && terrainTextures.empty() && textureFootsteps.empty() && !restrictionsNode))
     {
-        errorMessage = "mechanisms companion must contain a nonempty mechanisms sequence";
+        errorMessage = "mechanisms companion must contain mechanisms or an explicit map rule";
         return false;
     }
 
     const size_t faceCount = totalOutdoorFaceCount(outdoorMapData);
-    if (mapDeltaData.faceAttributes.size() != faceCount)
+    if (mechanismsNode.size() != 0 && mapDeltaData.faceAttributes.size() != faceCount)
     {
         errorMessage = "mechanisms companion requires matching ODM/DDM face counts";
         return false;
@@ -2707,6 +2796,8 @@ bool OutdoorSceneYmlLoader::applyMechanismsFromText(
     if (changedAttributes) ++mapDeltaData.surfaceRevision;
     runtimeRestrictions = candidateRestrictions;
     if (textureFootstepsNode) outdoorMapData.textureFootstepSoundOverrides.swap(textureFootsteps);
+    if (terrainFootstepsNode) outdoorMapData.terrainFootstepSoundOverrides.swap(terrainFootsteps);
+    if (terrainTexturesNode) outdoorMapData.terrainTextureOverrides.swap(terrainTextures);
     return true;
 }
 

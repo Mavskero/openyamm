@@ -1,0 +1,174 @@
+{
+  "baseline": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/loadscreen-parchment-188/runtime-001",
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-independent-completion-190/runtime-003",
+  "changed_members": {
+    "engine.zip": {
+      "changed": [
+        "data_tables/house_data.txt",
+        "events/Global_mmmerge_endgame_tail.lua"
+      ],
+      "added": [
+        "events/Global_mmmerge_council.lua",
+        "events/Global_mmmerge_mm6_remaining.lua",
+        "events/Global_mmmerge_mm7_remaining_0.lua",
+        "events/Global_mmmerge_mm7_remaining_1.lua",
+        "events/Global_mmmerge_quest_followers.lua"
+      ],
+      "sha256": {
+        "events/Global_mmmerge_endgame_tail.lua": "cfb36e066e9ac10920c20a06988ea826b9822115356fbaa8e7adbaab4f3bbca6",
+        "events/Global_mmmerge_council.lua": "2c69ab8f3feec26c7ffd6df8d458680da08882d27d3c34cb2743172b714079b8",
+        "events/Global_mmmerge_mm6_remaining.lua": "740acccfd23c0789aca8943d08e4a553996f5c13a53d77bbb9a20b2ba586033c",
+        "events/Global_mmmerge_mm7_remaining_0.lua": "e6cfa13bdec07b6c36e17e1425061460bbe59928ef7345a055d5ee8f4c6437dd",
+        "events/Global_mmmerge_mm7_remaining_1.lua": "ec663b91bd4c95d3983707cdd03c5052545d761b8c56f00fb478919c3aaab33b",
+        "events/Global_mmmerge_quest_followers.lua": "6b1834a7abefa549e3b5fac7b4613091511796581b598e67028e059f42566621",
+        "data_tables/house_data.txt": "5abec7454c50ef535b2e49e35d9e9b08427958df2aac8c71a3e2c3c42b02d3d2"
+      },
+      "members": 17074
+    },
+    "worlds/mm6.zip": {
+      "changed": [
+        "events/maps/outd3_mmmerge_archibald.lua"
+      ],
+      "added": [
+        "events/maps/6d02_mmmerge_remaining.lua",
+        "events/maps/6d03_mmmerge_remaining.lua",
+        "events/maps/6d07_mmmerge_key_chest.lua",
+        "events/maps/6d13_mmmerge_remaining.lua",
+        "events/maps/6t3_mmmerge_remaining.lua",
+        "events/maps/6t7_mmmerge_remaining.lua",
+        "events/maps/6t8_mmmerge_remaining.lua",
+        "events/maps/cd2_mmmerge_remaining.lua",
+        "events/maps/cd3_mmmerge_remaining.lua",
+        "events/maps/outb2_mmmerge_lost_shield.lua",
+        "events/maps/outb2_mmmerge_remaining.lua",
+        "events/maps/outb3_mmmerge_remaining.lua",
+        "events/maps/outc1_mmmerge_remaining.lua",
+        "events/maps/outc2_mmmerge_council.lua",
+        "events/maps/outc2_mmmerge_remaining.lua",
+        "events/maps/outd1_mmmerge_remaining.lua",
+        "events/maps/outd3_mmmerge_remaining.lua",
+        "events/maps/oute2_mmmerge_remaining.lua",
+        "events/maps/oute3_mmmerge_remaining.lua",
+        "events/maps/sewer_mmmerge_quest_followers.lua",
+        "maps/6d08.rules.yml",
+        "maps/6t3.rules.yml",
+        "maps/6t8.rules.yml",
+        "maps/outa2.mechanisms.yml",
+        "maps/outa3.mechanisms.yml"
+      ],
+      "sha256": {
+        "events/maps/outd3_mmmerge_archibald.lua": "62d3ead6e8d61693baf6ee42856ceec8bae0be7b118f62d6bece6f242d6e72b7",
+        "events/maps/6d02_mmmerge_remaining.lua": "698ec3f1d2d973f551763a66e487e6d45f569205600d482b43893ce9ad56f199",
+        "events/maps/6d03_mmmerge_remaining.lua": "70a6ba189b043f1a51bfdccd9fb05ff5929b1d232a9babffb3b57d51f92c3ff9",
+        "events/maps/6d07_mmmerge_key_chest.lua": "7d9fe3cfc7f45c31425347fbe7fbffa8982c6cecf856924910c54cc5e9e33375",
+        "events/maps/6d13_mmmerge_remaining.lua": "79124349e6ff4703bebd6b61e46c5c4cae135c92341a35f662f4da1936bbedf2",
+        "events/maps/6t3_mmmerge_remaining.lua": "dbf0bdc2406f148b56865b7642ed6da5ea5ba4102f680249ed7df3f1d01160be",
+        "events/maps/6t7_mmmerge_remaining.lua": "630d0ebf722817c712cea0a86410a34318ca736970f105621b835f720205040a",
+        "events/maps/6t8_mmmerge_remaining.lua": "f0df993248531977b6d76dc051e9adae8a36daadfc0e12680e355020ae941f87",
+        "events/maps/cd2_mmmerge_remaining.lua": "eead531d31a244d1fc8b76b28239bf927b9c559f3f8b7e13d0d75db63df54885",
+        "events/maps/cd3_mmmerge_remaining.lua": "f7689d6b396a30b586ac1f352f29cac45ea24f74259b79eb2850e83ed54dba44",
+        "events/maps/outb2_mmmerge_lost_shield.lua": "d1137c64902730427b799ccac79f68dbbb3604702527d31817f271df55042051",
+        "events/maps/outb2_mmmerge_remaining.lua": "b24b2ad20952a65d18479d7968dad6052ab1da89c2ea3222d225196373c9208f",
+        "events/maps/outb3_mmmerge_remaining.lua": "84102d1ecb6885b922952c2f6d1fd27c63f92fe0d4648b1ba08688b7bd1a89a4",
+        "events/maps/outc1_mmmerge_remaining.lua": "7ed74637fd04ca215aa27fe9d61c88ee6cdd456fb36b6f86e425129e6d485baa",
+        "events/maps/outc2_mmmerge_council.lua": "c0c2888957cb2315d83f6adc86be06fdc79bef7fae9511d97e91f89db510292e",
+        "events/maps/outc2_mmmerge_remaining.lua": "fc7d460f86ad9d4df646fb54cb1bb8c69174e168051743095f4e76867842385f",
+        "events/maps/outd1_mmmerge_remaining.lua": "c4e24868e0099418ae94a477061ae2da799b359b21c86a49af16a132ded6fdd2",
+        "events/maps/outd3_mmmerge_remaining.lua": "0693d5e2c02a8d09cf4f28e289bb89e3d73cb755fcb52381d88f9755a348ed22",
+        "events/maps/oute2_mmmerge_remaining.lua": "e1e5063a281c714f9eaa266452de42db06df34b421c95df8aa3994bb653eb6dd",
+        "events/maps/oute3_mmmerge_remaining.lua": "d992b470fdef0fc652d75ec790228dab2be21792ab0d80cf97ad4cb167f0faac",
+        "events/maps/sewer_mmmerge_quest_followers.lua": "f0a2b3f147fc99ff048cf7dd4f32d00d2ca7450fb76811ad216d0952915428df",
+        "maps/6d08.rules.yml": "fd87d86d7a2dacbb1e1f827bd20413f8421acbaab7f4b596d8165db46d577df5",
+        "maps/6t3.rules.yml": "fceb4870d7227246c85a4f57ad8d622b7c43b7416380e28eb4ddad6c60a370bf",
+        "maps/6t8.rules.yml": "37c6fd56b368ff1a5dfdb46853efd148f1ee90edb81d096e17505fcd2cd32e80",
+        "maps/outa2.mechanisms.yml": "0f2c15be37129dbdfbe8efd203cc93725539c8129bb5cb8163f0d9b8e6380769",
+        "maps/outa3.mechanisms.yml": "30bf48b05ea4a719ad2dc899071a1a9cdd6d137b7df5e103d77aa2fd97fd6941"
+      },
+      "members": 6304
+    },
+    "worlds/mm7.zip": {
+      "changed": [
+        "events/maps/7d24_mmmerge_stone_city.lua"
+      ],
+      "added": [
+        "events/maps/7d05_mmmerge_remaining.lua",
+        "events/maps/7d08_mmmerge_remaining.lua",
+        "events/maps/7d25_mmmerge_remaining.lua",
+        "events/maps/7d27_mmmerge_remaining.lua",
+        "events/maps/7d29_mmmerge_remaining.lua",
+        "events/maps/7d34_mmmerge_remaining.lua",
+        "events/maps/7d36_mmmerge_remaining.lua",
+        "events/maps/7out01_mmmerge_remaining.lua",
+        "events/maps/7out02_mmmerge_remaining.lua",
+        "events/maps/7out03_mmmerge_remaining.lua",
+        "events/maps/7out04_mmmerge_messenger.lua",
+        "events/maps/7out04_mmmerge_post_quest_visit.lua",
+        "events/maps/7out05_mmmerge_remaining.lua",
+        "events/maps/7out13_mmmerge_remaining.lua",
+        "events/maps/7out15_mmmerge_remaining.lua",
+        "events/maps/out09_mmmerge_remaining.lua",
+        "events/maps/out11_mmmerge_remaining.lua",
+        "events/maps/out12_mmmerge_remaining.lua",
+        "maps/7d05.rules.yml"
+      ],
+      "sha256": {
+        "events/maps/7d24_mmmerge_stone_city.lua": "0191ce7abac9b9263e145b15775f0a5e3e7438d083be43e1764706e5905fdd1a",
+        "events/maps/7d05_mmmerge_remaining.lua": "b8350b053e4cce0df8644921d3d2910688046cdc1da493201a1572c70d154fc5",
+        "events/maps/7d08_mmmerge_remaining.lua": "02a9d01e6c4915de3b41a46462eabda4f3717a88ae924c039185aa1e1a5c27b5",
+        "events/maps/7d25_mmmerge_remaining.lua": "75d3d2703cdbe1050b0b994e4b0ca2ee43c3a5c9abcac703607dff3c76655320",
+        "events/maps/7d27_mmmerge_remaining.lua": "8387adb053234b7659397853534681adc53f997fa062206f2d08dbce5e378526",
+        "events/maps/7d29_mmmerge_remaining.lua": "8a72a14b5a4f9a35c09137390d84dedf2e61ffafdd8f6b72ed7f70c1298fc7d6",
+        "events/maps/7d34_mmmerge_remaining.lua": "2e133bc7b24dfdfc7a7ac7232bb20ce872244a1997c294228f563e235bfad5f6",
+        "events/maps/7d36_mmmerge_remaining.lua": "48af2973a72e594c5016fd12a8a5440dfd860c116fcf3f6e9418c17215fb99e6",
+        "events/maps/7out01_mmmerge_remaining.lua": "6b8fb5e140bdd2e21a37ff2463b3cae57398b10ff19924492733eb95dccce11f",
+        "events/maps/7out02_mmmerge_remaining.lua": "e59973245c49bef16212c0b669346de6fd66c63cd1c3c25ccf40ccf71b6fc706",
+        "events/maps/7out03_mmmerge_remaining.lua": "7a7603e520b117ee580019cacbcfaea5a88a1a7c412dd79fb418e018dcedbcb4",
+        "events/maps/7out04_mmmerge_messenger.lua": "bb8b4dddc0d6b3daad13cc68b237b82a44df87e9e2660878b54a03d395b2c877",
+        "events/maps/7out04_mmmerge_post_quest_visit.lua": "bcd2440f8a704a7ace733586c5da632556a701f2f2fdf70e59adfb98c9d81143",
+        "events/maps/7out05_mmmerge_remaining.lua": "6083fe793504b3d73b0740d938f968d9c2b62b9b97cae53674d5e57a3b325bc7",
+        "events/maps/7out13_mmmerge_remaining.lua": "caa05f6a6f1e98a6123fe2e825a16f8d3f6a9cebf292a13db6f0ac989d494133",
+        "events/maps/7out15_mmmerge_remaining.lua": "d447aa2698a34072c0162d407c05695dc56635d58476eb430e4de62116fd0f80",
+        "events/maps/out09_mmmerge_remaining.lua": "dc58486c079917bb04ddf69abf5b2a9b0c6bc08bd1bdb7beeeddf58c74f2b69e",
+        "events/maps/out11_mmmerge_remaining.lua": "4f2b4855affd76ef3bb5e530000fef9920db26a442c31e98b1f2dec95064274d",
+        "events/maps/out12_mmmerge_remaining.lua": "b4ea4bfb48b4b59e9d7fb8b5e7dedc98a56200ab0ee3b2792757002d9ddf913d",
+        "maps/7d05.rules.yml": "b8bfd9c6657858a131a50925a020429a55e0840ae9b5376db1bad22ad89bf8e3"
+      },
+      "members": 10061
+    },
+    "worlds/mm8.zip": {
+      "changed": [],
+      "added": [
+        "events/maps/d24_mmmerge_post_quest_visit.lua",
+        "events/maps/d38_mmmerge_remaining.lua",
+        "events/maps/d39_mmmerge_remaining.lua",
+        "events/maps/out01_mmmerge_remaining.lua",
+        "events/maps/out05_mmmerge_remaining.lua",
+        "events/maps/out07_mmmerge_remaining.lua",
+        "events/maps/out13_mmmerge_cannon.lua",
+        "maps/out04.mechanisms.yml",
+        "maps/out06.mechanisms.yml",
+        "textures/gdtyl.bmp"
+      ],
+      "sha256": {
+        "events/maps/d24_mmmerge_post_quest_visit.lua": "05dd1a2bb54077ed842eac34163c4a652d8d77bd1961d6202885667012e4341f",
+        "events/maps/d38_mmmerge_remaining.lua": "8365f8365b34b0824ba8826fda3744339d7c7279eb213574f9a0dde5b29a046d",
+        "events/maps/d39_mmmerge_remaining.lua": "d7ef8426ebf684f0468fc4481f7b55c43327dcce854ed2105c5d070cd3e0749f",
+        "events/maps/out01_mmmerge_remaining.lua": "700f271325ec7f9ba8e931e3ecff37506ef9c70f38e087f02a7808bf4546a820",
+        "events/maps/out05_mmmerge_remaining.lua": "9a9d0e8cdea1402e8a32f7ccffb1227c5db7f0e8569886843c5765499ee3eba6",
+        "events/maps/out07_mmmerge_remaining.lua": "a0908bd2c4fb5b8fc358b459ffe6886ee1d140444b7de83c6b6fb5f51b7a2bd8",
+        "events/maps/out13_mmmerge_cannon.lua": "1df0f587893322d1c7222ab9a3d02127d2da8394012a74023065c1fd325edf14",
+        "maps/out04.mechanisms.yml": "fda58e74373d9ed630dc9b121fba44e405b629efdc8234a82759faafb61c900c",
+        "maps/out06.mechanisms.yml": "054c7d994a16efec6030cb9dfec972513981de8f4b183e1f84b183eaab206082",
+        "textures/gdtyl.bmp": "137e1a2c52b7c9b10e309df35e65ed355084d00e163623064386e8c085bb88f2"
+      },
+      "members": 10232
+    }
+  },
+  "all_other_archive_entries_unchanged": true,
+  "unchanged_package_references": {
+    "worlds/mmmerge.zip": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/loadscreen-parchment-188/runtime-001/worlds/mmmerge.zip",
+    "inspection/merge-scenes.zip": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/loadscreen-parchment-188/runtime-001/inspection/merge-scenes.zip"
+  },
+  "controlled_gameplay_fixtures_in_runtime": false,
+  "release_created": false
+}

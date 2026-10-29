@@ -139,6 +139,8 @@ public:
         mutable int16_t bolsterCacheMonsterId = 0;
         mutable int bolsterCachePartyLevel = 0;
         mutable uint32_t bolsterCacheMapId = 0;
+        mutable int32_t bolsterCacheUniqueNameId = 0;
+        mutable bool bolsterCacheUniqueNameExcluded = false;
         mutable GameplayMonsterBolsterResult bolsterCache = {};
     };
 
@@ -776,8 +778,11 @@ private:
     ) const;
     const GameplayMonsterBolsterResult &resolvedActorBolster(
         const MapActorAiState &aiState,
+        const MapDeltaActor *pActor,
         const MonsterTable::MonsterStatsEntry &stats,
         const MonsterEntry *pMonsterEntry) const;
+    GameplayBolsterRuntimeContext actorBolsterContext(int32_t uniqueNameId) const;
+    bool actorExcludedFromBolster(size_t actorIndex) const;
     const MonsterTable::MonsterStatsEntry *actorStats(size_t actorIndex) const;
     const MonsterTable::MonsterStatsEntry *actorStats(const MapActorAiState &aiState) const;
     GameplayMonsterBolsterResult actorBolster(size_t actorIndex,

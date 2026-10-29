@@ -1,10 +1,19 @@
-# OpenYAMM RC3 接手与真机调试
+# OpenYAMM 开发状态与RC3交接
 
 更新：2026-10-29。仓库：<https://github.com/Mavskero/openyamm>。
 交付分支：`codex/ipados`；原 RC2 交付提交：`ec5a8435`；真机修复分支：`codex/ipad-device-debug`。
 可直接交给另一台 Mac 的 Codex 的任务见 [CODEX_IPAD_DEVICE_PROMPT.md](CODEX_IPAD_DEVICE_PROMPT.md)。
 
-## 当前版本与验收边界
+## 当前开发：设备无关的集中修改
+
+本分支已完成[190集中开发](handoff/device-independent-completion-190/README.md)：任务跟随与交付、
+计时、城堡入侵、物品处理、竞技场及海底操作限制、地图规则等源码遗漏已集中补齐。
+Mac与未签名通用iOS编译、资源导入、两次短Mac运行通过；Save103保持不变。
+用户当前要求先做不依赖真机的工作，因此本批没有发布RC4、更新设备检查清单或进行设备操作。
+完整本地开发资源为`device-independent-completion-190/runtime-003`，尚未上传为新Release。
+下文RC3附件及其188资源是已发布历史版本，不包含190新增内容。完整自然战役仍未证明。
+
+## 已发布RC3与验收边界
 
 本轮交付目标为 **0.1.0-rc3-20261029 / Save103 / checkpoint189**。生产源码基线是
 `8f91f2b9276b649c3529fae049beaf91a5668996`，完整资源基线为
@@ -56,7 +65,8 @@ checkpoint 188 补齐原版侧栏纹理和所选UI皮肤伴随包顺序，Mac读
 新[188资源包](https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-resources-188-20261029)
 包含183所有资源修复；四个world ZIP仍复用RC2。见 [188交接](handoff/loadscreen-parchment-188/README.md)。
 
-2026-10-29 用户依据新真机反馈恢复持续开发 goal，当前为 active，**不是游戏已经完成**。
+2026-10-29 用户要求继续完成不依赖设备的开发，**不是游戏已经完成**。
+历史goal工具仍记录blocked；本批按新指令继续实现，不能把缺少真机数据作为源码开发的停止条件。
 原电脑继续无设备操作的集成开发；真机操作授权仅适用于收到用户授权的接手会话。
 历史快照中的禁用设备、旧机器路径、过时 next 指令和百分比不是接手任务的新约束。
 

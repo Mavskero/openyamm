@@ -4869,6 +4869,31 @@ std::optional<MapAssetInfo> MapAssetLoader::load(
                 logStageComplete("prepared indoor instance installed before presentation");
             }
 
+            // Rules companions retain the original geometry/delta ownership. Only explicit static
+            // facet, monster policy, door flag and travel restriction fields are augmented here.
+            const std::optional<std::string> rulesPath = companionLoadOptions.allowSceneYml
+                ? findAssetPath(assetFileSystem, map.worldId,
+                    normalizedFileName.substr(0, normalizedFileName.size() - 4) + ".rules.yml")
+                : std::nullopt;
+            if (rulesPath)
+            {
+                const std::optional<std::string> rulesText = assetFileSystem.readTextFile(*rulesPath);
+                std::string rulesError;
+                if (!rulesText || !assetInfo.indoorMapDeltaData
+                    || !IndoorSceneYmlLoader().applyMapRulesFromText(
+                        *assetInfo.indoorMapData, *assetInfo.indoorMapDeltaData,
+                        assetInfo.map.runtimeRestrictions, *rulesText, map.fileName, rulesError))
+                {
+                    std::cerr << "Failed to apply indoor map rules for " << map.fileName << ": "
+                              << (rulesError.empty() ? "missing companion content" : rulesError) << '\n';
+                    return std::nullopt;
+                }
+                assetInfo.scenePath = assetInfo.scenePath
+                    ? *assetInfo.scenePath + " + " + *rulesPath : *rulesPath;
+                assetInfo.sceneSize = assetInfo.sceneSize.value_or(0) + rulesText->size();
+                logStageComplete("indoor rules companion applied");
+            }
+
             if (loadFullPresentation)
             {
                 assetInfo.indoorTextureSet = buildIndoorTextureSet(

@@ -166,6 +166,10 @@ struct IndoorMapData
     uint32_t rawFaceCount = 0;
     std::vector<IndoorVertex> vertices;
     std::vector<IndoorFace> faces;
+    // Authenticated map rules may exclude source unique-name actors from ordinary monster bolster.
+    std::vector<uint16_t> bolsterExcludedUniqueNameIds;
+    // Static source flags are reapplied when a saved door delta replaces the authored companion.
+    uint32_t requiredDoorAttributes = 0;
     std::vector<IndoorSector> sectors;
     std::vector<uint16_t> sectorData;
     std::vector<uint16_t> sectorLightData;

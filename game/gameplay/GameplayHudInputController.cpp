@@ -1,6 +1,7 @@
 #include "game/gameplay/GameplayHudInputController.h"
 
 #include "game/gameplay/GameplayItemService.h"
+#include "game/gameplay/GameplayInputController.h"
 #include "game/gameplay/NpcFollowerRuntime.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/party/SpellIds.h"
@@ -139,6 +140,11 @@ void GameplayHudInputController::activatePartyPortrait(
     size_t memberIndex,
     const GameplayPartyPortraitInputConfig &config)
 {
+    if (!context.allowSourceGameplayAction(SourceActionSelectCharacter))
+    {
+        return;
+    }
+
     if (config.onPortraitActivated && config.onPortraitActivated(memberIndex))
     {
         return;
@@ -528,6 +534,40 @@ void GameplayHudInputController::handleGameplayHudButtonInput(
         },
         [&context](const GameplayHudPointerTarget &target)
         {
+            uint32_t sourceAction = 0;
+            switch (target.type)
+            {
+            case GameplayHudPointerTargetType::MenuButton: sourceAction = SourceActionGameMenu; break;
+            case GameplayHudPointerTargetType::RestButton: sourceAction = SourceActionRestWindow; break;
+            case GameplayHudPointerTargetType::BooksButton: sourceAction = SourceActionClickBooks; break;
+            case GameplayHudPointerTargetType::InventoryButton: sourceAction = SourceActionOpenInventory; break;
+            case GameplayHudPointerTargetType::QuickReferenceButton: sourceAction = SourceActionQuickReference; break;
+            case GameplayHudPointerTargetType::AttackButton: sourceAction = SourceActionAttack; break;
+            case GameplayHudPointerTargetType::CastButton:
+                sourceAction = context.pendingSpellTargetActive()
+                    ? SourceActionCustomDialogButton : SourceActionSpellbookWindow;
+                break;
+            case GameplayHudPointerTargetType::DimensionDoorButton:
+            case GameplayHudPointerTargetType::TurnBasedToggleButton:
+            case GameplayHudPointerTargetType::FollowerPanelToggleButton:
+                sourceAction = SourceActionCustomDialogButton;
+                break;
+            case GameplayHudPointerTargetType::MinimapZoomInButton: sourceAction = SourceActionZoomIn; break;
+            case GameplayHudPointerTargetType::MinimapZoomOutButton: sourceAction = SourceActionZoomOut; break;
+            case GameplayHudPointerTargetType::FollowerPanelPortrait:
+                sourceAction = SourceActionStartNpcDialogue;
+                break;
+            case GameplayHudPointerTargetType::FollowerPanelScrollUpButton:
+            case GameplayHudPointerTargetType::FollowerPanelScrollDownButton:
+                sourceAction = SourceActionScrollNpcPanel;
+                break;
+            default: break;
+            }
+            if (sourceAction != 0 && !context.allowSourceGameplayAction(sourceAction))
+            {
+                return;
+            }
+
             switch (target.type)
             {
             case GameplayHudPointerTargetType::MenuButton:
@@ -620,7 +660,8 @@ void GameplayHudInputController::handleGameplayHudButtonInput(
                 }
                 else if (pWorldRuntime != nullptr
                     && activationHit.hasHit
-                    && pWorldRuntime->canActivateWorldHit(activationHit, GameplayInteractionMethod::Keyboard))
+                    && pWorldRuntime->canActivateWorldHit(activationHit, GameplayInteractionMethod::Keyboard)
+                    && context.allowSourceGameplayAction(SourceActionWorldLeftClick))
                 {
                     pWorldRuntime->activateWorldHit(activationHit);
                 }

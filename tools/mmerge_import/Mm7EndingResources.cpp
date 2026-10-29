@@ -19,7 +19,7 @@ constexpr std::string_view SourceSha256 =
     "201eed1ebb5b6ed02878eaf92268a4190b7de90eecedbffa7cda63b7b2754623";
 
 constexpr std::string_view Overlay = R"OY_MM7_ENDING(
--- Audited StdQuestsFunctions.lua 795-797: run after the original topic 920 transaction.
+-- Audited StdQuestsFunctions.lua 795-801: run after the original ending-topic transactions.
 AppendGlobalEvent(920, function(continueStep)
     if continueStep ~= nil then return end
     if IsQBitSet(QBit(783)) then
@@ -27,6 +27,11 @@ AppendGlobalEvent(920, function(continueStep)
     else
         SetQBit(QBit(642))
     end
+end)
+
+AppendGlobalEvent(922, function(continueStep)
+    if continueStep ~= nil then return end
+    SetQBit(QBit(783))
 end)
 )OY_MM7_ENDING";
 

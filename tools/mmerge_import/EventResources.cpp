@@ -10,8 +10,16 @@
 #include "HarmondaleCastleResources.h"
 #include "LambentCastleResources.h"
 #include "StoneCityResources.h"
+#include "ArtifactMessengerResources.h"
 #include "EmeraldIslandTravelResources.h"
 #include "FreeHavenTempleResources.h"
+#include "Mm6QuestContinuityResources.h"
+#include "RegnaCannonResources.h"
+#include "Mm6LostShieldResources.h"
+#include "PostQuestVisitResources.h"
+#include "Mm8RemainingMapResources.h"
+#include "Mm6RemainingMapResources.h"
+#include "Mm7RemainingMapResources.h"
 #include "TownPortalVisitResources.h"
 #include "SubmarineTravelResources.h"
 #include "StoneStatueResources.h"
@@ -58,6 +66,26 @@ void require(bool condition, const std::string &message)
     {
         throw std::runtime_error(message);
     }
+}
+
+bool sameTimerRegistrations(const std::vector<Game::ScriptedEventProgram::TimerTrigger> &left,
+    const std::vector<Game::ScriptedEventProgram::TimerTrigger> &right)
+{
+    return left.size() == right.size() && std::equal(left.begin(), left.end(), right.begin(),
+        [](const Game::ScriptedEventProgram::TimerTrigger &first,
+            const Game::ScriptedEventProgram::TimerTrigger &second)
+        {
+            return Game::sameScriptedEventTimerIdentity(first, second)
+                && first.eventId == second.eventId && first.triggerStep == second.triggerStep
+                && first.triggerKind == second.triggerKind && first.scheduleKind == second.scheduleKind
+                && first.repeating == second.repeating
+                && first.temporaryMapLifecycle == second.temporaryMapLifecycle
+                && first.intervalHalfMinutes == second.intervalHalfMinutes
+                && first.startHour == second.startHour && first.startMinute == second.startMinute
+                && first.startSecond == second.startSecond
+                && first.intervalGameMinutes == second.intervalGameMinutes
+                && first.initialDelayGameMinutes == second.initialDelayGameMinutes;
+        });
 }
 
 std::string lower(std::string text)
@@ -338,6 +366,26 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
     const std::optional<StoneCityProfile> stoneCity = loadStoneCityProfile(root);
     const std::optional<EmeraldIslandTravelProfile> emeraldTravel = loadEmeraldIslandTravelProfile(root);
     const std::optional<FreeHavenTempleProfile> freeHavenTemple = loadFreeHavenTempleProfile(root);
+    const std::optional<FreeHavenCouncilProfile> freeHavenCouncil = loadFreeHavenCouncilProfile(root);
+    const std::optional<Mm6QuestContinuityProfile> mm6QuestContinuity = loadMm6QuestContinuityProfile(root);
+    const std::optional<RegnaCannonProfile> regnaCannon = loadRegnaCannonProfile(root);
+    const auto lostShield = loadMm6LostShieldProfile(root);
+    const auto postQuestVisits = loadPostQuestVisitProfiles(root);
+    const auto mm8Remaining = loadMm8RemainingMapProfiles(root);
+    const auto mm6Remaining = loadMm6RemainingMapProfiles(root);
+    const auto mm6RemainingGlobal = loadMm6RemainingGlobalProfile(root);
+    const auto mm7Remaining = loadMm7RemainingMapProfiles(root,
+        std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod"));
+    const auto mm7RemainingGlobal = loadMm7RemainingGlobalProfiles(root);
+    if (lostShield)
+    {
+        const Rows items = tableRows(tables / "items.txt");
+        const auto shield = std::find_if(items.begin(), items.end(), [](const auto &row)
+            { return rowId(row) == 2119; });
+        require(shield != items.end() && shield->size() > 3 && (*shield)[3] == "0",
+            "Lost shield projection requires source zero-value item2119");
+    }
+    const std::optional<ArtifactMessengerProfile> artifactMessenger = loadArtifactMessengerProfile(root);
     const std::vector<TownPortalVisitProfile> townPortalVisits = loadTownPortalVisitProfiles(root);
     const std::vector<SubmarineTravelProfile> submarineTravel = loadSubmarineTravelProfiles(root);
     const std::optional<StoneStatueProfile> stoneStatue = loadStoneStatueProfile(root);
@@ -442,6 +490,15 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
         return freeHavenTemple && map.world == "mm6"
             && std::filesystem::path(map.file).stem() == freeHavenTemple->mapStem;
     });
+    const bool selectedSewerContinuity = mm6QuestContinuity
+        && std::any_of(maps.begin(), maps.end(), [](const MapSource &map)
+            { return map.world == "mm6" && std::filesystem::path(map.file).stem() == "sewer"; });
+    const bool selectedKeyChestContinuity = mm6QuestContinuity
+        && std::any_of(maps.begin(), maps.end(), [](const MapSource &map)
+            { return map.world == "mm6" && std::filesystem::path(map.file).stem() == "6d07"; });
+    const bool selectedRegnaCannon = regnaCannon
+        && std::any_of(maps.begin(), maps.end(), [&](const MapSource &map)
+            { return map.world == "mm8" && std::filesystem::path(map.file).stem() == regnaCannon->mapStem; });
 
     std::map<std::string, const TownPortalVisitProfile *> selectedTownPortalVisits;
     for (const TownPortalVisitProfile &profile : townPortalVisits)
@@ -769,7 +826,7 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                 << std::quoted(stoneCity->sourceSha256)
                 << ",\"path\":\"worlds/mm7/events/maps/7d24_mmmerge_stone_city.lua\","
                 "\"scope\":\"event416 source Q647 gate instead of per-character award3; "
-                "ExitNPC398 journal cleanup not projected\"}";
+                "ExitNPC398 clears obsolete quest658\"}";
             firstSelectiveOverlay = false;
         }
         if (lambentCastle && selectedLambentCastle != maps.end())
@@ -874,7 +931,7 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                 << std::quoted(archibald->sourceSha256)
                 << ",\"path\":\"worlds/mm6/events/maps/outd3_mmmerge_archibald.lua\","
                 "\"scope\":\"event42 bell/completion entrance and release movie; original global1343 reward retained; "
-                "post-departure house animation487 not projected\"}";
+                "post-departure house animation487 selected from current NPC ownership\"}";
             firstSelectiveOverlay = false;
         }
         if (mm6Hive && std::any_of(maps.begin(), maps.end(), [&](const MapSource &map)
@@ -952,10 +1009,143 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                 manifest << ',';
             }
             manifest << "{\"profile\":\"mmmerge-mm7-ending-v1\",\"scope\":\"global\","
-                "\"event_ids\":[920],\"source\":\"Scripts/Global/StdQuestsFunctions.lua\",\"source_sha256\":"
+                "\"event_ids\":[920,922],\"source\":\"Scripts/Global/StdQuestsFunctions.lua\",\"source_sha256\":"
                 << std::quoted(mm7Ending->sourceSha256)
                 << ",\"path\":\"engine/events/Global_mmmerge_endgame_tail.lua\","
-                "\"behavior\":\"append source light-ending journal update after the original final transaction\"}";
+                "\"behavior\":\"append source light journal and dark completion tails after original events\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (freeHavenCouncil)
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-free-haven-council-v1\",\"scope\":\"global\","
+                "\"source\":\"Scripts/Global/StdQuestsFunctions.lua\",\"source_sha256\":"
+                << std::quoted(freeHavenCouncil->globalSourceSha256)
+                << ",\"path\":\"engine/events/Global_mmmerge_council.lua\","
+                "\"behavior\":\"append1693 source movie and rebuild quest-gated Council lobby\"}";
+            firstSelectiveOverlay = false;
+            if (selectedFreeHavenTemple != maps.end())
+            {
+                manifest << ",{\"profile\":\"mmmerge-free-haven-council-v1\",\"scope\":\"map\","
+                    "\"source\":\"Scripts/Maps/outc2.lua\",\"source_sha256\":"
+                    << std::quoted(freeHavenCouncil->mapSourceSha256)
+                    << ",\"path\":\"worlds/mm6/events/maps/outc2_mmmerge_council.lua\","
+                    "\"behavior\":\"doors49/50 original evidence transaction and owned-roster endorsements\"}";
+            }
+        }
+        if (mm6QuestContinuity)
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-mm6-quest-followers-v1\",\"scope\":\"global\","
+                "\"event_ids\":[1346,1347],\"source\":\"Scripts/Global/StdQuestsFollowers.lua\","
+                "\"source_sha256\":" << std::quoted(mm6QuestContinuity->followersSourceSha256)
+                << ",\"follower_api_source\":\"Scripts/General/NPCFollowers.lua\","
+                "\"follower_api_source_sha256\":" << std::quoted(mm6QuestContinuity->followerApiSourceSha256)
+                << ",\"path\":\"engine/events/Global_mmmerge_quest_followers.lua\","
+                "\"behavior\":\"append NPC802 follower cleanup after original reward and topic events\"}";
+            firstSelectiveOverlay = false;
+            if (selectedSewerContinuity)
+            {
+                manifest << ",{\"profile\":\"mmmerge-mm6-quest-followers-v1\",\"scope\":\"map\","
+                    "\"event_ids\":[8],\"source\":\"Scripts/Maps/sewer.lua\",\"source_sha256\":"
+                    << std::quoted(mm6QuestContinuity->sewerSourceSha256)
+                    << ",\"follower_api_source_sha256\":"
+                    << std::quoted(mm6QuestContinuity->followerApiSourceSha256)
+                    << ",\"path\":\"worlds/mm6/events/maps/sewer_mmmerge_quest_followers.lua\","
+                    "\"behavior\":\"append source Q1701-guarded NPC802 follower admission after event8\"}";
+            }
+            if (selectedKeyChestContinuity)
+            {
+                manifest << ",{\"profile\":\"mmmerge-mm6-key-chest-v1\",\"scope\":\"map\","
+                    "\"event_ids\":[16],\"source\":\"Scripts/Maps/6d07.lua\",\"source_sha256\":"
+                    << std::quoted(mm6QuestContinuity->keyChestSourceSha256)
+                    << ",\"path\":\"worlds/mm6/events/maps/6d07_mmmerge_key_chest.lua\","
+                    "\"source_map_var\":4,\"exported_map_var\":6,"
+                    "\"behavior\":\"choose original chest1 or6 from current2107 inventory and retained counter\"}";
+            }
+        }
+        if (selectedRegnaCannon)
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-regna-cannon-v1\",\"scope\":\"map\","
+                "\"event_ids\":[451,452," << RegnaCannonMigrationHookEventId
+                << "],\"source\":\"Scripts/Maps/out13.lua\",\"source_sha256\":"
+                << std::quoted(regnaCannon->sourceSha256)
+                << ",\"path\":\"worlds/mm8/events/maps/out13_mmmerge_cannon.lua\","
+                "\"removed_legacy_timer_source_event_id\":452,\"dynamic_timer_interval_minutes\":1,"
+                "\"migration_hook_event_id\":" << RegnaCannonMigrationHookEventId
+                << ",\"migration\":\"once-only legacy MapVar41 in-flight stage transfer; restart after one minute\","
+                "\"behavior\":\"source repeatable cannon and independent map-visit timer instances; "
+                "completion NPC and history transaction remains once-only\"}";
+            firstSelectiveOverlay = false;
+        }
+        if (artifactMessenger && std::any_of(maps.begin(), maps.end(), [&](const MapSource &map)
+            { return map.world == "mm7" && std::filesystem::path(map.file).stem() == artifactMessenger->mapStem; }))
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-artifact-messenger-v1\",\"scope\":\"map\","
+                "\"source\":\"Scripts/Maps/7out04.lua\",\"source_sha256\":"
+                << std::quoted(artifactMessenger->sourceSha256)
+                << ",\"path\":\"worlds/mm7/events/maps/7out04_mmmerge_messenger.lua\","
+                "\"behavior\":\"Judge death gate and original six war groups, once per source map state\"}";
+            firstSelectiveOverlay = false;
+        }
+        const auto recordMapOverlay = [&](const std::string &world, const std::string &stem,
+            const std::string &hash, const std::string &suffix)
+        {
+            if (!std::any_of(maps.begin(), maps.end(), [&](const MapSource &map)
+                { return map.world == world && std::filesystem::path(map.file).stem() == stem; }))
+            {
+                return;
+            }
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":" << std::quoted("mmmerge-" + suffix + "-v1")
+                << ",\"scope\":\"map\",\"source\":" << std::quoted("Scripts/Maps/" + stem + ".lua")
+                << ",\"source_sha256\":" << std::quoted(hash)
+                << ",\"path\":" << std::quoted("worlds/" + world + "/events/maps/" + stem
+                    + "_mmmerge_" + suffix + ".lua") << '}';
+            firstSelectiveOverlay = false;
+        };
+        if (lostShield) recordMapOverlay("mm6", lostShield->mapStem, lostShield->sourceSha256, "lost_shield");
+        for (const auto &profile : postQuestVisits)
+        {
+            recordMapOverlay(profile.world, profile.mapStem, profile.sourceSha256, "post_quest_visit");
+        }
+        for (const auto &profile : mm8Remaining)
+        {
+            if (!profile.requiredEventIds.empty() || !profile.addedOnLoadEventIds.empty()
+                || !profile.addedAfterLoadEventIds.empty())
+            {
+                recordMapOverlay("mm8", profile.mapStem, profile.sourceSha256, "remaining");
+            }
+        }
+        for (const auto &profile : mm6Remaining)
+        {
+            if (!profile.requiredEventIds.empty() || !profile.addedEventIds.empty())
+                recordMapOverlay("mm6", profile.mapStem, profile.sourceSha256, "remaining");
+        }
+        for (const auto &profile : mm7Remaining)
+            recordMapOverlay("mm7", profile.mapStem, profile.sourceSha256, "remaining");
+        if (mm6RemainingGlobal)
+        {
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-mm6-remaining-v1\",\"scope\":\"global\","
+                "\"source_sha256\":" << std::quoted(mm6RemainingGlobal->followersSourceSha256)
+                << ",\"functions_sha256\":" << std::quoted(mm6RemainingGlobal->functionsSourceSha256)
+                << ",\"follower_api_sha256\":" << std::quoted(mm6RemainingGlobal->followerApiSourceSha256)
+                << ",\"path\":\"engine/events/Global_mmmerge_mm6_remaining.lua\"}";
+            firstSelectiveOverlay = false;
+        }
+        for (size_t index = 0; index < mm7RemainingGlobal.size(); ++index)
+        {
+            const auto &profile = mm7RemainingGlobal[index];
+            if (!firstSelectiveOverlay) manifest << ',';
+            manifest << "{\"profile\":\"mmmerge-mm7-remaining-v1\",\"scope\":\"global\","
+                "\"source\":" << std::quoted(profile.sourcePath)
+                << ",\"source_sha256\":" << std::quoted(profile.sourceSha256)
+                << ",\"follower_api_sha256\":" << std::quoted(profile.followerApiSourceSha256)
+                << ",\"path\":" << std::quoted("engine/events/Global_mmmerge_mm7_remaining_"
+                    + std::to_string(index) + ".lua") << '}';
             firstSelectiveOverlay = false;
         }
         if (questItemCapacity)
@@ -1061,7 +1251,7 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
             }
             if (global && mm7Ending)
             {
-                require(program->hasEvent(920), "Missing original MM7 light ending event");
+                require(program->hasEvent(920) && program->hasEvent(922), "Missing original MM7 ending events");
                 const auto overlaid = Game::ScriptedEventProgram::loadFromLuaText(
                     std::string(EventSupportSource) + "\n" + lua + "\n" + mm7Ending->luaSource,
                     "@Global.lua+mm7-ending", Game::ScriptedEventScope::Global, error);
@@ -1071,6 +1261,39 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                     "MM7 ending overlay changed unrelated source event or topic registration");
                 writeConvertedResource(output / "engine/events/Global_mmmerge_endgame_tail.lua",
                     {mm7Ending->luaSource.begin(), mm7Ending->luaSource.end()});
+            }
+            if (global && freeHavenCouncil)
+            {
+                require(program->hasEvent(1693), "Missing original Council topic1693");
+                const auto overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + freeHavenCouncil->globalLuaSource,
+                    "@Global.lua+council", Game::ScriptedEventScope::Global, error);
+                require(overlaid.has_value(), "Council topic Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->canShowTopicEventIds() == program->canShowTopicEventIds(),
+                    "Council topic overlay changed unrelated event or topic registration");
+                writeConvertedResource(output / "engine/events/Global_mmmerge_council.lua",
+                    {freeHavenCouncil->globalLuaSource.begin(), freeHavenCouncil->globalLuaSource.end()});
+            }
+            if (global && mm6QuestContinuity)
+            {
+                require(program->hasEvent(1346) && program->hasEvent(1347),
+                    "Missing original MM6 prisoner reward or follow-up topic");
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + mm6QuestContinuity->globalLuaSource,
+                    "@Global.lua+mm6-quest-followers", Game::ScriptedEventScope::Global, error);
+                require(overlaid.has_value(), "MM6 quest follower global Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->canShowTopicEventIds() == program->canShowTopicEventIds()
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds()
+                    && sameTimerRegistrations(overlaid->timerTriggers(), program->timerTriggers())
+                    && overlaid->getHint(1346) == program->getHint(1346)
+                    && overlaid->getHint(1347) == program->getHint(1347),
+                    "MM6 quest follower global overlay changed unrelated registration or hints");
+                writeConvertedResource(output / "engine/events/Global_mmmerge_quest_followers.lua",
+                    {mm6QuestContinuity->globalLuaSource.begin(), mm6QuestContinuity->globalLuaSource.end()});
             }
             if (global && questItemCapacity)
             {
@@ -1222,6 +1445,208 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                     / "events/maps" / (stem + "_mmmerge_castle_history.lua");
                 writeConvertedResource(output / overlayPath,
                     {harmondaleCastle->luaSource.begin(), harmondaleCastle->luaSource.end()});
+            }
+            if (!global && mm6QuestContinuity && map.world == "mm6" && (stem == "sewer" || stem == "6d07"))
+            {
+                const bool sewer = stem == "sewer";
+                const uint16_t eventId = sewer ? 8 : 16;
+                require(program->hasEvent(eventId), "Missing original MM6 quest continuity source event");
+                if (!sewer)
+                {
+                    require(lua.find("SetValue(MapVar(6), 1)") != std::string::npos,
+                        "MM6 key chest exported counter layout changed; review source MapVar4");
+                    require(program->getHint(16).has_value(), "Missing MM6 key chest localized hint");
+                }
+                const std::string &overlay = sewer
+                    ? mm6QuestContinuity->sewerLuaSource : mm6QuestContinuity->keyChestLuaSource;
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+mm6-quest-continuity", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "MM6 quest continuity Lua rejected: " + error);
+                require(overlaid->eventIds() == program->eventIds()
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds()
+                    && sameTimerRegistrations(overlaid->timerTriggers(), program->timerTriggers())
+                    && overlaid->getHint(eventId) == program->getHint(eventId),
+                    "MM6 quest continuity overlay changed unrelated registration or hint");
+                const std::filesystem::path overlayPath = std::filesystem::path("worlds/mm6/events/maps")
+                    / (stem + (sewer ? "_mmmerge_quest_followers.lua" : "_mmmerge_key_chest.lua"));
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
+            }
+            const auto writeSupplement = [&](const std::string &overlay, const std::string &suffix,
+                std::vector<uint16_t> addedIds, const std::vector<uint16_t> &addedLoad,
+                const std::vector<uint16_t> &addedAfter,
+                const std::vector<uint16_t> &removedTimers = {},
+                const std::vector<uint16_t> &addedLeave = {},
+                const std::vector<uint16_t> &removedLoad = {})
+            {
+                if (overlay.empty()) return;
+                for (uint16_t id : addedIds)
+                {
+                    require(!program->hasEvent(id), "Supplement event collision in " + stem);
+                }
+                const auto overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+" + suffix,
+                    global ? Game::ScriptedEventScope::Global : Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Supplement Lua rejected for " + stem + ": " + error);
+                auto expectedIds = program->eventIds();
+                expectedIds.insert(expectedIds.end(), addedIds.begin(), addedIds.end());
+                std::sort(expectedIds.begin(), expectedIds.end());
+                auto expectedLoad = program->onLoadEventIds();
+                for (uint16_t id : removedLoad)
+                {
+                    require(std::erase(expectedLoad, id) > 0, "Missing removed load hook for " + stem);
+                }
+                expectedLoad.insert(expectedLoad.end(), addedLoad.begin(), addedLoad.end());
+                auto expectedAfter = program->afterLoadEventIds();
+                expectedAfter.insert(expectedAfter.end(), addedAfter.begin(), addedAfter.end());
+                auto expectedLeave = program->onLeaveEventIds();
+                expectedLeave.insert(expectedLeave.end(), addedLeave.begin(), addedLeave.end());
+                auto expectedTimers = program->timerTriggers();
+                for (uint16_t id : removedTimers)
+                {
+                    require(std::erase_if(expectedTimers, [id](const auto &timer)
+                        { return timer.origin == Game::ScriptedEventTimerOrigin::Legacy
+                            && timer.sourceEventId == id; }) == 1,
+                        "Expected exactly one removed source timer for " + stem);
+                }
+                require(overlaid->eventIds() == expectedIds && overlaid->onLoadEventIds() == expectedLoad
+                    && overlaid->afterLoadEventIds() == expectedAfter
+                    && overlaid->onLeaveEventIds() == expectedLeave
+                    && sameTimerRegistrations(overlaid->timerTriggers(), expectedTimers),
+                    "Supplement changed unrelated registration for " + stem);
+                const auto path = global
+                    ? std::filesystem::path("engine/events") / ("Global_mmmerge_" + suffix + ".lua")
+                    : std::filesystem::path("worlds") / map.world / "events/maps"
+                        / (stem + "_mmmerge_" + suffix + ".lua");
+                writeConvertedResource(output / path, {overlay.begin(), overlay.end()});
+            };
+            const auto localizedSupplementStrings = [&](const auto &profile)
+            {
+                for (uint16_t id : profile.requiredEventIds)
+                    require(program->hasEvent(id), "Missing original remaining source event for " + stem);
+                std::unordered_map<uint16_t, std::string> localized;
+                for (uint16_t id : profile.requiredStringIds)
+                {
+                    const auto text = strings.get(id);
+                    require(text.has_value(), "Missing original remaining source string for " + stem);
+                    localized.emplace(id, *text);
+                }
+                return localized;
+            };
+            if (global && mm6RemainingGlobal)
+            {
+                for (uint16_t id : {1331, 1333, 1334, 1631, 1634, 1638, 1640, 1642, 1645, 1646})
+                    require(program->hasEvent(id), "Missing original MM6 follower global event");
+                writeSupplement(mm6RemainingGlobal->luaSource, "mm6_remaining",
+                    mm6RemainingGlobal->addedEventIds, {}, mm6RemainingGlobal->addedAfterLoadEventIds);
+            }
+            if (global)
+            {
+                for (size_t index = 0; index < mm7RemainingGlobal.size(); ++index)
+                {
+                    const auto &profile = mm7RemainingGlobal[index];
+                    for (uint16_t id : profile.requiredEventIds)
+                        require(program->hasEvent(id), "Missing original MM7 follower global event");
+                    writeSupplement(profile.luaSource, "mm7_remaining_" + std::to_string(index),
+                        profile.addedNpcEnterHookEventIds, {}, {});
+                }
+            }
+            if (!global && map.world == "mm6")
+            {
+                for (const auto &profile : mm6Remaining)
+                {
+                    if (profile.mapStem != stem) continue;
+                    const auto localized = localizedSupplementStrings(profile);
+                    writeSupplement(makeMm6RemainingMapOverlay(profile, localized), "remaining", profile.addedEventIds,
+                        {}, profile.addedAfterLoadEventIds, profile.removedLegacyTimerEventIds);
+                }
+            }
+            if (!global && map.world == "mm7")
+            {
+                for (const auto &profile : mm7Remaining)
+                {
+                    if (profile.mapStem != stem) continue;
+                    const auto localized = localizedSupplementStrings(profile);
+                    writeSupplement(makeMm7RemainingMapOverlay(profile, localized), "remaining", profile.addedEventIds,
+                        profile.addedOnLoadEventIds, profile.addedAfterLoadEventIds,
+                        profile.removedLegacyTimerEventIds, profile.addedOnLeaveEventIds,
+                        profile.removedOnLoadEventIds);
+                }
+            }
+            if (!global && lostShield && map.world == "mm6" && stem == lostShield->mapStem)
+            {
+                writeSupplement(lostShield->luaSource, "lost_shield", {Mm6LostShieldHookEventId}, {}, {});
+            }
+            if (!global)
+            {
+                for (const auto &profile : postQuestVisits)
+                {
+                    if (profile.world != map.world || profile.mapStem != stem) continue;
+                    std::vector<uint16_t> added;
+                    if (profile.afterLoadEventId != 0) added.push_back(profile.afterLoadEventId);
+                    writeSupplement(profile.luaSource, "post_quest_visit", added, {}, added);
+                }
+                if (map.world == "mm8")
+                {
+                    for (const auto &profile : mm8Remaining)
+                    {
+                        if (profile.mapStem != stem) continue;
+                        for (uint16_t id : profile.requiredEventIds)
+                            require(program->hasEvent(id), "Missing source event for " + stem);
+                        std::unordered_map<uint16_t, std::string> localized;
+                        for (uint16_t id : profile.requiredStringIds)
+                        {
+                            const auto text = strings.get(id);
+                            require(text.has_value(), "Missing source string for " + stem);
+                            localized.emplace(id, *text);
+                        }
+                        auto added = profile.addedOnLoadEventIds;
+                        added.insert(added.end(), profile.addedAfterLoadEventIds.begin(),
+                            profile.addedAfterLoadEventIds.end());
+                        writeSupplement(makeMm8RemainingMapOverlay(profile, localized), "remaining", added,
+                            profile.addedOnLoadEventIds, profile.addedAfterLoadEventIds);
+                    }
+                }
+            }
+            if (!global && selectedRegnaCannon && map.world == "mm8" && stem == regnaCannon->mapStem)
+            {
+                const std::optional<std::string> cannonHint = strings.get(13);
+                const std::optional<std::string> firingText = strings.get(11);
+                const std::optional<std::string> noAmmoText = strings.get(18);
+                require(program->hasEvent(451) && program->hasEvent(452) && cannonHint && firingText && noAmmoText,
+                    "Missing original Regna cannon events or localized STR slots");
+                require(!program->hasEvent(RegnaCannonMigrationHookEventId),
+                    "Regna cannon migration hook conflicts with a source event");
+                const std::string overlay = makeRegnaCannonOverlay(*cannonHint, *firingText, *noAmmoText);
+                const std::optional<Game::ScriptedEventProgram> overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
+                    "@" + evtName + "+regna-cannon", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Regna cannon Lua rejected: " + error);
+                std::vector<Game::ScriptedEventProgram::TimerTrigger> expectedTimers = program->timerTriggers();
+                const size_t removed = std::erase_if(expectedTimers,
+                    [](const Game::ScriptedEventProgram::TimerTrigger &timer)
+                    {
+                        return timer.origin == Game::ScriptedEventTimerOrigin::Legacy && timer.sourceEventId == 452;
+                    });
+                require(removed == 1, "Regna cannon source must contain exactly one legacy event452 timer");
+                std::vector<uint16_t> expectedIds = program->eventIds();
+                expectedIds.push_back(RegnaCannonMigrationHookEventId);
+                std::sort(expectedIds.begin(), expectedIds.end());
+                std::vector<uint16_t> expectedAfterLoad = program->afterLoadEventIds();
+                expectedAfterLoad.push_back(RegnaCannonMigrationHookEventId);
+                require(overlaid->eventIds() == expectedIds
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == expectedAfterLoad
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds()
+                    && overlaid->getHint(451) == program->getHint(451)
+                    && overlaid->getHint(452) == program->getHint(452)
+                    && sameTimerRegistrations(overlaid->timerTriggers(), expectedTimers),
+                    "Regna cannon overlay changed unrelated registration, hint or timer schedule");
+                const std::filesystem::path overlayPath = "worlds/mm8/events/maps/out13_mmmerge_cannon.lua";
+                writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
             }
             if (!global && sciFi && map.world == "mm6" && stem == sciFi->mapStem)
             {
@@ -1431,6 +1856,43 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                 const std::filesystem::path overlayPath = "worlds/mm6/events/maps/outc2_mmmerge_temple.lua";
                 writeConvertedResource(output / overlayPath, {overlay.begin(), overlay.end()});
             }
+            if (!global && freeHavenCouncil && map.world == "mm6" && stem == "outc2")
+            {
+                require(program->hasEvent(49), "Missing Council source door49");
+                const auto overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + freeHavenCouncil->mapLuaSource,
+                    "@outc2.lua+council", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Council entrance Lua rejected: " + error);
+                std::vector<uint16_t> expectedIds = program->eventIds();
+                if (std::find(expectedIds.begin(), expectedIds.end(), 50) == expectedIds.end())
+                    expectedIds.push_back(50);
+                std::sort(expectedIds.begin(), expectedIds.end());
+                require(overlaid->hasEvent(49) && overlaid->hasEvent(50) && overlaid->eventIds() == expectedIds
+                    && overlaid->getHint(49) == program->getHint(49) && overlaid->getHint(50) == program->getHint(50)
+                    && overlaid->onLoadEventIds() == program->onLoadEventIds()
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "Council entrance overlay changed unrelated registration or door hints");
+                writeConvertedResource(output / "worlds/mm6/events/maps/outc2_mmmerge_council.lua",
+                    {freeHavenCouncil->mapLuaSource.begin(), freeHavenCouncil->mapLuaSource.end()});
+            }
+            if (!global && artifactMessenger && map.world == "mm7" && stem == artifactMessenger->mapStem)
+            {
+                require(program->hasEvent(401), "Missing original artifact messenger event401");
+                const auto overlaid = Game::ScriptedEventProgram::loadFromLuaText(
+                    std::string(EventSupportSource) + "\n" + lua + "\n" + artifactMessenger->luaSource,
+                    "@7out04.lua+messenger", Game::ScriptedEventScope::Map, error);
+                require(overlaid.has_value(), "Artifact messenger Lua rejected: " + error);
+                std::vector<uint16_t> expectedOnLoad = program->onLoadEventIds();
+                std::erase(expectedOnLoad, 401);
+                expectedOnLoad.push_back(401);
+                require(overlaid->eventIds() == program->eventIds() && overlaid->onLoadEventIds() == expectedOnLoad
+                    && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
+                    && overlaid->onLeaveEventIds() == program->onLeaveEventIds(),
+                    "Artifact messenger overlay changed unrelated source registration");
+                writeConvertedResource(output / "worlds/mm7/events/maps/7out04_mmmerge_messenger.lua",
+                    {artifactMessenger->luaSource.begin(), artifactMessenger->luaSource.end()});
+            }
             if (!global && stoneCity && map.world == "mm7" && stem == stoneCity->mapStem)
             {
                 const std::optional<std::string> entranceHint = strings.get(20);
@@ -1442,7 +1904,10 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                     std::string(EventSupportSource) + "\n" + lua + "\n" + overlay,
                     "@" + evtName + "+stone-city", Game::ScriptedEventScope::Map, error);
                 require(overlaid.has_value(), "Stone City entrance Lua rejected: " + error);
-                require(overlaid->eventIds() == program->eventIds()
+                std::vector<uint16_t> expectedIds = program->eventIds();
+                expectedIds.push_back(StoneCityNpcExitHookEventId);
+                std::sort(expectedIds.begin(), expectedIds.end());
+                require(overlaid->eventIds() == expectedIds
                     && overlaid->onLoadEventIds() == program->onLoadEventIds()
                     && overlaid->afterLoadEventIds() == program->afterLoadEventIds()
                     && overlaid->onLeaveEventIds() == program->onLeaveEventIds()

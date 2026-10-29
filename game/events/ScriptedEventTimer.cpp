@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <chrono>
 #include <limits>
 
 namespace OpenYAMM::Game
@@ -175,6 +176,134 @@ void advanceTimerAfterFire(ScriptedEventTimerState &state, double currentGameMin
 double legacyTimerGameMinutesFromTicks(int64_t legacyTicks)
 {
     return static_cast<double>(legacyTicks) / LegacyTicksPerGameMinute;
+}
+
+bool startDynamicScriptedEventTimer(
+    DynamicScriptedEventTimers &timers, uint16_t eventId, double intervalGameMinutes, double currentGameMinutes,
+    const DynamicScriptedEventTimerOptions &options)
+{
+    double alarm = currentGameMinutes + options.initialDelayGameMinutes.value_or(intervalGameMinutes);
+    if (eventId == 0 || !std::isfinite(intervalGameMinutes) || intervalGameMinutes <= 0.0
+        || !std::isfinite(currentGameMinutes) || currentGameMinutes < 0.0 || !std::isfinite(alarm)
+        || timers.nextId == std::numeric_limits<uint64_t>::max()
+        || (options.initialDelayGameMinutes && *options.initialDelayGameMinutes < 0.0))
+    {
+        return false;
+    }
+    if (!timers.lastPollGameMinutes)
+    {
+        timers.lastPollGameMinutes = options.lastVisitGameMinutes;
+    }
+    if (options.absoluteStartGameMinutes)
+    {
+        alarm = *options.absoluteStartGameMinutes;
+        if (!std::isfinite(alarm) || alarm < 0.0)
+        {
+            return false;
+        }
+        const double last = *timers.lastPollGameMinutes;
+        if (alarm <= currentGameMinutes && alarm <= last)
+        {
+            alarm = nextNativeExactAlarmGameMinutes(alarm, intervalGameMinutes,
+                static_cast<int64_t>(std::llround(last * LegacyTicksPerGameMinute)));
+        }
+    }
+    else if (options.pastAware)
+    {
+        alarm = currentGameMinutes;
+    }
+    DynamicScriptedEventTimer timer{timers.nextId++, eventId, intervalGameMinutes, alarm, false};
+    timer.scope = options.scope;
+    timer.exact = options.absoluteStartGameMinutes.has_value();
+    timers.instances.push_back(timer);
+    return true;
+}
+
+double scriptedEventRealTimeSeconds()
+{
+    return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+bool delayDynamicScriptedEvent(
+    DynamicScriptedEventTimers &timers, uint16_t eventId, double delaySeconds, ScriptedEventScope scope)
+{
+    if (eventId == 0 || !std::isfinite(delaySeconds) || delaySeconds < 0.0
+        || timers.nextId == std::numeric_limits<uint64_t>::max())
+    {
+        return false;
+    }
+    DynamicScriptedEventTimer timer{timers.nextId++, eventId, 0.0,
+        scriptedEventRealTimeSeconds() + delaySeconds, false};
+    timer.scope = scope;
+    timer.realTime = true;
+    timers.instances.push_back(timer);
+    return true;
+}
+
+void stopCurrentDynamicScriptedEventTimer(DynamicScriptedEventTimers &timers)
+{
+    for (DynamicScriptedEventTimer &timer : timers.instances)
+    {
+        if (timer.id == timers.executingId)
+        {
+            timer.removed = true;
+            return;
+        }
+    }
+}
+
+bool updateDynamicScriptedEventTimers(
+    DynamicScriptedEventTimers &timers, double currentGameMinutes,
+    const std::function<bool(const ScriptedEventTimerDefinition &)> &executeTimer, double realTimeSeconds)
+{
+    bool executedAny = false;
+    const size_t count = timers.instances.size();
+    for (size_t index = 0; index < count; ++index)
+    {
+        // Copy before dispatch: callbacks can append new registrations and reallocate the vector.
+        const DynamicScriptedEventTimer timer = timers.instances[index];
+        if (timer.removed || (timer.realTime ? realTimeSeconds : currentGameMinutes) < timer.nextAlarmGameMinutes)
+        {
+            continue;
+        }
+        ScriptedEventTimerDefinition definition;
+        definition.eventId = timer.eventId;
+        definition.sourceEventId = timer.eventId;
+        definition.scope = timer.scope;
+        definition.repeating = !timer.realTime;
+        definition.intervalGameMinutes = timer.intervalGameMinutes;
+        const uint64_t previousExecutingId = timers.executingId;
+        timers.executingId = timer.id;
+        try
+        {
+            executedAny = executeTimer(definition) || executedAny;
+        }
+        catch (...)
+        {
+            timers.executingId = previousExecutingId;
+            throw;
+        }
+        timers.executingId = previousExecutingId;
+        if (timer.realTime)
+        {
+            timers.instances[index].removed = true;
+        }
+        else if (timer.exact)
+        {
+            const double last = timers.lastPollGameMinutes.value_or(currentGameMinutes);
+            timers.instances[index].nextAlarmGameMinutes = nextNativeExactAlarmGameMinutes(
+                timer.nextAlarmGameMinutes, timer.intervalGameMinutes,
+                static_cast<int64_t>(std::llround(last * LegacyTicksPerGameMinute)));
+        }
+        else
+        {
+            // Source NextPeriod uses firing time, without catch-up callbacks after a slow frame.
+            timers.instances[index].nextAlarmGameMinutes = currentGameMinutes + timer.intervalGameMinutes;
+        }
+    }
+    timers.lastPollGameMinutes = currentGameMinutes;
+    std::erase_if(timers.instances, [](const DynamicScriptedEventTimer &timer) { return timer.removed; });
+    return executedAny;
 }
 
 int64_t legacyTimerTicksFromGameMinutes(double gameMinutes)

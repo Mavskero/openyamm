@@ -101,6 +101,14 @@ public:
         IndoorSceneData &sceneData,
         const std::string &yamlText,
         std::string &errorMessage) const;
+    // Augment an already loaded BLV/DLV without replacing its population or persistent variables.
+    bool applyMapRulesFromText(
+        IndoorMapData &indoorMapData,
+        MapDeltaData &mapDeltaData,
+        MapRuntimeRestrictions &runtimeRestrictions,
+        const std::string &yamlText,
+        const std::string &mapFileName,
+        std::string &errorMessage) const;
 };
 
 const IndoorSceneFaceAttributeOverride *findIndoorSceneFaceOverride(const IndoorSceneData &sceneData, size_t faceIndex);

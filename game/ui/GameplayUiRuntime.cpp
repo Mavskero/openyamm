@@ -2161,8 +2161,14 @@ const GameplayPortraitPresentationState &GameplayUiRuntime::portraitPresentation
     return m_portraitPresentationState;
 }
 
-std::string GameplayUiRuntime::resolvePortraitTextureName(const Character &character) const
+std::string GameplayUiRuntime::resolvePortraitTextureName(
+    const Character &character, std::optional<uint32_t> temporaryPictureId) const
 {
+    const auto textureForFrame = [&](uint16_t frame)
+    {
+        return temporaryPictureId ? portraitTextureNameForPictureFrame(*temporaryPictureId, frame)
+            : portraitTextureNameForCharacterFrame(character, frame);
+    };
     if (character.portraitState == PortraitId::Eradicated)
     {
         return "ERADCATE";
@@ -2175,12 +2181,12 @@ std::string GameplayUiRuntime::resolvePortraitTextureName(const Character &chara
 
     if (!m_portraitRuntimeLoaded)
     {
-        return character.portraitTextureName;
+        return temporaryPictureId ? textureForFrame(1) : character.portraitTextureName;
     }
 
     if (character.portraitState == PortraitId::Normal)
     {
-        return portraitTextureNameForCharacterFrame(character, 1);
+        return textureForFrame(1);
     }
 
     const PortraitFrameEntry *pFrame =
@@ -2188,10 +2194,10 @@ std::string GameplayUiRuntime::resolvePortraitTextureName(const Character &chara
 
     if (pFrame != nullptr && pFrame->textureIndex > 0)
     {
-        return portraitTextureNameForCharacterFrame(character, pFrame->textureIndex);
+        return textureForFrame(pFrame->textureIndex);
     }
 
-    return character.portraitTextureName;
+    return temporaryPictureId ? textureForFrame(1) : character.portraitTextureName;
 }
 
 bool GameplayUiRuntime::triggerPortraitFxAnimation(

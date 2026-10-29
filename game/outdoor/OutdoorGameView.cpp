@@ -4453,7 +4453,7 @@ void OutdoorGameView::updateHouseVideoPlayback(float deltaSeconds)
         return;
     }
 
-    if (pHostHouseEntry == nullptr || pHostHouseEntry->videoName.empty())
+    if (pHostHouseEntry == nullptr || resolveHouseVideoName(*pHostHouseEntry, pEventRuntimeState).empty())
     {
         if (m_activeHouseAudioHostId != 0 && m_pGameAudioSystem != nullptr)
         {
@@ -4486,7 +4486,7 @@ void OutdoorGameView::updateHouseVideoPlayback(float deltaSeconds)
         }
     }
 
-    m_gameSession.gameplayScreenRuntime().playHouseVideo(pHostHouseEntry->videoName);
+    screenRuntime.playHouseVideo(resolveHouseVideoName(*pHostHouseEntry, pEventRuntimeState));
 
     if (!houseShopOverlay().active)
     {

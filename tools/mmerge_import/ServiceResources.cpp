@@ -1,6 +1,7 @@
 #include "ServiceResources.h"
 #include "BreachAlvarCompanionResources.h"
 #include "LodResources.h"
+#include "PostQuestVisitResources.h"
 #include "TextResources.h"
 #include "engine/TextTable.h"
 #include "game/tables/ChestTable.h"
@@ -21,6 +22,7 @@
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 
 namespace OpenYAMM::Import
 {
@@ -104,19 +106,20 @@ IndexedRows indexed(const Rows &rows, size_t columns)
     return result;
 }
 
-bool verifiedBreachAlvarHouseSource(const std::filesystem::path &root)
+bool verifiedHouseSource(const std::filesystem::path &root, std::string_view relativePath,
+    std::string_view expectedSha256)
 {
-    const std::string name(BreachAlvarMapSourcePath);
+    const std::string name(relativePath);
     if (!std::filesystem::exists(root / name))
     {
         return false;
     }
     const std::filesystem::path path = sourcePath(root, name);
     const uintmax_t size = std::filesystem::file_size(path);
-    require(size > 0 && size <= 256 * 1024, "Invalid Breach Alvar house source size");
+    require(size > 0 && size <= 256 * 1024, "Invalid house source script size: " + name);
     std::string text(size, '\0');
     std::ifstream input(path, std::ios::binary);
-    require(bool(input.read(text.data(), std::streamsize(size))), "Cannot read Breach Alvar house source");
+    require(bool(input.read(text.data(), std::streamsize(size))), "Cannot read house source script: " + name);
     std::array<unsigned char, CC_SHA256_DIGEST_LENGTH> hash;
     CC_SHA256(text.data(), CC_LONG(text.size()), hash.data());
     std::ostringstream digest;
@@ -124,8 +127,45 @@ bool verifiedBreachAlvarHouseSource(const std::filesystem::path &root)
     {
         digest << std::hex << std::setfill('0') << std::setw(2) << unsigned(value);
     }
-    require(digest.str() == BreachAlvarMapSourceSha256, "Unsupported Breach Alvar house source fingerprint");
+    require(digest.str() == expectedSha256, "Unsupported house source script fingerprint: " + name);
     return true;
+}
+
+bool verifiedBreachAlvarHouseSource(const std::filesystem::path &root)
+{
+    return verifiedHouseSource(root, BreachAlvarMapSourcePath, BreachAlvarMapSourceSha256);
+}
+
+void applyClankerHouseExitRule(Rows &houses)
+{
+    Row *pHouse = nullptr;
+    for (Row &row : houses)
+    {
+        if (!row.empty() && row[0] == "395")
+        {
+            require(pHouse == nullptr && row.size() == 24, "Invalid Clanker house395 source row");
+            pHouse = &row;
+        }
+    }
+    require(pHouse != nullptr, "Missing Clanker house395 source row");
+    const bool original = (*pHouse)[20] == "0" && (*pHouse)[21] == "0" && (*pHouse)[22] == "0";
+    const bool projected = (*pHouse)[20] == "1" && (*pHouse)[21] == "86" && (*pHouse)[22] == "710";
+    require(original || projected, "Unexpected Clanker house395 exit identity");
+    (*pHouse)[20] = "1";
+    (*pHouse)[21] = "86";
+    (*pHouse)[22] = "710";
+}
+
+void appendClankerHouseExitManifest(std::ostream &manifest, bool enabled)
+{
+    manifest << ",\"clanker_postquest_exit\":";
+    if (!enabled)
+    {
+        manifest << "null";
+        return;
+    }
+    manifest << "{\"house_id\":395,\"destination_map_id\":86,\"picture_slot\":1,\"required_qbit\":710,"
+        "\"source\":\"Scripts/Maps/7out04.lua\",\"source_sha256\":\"" << ClankerPostQuestSourceSha256 << "\"}";
 }
 
 const BreachAlvarHousePresentationRule *breachAlvarHouseRule(uint32_t houseId)
@@ -252,6 +292,7 @@ void convertServiceResources(const std::filesystem::path &source, const std::fil
     sourceHouses.erase(sourceHouses.begin());
     const IndexedRows baseHouses = indexed(sourceHouses, 24);
     const bool breachAlvarHouses = verifiedBreachAlvarHouseSource(root);
+    const bool clankerHouseExit = verifiedHouseSource(root, ClankerPostQuestSourcePath, ClankerPostQuestSourceSha256);
     const bool chinese = std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod");
     IndexedRows localizedHouses;
     if (chinese)
@@ -309,6 +350,10 @@ void convertServiceResources(const std::filesystem::path &source, const std::fil
     {
         applyBreachAlvarHouseRules(houses, root, chinese, glyphs);
     }
+    if (clankerHouseExit)
+    {
+        applyClankerHouseExitRule(houses);
+    }
     Game::HouseTable baseHouseCheck;
     Game::HouseTable houseCheck;
     require(baseHouseCheck.loadFromRows(sourceHouses) && houseCheck.loadFromRows(houses)
@@ -318,6 +363,7 @@ void convertServiceResources(const std::filesystem::path &source, const std::fil
     {
         const Game::HouseEntry *pHouse = houseCheck.get(integer(row[0]));
         const Game::HouseEntry *pBase = baseHouseCheck.get(integer(row[0]));
+        const bool clankerExit = clankerHouseExit && integer(row[0]) == 395;
         require(pHouse && pBase && pHouse->name == row[5] && pHouse->proprietorName == row[6]
             && pHouse->proprietorTitle == row[7] && pHouse->enterText == row[23]
             && pHouse->type == pBase->type && pHouse->typeIndex == pBase->typeIndex
@@ -328,9 +374,9 @@ void convertServiceResources(const std::filesystem::path &source, const std::fil
             && pHouse->templeHealingTier == pBase->templeHealingTier && pHouse->templeBehavior == pBase->templeBehavior
             && pHouse->stockRefreshDays == pBase->stockRefreshDays && pHouse->openHour == pBase->openHour
             && pHouse->closeHour == pBase->closeHour && pHouse->offeredSkills == pBase->offeredSkills
-            && pHouse->rawExtraExitPictureIndex == pBase->rawExtraExitPictureIndex
-            && pHouse->rawExtraExitMapId == pBase->rawExtraExitMapId
-            && pHouse->rawExtraExitRestriction == pBase->rawExtraExitRestriction,
+            && pHouse->rawExtraExitPictureIndex == (clankerExit ? 1u : pBase->rawExtraExitPictureIndex)
+            && pHouse->rawExtraExitMapId == (clankerExit ? 86u : pBase->rawExtraExitMapId)
+            && pHouse->rawExtraExitRestriction == (clankerExit ? 710 : pBase->rawExtraExitRestriction),
             "House localization changed identity/mechanics");
     }
 
@@ -405,7 +451,9 @@ void convertServiceResources(const std::filesystem::path &source, const std::fil
                 << ",\"archive\":" << std::quoted(image.archive)
                 << ",\"width\":" << image.width << ",\"height\":" << image.height << "}";
         }
-        manifest << "],\"house_animations_ready\":false,\"house_rules_ready\":false,"
+        manifest << "]";
+        appendClankerHouseExitManifest(manifest, clankerHouseExit);
+        manifest << ",\"house_animations_ready\":false,\"house_rules_ready\":false,"
             << "\"interactive_chests_ready\":false,\"full_gameplay_loop\":false,"
             << "\"restored_glyphs\":" << glyphs << "}\n";
         writeText(output / "engine/data_tables/chest_data.txt", serializeTextRows(chests));
@@ -463,9 +511,14 @@ void convertHousePresentationResources(const std::filesystem::path &source,
     originalHouseRows.erase(originalHouseRows.begin());
     const IndexedRows originalHouses = indexed(originalHouseRows, 24);
     const bool breachAlvarHouses = verifiedBreachAlvarHouseSource(root);
+    const bool clankerHouseExit = verifiedHouseSource(root, ClankerPostQuestSourcePath, ClankerPostQuestSourceSha256);
     HouseTable originalHouseTable;
     HouseTable houseTable;
-    const Rows houseRows = convertedRows("house_data.txt");
+    Rows houseRows = convertedRows("house_data.txt");
+    if (clankerHouseExit)
+    {
+        applyClankerHouseExitRule(houseRows);
+    }
     std::set<uint32_t> convertedHouseIds;
     for (const Row &row : houseRows)
     {
@@ -613,12 +666,18 @@ void convertHousePresentationResources(const std::filesystem::path &source,
         manifest << (first ? "" : ",") << id;
         first = false;
     }
-    manifest << "]}\n";
+    manifest << "]";
+    appendClankerHouseExitManifest(manifest, clankerHouseExit);
+    manifest << "}\n";
     require(std::filesystem::create_directory(output), "Cannot create house presentation output");
     try
     {
         writeText(output / "engine/data_tables/house_animations.txt", serializeTextRows(animations));
         writeText(output / "engine/data_tables/house_movies.txt", serializeTextRows(movieRows));
+        if (clankerHouseExit)
+        {
+            writeText(output / "engine/data_tables/house_data.txt", serializeTextRows(houseRows));
+        }
         writeText(output / "house_conversion.json", manifest.str());
     }
     catch (...)

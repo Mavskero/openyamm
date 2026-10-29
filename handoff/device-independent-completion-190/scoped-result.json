@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "status": "ACCEPTED_SCOPED",
+  "date": "2026-10-29",
+  "batch": 190,
+  "objective": "Consolidate device-independent development before further iPad acceptance; normal play and completion remain the full goal.",
+  "goal_complete": false,
+  "goal_tool_status_last_observed": "blocked",
+  "user_resumed_development": true,
+  "source_base": "ab87c0bc36cf9fe50f5bdbb89bd4eda0e1a8258a",
+  "main_and_subagent_model": "gpt-6.1-sol/max",
+  "runtime": "local-data/validation/device-independent-completion-190/runtime-003",
+  "save_format": 103,
+  "rc1_rc2_rc3_preserved": true,
+  "new_release_created": false,
+  "runtime_uploaded": false,
+  "validation": {
+    "native-build-005": {
+      "command": "native-build-005.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 152.507743,
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e"
+    },
+    "native-build-007": {
+      "command": "native-build-007.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 5.815072,
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e"
+    },
+    "import-004": {
+      "command": "import-004.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 0.716557,
+      "executed_binary_sha256": "521d66c944d86c42631e5320d4caff452a0bcb36a595db4444428b8baa32b4d8"
+    },
+    "house-import-002": {
+      "command": "house-import-002.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 0.130216,
+      "executed_binary_sha256": "81c8f94acc882e68a964a1fd374b724241cd03ac0872f33c7cf2f68581e7c229"
+    },
+    "scene-import-005": {
+      "command": "scene-import-005.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 2.499974,
+      "executed_binary_sha256": "be8cdf299142e4a48afe3d87a9aec1b142b76cc4823c1b5e6bddd47b2ef4c554"
+    },
+    "ios-release-003": {
+      "command": "ios-release-003.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 127.242174,
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556"
+    },
+    "timer-check-002": {
+      "command": "timer-check-002.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 0.040209,
+      "executed_binary_sha256": "5fa7fd423e095c3fdfeb3df0b1087a3727b2dddf98a3f015007e3ea07c055886"
+    },
+    "assemble-003": {
+      "command": "assemble-003.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 29.890758,
+      "executed_binary_sha256": "30b2a6bf9706029b609327ca5db722cd458239df96efc87e1f8e37beed49db2e"
+    },
+    "actual-run-001": {
+      "command": "actual-run-001.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 13.768253,
+      "executed_binary_sha256": "796c72302e2d7137040aa7b40a219b0e20d95e21759c3eba08500843d6844db2"
+    },
+    "normal-startup-001": {
+      "command": "normal-startup-001.command.json",
+      "exit_code": 0,
+      "elapsed_wall_seconds": 16.025629,
+      "executed_binary_sha256": "14428351432c4cba1b1c116d5036beb222c4994ae0715bc5e37763aaf9f5511b"
+    }
+  },
+  "counts": {
+    "new_unit_cases": 1,
+    "final_selected_assertions": 30,
+    "old_cases_skipped": 26,
+    "actual_app_runs": 2,
+    "reviewed_images": 4,
+    "old_campaign_replays": 0,
+    "cold_replays": 0,
+    "device_operations": 0,
+    "simulator_operations": 0,
+    "event_import_maps": 49,
+    "scene_import_maps": 12,
+    "changed_resource_members": 4,
+    "added_resource_members": 59
+  },
+  "council_actual": {
+    "passed": true,
+    "controlled": true,
+    "natural_campaign": false,
+    "device_acceptance": false,
+    "frames": 84,
+    "captures": 2,
+    "event49_sdl_clicks": 1,
+    "door_model": 68,
+    "door_face": 7,
+    "expected_source_movie": "citytrtr",
+    "movie_identity_requires_visual_review": true,
+    "cutscene_started": true,
+    "cutscene_start_frame": 11,
+    "movie_capture_saved": true,
+    "movie_closed_by_escape": true,
+    "house209_capture_saved": true,
+    "movie_nonblack_pixels": 2147301,
+    "house_nonblack_pixels": 3255979,
+    "blank_movie_captures_discarded": 0,
+    "item2122_fixture_member_id": 1,
+    "stored_reputation_before": 0,
+    "expected_stored_reputation_after": -20,
+    "normal_frames": 30,
+    "npc789_initial_topic1415_slots": 0,
+    "normal_seconds": 0.486330870539,
+    "final_save_verified": true,
+    "elapsed_wall_seconds": 0,
+    "visual_review_required": true,
+    "new_unit_tests": 0,
+    "cold_replays": 0,
+    "failure": ""
+  },
+  "council_scope": "Original source door49 physical SDL click, movie/Escape/house209, 30 normal frames and decoded save. Map, pose, item2122, award/quest and reputation fixtures declared in actual-001/fixture.json. NPC789 had no1415 slot; no positive removal claim. First group/runtime001, not final full batch acceptance.",
+  "council_elapsed_note": "Driver elapsed_wall_seconds=0 is the SDL teardown clock observation; use wrapper wall time.",
+  "normal_mm7": {
+    "input": "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+    "new_gameplay_fixtures": false,
+    "map": "7d29.blv",
+    "frames": 181,
+    "save_decoded": true,
+    "member_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "gold": 128,
+    "food": 14,
+    "game_minutes": 75326.73230932515,
+    "images_reviewed": [
+      "normal-001/scene-first.png",
+      "normal-001/scene-later.png"
+    ],
+    "visual_observation": "Original castle room, textured geometry/firelight, four portraits and HUD/minimap visible in both frames; no blank scene or missing-texture warnings."
+  },
+  "source_acceptance_scope": "All new overlay metadata parsed by native importer; only Council branch and final normal MM7 startup were run in this batch. Other new branches remain source/import/build accepted.",
+  "empty_terrain_rules": [
+    "mm6:outb1.odm",
+    "mm6:outb2.odm",
+    "mm6:outb3.odm",
+    "mm6:oute3.odm"
+  ],
+  "remaining_boundaries": [
+    "oute3 volcano source reversed random bounds retained without invented correction.",
+    "d42 ordinary cross-world arena ingress/origin not found; return policy not invented.",
+    "Affected source gameplay actions wired; no claim of all MMExtension Action events or every control.",
+    "No full natural campaign or new iPad acceptance. Historical80–85% estimate is not increased from file counts."
+  ],
+  "preserved_failures": {
+    "native-build-001": "Overlong raw-string delimiter; fixed in next build.",
+    "import-003": "Unfiltered request included Merge map without original EVT; used explicit49-map selection.",
+    "house-import-001": "Old155 converted base had stale house identities; current188 tables used.",
+    "scene-import-001": "CLI needs map filenames with extensions.",
+    "scene-import-002": "Old sparse converted base lacked map event files.",
+    "scene-import-003": "Importer incorrectly required source terrain rule to match a local tile.",
+    "scene-import-004": "Empty rule projection must emit no companion; importer corrected without loosening runtime schema."
+  },
+  "next_policy": "Continue from concrete source/runtime defects; do not gate development on target-iPad data, publish per-fix device checkpoints, replay accepted campaigns or invent another broad audit.",
+  "post_validation_source_edits": "Three whitespace-only line wraps to comply with120-column style; no executable token changes, no repeat build or App run."
+}

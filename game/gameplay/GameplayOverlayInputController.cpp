@@ -3,6 +3,7 @@
 
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/GameplayInputFrame.h"
+#include "game/gameplay/GameplayInputController.h"
 #include "game/gameplay/GameplaySaveLoadUiSupport.h"
 #include "game/gameplay/HouseInteraction.h"
 #include "game/gameplay/HouseServiceRuntime.h"
@@ -844,6 +845,8 @@ bool GameplayOverlayInputController::handleRestOverlayInput(
     {
         if (!view.interactionState().closeOverlayLatch)
         {
+            view.interactionState().closeOverlayLatch = true;
+            if (!view.allowSourceGameplayAction(SourceActionExitRest, 5)) return true;
             finishOrCloseRestScreen();
             latchGameplayMenuEscape(view);
             view.interactionState().closeOverlayLatch = true;
@@ -924,6 +927,19 @@ bool GameplayOverlayInputController::handleRestOverlayInput(
         findPointerTarget,
         [&view, &finishOrCloseRestScreen, &waitUntilDawnMinutes](const GameplayRestPointerTarget &target)
         {
+            uint32_t sourceAction = 0;
+            switch (target.type)
+            {
+            case GameplayRestPointerTargetType::Rest8HoursButton: sourceAction = SourceActionRest8Hours; break;
+            case GameplayRestPointerTargetType::WaitUntilDawnButton: sourceAction = SourceActionWaitUntilDawn; break;
+            case GameplayRestPointerTargetType::Wait1HourButton: sourceAction = SourceActionWait1Hour; break;
+            case GameplayRestPointerTargetType::Wait5MinutesButton: sourceAction = SourceActionWait5Minutes; break;
+            case GameplayRestPointerTargetType::ExitButton: sourceAction = SourceActionExitRest; break;
+            case GameplayRestPointerTargetType::OpenButton: sourceAction = SourceActionRestWindow; break;
+            case GameplayRestPointerTargetType::None: break;
+            }
+            if (sourceAction != 0 && !view.allowSourceGameplayAction(sourceAction, 5)) return;
+
             switch (target.type)
             {
             case GameplayRestPointerTargetType::Rest8HoursButton:
@@ -979,6 +995,8 @@ bool GameplayOverlayInputController::handleMenuOverlayInput(
     {
         if (!view.interactionState().menuToggleLatch)
         {
+            view.interactionState().menuToggleLatch = true;
+            if (!view.allowSourceGameplayAction(SourceActionEscape, 1)) return true;
             view.closeMenuOverlay();
             view.interactionState().menuToggleLatch = true;
         }
@@ -1086,6 +1104,19 @@ bool GameplayOverlayInputController::handleMenuOverlayInput(
         findMenuPointerTarget,
         [&view, &menuScreen](const GameplayMenuPointerTarget &target)
         {
+            uint32_t sourceAction = 0;
+            switch (target.type)
+            {
+            case GameplayMenuPointerTargetType::NewGameButton: sourceAction = SourceActionStartNewGame; break;
+            case GameplayMenuPointerTargetType::SaveGameButton: sourceAction = SourceActionOpenSaveGame; break;
+            case GameplayMenuPointerTargetType::LoadGameButton: sourceAction = SourceActionOpenLoadGame; break;
+            case GameplayMenuPointerTargetType::ControlsButton: sourceAction = SourceActionOpenOptions; break;
+            case GameplayMenuPointerTargetType::QuitButton: sourceAction = SourceActionQuit; break;
+            case GameplayMenuPointerTargetType::ReturnButton: sourceAction = SourceActionReturnToGame; break;
+            case GameplayMenuPointerTargetType::None: break;
+            }
+            if (sourceAction != 0 && !view.allowSourceGameplayAction(sourceAction, 1)) return;
+
             switch (target.type)
             {
             case GameplayMenuPointerTargetType::NewGameButton:
@@ -2166,6 +2197,15 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
     {
         if (!view.interactionState().journalToggleLatch)
         {
+            uint32_t sourceAction = SourceActionOpenMapBook;
+            if (requestedJournalView == JournalShortcutView::Story) sourceAction = SourceActionOpenHistoryBook;
+            if (requestedJournalView == JournalShortcutView::Notes) sourceAction = SourceActionOpenAutonotes;
+            if (!view.allowSourceGameplayAction(sourceAction, 3))
+            {
+                view.interactionState().journalToggleLatch = true;
+                return journalScreen.active;
+            }
+
             const auto activateJournalView =
                 [&view, &journalScreen](JournalShortcutView targetView)
                 {
@@ -2296,6 +2336,8 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
     {
         if (zoomInPressed && !view.interactionState().journalMapKeyZoomLatch)
         {
+            view.interactionState().journalMapKeyZoomLatch = true;
+            if (!view.allowSourceGameplayAction(SourceActionZoomIn, 3)) return true;
             journalScreen.mapZoomStep =
                 std::min(journalScreen.mapZoomStep + 1, static_cast<int>(GameplayJournalMapZoomLevels.size()) - 1);
             clampGameplayJournalMapState(journalScreen, pJournalMinimapState);
@@ -2304,6 +2346,8 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
         }
         else if (zoomOutPressed && !view.interactionState().journalMapKeyZoomLatch)
         {
+            view.interactionState().journalMapKeyZoomLatch = true;
+            if (!view.allowSourceGameplayAction(SourceActionZoomOut, 3)) return true;
             journalScreen.mapZoomStep = std::max(journalScreen.mapZoomStep - 1, 0);
             clampGameplayJournalMapState(journalScreen, pJournalMinimapState);
             journalScreen.cachedMapValid = false;
@@ -2316,6 +2360,7 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
 
         if (mouseWheelDelta > 0.0f)
         {
+            if (!view.allowSourceGameplayAction(SourceActionZoomIn, 3)) return true;
             journalScreen.mapZoomStep =
                 std::min(journalScreen.mapZoomStep + 1, static_cast<int>(GameplayJournalMapZoomLevels.size()) - 1);
             clampGameplayJournalMapState(journalScreen, pJournalMinimapState);
@@ -2323,6 +2368,7 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
         }
         else if (mouseWheelDelta < 0.0f)
         {
+            if (!view.allowSourceGameplayAction(SourceActionZoomOut, 3)) return true;
             journalScreen.mapZoomStep = std::max(journalScreen.mapZoomStep - 1, 0);
             clampGameplayJournalMapState(journalScreen, pJournalMinimapState);
             journalScreen.cachedMapValid = false;
@@ -2337,6 +2383,8 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
     {
         if (!view.interactionState().closeOverlayLatch)
         {
+            view.interactionState().closeOverlayLatch = true;
+            if (!view.allowSourceGameplayAction(SourceActionEscape, 3)) return true;
             view.closeJournalOverlay();
             latchGameplayMenuEscape(view);
             view.interactionState().closeOverlayLatch = true;
@@ -2580,6 +2628,22 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
     const auto activateJournalTarget =
         [&view, &journalScreen, &adjustPage, pJournalMinimapState](const GameplayJournalPointerTarget &target)
         {
+            // The unified journal's pagination, category and map-note widgets are project UI controls.
+            uint32_t sourceAction = SourceActionCustomDialogButton;
+            switch (target.type)
+            {
+            case GameplayJournalPointerTargetType::MainMapView: sourceAction = SourceActionOpenMapBook; break;
+            case GameplayJournalPointerTargetType::MainQuestsView: sourceAction = SourceActionOpenQuestBook; break;
+            case GameplayJournalPointerTargetType::MainStoryView: sourceAction = SourceActionOpenHistoryBook; break;
+            case GameplayJournalPointerTargetType::MainNotesView: sourceAction = SourceActionOpenAutonotes; break;
+            case GameplayJournalPointerTargetType::MapZoomInButton: sourceAction = SourceActionZoomIn; break;
+            case GameplayJournalPointerTargetType::MapZoomOutButton: sourceAction = SourceActionZoomOut; break;
+            case GameplayJournalPointerTargetType::CloseButton: sourceAction = SourceActionEscape; break;
+            case GameplayJournalPointerTargetType::None: return;
+            default: break;
+            }
+            if (!view.allowSourceGameplayAction(sourceAction, 3)) return;
+
             switch (target.type)
             {
             case GameplayJournalPointerTargetType::MainMapView:
@@ -2795,6 +2859,12 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
             if (mapViewport.has_value()
                 && view.isPointerInsideResolvedElement(*mapViewport, journalPointerState.x, journalPointerState.y))
             {
+                if (!view.allowSourceGameplayAction(SourceActionCustomDialogButton, 3))
+                {
+                    view.interactionState().journalClickLatch = true;
+                    view.interactionState().journalPressedTarget = noneJournalTarget;
+                    return true;
+                }
                 journalScreen.selectedMapNoteId = 0;
                 journalScreen.mapDragActive = true;
                 journalScreen.mapDragStartMouseX = journalPointerState.x;
@@ -4001,6 +4071,11 @@ void GameplayOverlayInputController::handleLootOverlayInput(
                 && chestMouseY >= resolvedInventoryGrid->y
                 && chestMouseY < resolvedInventoryGrid->y + resolvedInventoryGrid->height)
             {
+                if (!view.allowSourceGameplayAction(SourceActionInventoryLeftClick, 15))
+                {
+                    view.interactionState().inventoryNestedOverlayItemClickLatch = true;
+                    return;
+                }
                 Party &party = *view.party();
                 const Character *pCharacter = party.activeMember();
                 const InventoryGridMetrics gridMetrics = computeInventoryGridMetrics(
@@ -4135,6 +4210,8 @@ void GameplayOverlayInputController::handleLootOverlayInput(
                     return;
                 }
 
+                if (!view.allowSourceGameplayAction(SourceActionEscape, 10)) return;
+
                 if (view.inventoryNestedOverlay().active)
                 {
                     view.closeInventoryNestedOverlay();
@@ -4175,6 +4252,11 @@ void GameplayOverlayInputController::handleLootOverlayInput(
             && chestMouseY >= resolvedChestGrid->y
             && chestMouseY < resolvedChestGrid->y + resolvedChestGrid->height)
         {
+            if (!view.allowSourceGameplayAction(SourceActionChestClickItem, 10))
+            {
+                view.interactionState().chestItemClickLatch = true;
+                return;
+            }
             const InventoryGridMetrics chestGridMetrics = computeInventoryGridMetrics(
                 resolvedChestGrid->x,
                 resolvedChestGrid->y,
@@ -4368,6 +4450,11 @@ void GameplayOverlayInputController::handleLootOverlayInput(
             && itemCount > 0
             && view.party() != nullptr)
         {
+            if (!view.allowSourceGameplayAction(SourceActionChestClickItem, 10))
+            {
+                view.interactionState().lootChestItemLatch = true;
+                return;
+            }
             const GameplayChestViewState *pCurrentChestView =
                 view.worldRuntime()->activeChestView();
             const GameplayCorpseViewState *pCurrentCorpseView =
@@ -4465,6 +4552,8 @@ void GameplayOverlayInputController::handleLootOverlayInput(
     {
         if (!view.interactionState().closeOverlayLatch)
         {
+            view.interactionState().closeOverlayLatch = true;
+            if (!view.allowSourceGameplayAction(SourceActionEscape, 10)) return;
             if (view.inventoryNestedOverlay().active)
             {
                 view.closeInventoryNestedOverlay();

@@ -4,6 +4,7 @@
 #include "game/tables/MonsterTable.h"
 
 #include <cstdint>
+#include <span>
 #include <string>
 
 namespace OpenYAMM::Game
@@ -22,6 +23,8 @@ struct GameplayBolsterRuntimeContext
     const MergedBolsterMonsterTable *pBolsterMonsterTable = nullptr;
     const Party *pParty = nullptr;
     bool bolsterMonstersEnabled = false;
+    int32_t uniqueNameId = 0;
+    std::span<const uint16_t> excludedUniqueNameIds = {};
 };
 
 struct GameplayMonsterBolsterResult
@@ -66,6 +69,9 @@ struct GameplayMonsterBolsterResult
 };
 
 int gameplayBolsterAveragePartyLevel(const Party *pParty);
+
+// Authored map exclusions identify an individual actor name, independently of its monster species.
+bool gameplayBolsterExcludesUniqueName(const GameplayBolsterRuntimeContext &context);
 
 int gameplayBolsterPlayerArmorClass(
     int armorClass,

@@ -8248,7 +8248,8 @@ bool OutdoorWorldRuntime::applyMergedWeatherProfile()
     m_atmosphereState.fogTintBlue = profile.fogTintRgb[2];
     m_atmosphereState.underwater = profile.underwater;
 
-    if (!profile.mergedWeatherEnabled)
+    if (!profile.mergedWeatherEnabled
+        || (m_eventRuntimeState && m_eventRuntimeState->outdoorWeatherEnabledOverride == false))
     {
         m_atmosphereState.weatherFlags &= ~(MapWeatherSnowing | MapWeatherRaining);
         m_atmosphereState.rainIntensity = 0.0f;
@@ -14415,14 +14416,7 @@ bool OutdoorWorldRuntime::updateTimers(
         initializeTimers(localEventProgram, globalEventProgram, registrationGameMinutes);
     }
 
-    if (m_timers.empty())
-    {
-        return false;
-    }
-
-    return updateScriptedEventTimers(
-        m_timers,
-        static_cast<double>(m_gameMinutes),
+    const auto executeTimer =
         [this, &eventRuntime, &localEventProgram, &globalEventProgram, pPerformanceDiagnostics](
             const ScriptedEventTimerDefinition &definition)
         {
@@ -14476,7 +14470,10 @@ bool OutdoorWorldRuntime::updateTimers(
             }
 
             return executed;
-        });
+        };
+    const bool staticExecuted = updateScriptedEventTimers(m_timers, m_gameMinutes, executeTimer);
+    return updateDynamicScriptedEventTimers(m_eventRuntimeState->dynamicMapTimers, m_gameMinutes, executeTimer)
+        || staticExecuted;
 }
 
 void OutdoorWorldRuntime::prepareTimers(

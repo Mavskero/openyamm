@@ -223,6 +223,13 @@ void GameplayInputController::handleStandardUiHotkeys(
 
     if (isEscapeNewlyPressed(context, config.pInputFrame, config.pKeyboardState))
     {
+        if (!context.allowSourceGameplayAction(SourceActionEscape))
+        {
+            context.interactionState().menuToggleLatch = true;
+            context.interactionState().closeOverlayLatch = true;
+            return;
+        }
+
         if (pWorldRuntime != nullptr && closeActiveLootViewFromEscape(context, *pWorldRuntime))
         {
             return;
@@ -291,7 +298,10 @@ void GameplayInputController::handleStandardUiHotkeys(
             {
                 if (!context.interactionState().menuToggleLatch)
                 {
-                    context.openMenuOverlay();
+                    if (context.allowSourceGameplayAction(SourceActionGameMenu))
+                    {
+                        context.openMenuOverlay();
+                    }
                     context.interactionState().menuToggleLatch = true;
                 }
             }
@@ -323,7 +333,10 @@ void GameplayInputController::handleStandardUiHotkeys(
             {
                 if (!context.interactionState().restToggleLatch)
                 {
-                    context.openRestOverlay();
+                    if (context.allowSourceGameplayAction(SourceActionRestWindow))
+                    {
+                        context.openRestOverlay();
+                    }
                     context.interactionState().restToggleLatch = true;
                 }
             }
@@ -360,7 +373,8 @@ void GameplayInputController::handleStandardUiHotkeys(
         && !houseBankInputActive
         && !config.blockSpellbookToggle;
 
-    if (isActionNewlyPressed(context, KeyboardAction::Cast, config.pInputFrame, config.pKeyboardState))
+    if (isActionNewlyPressed(context, KeyboardAction::Cast, config.pInputFrame, config.pKeyboardState)
+        && context.allowSourceGameplayAction(SourceActionSpellbookWindow))
     {
         if (context.spellbookReadOnly().active)
         {
@@ -386,7 +400,7 @@ void GameplayInputController::handleStandardUiHotkeys(
         && !config.blockInventoryToggle;
 
     if (isActionNewlyPressed(context, KeyboardAction::Quest, config.pInputFrame, config.pKeyboardState)
-        && canToggleInventory)
+        && canToggleInventory && context.allowSourceGameplayAction(SourceActionOpenInventory))
     {
         if (hasActiveLootView)
         {
@@ -438,7 +452,8 @@ void GameplayInputController::handleStandardUiHotkeys(
         && !houseShopActive
         && !houseBankInputActive;
 
-    if (isActionNewlyPressed(context, KeyboardAction::QuickRef, config.pInputFrame, config.pKeyboardState))
+    if (isActionNewlyPressed(context, KeyboardAction::QuickRef, config.pInputFrame, config.pKeyboardState)
+        && context.allowSourceGameplayAction(SourceActionQuickReference))
     {
         if (quickReferenceActive)
         {
@@ -451,7 +466,8 @@ void GameplayInputController::handleStandardUiHotkeys(
     }
 
     if (!canCyclePartyMember
-        || !isActionNewlyPressed(context, KeyboardAction::CharCycle, config.pInputFrame, config.pKeyboardState))
+        || !isActionNewlyPressed(context, KeyboardAction::CharCycle, config.pInputFrame, config.pKeyboardState)
+        || !context.allowSourceGameplayAction(SourceActionCycleCharacters))
     {
         return;
     }
@@ -493,6 +509,11 @@ void GameplayInputController::handleSharedGameplayHotkeys(
     {
         if (!context.interactionState().alwaysRunToggleLatch)
         {
+            context.interactionState().alwaysRunToggleLatch = true;
+            if (!context.allowSourceGameplayAction(SourceActionToggleAlwaysRun))
+            {
+                return;
+            }
             GameSettings &settings = context.mutableSettings();
             settings.alwaysRun = !settings.alwaysRun;
 
@@ -527,6 +548,11 @@ void GameplayInputController::handleSharedGameplayHotkeys(
     {
         if (!context.interactionState().turnBasedToggleLatch)
         {
+            context.interactionState().turnBasedToggleLatch = true;
+            if (!context.allowSourceGameplayAction(SourceActionCustomDialogButton))
+            {
+                return;
+            }
             Party *pParty = context.party();
 
             if (pParty != nullptr)
@@ -546,6 +572,11 @@ void GameplayInputController::handleSharedGameplayHotkeys(
     {
         if (!context.interactionState().adventurersInnToggleLatch)
         {
+            context.interactionState().adventurersInnToggleLatch = true;
+            if (!context.allowSourceGameplayAction(SourceActionCustomDialogButton))
+            {
+                return;
+            }
             GameplayUiController::CharacterScreenState &characterScreen = context.characterScreen();
 
             if (context.isAdventurersInnCharacterSourceActive())
@@ -766,7 +797,8 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
                     .hasReadyMember = config.hasReadyMember,
                 });
 
-        if (quickCastDecision.shouldBeginQuickCast)
+        if (quickCastDecision.shouldBeginQuickCast
+            && context.allowSourceGameplayAction(SourceActionCastQuickSpell))
         {
             GameplayActionController::QuickCastActionResult quickCastResult =
                 GameplayActionController::QuickCastActionResult::Failed;

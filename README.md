@@ -1,10 +1,12 @@
 # OpenYAMM
 
-**iPadOS branch handoff (2026-10-28):** this branch contains the RC2 / Save103
-implementation. Start with [IPADOS_HANDOFF.md](IPADOS_HANDOFF.md) for current status,
+**iPadOS branch development (2026-10-29):** this branch contains the consolidated
+[device-independent changes after RC3](handoff/device-independent-completion-190/README.md), retaining Save103.
+Start with [IPADOS_HANDOFF.md](IPADOS_HANDOFF.md) for current status,
 fresh-Mac builds, separately transferred runtime assets and physical-iPad debugging.
 The ready-to-paste Codex task is [CODEX_IPAD_DEVICE_PROMPT.md](CODEX_IPAD_DEVICE_PROMPT.md).
-Current iPad acceptance and a complete natural campaign remain unverified; the
+This development batch creates no new device checkpoint or release. Its complete runtime is local;
+published RC3 assets remain unchanged. New iPad acceptance and a complete natural campaign remain unverified; the
 general upstream description below is not evidence of either.
 
 OpenYAMM is Open Yet Another Might and Magic: a modern C++ reimplementation of

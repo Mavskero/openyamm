@@ -20,16 +20,19 @@ constexpr std::string_view SourceSha256 =
 
 constexpr std::string_view Overlay = R"OY_ARCHIBALD(
 -- Audited outd3.lua 19-43: restore access to Archibald without granting his quest reward here.
--- House 1244 already uses source animation 486. Its later empty-room animation 487 is not projected.
+-- Source pictures 486/487 select archloop/noarchie; recompute the room loop on each entrance.
 -- Register the replacement handler while retaining the exported localized door hint.
 RegisterEvent(42, nil, function()
     if IsQBitSet(QBit(1201)) then
+        local roomVideo = evt.GetNPCHouse(797) == 1244 and "archloop" or "noarchie"
+        evt.SetHouseVideo(1244, roomVideo)
         evt.EnterHouse(1244)
         return
     end
     evt.ForPlayer(Players.All)
     if HasItem(2081) then
         evt.ShowMovie("archie", false)
+        evt.SetHouseVideo(1244, "archloop")
         evt.EnterHouse(1244)
     else
         evt.EnterHouse(1215)

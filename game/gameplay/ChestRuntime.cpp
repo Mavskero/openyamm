@@ -858,6 +858,96 @@ bool insertChestItemOnce(
     return true;
 }
 
+bool ensureChestItemRecord(
+    MapDeltaChest &chest,
+    std::optional<GameplayChestViewState> &view,
+    uint32_t itemId,
+    uint32_t recordIndex,
+    const ItemTable *pItemTable)
+{
+    const ItemDefinition *pDefinition = pItemTable != nullptr ? pItemTable->get(itemId) : nullptr;
+    const size_t capacity = chest.rawItems.size() / ChestItemRecordSize;
+    if (pDefinition == nullptr || recordIndex >= capacity)
+    {
+        return false;
+    }
+    GameplayChestItemState replacement;
+    if (view)
+    {
+        const auto contains = [itemId](const GameplayChestItemState &item) { return item.itemId == itemId; };
+        if (std::ranges::any_of(view->items, contains) || std::ranges::any_of(view->hiddenItems, contains))
+        {
+            return false;
+        }
+        if (view->itemRecordCapacity == 0)
+        {
+            view->itemRecordCapacity = uint32_t(capacity);
+        }
+        assignMissingChestItemRecords(*view);
+        const auto removeRecord = [&](std::vector<GameplayChestItemState> &items)
+        {
+            const auto found = std::find_if(items.begin(), items.end(), [recordIndex](const auto &item)
+                { return item.itemRecordIndex == int32_t(recordIndex); });
+            if (found != items.end())
+            {
+                replacement = *found;
+                items.erase(found);
+            }
+        };
+        removeRecord(view->items);
+        removeRecord(view->hiddenItems);
+    }
+    else
+    {
+        for (size_t index = 0; index < capacity; ++index)
+        {
+            int32_t existingId = 0;
+            readChestItemRecordInt32(chest, index, 0, existingId);
+            if (existingId == int32_t(itemId))
+            {
+                return false;
+            }
+        }
+    }
+
+    // The original item layout specifies Number at 0, Bonus at 4 and Bonus2 at 12.
+    // BonusStrength, charges, condition and every other raw byte remain intact.
+    uint8_t *pRecord = chest.rawItems.data() + size_t(recordIndex) * ChestItemRecordSize;
+    const uint32_t zero = 0;
+    std::memcpy(pRecord, &itemId, sizeof(itemId));
+    std::memcpy(pRecord + 4, &zero, sizeof(zero));
+    std::memcpy(pRecord + 12, &zero, sizeof(zero));
+    if (view)
+    {
+        const InventoryItem identity =
+            ItemGenerator::makeInventoryItem(itemId, *pItemTable, ItemGenerationMode::ChestLoot);
+        replacement.itemRecordIndex = int32_t(recordIndex);
+        replacement.itemId = itemId;
+        replacement.item.objectDescriptionId = itemId;
+        replacement.item.standardEnchantId = 0;
+        replacement.item.specialEnchantId = 0;
+        replacement.item.rarity = identity.rarity;
+        replacement.item.artifactId = identity.artifactId;
+        replacement.item.width = identity.width;
+        replacement.item.height = identity.height;
+        replacement.quantity = replacement.item.quantity;
+        replacement.isGold = false;
+        replacement.goldAmount = 0;
+        replacement.goldRollCount = 0;
+        resolveChestItemSize(replacement, pItemTable);
+        if (canPlaceChestItem(replacement, view->items, view->gridWidth, view->gridHeight))
+        {
+            view->items.push_back(replacement);
+        }
+        else
+        {
+            view->hiddenItems.push_back(replacement);
+        }
+        tryPlaceHiddenChestItems(*view);
+    }
+    return true;
+}
+
 void applyPendingChestItemInsertions(
     EventRuntimeState &state,
     std::vector<MapDeltaChest> &chests,
@@ -877,7 +967,15 @@ void applyPendingChestItemInsertions(
         {
             views.resize(request.chestId + 1);
         }
-        insertChestItemOnce(chests[request.chestId], views[request.chestId], request.itemId, pItemTable);
+        if (request.ensureRecordIndex)
+        {
+            ensureChestItemRecord(chests[request.chestId], views[request.chestId],
+                request.itemId, *request.ensureRecordIndex, pItemTable);
+        }
+        else
+        {
+            insertChestItemOnce(chests[request.chestId], views[request.chestId], request.itemId, pItemTable);
+        }
         if (activeView && activeView->chestId == request.chestId && views[request.chestId])
         {
             activeView = views[request.chestId];

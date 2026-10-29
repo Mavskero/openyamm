@@ -12,7 +12,7 @@ struct Mm7EndingProfile
     std::string luaSource;
 };
 
-// Appends only the source topic 920 quest-bit tail, preserving the exported ending transaction.
+// Appends the source topic 920/922 quest-bit tails, preserving the exported ending transactions.
 // Missing StdQuestsFunctions disables the projection; an available script must match the audited source.
 std::optional<Mm7EndingProfile> loadMm7EndingProfile(const std::filesystem::path &source);
 }

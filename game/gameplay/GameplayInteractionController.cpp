@@ -714,6 +714,11 @@ bool tryActivateWorldHit(
         return false;
     }
 
+    if (pRuntime != nullptr && !pRuntime->allowSourceGameplayAction(SourceActionWorldLeftClick))
+    {
+        return false;
+    }
+
     GAMEPLAY_DEBUG_TRACE(
         "interact method="
         + std::string(interactionMethod == GameplayInteractionMethod::Keyboard ? "keyboard" : "mouse")
@@ -1678,6 +1683,11 @@ GameplayInteractionController::updateWorldInteractionFrame(
         if (overlayInteractionState.gameplayHudDropHeldItemRequested)
         {
             overlayInteractionState.gameplayHudDropHeldItemRequested = false;
+            if (!runtime.allowSourceGameplayAction(SourceActionWorldLeftClick))
+            {
+                result.heldItemHandled = true;
+                return result;
+            }
             const std::optional<GameplayHeldItemDropRequest> heldItemDropRequest =
                 pWorldRuntime != nullptr ? pWorldRuntime->buildHeldItemDropRequest() : std::nullopt;
             dropHeldItemToActiveWorld(runtime, heldItemDropRequest);
@@ -1699,6 +1709,15 @@ GameplayInteractionController::updateWorldInteractionFrame(
 #else
         const bool heldItemPointerPressed = pointerPolicy.leftMousePressed;
 #endif
+
+        if (!heldItemPointerPressed && worldInteractionInputState.heldInventoryDropLatch
+            && !pointerPolicy.pointerOverPartyPortrait
+            && !runtime.allowSourceGameplayAction(SourceActionWorldLeftClick))
+        {
+            worldInteractionInputState.heldInventoryDropLatch = false;
+            result.heldItemHandled = true;
+            return result;
+        }
 
         if (!heldItemPointerPressed
             && worldInteractionInputState.heldInventoryDropLatch

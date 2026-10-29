@@ -29,6 +29,7 @@ std::optional<int> resolveTerrainDescriptorIndex(
 
 std::string terrainTileDataPath(uint8_t masterTile);
 
+// Map-local bitmap overrides are applied after original descriptor resolution. No descriptor attributes change.
 std::optional<std::vector<TerrainTileDescriptor>> loadTerrainTileDescriptors(
     const Engine::AssetFileSystem &assetFileSystem,
     const OutdoorMapData &outdoorMapData);

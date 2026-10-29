@@ -109,6 +109,14 @@ std::string makeStoneCityOverlay(std::string_view entranceHint, std::string_view
         throw std::runtime_error("Missing Stone City entrance or locked-door source text");
     }
     return "local entranceHint = " + luaStringLiteral(entranceHint)
-        + "\nlocal lockedText = " + luaStringLiteral(lockedText) + "\n" + std::string(Overlay);
+        + "\nlocal lockedText = " + luaStringLiteral(lockedText) + "\n" + std::string(Overlay)
+        + "\n-- Source ExitNPC clears the repair referral even after the king's quest topic is gone.\n"
+        + "RegisterNpcExitHook(" + std::to_string(StoneCityNpcExitHookEventId)
+        + R"OY_STONE_EXIT(, nil, function(context)
+    if context.npcId == 398 then
+        ClearQBit(QBit(658))
+    end
+end)
+)OY_STONE_EXIT";
 }
 }

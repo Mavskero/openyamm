@@ -12,6 +12,6 @@ struct ArchibaldProfile
     std::string luaSource;
 };
 
-// Audited outd3 event 42 entrance only; the original global topic owns the ritual scroll transaction.
+// Audited outd3 event 42 entrance and occupied/empty room loops; global topic 1343 owns the scroll transaction.
 std::optional<ArchibaldProfile> loadArchibaldProfile(const std::filesystem::path &source);
 }

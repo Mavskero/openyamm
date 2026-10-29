@@ -118,6 +118,7 @@ struct HouseShopGoodbyeResult
 };
 
 HouseServiceType resolveHouseServiceType(const HouseEntry &houseEntry);
+const std::string &resolveHouseVideoName(const HouseEntry &houseEntry, const EventRuntimeState *pRuntimeState);
 std::optional<uint32_t> deriveHouseSoundId(const HouseEntry &houseEntry, HouseSoundType soundType);
 bool isAlchemyShop(const HouseEntry &houseEntry);
 bool houseRefusesShopServiceForReputation(

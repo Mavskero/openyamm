@@ -6,6 +6,7 @@
 #include "game/tables/CharacterDollTable.h"
 #include "game/gameplay/GameMechanics.h"
 #include "game/gameplay/GameplayInputFrame.h"
+#include "game/gameplay/GameplayInputController.h"
 #include "game/gameplay/GameplayItemService.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/gameplay/AwardRuntime.h"
@@ -552,6 +553,12 @@ void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
             findTownPortalTarget,
             [&context, &resolveSpellName](const GameplayUtilitySpellPointerTarget &target)
             {
+                if (target.type != GameplayUtilitySpellPointerTargetType::None
+                    && isDimensionDoorOverlayMode(context.utilitySpellOverlayReadOnly().mode)
+                    && !context.allowSourceGameplayAction(SourceActionCustomDialogButton))
+                {
+                    return;
+                }
                 if (target.type == GameplayUtilitySpellPointerTargetType::Close)
                 {
                     context.utilitySpellOverlay() = {};
@@ -967,6 +974,8 @@ void GameplayPartyOverlayInputController::handleSpellbookOverlayInput(
     {
         if (!context.interactionState().closeOverlayLatch)
         {
+            context.interactionState().closeOverlayLatch = true;
+            if (!context.allowSourceGameplayAction(SourceActionEscape)) return;
             context.closeSpellbookOverlay();
             latchGameplayMenuEscape(context);
             context.interactionState().closeOverlayLatch = true;
@@ -1443,6 +1452,8 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
     {
         if (!context.interactionState().closeOverlayLatch)
         {
+            context.interactionState().closeOverlayLatch = true;
+            if (!context.allowSourceGameplayAction(SourceActionExitCharacterWindow)) return;
             if (isInventorySpellTargetMode)
             {
                 context.utilitySpellOverlay() = {};
@@ -1464,7 +1475,7 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
 
     const bool charCycleNewlyPressed = input.action(KeyboardAction::CharCycle).pressed;
 
-    if (charCycleNewlyPressed)
+    if (charCycleNewlyPressed && context.allowSourceGameplayAction(SourceActionCycleCharacters))
     {
         context.clearAdventurersInnReleaseConfirmation();
         if (pParty != nullptr && !pParty->members().empty())
@@ -2275,6 +2286,48 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
             float activationX,
             float activationY)
         {
+            uint32_t sourceAction = 0;
+            switch (target.type)
+            {
+            case GameplayCharacterPointerTargetType::EquipmentSlot:
+            case GameplayCharacterPointerTargetType::DollPanel: sourceAction = SourceActionClickPaperdoll; break;
+            case GameplayCharacterPointerTargetType::InventoryItem:
+            case GameplayCharacterPointerTargetType::InventoryCell:
+                sourceAction = SourceActionInventoryLeftClick;
+                break;
+            case GameplayCharacterPointerTargetType::PageButton:
+                switch (target.page)
+                {
+                case GameplayUiController::CharacterPage::Stats: sourceAction = SourceActionClickStats; break;
+                case GameplayUiController::CharacterPage::Skills: sourceAction = SourceActionClickSkills; break;
+                case GameplayUiController::CharacterPage::Inventory: sourceAction = SourceActionClickInventory; break;
+                case GameplayUiController::CharacterPage::Awards: sourceAction = SourceActionClickAwards; break;
+                }
+                break;
+            case GameplayCharacterPointerTargetType::ExitButton: sourceAction = SourceActionExitCharacterWindow; break;
+            case GameplayCharacterPointerTargetType::SkillRow: sourceAction = SourceActionSkillUp; break;
+            case GameplayCharacterPointerTargetType::AwardScrollUpButton: sourceAction = SourceActionAwardsUp; break;
+            case GameplayCharacterPointerTargetType::AwardScrollDownButton:
+                sourceAction = SourceActionAwardsDown;
+                break;
+            case GameplayCharacterPointerTargetType::AwardScrollTrack: sourceAction = SourceActionAwardScrollBar; break;
+            case GameplayCharacterPointerTargetType::StatsButton: sourceAction = SourceActionClickStats; break;
+            case GameplayCharacterPointerTargetType::SkillsButton: sourceAction = SourceActionClickSkills; break;
+            case GameplayCharacterPointerTargetType::InventoryButton: sourceAction = SourceActionClickInventory; break;
+            case GameplayCharacterPointerTargetType::AwardsButton: sourceAction = SourceActionClickAwards; break;
+            case GameplayCharacterPointerTargetType::DismissButton:
+            case GameplayCharacterPointerTargetType::MagnifyButton:
+            case GameplayCharacterPointerTargetType::AdventurersInnHireButton:
+            case GameplayCharacterPointerTargetType::AdventurersInnDismissButton:
+            case GameplayCharacterPointerTargetType::AdventurersInnScrollUpButton:
+            case GameplayCharacterPointerTargetType::AdventurersInnScrollDownButton:
+            case GameplayCharacterPointerTargetType::AdventurersInnPortrait:
+                sourceAction = SourceActionCustomDialogButton;
+                break;
+            default: break;
+            }
+            if (sourceAction != 0 && !context.allowSourceGameplayAction(sourceAction, 7)) return;
+
             if (target.type != GameplayCharacterPointerTargetType::AdventurersInnPortrait)
             {
                 // An intervening button activation ends the portrait double-click sequence.

@@ -2,6 +2,8 @@
 #include "BreachAlvarCompanionResources.h"
 #include "BreachMazeEventSource.h"
 #include "LodResources.h"
+#include "Mm6RemainingMapResources.h"
+#include "Mm8RemainingMapResources.h"
 #include "SpriteFrameResources.h"
 #include "SurfaceResources.h"
 #include "TextResources.h"
@@ -10,6 +12,8 @@
 #include "game/audio/SoundCatalog.h"
 #include "game/events/ScriptedEventProgram.h"
 #include "game/maps/MapDeltaData.h"
+#include "game/maps/IndoorSceneYml.h"
+#include "game/maps/OutdoorSceneYml.h"
 #include "game/maps/TerrainTileData.h"
 #include "game/tables/HouseTable.h"
 #include "game/tables/MapStats.h"
@@ -241,6 +245,178 @@ struct MergeSceneProfile
     std::string sha256;
     std::set<std::string> textures;
 };
+
+struct StaticMapRules
+{
+    std::string sourceScript;
+    std::string sha256;
+    std::vector<Mm8TileSetFootstepRule> tileSetFootsteps;
+    std::optional<Mm8TerrainBitmapRule> terrainBitmap;
+    std::vector<Mm6IndoorFacetTypeRule> indoorFacetTypes;
+    std::vector<uint16_t> bolsterExcludedUniqueNameIds;
+    bool arena = false;
+};
+
+std::map<std::string, StaticMapRules> loadStaticMapRules(const Path &root)
+{
+    std::map<std::string, StaticMapRules> result;
+    for (const Mm6RemainingMapProfile &profile : loadMm6RemainingMapProfiles(root))
+    {
+        if (profile.tileSetFootsteps.empty() && profile.indoorFacetTypes.empty()
+            && profile.bolsterExcludedUniqueNameIds.empty()) continue;
+        StaticMapRules rule;
+        rule.sourceScript = "Scripts/Maps/" + profile.mapStem + ".lua";
+        rule.sha256 = profile.sourceSha256;
+        for (const Mm6TileSetFootstepRule &footstep : profile.tileSetFootsteps)
+        {
+            rule.tileSetFootsteps.push_back({footstep.tileSet, footstep.walkSoundId, footstep.runSoundId});
+        }
+        rule.indoorFacetTypes = profile.indoorFacetTypes;
+        rule.bolsterExcludedUniqueNameIds = profile.bolsterExcludedUniqueNameIds;
+        result.emplace("mm6:" + profile.mapStem, std::move(rule));
+    }
+    for (const Mm8RemainingMapProfile &profile : loadMm8RemainingMapProfiles(root))
+    {
+        if (profile.tileSetFootsteps.empty() && !profile.terrainBitmap) continue;
+        StaticMapRules rule;
+        rule.sourceScript = "Scripts/Maps/" + profile.mapStem + ".lua";
+        rule.sha256 = profile.sourceSha256;
+        rule.tileSetFootsteps = profile.tileSetFootsteps;
+        rule.terrainBitmap = profile.terrainBitmap;
+        result.emplace("mm8:" + profile.mapStem, std::move(rule));
+    }
+    const Path arenaScript = root / "Scripts/Maps/7d05.lua";
+    if (std::filesystem::exists(arenaScript))
+    {
+        const Path path = std::filesystem::canonical(arenaScript);
+        const Path relative = path.lexically_relative(root);
+        require(!relative.empty() && !relative.is_absolute() && *relative.begin() != "..",
+            "Arena map source escapes input root");
+        const std::string script = readText(path);
+        std::array<unsigned char, CC_SHA256_DIGEST_LENGTH> hash;
+        CC_SHA256(script.data(), static_cast<CC_LONG>(script.size()), hash.data());
+        std::ostringstream digest;
+        for (unsigned char value : hash)
+        {
+            digest << std::hex << std::setfill('0') << std::setw(2) << unsigned(value);
+        }
+        require(digest.str() == "a3b156f24dbe4dc588207ad5a7679f5cf292592ed5fe46f7e21151f7c506006c",
+            "Unsupported arena map source fingerprint");
+        StaticMapRules rule;
+        rule.sourceScript = "Scripts/Maps/7d05.lua";
+        rule.sha256 = digest.str();
+        rule.arena = true;
+        result.emplace("mm7:7d05", std::move(rule));
+    }
+    return result;
+}
+
+void writeMapRuleHeader(std::ostream &yaml, const StaticMapRules &rule,
+    const std::string &kind, const std::string &file)
+{
+    yaml << "# Authenticated static rules; original geometry, population and persistent variables are retained.\n"
+        << "format_version: 1\nkind: " << kind << "\nmap: " << file << "\nsource:\n"
+        << "  script: " << rule.sourceScript << "\n  sha256: " << std::quoted(rule.sha256) << '\n';
+}
+
+std::string outdoorTerrainRules(const StaticMapRules &rule, const Game::OutdoorMapData &map,
+    const Rows &tiles, const Path &base, const std::string &world, const std::string &file)
+{
+    Game::SoundCatalog sounds;
+    std::string error;
+    require(sounds.loadFromScopedRows(readRows(base / "engine/data_tables/sounds.txt"), {}, error),
+        "Cannot read terrain footstep sound catalog: " + error);
+    std::map<uint16_t, Mm8TileSetFootstepRule> footsteps;
+    for (const Mm8TileSetFootstepRule &footstep : rule.tileSetFootsteps)
+    {
+        require(footsteps.emplace(footstep.tileSet, footstep).second,
+            "Duplicate source terrain footstep tileset: " + file);
+        for (uint32_t id : {footstep.walkSoundId, footstep.runSoundId})
+        {
+            const Game::SoundCatalogEntry *sound = sounds.findById(id);
+            require(sound && !sound->name.empty(), "Missing source terrain footstep sound " + std::to_string(id));
+        }
+    }
+    std::vector<Game::OutdoorTerrainFootstepSoundOverride> tileFootsteps;
+    std::vector<Game::OutdoorTerrainTextureOverride> tileTextures;
+    for (int tile = 0; tile < 234; ++tile)
+    {
+        const std::optional<int> index = Game::resolveTerrainDescriptorIndex(map, tile, world == "mm8");
+        require(index && *index >= 0 && size_t(*index) + 1 < tiles.size(),
+            "Terrain rule lookup outside source table: " + file);
+        const auto &row = tiles[size_t(*index) + 1];
+        require(row.size() == 7, "Invalid converted terrain rule source row: " + file);
+        const unsigned tileSet = std::stoul(row[4]);
+        require(tileSet <= 65535, "Invalid source terrain tileset: " + file);
+        if (const auto found = footsteps.find(uint16_t(tileSet)); found != footsteps.end())
+        {
+            tileFootsteps.push_back({uint8_t(tile), found->second.walkSoundId, found->second.runSoundId});
+        }
+        if (rule.terrainBitmap && *index >= rule.terrainBitmap->firstSourceIndex
+            && *index <= rule.terrainBitmap->lastSourceIndex
+            && row[1].starts_with(rule.terrainBitmap->sourceTexturePrefix))
+        {
+            tileTextures.push_back({uint8_t(tile), rule.terrainBitmap->textureName});
+        }
+    }
+    // A source TileSound handler can name a tileset absent from this map's local lookup.
+    // Keep the original terrain and record zero overrides instead of emitting an empty companion.
+    if (tileFootsteps.empty() && tileTextures.empty())
+    {
+        return {};
+    }
+    std::ostringstream yaml;
+    writeMapRuleHeader(yaml, rule, "outdoor_mechanisms", file);
+    yaml << "mechanisms: []\n";
+    if (!tileFootsteps.empty())
+    {
+        yaml << "terrain_footstep_sound_overrides:\n";
+        for (const auto &footstep : tileFootsteps)
+        {
+            yaml << "  - tile_id: " << unsigned(footstep.tileId) << "\n    walk_sound_id: " << footstep.walkSoundId
+                << "\n    run_sound_id: " << footstep.runSoundId << '\n';
+        }
+    }
+    if (!tileTextures.empty())
+    {
+        yaml << "terrain_texture_overrides:\n";
+        for (const auto &texture : tileTextures)
+        {
+            yaml << "  - tile_id: " << unsigned(texture.tileId)
+                << "\n    texture: " << std::quoted(texture.textureName) << '\n';
+        }
+    }
+    return yaml.str();
+}
+
+std::string indoorMapRules(const StaticMapRules &rule, const Game::IndoorMapData &map, const std::string &file)
+{
+    std::ostringstream yaml;
+    writeMapRuleHeader(yaml, rule, "indoor_map_rules", file);
+    yaml << "face_count: " << map.faces.size() << '\n';
+    if (!rule.indoorFacetTypes.empty())
+    {
+        yaml << "faces:\n";
+        for (const Mm6IndoorFacetTypeRule &face : rule.indoorFacetTypes)
+        {
+            require(face.faceIndex < map.faces.size(), "Source facet rule outside indoor geometry: " + file);
+            yaml << "  - face_index: " << face.faceIndex
+                << "\n    expected_facet_type: " << unsigned(map.faces[face.faceIndex].facetType)
+                << "\n    facet_type: " << unsigned(face.facetType) << '\n';
+        }
+    }
+    if (!rule.bolsterExcludedUniqueNameIds.empty())
+    {
+        yaml << "bolster_excluded_unique_name_ids:\n";
+        for (uint16_t id : rule.bolsterExcludedUniqueNameIds) yaml << "  - " << id << '\n';
+    }
+    if (rule.arena)
+    {
+        yaml << "runtime_restrictions:\n  allow_save_game: false\n  allow_lloyds_beacon: false\n  arena: true\n"
+            << "door_flags:\n  no_sound: true\n  silent_move: true\n";
+    }
+    return yaml.str();
+}
 
 // These scenes have Map Lua, not EVT binaries. Only explicit source projections execute; importing
 // their remaining original scripts as provenance does not provide general Merge Lua compatibility.
@@ -529,6 +705,8 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
         && mapRules.loadFromRows(readRows(tables / "bolster_maps.txt")), "Cannot read scene sky settings");
     require(sprites.loadFromYaml(readText(base / "engine/rendering/sprite_frame_data_common.yml"), error),
         "Cannot read complete shared sprite frames: " + error);
+    const std::map<std::string, StaticMapRules> staticMapRules = nativeMergeSource
+        ? std::map<std::string, StaticMapRules>{} : loadStaticMapRules(root);
     std::map<std::string, Rows> terrainRows;
     for (const auto &[world, name] : std::map<std::string, std::string>{
             {"mm6", "Tile3.txt"}, {"mm7", "Tile2.txt"}, {"mm8", "Tile.txt"}})
@@ -669,10 +847,35 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
             const std::string companionName = Path(file).stem().string() + (outdoor ? ".ddm" : ".dlv");
             const Path companionArchive = sourceArchive(companionName);
             const std::vector<uint8_t> companion = readLodMap(companionArchive, companionName);
-            const std::optional<MapDeltaData> delta = outdoor
+            std::optional<MapDeltaData> delta = outdoor
                 ? MapDeltaDataLoader().loadOutdoorFromBytes(companion, *outdoorMap)
                 : MapDeltaDataLoader().loadIndoorFromBytes(companion, *indoorMap);
             require(delta.has_value(), "Cannot decode scene companion: " + file);
+            std::string staticRulesYaml;
+            std::string staticRulesCompanion;
+            const auto staticRule = staticMapRules.find(pMap->worldId + ":" + Path(file).stem().string());
+            if (staticRule != staticMapRules.end())
+            {
+                MapRuntimeRestrictions restrictions;
+                if (outdoorMap)
+                {
+                    staticRulesYaml = outdoorTerrainRules(staticRule->second, *outdoorMap,
+                        terrainRows.at(formatWorld), base, formatWorld, file);
+                    if (!staticRulesYaml.empty())
+                    {
+                        staticRulesCompanion = Path(file).stem().string() + ".mechanisms.yml";
+                        require(OutdoorSceneYmlLoader().applyMechanismsFromText(*outdoorMap, *delta,
+                            restrictions, staticRulesYaml, file, error), "Invalid imported terrain rules: " + error);
+                    }
+                }
+                else
+                {
+                    staticRulesYaml = indoorMapRules(staticRule->second, *indoorMap, file);
+                    staticRulesCompanion = Path(file).stem().string() + ".rules.yml";
+                    require(IndoorSceneYmlLoader().applyMapRulesFromText(*indoorMap, *delta,
+                        restrictions, staticRulesYaml, file, error), "Invalid imported indoor rules: " + error);
+                }
+            }
             std::optional<ScriptedEventProgram> events;
             if (!profile)
             {
@@ -740,6 +943,12 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                     {
                         addSurface(name, 0);
                     }
+                }
+                for (const OutdoorTerrainTextureOverride &texture : outdoorMap->terrainTextureOverrides)
+                {
+                    require(bitmaps.members.contains(texture.textureName),
+                        "Missing imported terrain bitmap: " + texture.textureName);
+                    addSurface(texture.textureName, 0);
                 }
                 for (const OutdoorBModel &model : outdoorMap->bmodels)
                 {
@@ -913,6 +1122,10 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                 }
             }
             const Path world = resources / "worlds" / pMap->worldId;
+            if (!staticRulesCompanion.empty())
+            {
+                writeText(world / "maps" / staticRulesCompanion, staticRulesYaml);
+            }
             if (profile)
             {
                 require(missingTextures.empty() && missingSprites.empty() && missingPalettes.empty(),
@@ -1194,6 +1407,20 @@ void convertSceneResources(const Path &source, const Path &convertedBase, const 
                         << ",\"width\":" << image.width << ",\"height\":" << image.height;
                 }
                 report << '}';
+            }
+            if (staticRule != staticMapRules.end())
+            {
+                report << ",\"static_rules_companion\":" << std::quoted(staticRulesCompanion)
+                    << ",\"static_rules_source\":" << std::quoted(staticRule->second.sourceScript)
+                    << ",\"static_rules_sha256\":" << std::quoted(staticRule->second.sha256)
+                    << ",\"terrain_footstep_sound_overrides\":"
+                    << (outdoorMap ? outdoorMap->terrainFootstepSoundOverrides.size() : 0)
+                    << ",\"terrain_texture_overrides\":"
+                    << (outdoorMap ? outdoorMap->terrainTextureOverrides.size() : 0)
+                    << ",\"indoor_facet_type_overrides\":" << staticRule->second.indoorFacetTypes.size()
+                    << ",\"bolster_unique_name_exclusions\":"
+                    << staticRule->second.bolsterExcludedUniqueNameIds.size()
+                    << ",\"arena_policy\":" << (staticRule->second.arena ? "true" : "false");
             }
             if (profile)
             {

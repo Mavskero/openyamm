@@ -310,3 +310,76 @@ TEST_CASE("version 66 timer migration converts its remaining duration exactly on
     REQUIRE_EQ(reconciledAgain.size(), 1u);
     CHECK_EQ(reconciledAgain[0].nextAlarmGameMinutes, doctest::Approx(112.5));
 }
+
+TEST_CASE("dynamic source map timers use click time and remove only the current registration")
+{
+    using namespace OpenYAMM::Game;
+    DynamicScriptedEventTimers timers;
+    REQUIRE(startDynamicScriptedEventTimer(timers, 452, 1.0, 100.25));
+    REQUIRE(startDynamicScriptedEventTimer(timers, 452, 1.0, 100.75));
+    std::vector<uint16_t> fired;
+    const auto first = [&](const ScriptedEventTimerDefinition &definition)
+    {
+        fired.push_back(definition.eventId);
+        stopCurrentDynamicScriptedEventTimer(timers);
+        // A registration made inside a callback must survive removal and wait for its own deadline.
+        REQUIRE(startDynamicScriptedEventTimer(timers, 453, 1.0, 101.25));
+        return true;
+    };
+    CHECK_FALSE(updateDynamicScriptedEventTimers(timers, 101.0, first));
+    CHECK(updateDynamicScriptedEventTimers(timers, 101.25, first));
+    CHECK_EQ(fired, std::vector<uint16_t>{452});
+    const auto record = [&](const ScriptedEventTimerDefinition &definition)
+    {
+        fired.push_back(definition.eventId);
+        return true;
+    };
+    CHECK_FALSE(updateDynamicScriptedEventTimers(timers, 101.5, record));
+    CHECK(updateDynamicScriptedEventTimers(timers, 110.0, record));
+    CHECK_EQ(fired, (std::vector<uint16_t>{452, 452, 453}));
+    CHECK_FALSE(updateDynamicScriptedEventTimers(timers, 110.0, record));
+    CHECK_FALSE(updateDynamicScriptedEventTimers(timers, 110.9, record));
+    const auto remove = [&](const ScriptedEventTimerDefinition &definition)
+    {
+        fired.push_back(definition.eventId);
+        stopCurrentDynamicScriptedEventTimer(timers);
+        return true;
+    };
+    CHECK(updateDynamicScriptedEventTimers(timers, 111.0, remove));
+    CHECK_EQ(fired, (std::vector<uint16_t>{452, 452, 453, 452, 453}));
+    CHECK(timers.instances.empty());
+    CHECK_FALSE(updateDynamicScriptedEventTimers(timers, 1000.0, record));
+
+    // An absolute source start uses the prior visit tick; overdue delivery is one callback per poll.
+    DynamicScriptedEventTimers anchored;
+    DynamicScriptedEventTimerOptions options;
+    options.absoluteStartGameMinutes = 3.0;
+    options.lastVisitGameMinutes = 9.0;
+    REQUIRE(startDynamicScriptedEventTimer(anchored, 600, 1.0, 20.0, options));
+    CHECK(anchored.instances.front().nextAlarmGameMinutes == doctest::Approx(10.0));
+    CHECK(updateDynamicScriptedEventTimers(anchored, 20.0, record));
+    CHECK(anchored.instances.front().nextAlarmGameMinutes == doctest::Approx(11.0));
+    CHECK(updateDynamicScriptedEventTimers(anchored, 20.25, record));
+    CHECK(anchored.instances.front().nextAlarmGameMinutes == doctest::Approx(21.0));
+
+    DynamicScriptedEventTimers delayed;
+    options = {};
+    options.scope = ScriptedEventScope::Global;
+    options.initialDelayGameMinutes = 60.0;
+    REQUIRE(startDynamicScriptedEventTimer(delayed, 601, 5.0, 100.0, options));
+    CHECK_FALSE(updateDynamicScriptedEventTimers(delayed, 159.0, record));
+    const auto global = [&](const ScriptedEventTimerDefinition &definition)
+    {
+        CHECK(definition.scope == ScriptedEventScope::Global);
+        stopCurrentDynamicScriptedEventTimer(delayed);
+        return true;
+    };
+    CHECK(updateDynamicScriptedEventTimers(delayed, 160.0, global));
+    CHECK(delayed.instances.empty());
+    REQUIRE(delayDynamicScriptedEvent(delayed, 602, 1.0, ScriptedEventScope::Map));
+    const double deadline = delayed.instances.front().nextAlarmGameMinutes;
+    CHECK_FALSE(updateDynamicScriptedEventTimers(delayed, 10000.0, record, deadline - 0.1));
+    CHECK(updateDynamicScriptedEventTimers(delayed, 10000.0, record, deadline));
+    CHECK(delayed.instances.empty());
+
+}

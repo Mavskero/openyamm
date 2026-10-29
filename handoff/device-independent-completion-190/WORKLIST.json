@@ -1,0 +1,97 @@
+{
+  "status": "IMPLEMENTED_SOURCE_SCOPED",
+  "policy": "One consolidated device-independent implementation batch; no device/simulator operations or per-fix releases; builds after all grouped changes.",
+  "completed_first_group": [
+    "Council49/50 and1693",
+    "Archibald empty house",
+    "MM7 ending922",
+    "NPC398 exit cleanup",
+    "MM7 war messenger",
+    "ReputationIs binding",
+    "NPC802 follower lifecycle",
+    "6d07 key chest",
+    "Regna repeat cannon/dynamic timers/legacy migration"
+  ],
+  "interpretation": "Candidates from existing171 evidence, not all proven current defects; each owner must check existing native handling before changing code.",
+  "owners": {
+    "mm6": "sol_mm6_remaining_190",
+    "mm7": "sol_mm7_remaining_190",
+    "mm8": "sol_maze_remaining_190",
+    "shared_build_app_integration": "main"
+  },
+  "validation_so_far": {
+    "new_unit_cases": 1,
+    "final_selected_assertions": 30,
+    "old_cases_skipped": 26,
+    "actual_app_runs": 2,
+    "reviewed_images": 4,
+    "old_campaign_replays": 0,
+    "cold_replays": 0,
+    "device_operations": 0,
+    "simulator_operations": 0,
+    "event_import_maps": 49,
+    "scene_import_maps": 12,
+    "changed_resource_members": 4,
+    "added_resource_members": 59
+  },
+  "next": "Continue from concrete source/runtime defects; do not gate development on target-iPad data, publish per-fix device checkpoints, replay accepted campaigns or invent another broad audit.",
+  "remaining_boundaries": [
+    "oute3 volcano source reversed random bounds retained without invented correction.",
+    "d42 ordinary cross-world arena ingress/origin not found; return policy not invented.",
+    "Affected source gameplay actions wired; no claim of all MMExtension Action events or every control.",
+    "No full natural campaign or new iPad acceptance. Historical80–85% estimate is not increased from file counts."
+  ],
+  "completed_shared_group": [
+    "outb2 shield original record repair",
+    "d24 postquest group0 hiding",
+    "7out04 postquest house395 and quest-gated exit"
+  ],
+  "reviewed_source_inventory": {
+    "mm6": [
+      "6d02/6d03/6t3/6t8 followers and source exceptions",
+      "6d08 facet373",
+      "6d13 altar",
+      "6t7 selector/damage",
+      "cd2 coffin",
+      "cd3 full health/mana",
+      "outa2/outa3/outb1 footsteps",
+      "outb2/outc1/outc2/outd1/oute2 tower/relations",
+      "outb3 altar reentry",
+      "outc1 weather",
+      "outd3 Nicolai/bandits",
+      "oute3 volcano"
+    ],
+    "mm7": [
+      "7d08 Loren",
+      "7d25 hostility",
+      "7d29 Golem/rest/invasion",
+      "7d34 rescued dwarves",
+      "7out01 Arcomage",
+      "7out02/03 scavenger and invasion",
+      "7out05 faction/vampires",
+      "7out13 inn82",
+      "7out15 portraits/action restrictions",
+      "out09 midnight obelisk",
+      "out12 early866/greeting",
+      "7d05 arena policies",
+      "7d27 lost key1463",
+      "7d36/out11 arrival differences"
+    ],
+    "mm8": [
+      "d38/d39 repair supplements",
+      "d42 crossworld arena return, normal entrance unproved",
+      "out01 NPC185 refill",
+      "out04/out06 footsteps/terrain",
+      "out05 instant155/158",
+      "out07 gems/party selector"
+    ]
+  },
+  "source_decisions": {
+    "implemented": "Authenticated source changes, including static rule projections, have been integrated.",
+    "no_effect": "Footstep source tilesets absent from local map lookups remain zero-effect; no invented map tile changes.",
+    "retained_uncertainty": [
+      "oute3 volcano reversed random ranges",
+      "d42 cross-world arena ingress/origin"
+    ]
+  }
+}

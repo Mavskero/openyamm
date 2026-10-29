@@ -15,6 +15,9 @@ constexpr size_t MaximumScriptBytes = 256 * 1024;
 constexpr std::string_view RelativePath = "Scripts/Maps/outc2.lua";
 constexpr std::string_view ExpectedSha256 =
     "8551ac3062309de282c22470aabd4e27ea151d761a7985fda65b2cb119007b7f";
+constexpr std::string_view CouncilGlobalPath = "Scripts/Global/StdQuestsFunctions.lua";
+constexpr std::string_view CouncilGlobalSha256 =
+    "201eed1ebb5b6ed02878eaf92268a4190b7de90eecedbffa7cda63b7b2754623";
 
 constexpr std::string_view Overlay = R"OY_FREE_HAVEN(
 -- Translate the source follower transaction; hiring, fees and custody remain native operations.
@@ -50,6 +53,59 @@ RegisterEvent(140, innHint, function()
 end, innHint)
 )OY_FREE_HAVEN";
 
+constexpr std::string_view CouncilMapOverlay = R"OY_COUNCIL_MAP(
+-- Audited outc2.lua 28-69: the original door reveals the evidence before opening the Council lobby.
+local function enterCouncil()
+    evt.ForPlayer(Players.All)
+    if HasItem(2122) and evt.GetNPCHouse(1089) == 209 then
+        evt.ShowMovie("citytrtr", false)
+        evt.MoveNPC(1089, 0)
+        RemoveItem(2122)
+        evt.Add(0x00EB, 20) -- Source ReputationIs improves the stored local reputation by 20.
+        SetQBit(QBit(1192))
+        ClearQBit(QBit(1225))
+        SetAward(Award(63))
+
+        local allEndorsements = true
+        for awardId = 57, 62 do
+            if not evt.HasOwnedAward(awardId) then
+                allEndorsements = false
+                break
+            end
+        end
+        if allEndorsements then
+            SetQBit(QBit(1191))
+        end
+    end
+
+    if IsQBitSet(QBit(1192)) then
+        ClearQBit(QBit(1225))
+        for slot = 0, 5 do
+            if evt.GetNPCTopic(789, slot) == 1415 then
+                evt.SetNPCTopic(789, slot, 0)
+            end
+        end
+    end
+
+    evt.EnterHouse(209)
+end
+
+RegisterEvent(49, nil, enterCouncil)
+RegisterEvent(50, nil, enterCouncil)
+)OY_COUNCIL_MAP";
+
+constexpr std::string_view CouncilGlobalOverlay = R"OY_COUNCIL_GLOB(
+-- StdQuestsFunctions.lua 67-73 is an AfterProcessEvent callback; retain the original EVT transaction.
+AppendGlobalEvent(1693, function(continueStep)
+    if continueStep ~= nil then return end
+    if IsQBitSet(QBit(1192)) then
+        evt.ShowMovie("citytrtr", false)
+        -- Rebuild the lobby and its live quest-gated extra exit after leaving the NPC conversation.
+        evt.EnterHouse(209)
+    end
+end)
+)OY_COUNCIL_GLOB";
+
 std::string luaStringLiteral(std::string_view text)
 {
     std::string literal = "\"";
@@ -75,36 +131,29 @@ std::string luaStringLiteral(std::string_view text)
     literal += '"';
     return literal;
 }
-}
 
-std::optional<FreeHavenTempleProfile> loadFreeHavenTempleProfile(const std::filesystem::path &source)
+std::string authenticatedSourceHash(const std::filesystem::path &root, std::string_view relativePath,
+    std::string_view expectedSha256)
 {
-    const std::filesystem::path root = std::filesystem::canonical(source);
-    const std::filesystem::path candidate = root / RelativePath;
-    if (!std::filesystem::exists(candidate))
-    {
-        return std::nullopt;
-    }
-
-    const std::filesystem::path path = std::filesystem::canonical(candidate);
+    const std::filesystem::path path = std::filesystem::canonical(root / relativePath);
     const std::filesystem::path relative = path.lexically_relative(root);
     if (relative.empty() || relative.is_absolute() || *relative.begin() == ".."
         || !std::filesystem::is_regular_file(path))
     {
-        throw std::runtime_error("Free Haven temple source script escapes the game source root");
+        throw std::runtime_error("Free Haven source script escapes the game source root");
     }
 
     const uintmax_t size = std::filesystem::file_size(path);
     if (size == 0 || size > MaximumScriptBytes)
     {
-        throw std::runtime_error("Invalid Free Haven temple source script size");
+        throw std::runtime_error("Invalid Free Haven source script size");
     }
 
     std::string script(size, '\0');
     std::ifstream input(path, std::ios::binary);
     if (!input.read(script.data(), static_cast<std::streamsize>(size)))
     {
-        throw std::runtime_error("Cannot read Free Haven temple source script");
+        throw std::runtime_error("Cannot read Free Haven source script");
     }
 
     std::array<unsigned char, CC_SHA256_DIGEST_LENGTH> hash;
@@ -115,13 +164,36 @@ std::optional<FreeHavenTempleProfile> loadFreeHavenTempleProfile(const std::file
         digest << std::hex << std::setfill('0') << std::setw(2) << unsigned(value);
     }
     const std::string sourceSha256 = digest.str();
-    if (sourceSha256 != ExpectedSha256)
+    if (sourceSha256 != expectedSha256)
     {
-        throw std::runtime_error("Unsupported Scripts/Maps/outc2.lua fingerprint; "
-            "review this Merge version before enabling the Free Haven temple and inn overlay");
+        throw std::runtime_error("Unsupported " + std::string(relativePath) + " fingerprint; "
+            "review this Merge version before enabling the Free Haven projection");
     }
+    return sourceSha256;
+}
+}
 
-    return FreeHavenTempleProfile{"outc2", sourceSha256};
+std::optional<FreeHavenTempleProfile> loadFreeHavenTempleProfile(const std::filesystem::path &source)
+{
+    const std::filesystem::path root = std::filesystem::canonical(source);
+    if (!std::filesystem::exists(root / RelativePath))
+    {
+        return std::nullopt;
+    }
+    return FreeHavenTempleProfile{"outc2", authenticatedSourceHash(root, RelativePath, ExpectedSha256)};
+}
+
+std::optional<FreeHavenCouncilProfile> loadFreeHavenCouncilProfile(const std::filesystem::path &source)
+{
+    const std::filesystem::path root = std::filesystem::canonical(source);
+    if (!std::filesystem::exists(root / RelativePath) || !std::filesystem::exists(root / CouncilGlobalPath))
+    {
+        return std::nullopt;
+    }
+    return FreeHavenCouncilProfile{
+        authenticatedSourceHash(root, RelativePath, ExpectedSha256),
+        authenticatedSourceHash(root, CouncilGlobalPath, CouncilGlobalSha256),
+        std::string(CouncilMapOverlay), std::string(CouncilGlobalOverlay)};
 }
 
 std::string makeFreeHavenTempleOverlay(std::string_view templeHint, std::string_view repairedText,

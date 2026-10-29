@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <vector>
 
 namespace OpenYAMM::Game
@@ -68,6 +69,49 @@ struct ScriptedEventTimerState
     // Anchored native timers are re-registered on map load, so their poll cursor is transient.
     int64_t lastNativePollTime = -1;
 };
+
+// Source Timer(callback, period) registrations exist only for the current map visit.
+// Repeated registrations of the same callback are independent; they are never saved.
+struct DynamicScriptedEventTimer
+{
+    uint64_t id = 0;
+    uint16_t eventId = 0;
+    double intervalGameMinutes = 0.0;
+    double nextAlarmGameMinutes = 0.0;
+    bool removed = false;
+    ScriptedEventScope scope = ScriptedEventScope::Map;
+    bool exact = false;
+    bool realTime = false;
+};
+
+struct DynamicScriptedEventTimers
+{
+    std::vector<DynamicScriptedEventTimer> instances;
+    uint64_t nextId = 1;
+    uint64_t executingId = 0;
+    std::optional<double> lastPollGameMinutes;
+};
+
+struct DynamicScriptedEventTimerOptions
+{
+    ScriptedEventScope scope = ScriptedEventScope::Map;
+    std::optional<double> absoluteStartGameMinutes;
+    std::optional<double> initialDelayGameMinutes;
+    double lastVisitGameMinutes = -1.0 / 256.0;
+    bool pastAware = false;
+};
+
+bool startDynamicScriptedEventTimer(
+    DynamicScriptedEventTimers &timers, uint16_t eventId, double intervalGameMinutes, double currentGameMinutes,
+    const DynamicScriptedEventTimerOptions &options = {});
+double scriptedEventRealTimeSeconds();
+bool delayDynamicScriptedEvent(
+    DynamicScriptedEventTimers &timers, uint16_t eventId, double delaySeconds, ScriptedEventScope scope);
+void stopCurrentDynamicScriptedEventTimer(DynamicScriptedEventTimers &timers);
+bool updateDynamicScriptedEventTimers(
+    DynamicScriptedEventTimers &timers, double currentGameMinutes,
+    const std::function<bool(const ScriptedEventTimerDefinition &)> &executeTimer,
+    double realTimeSeconds = scriptedEventRealTimeSeconds());
 
 double legacyTimerGameMinutesFromTicks(int64_t legacyTicks);
 int64_t legacyTimerTicksFromGameMinutes(double gameMinutes);

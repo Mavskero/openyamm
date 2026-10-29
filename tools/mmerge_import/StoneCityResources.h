@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -7,13 +8,15 @@
 
 namespace OpenYAMM::Import
 {
+inline constexpr uint16_t StoneCityNpcExitHookEventId = 65490;
+
 struct StoneCityProfile
 {
     std::string mapStem;
     std::string sourceSha256;
 };
 
-// Only event 416 is translated. Existing map-load and continent reward hooks retain their ownership.
+// Translates event 416 and the source NPC398 exit cleanup, preserving map-load and continent reward ownership.
 // A missing source leaves the profile absent; a changed source requires a compatibility review.
 std::optional<StoneCityProfile> loadStoneCityProfile(const std::filesystem::path &source);
 

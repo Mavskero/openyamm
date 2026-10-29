@@ -553,6 +553,8 @@ struct EventRuntimeState
     std::unordered_map<uint32_t, SpriteOverride> spriteOverrides;
     std::unordered_map<uint32_t, bool> indoorLightsEnabled;
     uint64_t indoorLightRevision = 0;
+    std::unordered_map<uint64_t, uint32_t> temporaryPartyPortraits;
+    std::optional<bool> outdoorWeatherEnabledOverride;
     std::optional<bool> snowEnabled;
     std::optional<bool> rainEnabled;
     std::optional<OutdoorLightTimeOverride> outdoorLightTimeOverride;
@@ -584,6 +586,9 @@ struct EventRuntimeState
     // Map-session primary text only; never copied to Party or serialized in saves.
     std::unordered_map<uint32_t, std::string> npcPrimaryGreetingTextOverrides;
     std::unordered_map<uint32_t, uint32_t> npcHouseOverrides;
+    // Recomputed by source entrance events; house presentation only, not persistent campaign state.
+    std::unordered_map<uint32_t, std::string> houseVideoOverrides;
+    DynamicScriptedEventTimers dynamicMapTimers;
     std::unordered_map<uint32_t, std::string> npcNameOverrides;
     std::unordered_map<uint32_t, uint32_t> npcPictureOverrides;
     std::unordered_map<uint32_t, uint32_t> npcProfessionOverrides;
@@ -610,6 +615,8 @@ struct EventRuntimeState
     {
         uint32_t chestId = 0;
         uint32_t itemId = 0;
+        // Source record repair: preserve the record except Number, Bonus and Bonus2.
+        std::optional<uint32_t> ensureRecordIndex;
     };
     std::vector<ChestItemInsertion> pendingChestItemInsertions;
     bool activeEventOpenedByTelekinesis = false;

@@ -5202,20 +5202,25 @@ void IndoorWorldRuntime::syncMapActorAiStates()
         const MonsterTable::MonsterStatsEntry *pStats =
             actorStats(actorIndex);
 
-        if (pStats != nullptr && actor.hp > 0 && actor.hp <= pStats->hitPoints)
+        const GameplayBolsterRuntimeContext bolsterContext = actorBolsterContext(actor.uniqueNameIndex);
+        const bool bolsterExcluded = gameplayBolsterExcludesUniqueName(bolsterContext);
+        if (bolsterExcluded)
+        {
+            // An earlier save can contain the former, incorrect boost. Do not heal a wounded/dead rescued actor.
+            if (actor.bolsterRewardMultiplier > 1.0f && pStats != nullptr
+                && actor.hp > std::max(1, pStats->hitPoints))
+            {
+                actor.hp = std::max(1, pStats->hitPoints);
+            }
+            actor.bolsterRewardMultiplier = 1.0f;
+        }
+        if (pStats != nullptr && !bolsterExcluded && actor.hp > 0 && actor.hp <= pStats->hitPoints)
         {
             const MonsterEntry *pMonsterEntry =
                 m_pMonsterTable != nullptr ? resolveRuntimeMonsterEntry(*m_pMonsterTable, actor) : nullptr;
             const GameplayMonsterBolsterResult bolster =
                 resolveGameplayMonsterBolster(
-                    GameplayBolsterRuntimeContext{
-                        .pMap = m_map ? &*m_map : nullptr,
-                        .pMonsterTable = m_pMonsterTable,
-                        .pBolsterMapTable = m_pMergedBolsterMapTable,
-                        .pBolsterMonsterTable = m_pMergedBolsterMonsterTable,
-                        .pParty = m_pParty,
-                        .bolsterMonstersEnabled = m_bolsterMonstersEnabled,
-                    },
+                    bolsterContext,
                     *pStats,
                     pMonsterEntry);
             actor.hp = std::clamp(bolster.maxHp, 1, 30000);
@@ -9944,7 +9949,8 @@ uint32_t IndoorWorldRuntime::actorExperienceReward(
         {
             return uint32_t(pResolved->combat.rewards.experience);
         }
-        return gameplayBolsterExperienceReward(stats.experience, stats.hitPoints, state.bolsterRewardMultiplier);
+        return gameplayBolsterExperienceReward(stats.experience, stats.hitPoints,
+            actorExcludedFromBolster(actorIndex) ? 1.0f : state.bolsterRewardMultiplier);
     }
     return gameplayBolsterExperienceReward(stats.experience, stats.hitPoints, 1.0f);
 }
@@ -9959,7 +9965,8 @@ MonsterTable::LootPrototype IndoorWorldRuntime::actorLootPrototype(
         {
             return actorStats(state)->loot;
         }
-        return gameplayBolsterLootPrototype(stats.loot, stats.hitPoints, state.bolsterRewardMultiplier);
+        return gameplayBolsterLootPrototype(stats.loot, stats.hitPoints,
+            actorExcludedFromBolster(actorIndex) ? 1.0f : state.bolsterRewardMultiplier);
     }
     return stats.loot;
 }
@@ -9967,23 +9974,43 @@ MonsterTable::LootPrototype IndoorWorldRuntime::actorLootPrototype(
 GameplayMonsterBolsterResult IndoorWorldRuntime::actorBolster(size_t actorIndex,
     const MonsterTable::MonsterStatsEntry &stats, const MonsterEntry *pMonsterEntry) const
 {
+    const MapDeltaData *pDelta = mapDeltaData();
+    const MapDeltaActor *pActor = pDelta != nullptr && actorIndex < pDelta->actors.size()
+        ? &pDelta->actors[actorIndex] : nullptr;
     if (actorIndex < m_mapActorAiStates.size())
     {
-        return resolvedActorBolster(m_mapActorAiStates[actorIndex], stats, pMonsterEntry);
+        return resolvedActorBolster(m_mapActorAiStates[actorIndex], pActor, stats, pMonsterEntry);
     }
     return resolveGameplayMonsterBolster(
-        GameplayBolsterRuntimeContext{
-            .pMap = m_map ? &*m_map : nullptr,
-            .pMonsterTable = m_pMonsterTable,
-            .pBolsterMapTable = m_pMergedBolsterMapTable,
-            .pBolsterMonsterTable = m_pMergedBolsterMonsterTable,
-            .pParty = m_pParty,
-            .bolsterMonstersEnabled = m_bolsterMonstersEnabled,
-        }, stats, pMonsterEntry);
+        actorBolsterContext(pActor != nullptr ? pActor->uniqueNameIndex : 0), stats, pMonsterEntry);
+}
+
+GameplayBolsterRuntimeContext IndoorWorldRuntime::actorBolsterContext(int32_t uniqueNameId) const
+{
+    return GameplayBolsterRuntimeContext{
+        .pMap = m_map ? &*m_map : nullptr,
+        .pMonsterTable = m_pMonsterTable,
+        .pBolsterMapTable = m_pMergedBolsterMapTable,
+        .pBolsterMonsterTable = m_pMergedBolsterMonsterTable,
+        .pParty = m_pParty,
+        .bolsterMonstersEnabled = m_bolsterMonstersEnabled,
+        .uniqueNameId = uniqueNameId,
+        .excludedUniqueNameIds = m_pIndoorMapData != nullptr
+            ? std::span<const uint16_t>(m_pIndoorMapData->bolsterExcludedUniqueNameIds)
+            : std::span<const uint16_t>{},
+    };
+}
+
+bool IndoorWorldRuntime::actorExcludedFromBolster(size_t actorIndex) const
+{
+    const MapDeltaData *pDelta = mapDeltaData();
+    return pDelta != nullptr && actorIndex < pDelta->actors.size()
+        && gameplayBolsterExcludesUniqueName(actorBolsterContext(pDelta->actors[actorIndex].uniqueNameIndex));
 }
 
 const GameplayMonsterBolsterResult &IndoorWorldRuntime::resolvedActorBolster(
     const MapActorAiState &aiState,
+    const MapDeltaActor *pActor,
     const MonsterTable::MonsterStatsEntry &stats,
     const MonsterEntry *pMonsterEntry
 ) const
@@ -9999,33 +10026,29 @@ const GameplayMonsterBolsterResult &IndoorWorldRuntime::resolvedActorBolster(
     const int partyLevel =
         m_bolsterMonstersEnabled ? gameplayBolsterAveragePartyLevel(m_pParty) : 0;
     const uint32_t mapId = m_map ? m_map->id : 0;
+    const GameplayBolsterRuntimeContext context = actorBolsterContext(pActor != nullptr ? pActor->uniqueNameIndex : 0);
+    const bool uniqueNameExcluded = gameplayBolsterExcludesUniqueName(context);
 
     if (aiState.bolsterCacheValid
         && aiState.bolsterCacheEnabled == m_bolsterMonstersEnabled
         && aiState.bolsterCacheMonsterId == aiState.monsterId
         && aiState.bolsterCachePartyLevel == partyLevel
-        && aiState.bolsterCacheMapId == mapId)
+        && aiState.bolsterCacheMapId == mapId
+        && aiState.bolsterCacheUniqueNameId == context.uniqueNameId
+        && aiState.bolsterCacheUniqueNameExcluded == uniqueNameExcluded)
     {
         return aiState.bolsterCache;
     }
 
     aiState.bolsterCache =
-        resolveGameplayMonsterBolster(
-            GameplayBolsterRuntimeContext{
-                .pMap = m_map ? &*m_map : nullptr,
-                .pMonsterTable = m_pMonsterTable,
-                .pBolsterMapTable = m_pMergedBolsterMapTable,
-                .pBolsterMonsterTable = m_pMergedBolsterMonsterTable,
-                .pParty = m_pParty,
-                .bolsterMonstersEnabled = m_bolsterMonstersEnabled,
-            },
-            stats,
-            pMonsterEntry);
+        resolveGameplayMonsterBolster(context, stats, pMonsterEntry);
     aiState.bolsterCacheValid = true;
     aiState.bolsterCacheEnabled = m_bolsterMonstersEnabled;
     aiState.bolsterCacheMonsterId = aiState.monsterId;
     aiState.bolsterCachePartyLevel = partyLevel;
     aiState.bolsterCacheMapId = mapId;
+    aiState.bolsterCacheUniqueNameId = context.uniqueNameId;
+    aiState.bolsterCacheUniqueNameExcluded = uniqueNameExcluded;
     return aiState.bolsterCache;
 }
 
@@ -10062,7 +10085,7 @@ std::optional<ActorAiFacts> IndoorWorldRuntime::collectIndoorActorAiFacts(
     const uint16_t radius = aiState.collisionRadius;
     const uint16_t height = aiState.collisionHeight;
     const MonsterEntry *pMonsterEntry = resolveRuntimeMonsterEntry(*m_pMonsterTable, actor);
-    const GameplayMonsterBolsterResult &bolster = resolvedActorBolster(aiState, *pStats, pMonsterEntry);
+    const GameplayMonsterBolsterResult &bolster = resolvedActorBolster(aiState, &actor, *pStats, pMonsterEntry);
     const bool actorInvisible = (actor.attributes & static_cast<uint32_t>(EvtActorAttribute::Invisible)) != 0;
     const bool defaultHostile = defaultActorHostileToParty(actor, m_pMonsterTable);
     const bool hasEffectOverride =
@@ -17720,7 +17743,7 @@ void IndoorWorldRuntime::restoreSnapshot(const Snapshot &snapshot)
         }
     }
     std::vector<MapActorAiState> restoredActors = snapshot.mapActorAiStates;
-    const MapDeltaData *pRestoreDelta = mapDeltaData();
+    MapDeltaData *pRestoreDelta = mapDeltaData();
     for (size_t index = 0; index < restoredActors.size(); ++index)
     {
         MapActorAiState &state = restoredActors[index];
@@ -17728,6 +17751,19 @@ void IndoorWorldRuntime::restoreSnapshot(const Snapshot &snapshot)
         state.bolsterCacheValid = false;
         if (state.combatState.resolved() == nullptr)
         {
+            if (pRestoreDelta != nullptr && index < pRestoreDelta->actors.size()
+                && actorExcludedFromBolster(index))
+            {
+                MapDeltaActor &actor = pRestoreDelta->actors[index];
+                const MonsterTable::MonsterStatsEntry *pStats = findIndoorActorStats(m_pMonsterTable, actor);
+                if ((actor.bolsterRewardMultiplier > 1.0f || state.bolsterRewardMultiplier > 1.0f)
+                    && pStats != nullptr && actor.hp > std::max(1, pStats->hitPoints))
+                {
+                    actor.hp = std::max(1, pStats->hitPoints);
+                }
+                actor.bolsterRewardMultiplier = 1.0f;
+                state.bolsterRewardMultiplier = 1.0f;
+            }
             continue;
         }
         std::string error;
@@ -17834,14 +17870,7 @@ void IndoorWorldRuntime::applyMapReentryReset()
             const GameplayMonsterBolsterResult bolster =
                 pStats != nullptr
                     ? resolveGameplayMonsterBolster(
-                        GameplayBolsterRuntimeContext{
-                            .pMap = m_map ? &*m_map : nullptr,
-                            .pMonsterTable = m_pMonsterTable,
-                            .pBolsterMapTable = m_pMergedBolsterMapTable,
-                            .pBolsterMonsterTable = m_pMergedBolsterMonsterTable,
-                            .pParty = m_pParty,
-                            .bolsterMonstersEnabled = m_bolsterMonstersEnabled,
-                        },
+                        actorBolsterContext(actor.uniqueNameIndex),
                         *pStats,
                         pMonsterEntry)
                     : GameplayMonsterBolsterResult{};

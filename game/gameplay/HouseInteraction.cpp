@@ -958,6 +958,19 @@ std::string houseWelcomeLine(const HouseEntry &houseEntry)
     return "Welcome to " + houseEntry.name;
 }
 
+const std::string &resolveHouseVideoName(const HouseEntry &houseEntry, const EventRuntimeState *pRuntimeState)
+{
+    if (pRuntimeState != nullptr)
+    {
+        const auto found = pRuntimeState->houseVideoOverrides.find(houseEntry.id);
+        if (found != pRuntimeState->houseVideoOverrides.end())
+        {
+            return found->second;
+        }
+    }
+    return houseEntry.videoName;
+}
+
 HouseServiceType resolveHouseServiceType(const HouseEntry &houseEntry)
 {
     if (houseEntry.vendorStockProfile != VendorStockProfile::None)

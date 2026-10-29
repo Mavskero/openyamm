@@ -3734,9 +3734,58 @@ void GameplayScreenRuntime::renderViewportSidePanels(
     }
 }
 
+bool GameplayScreenRuntime::allowSourceGameplayAction(uint32_t actionId, uint32_t menuId)
+{
+    IGameplayWorldRuntime *pWorld = worldRuntime();
+    EventRuntimeState *pState = pWorld != nullptr ? pWorld->eventRuntimeState() : nullptr;
+    if (pState == nullptr)
+    {
+        return true;
+    }
+    const auto previousHook = pState->activeHookContext;
+    const size_t statusCount = pState->statusMessages.size();
+    EventRuntimeState::ActiveHookContext hook;
+    hook.kind = EventRuntimeHookKind::GameplayAction;
+    hook.gameplayActionId = actionId;
+    hook.menuId = menuId;
+    const auto &held = heldInventoryItem();
+    hook.heldItemId = held.active ? held.item.objectDescriptionId : 0;
+    pState->activeHookContext = hook;
+    try
+    {
+        pWorld->executeEventHooks(EventRuntimeHookKind::GameplayAction);
+    }
+    catch (...)
+    {
+        pState->activeHookContext = previousHook;
+        throw;
+    }
+    const bool allowed = !pState->activeHookContext || !pState->activeHookContext->blocked;
+    pState->activeHookContext = previousHook;
+    if (pState->statusMessages.size() > statusCount)
+    {
+        setStatusBarEvent(pState->statusMessages.back(), 4.0f);
+        pState->statusMessages.resize(statusCount);
+    }
+    consumePendingEventRuntimeAudioRequests();
+    return allowed;
+}
+
 std::string GameplayScreenRuntime::resolvePortraitTextureName(const Character &character) const
 {
-    return uiRuntime().resolvePortraitTextureName(character);
+    std::optional<uint32_t> temporaryPictureId;
+    const EventRuntimeState *pState = worldRuntime() != nullptr ? worldRuntime()->eventRuntimeState() : nullptr;
+    const Party *pParty = party();
+    if (pState != nullptr && pParty != nullptr
+        && std::ranges::any_of(pParty->members(), [&](const Character &member) { return &member == &character; }))
+    {
+        const auto found = pState->temporaryPartyPortraits.find(character.memberId);
+        if (found != pState->temporaryPartyPortraits.end())
+        {
+            temporaryPictureId = found->second;
+        }
+    }
+    return uiRuntime().resolvePortraitTextureName(character, temporaryPictureId);
 }
 
 void GameplayScreenRuntime::renderPortraitFx(
