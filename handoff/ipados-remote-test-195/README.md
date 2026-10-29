@@ -47,11 +47,12 @@
 ## App、资源与存档组合
 
 使用本次195发布的最新未签名iOS App，接收Mac签名后保留数据地更新；只更新engine不能替代App更新。
-完整资源为本次发布的 `engine.zip`、`conversion.json`、`SHA256SUMS`，加上
-[RC2运行资源](https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028)的
-四个world ZIP，worlds不变。目录、下载、校验和新Mac构建见[IPADOS_HANDOFF.md](../../IPADOS_HANDOFF.md)。
-195完整资源继承194的完整包及303张新增原版休息动画图，只更新72键UI文字表；Save104不变。
-不解压ZIP、不混用旧engine，不以故障注入副本或开发夹具作为正常资源。
+完整资源全部来自本次同一tag `ipados-ui-function-195-20261029`：`engine.zip`、`conversion.json`、
+`SHA256SUMS`，以及 `mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip` 四个world ZIP。
+目录、下载、校验和新Mac构建见[IPADOS_HANDOFF.md](../../IPADOS_HANDOFF.md)；清单保留 `worlds/` 相对路径。
+195继承194的完整包及303张新增原版休息动画图。194→195仅更新72键UI文字表，Save104和world相对194不变。
+四个world实际继承190/runtime-003；RC2→195的MM6/MM7/MM8已增加190脚本，三个ZIP已变，只有mmmerge字节相同。
+本次仍下载195发布的全部四个world，不复用RC2的前三个world；不解压ZIP、不混用旧engine，不以故障注入副本或开发夹具作为正常资源。
 
 **Save104是向前写入边界：旧RC1/RC2/RC3不能读取新写104。**
 先备份旧数据和旧存档并记录摘要；旧档只用副本，测试写新槽。回退二进制时使用旧格式备份。

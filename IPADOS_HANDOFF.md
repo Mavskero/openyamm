@@ -26,14 +26,15 @@
 195通用未签名iOS build-ios-001通过（54.982秒、exit 0），没有目标设备运行。
 这些证据不等于新版目标iPad通过，也不证明完整自然通关。
 
-## 完整资源由两处附件组合
+## 完整资源来自本次同一发布
 
-从本次195发布下载 `engine.zip`、`conversion.json`、`SHA256SUMS`，
-四个世界包继续使用[RC2运行资源](https://github.com/Mavskero/openyamm/releases/tag/ipados-rc2-runtime-20261028)
-的 `mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip`。四个world ZIP未变，已有文件可校验后复用。
+从本次195发布下载全部资源：`engine.zip`、`conversion.json`、`SHA256SUMS`，以及
+`mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip`。全部附件来自同一tag `ipados-ui-function-195-20261029`。
 195完整本地基线为 `local-data/validation/ui-function-completion-195/runtime-001`：继承194完整包，
-保留194新增的303张原版休息动画图，仅把UI文字表更新为72键；Save104和四个world保持不变。
-不混用188、RC3或RC2旧engine；不解压运行ZIP，不把源码ZIP或零散补丁当作完整运行包。
+保留194新增的303张原版休息动画图。194→195仅把UI文字表更新为72键，Save104和四个world相对194不变。
+四个world实际继承 `local-data/validation/device-independent-completion-190/runtime-003`；与RC2相比，
+MM6/MM7/MM8已增加190脚本，三个ZIP均已改变，只有mmmerge字节相同。本次仍从195发布下载全部四个world并校验，
+不要复用RC2的MM6/MM7/MM8。不混用188、RC3或RC2旧engine；不解压运行ZIP，不把源码ZIP或零散补丁当作完整运行包。
 
 在接收端一个新的可写目录中执行：
 
@@ -41,7 +42,7 @@
 mkdir -p assets/worlds
 gh release download ipados-ui-function-195-20261029 --repo Mavskero/openyamm \
   --dir assets --pattern engine.zip --pattern conversion.json --pattern SHA256SUMS
-gh release download ipados-rc2-runtime-20261028 --repo Mavskero/openyamm \
+gh release download ipados-ui-function-195-20261029 --repo Mavskero/openyamm \
   --dir assets/worlds --pattern mm6.zip --pattern mm7.zip --pattern mm8.zip --pattern mmmerge.zip
 (cd assets && shasum -a 256 -c SHA256SUMS)
 ```

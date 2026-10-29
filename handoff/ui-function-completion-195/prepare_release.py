@@ -2,8 +2,9 @@
 """Prepare the 195 iPad handoff locally; never build, upload, sign, or run an App.
 
 Run only after committing the final production source. --runtime must contain all
-six final runtime files. The four unchanged RC2 world archives are verified but
-are deliberately not copied into this handoff. An existing output is never reused.
+six final runtime files; all six are copied as flat release attachments. Install
+the four world ZIPs under worlds/ before checking SHA256SUMS. Existing generated
+outputs are never reused; a prewritten README is preserved.
 """
 
 import argparse
@@ -25,8 +26,6 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[3]
 TAG = "ipados-ui-function-195-20261029"
-RC2_TAG = "ipados-rc2-runtime-20261028"
-REPOSITORY = "https://github.com/Mavskero/openyamm"
 RUNTIME_NAMES = ("engine.zip", "conversion.json", "worlds/mm6.zip", "worlds/mm7.zip",
                  "worlds/mm8.zip", "worlds/mmmerge.zip")
 RAW_TREES = {"assets_dev", "assets_editor_dev", "data"}
@@ -203,9 +202,6 @@ def prepare(args, release):
                               "game", "engine", "cmake", "ios", "scripts", "packaging", "tools", "tests",
                               "third_party", "CMakeLists.txt", "settings_release.ini"], cwd=repo).stdout
     require(not untracked, "Untracked source/build inputs must be committed before archiving")
-    baseline_path = args.rc2_version.resolve(strict=True)
-    baseline = json.loads(baseline_path.read_text())
-    baseline_entries = {entry["path"].removeprefix("assets/"): entry for entry in baseline["runtime_payloads"]}
     runtime_entries = []
     source_stats = {}
     for name in RUNTIME_NAMES:
@@ -213,20 +209,14 @@ def prepare(args, release):
         require(source.is_file(), f"Missing complete runtime file: {name}")
         source_stats[name] = source.stat()
         entry = {"path": name, "bytes": source.stat().st_size, "sha256": sha(source),
-                 "included_in_release": not name.startswith("worlds/")}
-        if name.startswith("worlds/"):
-            previous = baseline_entries.get(name)
-            require(previous is not None and entry["bytes"] == previous["bytes"]
-                    and entry["sha256"] == previous["sha256"], f"World differs from published RC2 baseline: {name}")
-            entry["reused_release_tag"] = RC2_TAG
-        else:
-            target = release / name
-            copied = commands.run(["/bin/cp", "-c", source, target], check=False)
-            if copied.returncode:
-                require(not target.exists(), f"Failed clone left a partial file: {target}")
-                shutil.copy2(source, target)
-            require(target.is_file() and not target.is_symlink() and sha(target) == entry["sha256"],
-                    f"Runtime copy differs: {name}")
+                 "included_in_release": True, "release_asset_name": PurePosixPath(name).name}
+        target = release / entry["release_asset_name"]
+        copied = commands.run(["/bin/cp", "-c", source, target], check=False)
+        if copied.returncode:
+            require(not target.exists(), f"Failed clone left a partial file: {target}")
+            shutil.copy2(source, target)
+        require(target.is_file() and not target.is_symlink() and sha(target) == entry["sha256"],
+                f"Runtime copy differs: {name}")
         runtime_entries.append(entry)
     with (release / "SHA256SUMS").open("x") as stream:
         for entry in runtime_entries:
@@ -277,9 +267,8 @@ def prepare(args, release):
                "source_archive_sha256": source_manifest["archive_sha256"],
                "source_manifest_sha256": sha(release / "SOURCE-MANIFEST.json"),
                "source_scope": source_manifest["scope"], "runtime_source": str(runtime),
-               "runtime_payloads": runtime_entries,
-               "world_baseline": {"release_tag": RC2_TAG, "release_url": f"{REPOSITORY}/releases/tag/{RC2_TAG}",
-                                  "version_file_sha256": sha(baseline_path), "source_head": baseline.get("source_head")},
+               "runtime_payloads": runtime_entries, "runtime_files_all_included": True,
+               "runtime_installation": "All six files are included; place mm6/mm7/mm8/mmmerge.zip under worlds/",
                "ios": {"build_input_app": str(source_app), "bundle_identifier": app_info.get("CFBundleIdentifier"),
                        "minimum_os_version": app_info.get("MinimumOSVersion"), "archive": app_zip.name,
                        "archive_bytes": app_zip.stat().st_size, "archive_sha256": sha(app_zip),
@@ -287,12 +276,13 @@ def prepare(args, release):
                        "unsigned_executable_sha256": sha(copied_app / executable_name),
                        "embedded_signatures_removed": stripped, "unsigned_copy_verified": True,
                        "requires_receiving_mac_signing": True},
-               "original_inputs_unchanged": True, "world_archives_repacked": False,
+               "original_inputs_unchanged": True, "world_archives_included": True, "world_archives_repacked": False,
                "device_test": "NOT_RUN_BY_PACKAGER", "fresh_source_build": "NOT_RUN_BY_PACKAGER",
-               "app_run": "NOT_RUN_BY_PACKAGER", "published": False, "mac_package": False}
+               "app_run": "NOT_RUN_BY_PACKAGER", "publication_status_at_preparation": "NOT_YET_UPLOADED",
+               "publication_receipt": "See release delivery.json after publication", "mac_package": False}
     write_json(release / "VERSION.json", version)
-    publish_names = ["engine.zip", "conversion.json", "SHA256SUMS", "OpenYAMM-195-iPadOS-unsigned.zip",
-                     "source.tar.gz", "SOURCE-MANIFEST.json", "VERSION.json"]
+    publish_names = [PurePosixPath(name).name for name in RUNTIME_NAMES] + [
+        "SHA256SUMS", "OpenYAMM-195-iPadOS-unsigned.zip", "source.tar.gz", "SOURCE-MANIFEST.json", "VERSION.json"]
     if (release / "README-IPAD-195.md").is_file():
         publish_names.append("README-IPAD-195.md")
     with (release / "ARTIFACT-SHA256SUMS").open("x") as stream:
@@ -312,7 +302,6 @@ def main():
     parser.add_argument("--expected-head", help="Exact final committed HEAD; recommended")
     parser.add_argument("--repo", type=Path, default=ROOT / "openyamm")
     parser.add_argument("--output", type=Path, default=ROOT / "releases/ipados-remote-test-195-20261029")
-    parser.add_argument("--rc2-version", type=Path, default=ROOT / "releases/first-playable-20261028-rc2/VERSION.json")
     args = parser.parse_args()
     release = args.output.absolute()
     require(not release.is_symlink(), f"Output must not be a symlink: {release}")

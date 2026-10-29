@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-29T10:50:34.513302+00:00",
+  "rejected": "Reuse RC2 world archives for current195 runtime",
+  "reason": "195 inherits194 but MM6/MM7/MM8 had already changed at190; strict pre-publish SHA256 check caught mismatch.",
+  "failed_attempt": "prepare-release-002.log; releases/ipados-remote-test-195-20261029/PREPARATION-FAILED.json",
+  "resolution": "Include all6 runtime files in one release; SHA256SUMS uses canonical assets-relative paths; no old-world substitution.",
+  "publication_state": "Draft runtime upload in progress; no published incomplete release",
+  "originals_preserved": true
+}

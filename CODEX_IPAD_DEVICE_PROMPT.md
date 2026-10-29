@@ -29,11 +29,12 @@ Save104存读档与普通旅行。先读 `handoff/ipados-device-20261028/README.
 更新App和保存前先备份旧App数据、旧存档及摘要；旧档只用副本，新保存使用空槽和新名称。
 回退旧App时使用保留的旧格式存档，不覆盖原件。不把Windows/MMMerge存档列为已兼容。
 
-完整资源使用本次195发布的 engine.zip、conversion.json、SHA256SUMS，
-搭配 `ipados-rc2-runtime-20261028` 发布中的 mm6.zip、mm7.zip、mm8.zip、mmmerge.zip。
-195完整包保留194增加的303张休息动画图，仅更新72键UI文字，沿用Save104。
-四个world不变，可校验后复用。按IPADOS_HANDOFF.md放入新 assets/worlds 目录，
-在assets中完成SHA256SUMS校验，选择整个assets文件夹导入。不要解压ZIP或混用旧engine。
+全部资源均从本次同一tag `ipados-ui-function-195-20261029` 下载：engine.zip、conversion.json、SHA256SUMS，
+以及 mm6.zip、mm7.zip、mm8.zip、mmmerge.zip。195完整包继承194增加的303张休息动画图；
+194→195仅更新72键UI文字，Save104和四个world相对194不变。world实际继承190/runtime-003，
+与RC2相比MM6/MM7/MM8已增加190脚本，三个ZIP已变，只有mmmerge字节相同，不要复用RC2的前三个world。
+全部四个world仍下载本次195附件，按IPADOS_HANDOFF.md放入新 assets/worlds 目录，
+在assets中完成SHA256SUMS校验；清单保留 worlds/ 相对路径。选择整个assets文件夹导入，不解压ZIP或混用旧engine。
 资源下载时可并行做本机环境准备，不能用故障注入资源或检查夹具替代正常资源。
 
 未签名iOS App需要接收Mac有效签名才能安装；可重签发布附件，或从匹配195源码构建设备Release。
