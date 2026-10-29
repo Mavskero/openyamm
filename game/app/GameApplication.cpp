@@ -9819,6 +9819,20 @@ bool GameApplication::applyMapMove(const EventRuntimeState::PendingMapMove &move
 
     try
     {
+        std::optional<OutdoorMapStartPoint> nativeDeparture;
+        if (move.nativeArrivalStartEdge)
+        {
+            if (m_pMapSceneRuntime == nullptr || m_pMapSceneRuntime->kind() != SceneKind::Outdoor
+                || m_pOutdoorPartyRuntime == nullptr || !move.mapName || move.mapName->empty()
+                || *move.mapName == "0" || *move.mapName == "0.")
+            {
+                return rejectTravel("native boundary arrival requires an outdoor departure and destination");
+            }
+            const OutdoorMoveState &departure = m_pOutdoorPartyRuntime->movementState();
+            nativeDeparture = OutdoorMapStartPoint{
+                departure.x, departure.y, departure.footZ, m_outdoorGameView.cameraYawRadians()};
+        }
+
         std::string travelError;
         if (!applyDeferredTravelPlan(m_pMapSceneRuntime->party(), m_gameSession.activeWorldRuntime(),
                 move.travelPlan, travelError))
@@ -9832,12 +9846,13 @@ bool GameApplication::applyMapMove(const EventRuntimeState::PendingMapMove &move
             || move.mapName->empty()
             || *move.mapName == "0"
             || *move.mapName == "0."
-            || (!move.useMapStartPosition
+            || (!move.useMapStartPosition && !move.nativeArrivalStartEdge
                 && sameMapFileName(*move.mapName, m_gameSession.currentMapFileName()));
 
         const auto applyMapMoveDirection = [this, &move]()
         {
-            if ((!move.directionDegrees && !move.lookAngleDegrees) || m_pMapSceneRuntime == nullptr)
+            if (move.nativeArrivalStartEdge
+                || (!move.directionDegrees && !move.lookAngleDegrees) || m_pMapSceneRuntime == nullptr)
             {
                 return;
             }
@@ -9939,7 +9954,50 @@ bool GameApplication::applyMapMove(const EventRuntimeState::PendingMapMove &move
             appendPendingMapLeaveOutputs(*pArrivingRuntimeState, std::move(onLeaveOutputs));
         }
 
-        if (m_pMapSceneRuntime != nullptr
+        if (nativeDeparture)
+        {
+            const std::optional<MapAssetInfo> &selectedMap = m_gameDataLoader.getSelectedMap();
+            if (m_pMapSceneRuntime == nullptr || m_pMapSceneRuntime->kind() != SceneKind::Outdoor
+                || m_pOutdoorPartyRuntime == nullptr || m_pAssetFileSystem == nullptr
+                || !selectedMap || !selectedMap->outdoorMapData)
+            {
+                return rejectTravel("native boundary arrival requires an outdoor destination");
+            }
+            std::string_view startName;
+            switch (*move.nativeArrivalStartEdge)
+            {
+                case MapBoundaryEdge::North: startName = "north start"; break;
+                case MapBoundaryEdge::East: startName = "east start"; break;
+                case MapBoundaryEdge::South: startName = "south start"; break;
+                case MapBoundaryEdge::West: startName = "west start"; break;
+                default: return rejectTravel("native boundary arrival has an invalid start edge");
+            }
+            // MM8 skips Party Start positioning. Missing side markers retain the leaving XY/yaw;
+            // both paths then project Z onto the destination terrain, independent of marker Z.
+            const OutdoorMapStartPoint arrivalPoint = resolveOutdoorMapStartPoint(
+                *m_pAssetFileSystem, *selectedMap->outdoorMapData, startName).value_or(*nativeDeparture);
+            const std::optional<OutdoorNativeArrivalFloor> floor = resolveOutdoorNativeArrivalFloor(
+                *m_pAssetFileSystem, *selectedMap->outdoorMapData, arrivalPoint.x, arrivalPoint.y,
+                m_pOutdoorPartyRuntime->party().hasPartyBuff(PartyBuffId::Levitate));
+            if (!floor)
+            {
+                return rejectTravel("native boundary arrival terrain could not be resolved");
+            }
+            OutdoorPartyRuntime::Snapshot arrival = m_pOutdoorPartyRuntime->snapshot();
+            arrival.movementState = {};
+            arrival.movementState.x = arrivalPoint.x;
+            arrival.movementState.y = arrivalPoint.y;
+            arrival.movementState.footZ = floor->height;
+            arrival.movementState.fallStartZ = floor->height;
+            arrival.movementState.supportKind = OutdoorSupportKind::Terrain;
+            arrival.movementState.supportIsFluid = floor->onWater;
+            arrival.movementState.supportOnWater = floor->onWater;
+            arrival.movementState.supportOnBurning = floor->onBurning;
+            arrival.movementAccumulatorSeconds = 0.0f;
+            m_pOutdoorPartyRuntime->restoreSnapshot(arrival);
+            m_outdoorGameView.setCameraAngles(arrivalPoint.yawRadians, m_outdoorGameView.cameraPitchRadians());
+        }
+        else if (m_pMapSceneRuntime != nullptr
             && m_pMapSceneRuntime->kind() == SceneKind::Outdoor
             && m_pOutdoorPartyRuntime != nullptr
             && !move.useMapStartPosition)

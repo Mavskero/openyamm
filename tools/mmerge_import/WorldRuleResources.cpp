@@ -6,11 +6,13 @@
 #include "game/tables/MapStats.h"
 #include "game/tables/MergedBaseTables.h"
 
+#include <CommonCrypto/CommonDigest.h>
 #include <algorithm>
 #include <array>
 #include <charconv>
 #include <cmath>
 #include <fstream>
+#include <iomanip>
 #include <locale>
 #include <map>
 #include <set>
@@ -23,6 +25,7 @@ namespace
 {
 using Row = std::vector<std::string>;
 using Rows = std::vector<Row>;
+using Bytes = std::vector<uint8_t>;
 
 std::string lower(std::string value)
 {
@@ -111,6 +114,213 @@ Rows readRows(const std::filesystem::path &root, const std::string &name, bool l
         rows.push_back(std::move(row));
     }
     return rows;
+}
+
+std::string sha256(const uint8_t *bytes, size_t size)
+{
+    std::array<uint8_t, CC_SHA256_DIGEST_LENGTH> hash;
+    CC_SHA256(bytes, static_cast<CC_LONG>(size), hash.data());
+    std::ostringstream result;
+    for (uint8_t value : hash)
+    {
+        result << std::hex << std::setfill('0') << std::setw(2) << unsigned(value);
+    }
+    return result.str();
+}
+
+struct NativeNavigationSourceSegment
+{
+    const char *name;
+    const char *kind;
+    const char *virtualAddress;
+    const char *fileOffset;
+    size_t offset;
+    size_t size;
+    const char *hash;
+};
+
+constexpr std::array<NativeNavigationSourceSegment, 6> NativeNavigationSegments = {{
+    {"WalkTravel", "function", "0x4889a8", "0x889a8", 0x889a8, 211,
+        "3a8b091c05e5f262cae350f6c0ae5984cae0967d8d51894771bc4f40ee85e79a"},
+    {"NamedStart", "function", "0x446faf", "0x46faf", 0x46faf, 372,
+        "745f1174b500a49f478ad13c397cb29b066727ff1857e7f31318ff52ff873bce"},
+    {"destinations", "byte_array", "0x4fc954", "0xfc954", 0xfc954, 52,
+        "a0b55c9258ddfcd7cefd04ab9b5b460cf9ccc91d34895ea48b1810b61f95fa0c"},
+    {"days", "byte_array", "0x4fc988", "0xfc988", 0xfc988, 52,
+        "2abc740528f7307b64c98f7478b275f6180b5934c64c880b43905189ef389401"},
+    {"arrival_sides", "byte_array", "0x4fc9bc", "0xfc9bc", 0xfc9bc, 52,
+        "116f3775a60bfb6fc7bc46704c3b02cf7c97c8c28e6844b959fbc2332c6bac69"},
+    {"navigation_arrays", "array_block", "0x4fc954", "0xfc954", 0xfc954, 156,
+        "96ef2d1d42242160f444819bc54d49550d1f9979ca912c143e397c75744f3a8b"},
+}};
+
+struct NativeNavigation
+{
+    Rows rows;
+    std::string report;
+};
+
+NativeNavigation nativeMm8Navigation(const std::filesystem::path &root, Game::MapStats &maps)
+{
+    constexpr size_t ExecutableSize = 1155072;
+    constexpr const char *ExecutableHash =
+        "97be86a7597fbd9763f9b4b0ed1f4a7e47c960703fa30857c32daa056b7d403b";
+    constexpr size_t SlotCount = 13;
+    constexpr size_t DirectionCount = 4;
+    constexpr size_t DestinationOffset = 0xfc954;
+    constexpr size_t DaysOffset = 0xfc988;
+    constexpr size_t ArrivalSideOffset = 0xfc9bc;
+    constexpr std::array<const char *, DirectionCount> StartNames =
+        {"North Start", "South Start", "East Start", "West Start"};
+    constexpr std::array<Game::MapBoundaryEdge, DirectionCount> Edges =
+        {Game::MapBoundaryEdge::North, Game::MapBoundaryEdge::South,
+            Game::MapBoundaryEdge::East, Game::MapBoundaryEdge::West};
+    const std::filesystem::path path = std::filesystem::canonical(root / "mm8.exe");
+    const std::filesystem::path relative = path.lexically_relative(root);
+    require(!relative.empty() && !relative.is_absolute() && *relative.begin() != "..",
+        "Native navigation executable escapes source root");
+    require(std::filesystem::file_size(path) == ExecutableSize,
+        "Unsupported MM8 navigation executable size; no binary code is executed");
+    Bytes executable(ExecutableSize);
+    std::ifstream stream(path, std::ios::binary);
+    require(bool(stream.read(reinterpret_cast<char *>(executable.data()),
+        static_cast<std::streamsize>(executable.size()))),
+        "Cannot read native navigation executable");
+    require(sha256(executable.data(), executable.size()) == ExecutableHash,
+        "Unsupported MM8 navigation executable profile; no binary code is executed");
+    for (const NativeNavigationSourceSegment &segment : NativeNavigationSegments)
+    {
+        require(segment.offset <= executable.size() && segment.size <= executable.size() - segment.offset
+            && sha256(executable.data() + segment.offset, segment.size) == segment.hash,
+            "Native navigation source segment changed: " + std::string(segment.name));
+    }
+    NativeNavigation result;
+    result.rows.push_back({"/ MapFile", "MinX", "MaxX", "MinY", "MaxY",
+        "NorthMap", "NorthDays", "NorthHeading", "SouthMap", "SouthDays", "SouthHeading",
+        "EastMap", "EastDays", "EastHeading", "WestMap", "WestDays", "WestHeading",
+        "NorthX", "NorthY", "NorthZ", "SouthX", "SouthY", "SouthZ",
+        "EastX", "EastY", "EastZ", "WestX", "WestY", "WestZ",
+        "NorthNativeArrivalStart", "SouthNativeArrivalStart", "EastNativeArrivalStart", "WestNativeArrivalStart"});
+    const auto fileName = [](size_t number)
+    {
+        return std::string(number < 10 ? "out0" : "out") + std::to_string(number) + ".odm";
+    };
+    const auto isNativeMap = [](const Game::MapStatsEntry *pMap, const std::string &file)
+    {
+        return pMap && pMap->worldId == "mm8" && lower(pMap->fileName) == file;
+    };
+    size_t routes = 0;
+    size_t zeroSlots = 0;
+    size_t projectedZeroSlots = 0;
+    size_t skippedZeroSlots = 0;
+    std::ostringstream slots;
+    for (size_t slot = 0; slot < SlotCount; ++slot)
+    {
+        const std::string file = fileName(slot + 1);
+        const Game::MapStatsEntry *pMap = maps.findByFileName(file);
+        Row row(33);
+        row[0] = file;
+        row[1] = row[3] = "-22528";
+        row[2] = row[4] = "22528";
+        size_t slotRoutes = 0;
+        for (size_t direction = 0; direction < DirectionCount; ++direction)
+        {
+            // WalkTravel indexes 4 * mapNumber + leaveSide from bases five bytes earlier.
+            // The physical arrays are exactly 13 * 4 bytes, ordered North, South, East, West.
+            const size_t index = slot * DirectionCount + direction;
+            const uint8_t destination = executable[DestinationOffset + index];
+            const uint8_t days = executable[DaysOffset + index];
+            const uint8_t arrivalSide = executable[ArrivalSideOffset + index];
+            const size_t column = 5 + direction * 3;
+            if (destination == 0)
+            {
+                require(days == 0 && arrivalSide == 0, "Inactive native navigation has travel metadata");
+                row[column] = row[column + 1] = "0";
+                continue;
+            }
+            const std::string destinationFile = fileName(destination);
+            require(destination <= SlotCount && arrivalSide >= 1 && arrivalSide <= DirectionCount
+                && isNativeMap(pMap, file) && isNativeMap(maps.findByFileName(destinationFile), destinationFile),
+                "Native navigation origin/destination is not a registered MM8 map: " + file + " -> " + destinationFile);
+            row[column] = destinationFile;
+            row[column + 1] = std::to_string(days);
+            // Keep all source routes, including those whose destination lacks the named marker.
+            // Runtime resolves the original start and retains incoming XY/yaw if it is absent.
+            row[29 + direction] = StartNames[arrivalSide - 1];
+            ++slotRoutes;
+        }
+        const bool projected = slotRoutes != 0 || isNativeMap(pMap, file);
+        if (slotRoutes == 0)
+        {
+            ++zeroSlots;
+            projectedZeroSlots += projected;
+            skippedZeroSlots += !projected;
+        }
+        if (slot != 0)
+        {
+            slots << ',';
+        }
+        slots << "{\"slot\":" << slot + 1 << ",\"map\":\"" << file << "\",\"routes\":" << slotRoutes
+            << ",\"projected\":" << (projected ? "true" : "false") << ",\"registry_status\":\""
+            << (projected ? "mm8" : pMap ? "different_world_or_identity" : "absent") << "\"}";
+        routes += slotRoutes;
+        if (projected)
+        {
+            result.rows.push_back(std::move(row));
+        }
+    }
+    require(routes == 28 && zeroSlots == 6, "Native navigation table dimensions/routes changed");
+    require(maps.applyOutdoorNavigationRows(result.rows), "Cannot apply native MM8 navigation base");
+    for (size_t index = 1; index < result.rows.size(); ++index)
+    {
+        const Row &row = result.rows[index];
+        const Game::MapStatsEntry *pMap = maps.findByFileName(row[0]);
+        require(pMap && pMap->outdoorBounds.enabled && pMap->outdoorBounds.minX == -22528
+            && pMap->outdoorBounds.maxX == 22528 && pMap->outdoorBounds.minY == -22528
+            && pMap->outdoorBounds.maxY == 22528, "Native outdoor bounds changed");
+        for (size_t direction = 0; direction < DirectionCount; ++direction)
+        {
+            const size_t column = 5 + direction * 3;
+            const std::optional<Game::MapEdgeTransition> &edge = *pMap->edgeTransition(Edges[direction]);
+            require(edge.has_value() == (row[column] != "0"), "Native outdoor edge activation changed");
+            if (edge)
+            {
+                require(edge->destinationMapFileName == row[column]
+                    && edge->travelDays == number(row[column + 1], 0, 255)
+                    && edge->nativeArrivalStartEdge.has_value()
+                    && static_cast<size_t>(*edge->nativeArrivalStartEdge) < StartNames.size()
+                    && StartNames[static_cast<size_t>(*edge->nativeArrivalStartEdge)] == row[29 + direction]
+                    && !edge->directionDegrees && !edge->arrivalX && !edge->arrivalY && !edge->arrivalZ,
+                    "Native outdoor destination/duration/start changed");
+            }
+        }
+    }
+    std::ostringstream report;
+    report << "{\"executable\":\"mm8.exe\",\"executable_bytes\":" << ExecutableSize
+        << ",\"executable_sha256\":\"" << ExecutableHash << "\",\"image_base\":\"0x400000\""
+        << ",\"binary_code_executed\":false,\"source_segments\":[";
+    for (size_t index = 0; index < NativeNavigationSegments.size(); ++index)
+    {
+        const NativeNavigationSourceSegment &segment = NativeNavigationSegments[index];
+        if (index != 0)
+        {
+            report << ',';
+        }
+        report << "{\"name\":\"" << segment.name << "\",\"kind\":\"" << segment.kind
+            << "\",\"virtual_address\":\"" << segment.virtualAddress << "\",\"file_offset\":\""
+            << segment.fileOffset << "\",\"bytes\":" << segment.size << ",\"sha256\":\"" << segment.hash << "\"}";
+    }
+    report << "],\"slot_count\":" << SlotCount << ",\"directions_per_slot\":" << DirectionCount
+        << ",\"direction_order\":[\"North\",\"South\",\"East\",\"West\"],\"routes\":" << routes
+        << ",\"array_index\":\"4*(map_number-1)+(leave_side-1)\""
+        << ",\"arrival_side_names\":[\"North Start\",\"South Start\",\"East Start\",\"West Start\"]"
+        << ",\"zero_slots\":" << zeroSlots << ",\"projected_zero_slots\":" << projectedZeroSlots
+        << ",\"skipped_zero_slots\":" << skippedZeroSlots << ",\"projected_rows\":" << result.rows.size() - 1
+        << ",\"columns\":33,\"arrival_policy\":\"native_named_start\""
+        << ",\"missing_marker_policy\":\"retain_incoming_xy_yaw_and_project_destination_terrain\""
+        << ",\"slots\":[" << slots.str() << "],\"merge_overrides_applied_after_base\":true}";
+    result.report = report.str();
+    return result;
 }
 
 bool marker(const std::string &value)
@@ -455,6 +665,8 @@ void convertWorldRuleResources(const std::filesystem::path &source, const std::f
     require(maps.loadFromRows(readRows(assets, "engine/data_tables/map_stats.txt", false))
         && houses.loadFromRows(readRows(assets, "engine/data_tables/house_data.txt", false)),
         "Invalid world rule registry dependency");
+    const NativeNavigation nativeNavigation = nativeMm8Navigation(root, maps);
+    sources.emplace("map_navigation.txt", nativeNavigation.rows);
     MergedContinentSettingTable continents;
     MergedHardwareWaterTextureTable water;
     MergedHouseExitTable exits;
@@ -587,7 +799,8 @@ void convertWorldRuleResources(const std::filesystem::path &source, const std::f
         << ",\"applied_house_routes\":" << houseRoutes << ",\"applied_extra_exits\":" << extraExits
         << ",\"typed_validation\":true,\"images_exported\":0,\"movies_exported\":0"
         << ",\"legacy_transport_indices_applied\":false,\"original_arrival_side_parity\":false"
-        << ",\"rendered_travel_validated\":false,\"full_gameplay_loop\":false}\n";
+        << ",\"rendered_travel_validated\":false,\"full_gameplay_loop\":false"
+        << ",\"native_navigation\":" << nativeNavigation.report << "}\n";
     std::map<std::string, std::string> files;
     for (const auto &[name, rows] : sources)
     {

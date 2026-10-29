@@ -58,6 +58,9 @@ struct MapEdgeTransition
     std::optional<MapBoundaryEdge> straightTravelSide;
     MapTransitionSurfaceRequirement requiredOriginSurface = MapTransitionSurfaceRequirement::Land;
     std::vector<uint32_t> requiredQuestBitsAny;
+    // Original MM8 named arrival start. If its marker is absent, runtime retains incoming XY/yaw
+    // and projects Z onto the destination floor; the table parser does not guess an edge position.
+    std::optional<MapBoundaryEdge> nativeArrivalStartEdge;
 };
 
 struct MapStatsEntry

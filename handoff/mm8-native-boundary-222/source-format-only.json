@@ -1,0 +1,12 @@
+{
+  "game/outdoor/HeadlessOutdoorDiagnostics.cpp": {
+    "built_sha256": "5b3206f0566eeded6bb3c730bb2e241cb788c9e6e0aaad614a3c42d733856e5f",
+    "final_sha256": "d9204679c36d64964b9479e9daece5b0cf49857579fe1a4dc4368d9d3ad64d76",
+    "change": "Only line wrapping to respect120columns; whitespace-token sequences identical; no new build/replay for formatting."
+  },
+  "tools/mmerge_import/WorldRuleResources.cpp": {
+    "built_sha256": "a3b6289316b85bb2d2412df2ddc33bbc6fd7b9df795b228dd57d18921e526d02",
+    "final_sha256": "f729014adb6d9a9b80be506e52cf21f7de90b4e81673e111e33f245a4cd4d301",
+    "change": "Only line wrapping to respect120columns; whitespace-token sequences identical; no new build/replay for formatting."
+  }
+}

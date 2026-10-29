@@ -478,11 +478,12 @@ OutdoorSceneRuntime::AdvanceFrameResult OutdoorSceneRuntime::advanceFrame(
             transitionMove.mapName = (*pTransition)->destinationMapFileName;
             transitionMove.directionDegrees = (*pTransition)->directionDegrees;
             transitionMove.useMapStartPosition = (*pTransition)->useMapStartPosition;
+            transitionMove.nativeArrivalStartEdge = (*pTransition)->nativeArrivalStartEdge;
             transitionMove.traceSourceKind = "map_boundary";
             transitionMove.traceSourceId = context.sourceId;
             transitionMove.traceDestinationName = (*pTransition)->destinationMapFileName;
 
-            if (!(*pTransition)->useMapStartPosition
+            if (!transitionMove.nativeArrivalStartEdge && !(*pTransition)->useMapStartPosition
                 && (*pTransition)->arrivalX.has_value()
                 && (*pTransition)->arrivalY.has_value()
                 && (*pTransition)->arrivalZ.has_value())
@@ -491,7 +492,7 @@ OutdoorSceneRuntime::AdvanceFrameResult OutdoorSceneRuntime::advanceFrame(
                 transitionMove.y = *(*pTransition)->arrivalY;
                 transitionMove.z = *(*pTransition)->arrivalZ;
             }
-            else
+            else if (!transitionMove.nativeArrivalStartEdge)
             {
                 applyMergedStraightTravelArrival(transitionMove, **pTransition, moveState);
             }

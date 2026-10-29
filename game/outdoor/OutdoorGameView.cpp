@@ -31,6 +31,7 @@
 #include "game/maps/MapIdentity.h"
 #include "game/maps/MapDecorationDirection.h"
 #include "game/maps/SaveGame.h"
+#include "game/maps/TerrainTileData.h"
 #include "game/scene/OutdoorSceneRuntime.h"
 #include "game/SpawnPreview.h"
 #include "game/gameplay/GameplayScreenController.h"
@@ -1933,14 +1934,6 @@ constexpr uint8_t OutdoorPolygonInBetweenFloorAndWall = 0x4;
 constexpr int DwiMapId = 1;
 constexpr uint16_t DwiMeteorShowerEventId = 456;
 
-struct OutdoorPartyStartPoint
-{
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
-    std::optional<float> yawRadians;
-};
-
 struct ParsedHudFontGlyphMetrics
 {
     int leftSpacing = 0;
@@ -2117,9 +2110,10 @@ std::optional<bool> parseHudLayoutBool(const std::string &value)
     return std::nullopt;
 }
 
-std::optional<OutdoorPartyStartPoint> resolveOutdoorPartyStartPoint(
+std::optional<OutdoorMapStartPoint> resolveOutdoorMapStartPointImpl(
     const Engine::AssetFileSystem &assetFileSystem,
-    const OutdoorMapData &outdoorMapData)
+    const OutdoorMapData &outdoorMapData,
+    const std::string &startName)
 {
     const std::optional<std::string> decorationTableText =
         assetFileSystem.readTextFile(engineDataTablePath("decoration_data.txt"));
@@ -2160,16 +2154,16 @@ std::optional<OutdoorPartyStartPoint> resolveOutdoorPartyStartPoint(
         {
             if (const DecorationEntry *pDecoration = decorationTable.get(entity.decorationListId))
             {
-                decorationName = pDecoration->internalName;
+                decorationName = toLowerCopy(pDecoration->internalName);
             }
         }
 
-        if (decorationName != PartyStartDecorationName)
+        if (decorationName != startName)
         {
             continue;
         }
 
-        OutdoorPartyStartPoint startPoint = {};
+        OutdoorMapStartPoint startPoint = {};
         startPoint.x = static_cast<float>(entity.x);
         startPoint.y = static_cast<float>(entity.y);
         startPoint.z = static_cast<float>(entity.z);
@@ -2898,6 +2892,93 @@ std::vector<uint8_t> readBinaryFile(const std::filesystem::path &path)
 
 }
 
+std::optional<OutdoorMapStartPoint> resolveOutdoorMapStartPoint(
+    const Engine::AssetFileSystem &assetFileSystem,
+    const OutdoorMapData &outdoorMapData,
+    std::string_view startName)
+{
+    return resolveOutdoorMapStartPointImpl(assetFileSystem, outdoorMapData, toLowerCopy(std::string(startName)));
+}
+
+std::optional<OutdoorNativeArrivalFloor> resolveOutdoorNativeArrivalFloor(
+    const Engine::AssetFileSystem &assetFileSystem,
+    const OutdoorMapData &outdoorMapData,
+    float x,
+    float y,
+    bool levitateActive)
+{
+    constexpr int TileSize = OutdoorMapData::TerrainTileSize;
+    constexpr int Width = OutdoorMapData::TerrainWidth;
+    constexpr int Height = OutdoorMapData::TerrainHeight;
+    if (!std::isfinite(x) || !std::isfinite(y)
+        || std::abs(static_cast<double>(x)) > std::numeric_limits<int32_t>::max() - TileSize
+        || std::abs(static_cast<double>(y)) > std::numeric_limits<int32_t>::max() - TileSize
+        || outdoorMapData.heightMap.size() != static_cast<size_t>(Width * Height)
+        || outdoorMapData.tileMap.size() != static_cast<size_t>(Width * Height))
+    {
+        return std::nullopt;
+    }
+    const auto descriptors = loadTerrainTileDescriptors(assetFileSystem, outdoorMapData);
+    if (!descriptors)
+    {
+        return std::nullopt;
+    }
+
+    // MM8 0x481e19: the upper cell owns an exact Y grid boundary. Each signed
+    // interpolation term is shifted separately; neither bilinear sampling nor +1 applies.
+    const int worldX = static_cast<int>(x);
+    const int worldY = static_cast<int>(y);
+    const int gridX = static_cast<int>(std::floor(static_cast<double>(worldX) / TileSize)) + Width / 2;
+    const int gridY = Height / 2 - 1 - static_cast<int>(std::floor(static_cast<double>(worldY) / TileSize));
+    const auto sampleHeight = [&](int column, int row)
+    {
+        return column >= 0 && column < Width && row >= 0 && row < Height
+            ? static_cast<int>(outdoorMapData.heightMap[static_cast<size_t>(row * Width + column)])
+                * OutdoorMapData::TerrainHeightScale
+            : 0;
+    };
+    const int height00 = sampleHeight(gridX, gridY);
+    const int height10 = sampleHeight(gridX + 1, gridY);
+    const int height01 = sampleHeight(gridX, gridY + 1);
+    const int height11 = sampleHeight(gridX + 1, gridY + 1);
+    const int x0 = (gridX - Width / 2) * TileSize;
+    const int y0 = (Height / 2 - gridY) * TileSize;
+    const int dx = worldX - x0;
+    const int dy = y0 - worldY;
+    const auto interpolateTerm = [](int heightDifference, int distance)
+    {
+        const int64_t numerator = static_cast<int64_t>(heightDifference) * distance;
+        return static_cast<int>(numerator >= 0
+            ? numerator / TileSize
+            : -((-numerator + TileSize - 1) / TileSize));
+    };
+    int groundHeight = dy < dx
+        ? height10 + interpolateTerm(height00 - height10, TileSize - dx)
+            + interpolateTerm(height11 - height10, dy)
+        : height01 + interpolateTerm(height11 - height01, dx)
+            + interpolateTerm(height00 - height01, TileSize - dy);
+
+    OutdoorNativeArrivalFloor floor;
+    if (gridX >= 0 && gridX < Width && gridY >= 0 && gridY < Height)
+    {
+        const size_t cellIndex = static_cast<size_t>(gridY * Width + gridX);
+        const uint8_t tileId = outdoorMapData.tileMap[cellIndex];
+        if (tileId >= descriptors->size())
+        {
+            return std::nullopt;
+        }
+        // Original D3D ground query uses descriptor flags; software shore bitmap masks do not apply.
+        floor.onWater = ((*descriptors)[tileId].flags & TerrainTileFlagWater) != 0;
+        floor.onBurning = ((*descriptors)[tileId].flags & TerrainTileFlagBurn) != 0;
+        if (floor.onWater || floor.onBurning)
+        {
+            groundHeight += levitateActive ? 20 : -60;
+        }
+    }
+    floor.height = static_cast<float>(groundHeight);
+    return floor;
+}
+
 bgfx::VertexLayout OutdoorGameView::TerrainVertex::ms_layout;
 bgfx::VertexLayout OutdoorGameView::TexturedTerrainVertex::ms_layout;
 bgfx::VertexLayout OutdoorGameView::LitBillboardVertex::ms_layout;
@@ -3118,8 +3199,8 @@ bool OutdoorGameView::initialize(
     float initialFootZ = centerHeightWorld;
     std::optional<float> initialYawRadians;
 
-    if (const std::optional<OutdoorPartyStartPoint> startPoint =
-            resolveOutdoorPartyStartPoint(assetFileSystem, outdoorMapData))
+    if (const std::optional<OutdoorMapStartPoint> startPoint =
+            resolveOutdoorMapStartPoint(assetFileSystem, outdoorMapData, PartyStartDecorationName))
     {
         initialX = startPoint->x;
         initialY = startPoint->y;

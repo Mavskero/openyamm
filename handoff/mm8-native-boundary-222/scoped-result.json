@@ -1,0 +1,139 @@
+{
+  "checkpoint": 222,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-29T17:46:53.524613+00:00",
+  "source_base": "61e7a801d80900ade5fa1d2ed44cfa7d8ba01483",
+  "runtime": "local-data/validation/mm8-native-boundary-222/runtime-001",
+  "scope": [
+    "Restore authenticated native MM8 base navigation before Merge overrides: all28 routes and original days/named starts",
+    "Typed native arrival resolution, exact destination terrain projection and four source-confirmed missing-marker fallback routes",
+    "Save105 optional selector codec with old104 read and invalid enum atomic rejection",
+    "Existing production movement/confirmation/commit Out02 east -> Out06 case now passes original five-day costs and exact WestStart XY/yaw/Z"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T17:31:32.897986+00:00",
+      "finished_at": "2026-10-29T17:33:33.729220+00:00",
+      "elapsed_seconds": 120.831234
+    },
+    "build-native-002": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T17:39:15.613752+00:00",
+      "finished_at": "2026-10-29T17:39:33.629076+00:00",
+      "elapsed_seconds": 18.015324
+    },
+    "build-native-003": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T17:42:09.280719+00:00",
+      "finished_at": "2026-10-29T17:42:31.203662+00:00",
+      "elapsed_seconds": 21.922943
+    },
+    "world-rule-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T17:33:52.463783+00:00",
+      "finished_at": "2026-10-29T17:33:52.586575+00:00",
+      "elapsed_seconds": 0.122792
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T17:34:00.202638+00:00",
+      "finished_at": "2026-10-29T17:34:03.076573+00:00",
+      "elapsed_seconds": 2.873935
+    },
+    "codec-compile-001": {
+      "exit_code": 1,
+      "started_at": "2026-10-29T17:33:52.457503+00:00",
+      "finished_at": "2026-10-29T17:33:55.032205+00:00",
+      "elapsed_seconds": 2.574702
+    },
+    "codec-compile-002": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T17:34:30.870081+00:00",
+      "finished_at": "2026-10-29T17:34:34.724883+00:00",
+      "elapsed_seconds": 3.854802
+    },
+    "codec-roundtrip-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T17:35:25.578293+00:00",
+      "finished_at": "2026-10-29T17:35:25.708847+00:00",
+      "elapsed_seconds": 0.130554
+    },
+    "travel-effects-001": {
+      "exit_code": 1,
+      "started_at": "2026-10-29T17:34:18.123647+00:00",
+      "finished_at": "2026-10-29T17:34:27.802016+00:00",
+      "elapsed_seconds": 9.678369
+    },
+    "travel-effects-002": {
+      "exit_code": 1,
+      "started_at": "2026-10-29T17:40:10.422850+00:00",
+      "finished_at": "2026-10-29T17:40:20.520786+00:00",
+      "elapsed_seconds": 10.097936
+    },
+    "travel-effects-003": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T17:43:20.794518+00:00",
+      "finished_at": "2026-10-29T17:43:31.017230+00:00",
+      "elapsed_seconds": 10.222712
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T17:43:51.229611+00:00",
+      "finished_at": "2026-10-29T17:45:55.499151+00:00",
+      "elapsed_seconds": 124.26954
+    }
+  },
+  "native_table": {
+    "slots": 13,
+    "directions_per_slot": 4,
+    "active_routes": 28,
+    "projected_rows": 9,
+    "columns": 33,
+    "required_marker_kinds": 19,
+    "present_unique_markers": 16,
+    "missing_marker_edges": 4
+  },
+  "live_route_case_count": 1,
+  "case_attempts": 3,
+  "case_passed": true,
+  "fixture_repairs": [
+    "Initial boundary pose inherited map-center Z513 above edge ground0; same X/Y now ground-hinted0",
+    "Old check queried map-owned move after production transfers it into session queue; now checks actual session queue"
+  ],
+  "preserved_failures": [
+    "travel-effects-001 initial airborne pose fixture",
+    "travel-effects-002 stale map-vs-session queue assertion",
+    "codec-compile-001 local helper omitted inherited BX_CONFIG_DEBUG compile definition"
+  ],
+  "production_changed_for_fixture_failures": false,
+  "runtime_added_members": [
+    "data_tables/map_navigation.txt"
+  ],
+  "runtime_changed_members": [],
+  "all_nine_existing_world_rule_tables_retained": true,
+  "all_other_runtime_members_retained": true,
+  "ui_text_count": 132,
+  "save_version": 105,
+  "legacy_input_104_unchanged": true,
+  "codec_check": "local-data/validation/mm8-native-boundary-222/codec-result-001.json",
+  "existing_cases_updated": 2,
+  "new_unit_cases": 0,
+  "app_gui_runs": 0,
+  "headless_affected_case_runs": 3,
+  "images_reviewed": 0,
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "device_or_simulator_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "Only one native route is exercised end-to-end in a controlled headless App transaction; all28 actual routes and four missing-marker branches are not claimed live",
+    "No graphical, physical-touch or natural campaign acceptance",
+    "Legacy104 read is real; a populated old104 queued-selector migration fixture was not replayed",
+    "Existing persistent unit codec case was updated for future execution; only the focused local codec helper ran"
+  ]
+}

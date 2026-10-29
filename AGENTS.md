@@ -4,6 +4,16 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 222 ACCEPTED_SCOPED: `local-data/validation/mm8-native-boundary-222/scoped-result.json`.
+  Standard import now restores authenticated MM8 native base before Merge:13slots/28routes/9projected33-column rows.
+  Typed named-start intent resolves original markers, missing4edges retaindepartureXY/yaw; exact native terrainD3D
+  projection. Save105 appends optional selector; real104read/3nested105selector/invalidvalueatomic checks pass.
+  OriginalOut02east→Out06/5days/food/WestStartXYyaw/Z480 now passes one headlessAppcase10.223s; initialairborne
+  andstalemapqueue fixtures repaired,preserved. Native001–003/import/unsignediOS pass;0newcases/GUI/device/release.
+  Complete default222/runtime-001 adds onlynavigation;132keyUI/alloldmembers/worlds retained. Repo handoff contains
+  6702byte cumulativeUI+navigation overlay forcurrent105source build;214/195/RCs fixed. GoalACTIVE/~85%lowconfidence;
+  fullnaturalcampaign andall28live routes unproved. No broad audit/replay ornewdevicecheckpoint.
+
 - 221 ACCEPTED_SOURCE_SCOPED_WITH_OPEN_RUNTIME_GAP: `local-data/validation/ui-function-completion-221/scoped-result.json`.
   Fixed map_boundary deferred travel plan, fine-bearing single-resident Throne routing, ordinaryNPC captions/full
   message1688(namespace533 wrong), localized travel/fine/disabled UI132keys and App destructor owner cleanup.

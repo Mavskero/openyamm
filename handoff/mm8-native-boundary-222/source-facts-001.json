@@ -1,0 +1,127 @@
+{
+  "source_exe": "local-data/validation/mm8-runtime-076/source-001/mm8.exe",
+  "source_exe_sha256": "97be86a7597fbd9763f9b4b0ed1f4a7e47c960703fa30857c32daa056b7d403b",
+  "native_route_count": 28,
+  "distinct_required_markers": 19,
+  "present_unique_markers": 16,
+  "missing_marker_edges": [
+    {
+      "origin": "out04.odm",
+      "leave": "North",
+      "destination": "out03.odm",
+      "start": "North Start"
+    },
+    {
+      "origin": "out04.odm",
+      "leave": "East",
+      "destination": "out06.odm",
+      "start": "East Start"
+    },
+    {
+      "origin": "out07.odm",
+      "leave": "North",
+      "destination": "out03.odm",
+      "start": "North Start"
+    },
+    {
+      "origin": "out07.odm",
+      "leave": "West",
+      "destination": "out05.odm",
+      "start": "West Start"
+    }
+  ],
+  "missing_marker_source_path": [
+    "0x43084f:45ea00(1,1) skips initial Party Start positioning",
+    "0x430879:446faf selects named arrival",
+    "0x447032-0x447092: absent instance retains departing XY/yaw",
+    "0x43089e:481e19 projects target terrain without incoming Z",
+    "0x4308a3/0x4308a8: write exact returned Z and FallStartZ, no +1"
+  ],
+  "floor_source": {
+    "function": "0x481e19-0x482144",
+    "interpolation": "native integer triangles; signed interpolation terms shifted independently",
+    "bmodels_used": false,
+    "levitate_lookup": "Player buff slot25 (Levitate), expiration>0",
+    "renderer_flag": "F01A08=RendererD3D; D3D water/burn descriptor flags, software-only shore masks excluded",
+    "fluid_adjustment": {
+      "levitate": 20,
+      "otherwise": -60
+    }
+  },
+  "unique_checked_arrival": {
+    "origin": "out02.odm",
+    "leave": "East",
+    "destination": "out06.odm",
+    "travel_days": 5,
+    "start": "West Start",
+    "x": -22080,
+    "y": -5776,
+    "yaw_native": 0,
+    "yaw_degrees": 0,
+    "marker_z": 480,
+    "heightmap_corners": [
+      [
+        20,
+        75,
+        15
+      ],
+      [
+        21,
+        75,
+        15
+      ],
+      [
+        21,
+        76,
+        15
+      ],
+      [
+        20,
+        76,
+        15
+      ]
+    ],
+    "heightmap_file_offsets": [
+      "0x2648",
+      "0x2649",
+      "0x26c9",
+      "0x26c8"
+    ],
+    "height_scale": 32,
+    "dx": 448,
+    "dy": 144,
+    "tile_id": 218,
+    "tile_file_offset": "0x6648",
+    "tile_group": 3,
+    "tile_group_base": 774,
+    "tile_descriptor": 794,
+    "tile_name": "gdrdne2",
+    "tile_flags": "0x200",
+    "water": false,
+    "burn": false,
+    "expected_final_z": 480,
+    "expected_fall_start_z": 480
+  },
+  "prototype_rejected": {
+    "path": "assets_dev/engine/data_tables/map_navigation.txt at db142fb3",
+    "old_out02_east_days": 1,
+    "old_heading": 90,
+    "original_days": 5,
+    "original_heading": 0
+  },
+  "scope": "Source extraction and implementation facts; no claim of 28 live routes, missing-marker actual flow, natural campaign or device acceptance.",
+  "origin_fixture_repair": {
+    "map": "out02.odm",
+    "party_start_present": false,
+    "fallback_center_height": 512,
+    "fallback_center_foot_z": 513,
+    "same_y": 0,
+    "edge_x": 22490,
+    "edge_ground_height": 0,
+    "edge_land": true,
+    "old_hint_causes_airborne": true,
+    "case_new_foot_z_hint": 0,
+    "production_surface_rules_unchanged": true,
+    "initial_failed_attempt": "travel-effects-001"
+  }
+}

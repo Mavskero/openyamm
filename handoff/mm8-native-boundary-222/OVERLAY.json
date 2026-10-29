@@ -1,0 +1,19 @@
+{
+  "published_base": "ipados-ui-cumulative-214-20261029",
+  "requires_current_Save105_source_build": true,
+  "overlay_files": {
+    "runtime-overlay/engine/data_tables/map_navigation.txt": {
+      "bytes": 2163,
+      "sha256": "3c706f9eb10d9743ba86870e69820ca6d591db3cc8cba46f2f793d6aa1ecc3df"
+    },
+    "runtime-overlay/engine/data_tables/ui_text.txt": {
+      "bytes": 4539,
+      "sha256": "ef363a9e209453553307cca96a8a45ed11012a0652aa59d4f0dfb6f4d225238b"
+    }
+  },
+  "relative_to_221": "only new map_navigation.txt; ui_text retained from221",
+  "relative_to_published_214": "ui_text cumulative216-221 and new navigation222",
+  "world_packages_changed": false,
+  "new_release": false,
+  "new_device_matrix": false
+}

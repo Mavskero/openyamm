@@ -71,6 +71,8 @@ void migrateLegacyPartyMemberIdentities(GameSaveData &data, uint32_t sourceSaveV
 bool saveGameDataToPath(const std::filesystem::path &path, const GameSaveData &data, std::string &error,
     const BreachAlvarFriendActorRules *pCompanionRules = nullptr,
     const BreachMercenaryProfile *pMercenaryProfile = nullptr);
+// Save105 retains native outdoor arrival-start intent across queued/session/dialogue map moves. Older moves
+// have no native selector and keep their saved position semantics.
 // Save104 retains session-owned map moves and deferred travel plans. Older queued moves have already paid,
 // so their absent plan explicitly keeps the default None mode rather than charging again after loading.
 // Save102 owns cross-map saved locations at session scope; legacy bottle records migrate only

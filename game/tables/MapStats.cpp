@@ -52,6 +52,10 @@ constexpr size_t NavigationEastArrivalZColumn = 25;
 constexpr size_t NavigationWestArrivalXColumn = 26;
 constexpr size_t NavigationWestArrivalYColumn = 27;
 constexpr size_t NavigationWestArrivalZColumn = 28;
+constexpr size_t NavigationNorthNativeArrivalStartColumn = 29;
+constexpr size_t NavigationSouthNativeArrivalStartColumn = 30;
+constexpr size_t NavigationEastNativeArrivalStartColumn = 31;
+constexpr size_t NavigationWestNativeArrivalStartColumn = 32;
 constexpr size_t TreasureLevelColumn = 11;
 constexpr size_t EncounterChanceColumn = 12;
 constexpr size_t Encounter1ChanceColumn = 13;
@@ -481,6 +485,47 @@ size_t navigationArrivalZColumn(MapBoundaryEdge edge)
     return NavigationNorthArrivalZColumn;
 }
 
+size_t navigationNativeArrivalStartColumn(MapBoundaryEdge edge)
+{
+    switch (edge)
+    {
+        case MapBoundaryEdge::North:
+            return NavigationNorthNativeArrivalStartColumn;
+
+        case MapBoundaryEdge::South:
+            return NavigationSouthNativeArrivalStartColumn;
+
+        case MapBoundaryEdge::East:
+            return NavigationEastNativeArrivalStartColumn;
+
+        case MapBoundaryEdge::West:
+            return NavigationWestNativeArrivalStartColumn;
+    }
+
+    return NavigationNorthNativeArrivalStartColumn;
+}
+
+std::optional<MapBoundaryEdge> parseNativeArrivalStartEdge(const std::string &value)
+{
+    if (value == "North Start")
+    {
+        return MapBoundaryEdge::North;
+    }
+    if (value == "South Start")
+    {
+        return MapBoundaryEdge::South;
+    }
+    if (value == "East Start")
+    {
+        return MapBoundaryEdge::East;
+    }
+    if (value == "West Start")
+    {
+        return MapBoundaryEdge::West;
+    }
+    return std::nullopt;
+}
+
 bool applyMergedOutdoorTravelDirection(
     MapStatsEntry &entry,
     MapBoundaryEdge edge,
@@ -763,15 +808,36 @@ bool MapStats::applyOutdoorNavigationRows(const std::vector<std::vector<std::str
             }
 
             const std::string destinationMap = trimCopy(getColumnValue(row, mapColumn));
+            const std::string nativeArrivalStartName =
+                trimCopy(getColumnValue(row, navigationNativeArrivalStartColumn(*edge)));
+            std::optional<MapBoundaryEdge> nativeArrivalStartEdge;
+
+            if (!nativeArrivalStartName.empty())
+            {
+                nativeArrivalStartEdge = parseNativeArrivalStartEdge(nativeArrivalStartName);
+                if (!nativeArrivalStartEdge.has_value())
+                {
+                    std::cerr << "Map navigation row has invalid native arrival start for map file: "
+                        << fileName << ": " << nativeArrivalStartName << '\n';
+                    return false;
+                }
+            }
 
             if (destinationMap.empty() || destinationMap == "0")
             {
+                if (nativeArrivalStartEdge.has_value())
+                {
+                    std::cerr << "Map navigation row has native arrival start without a destination for map file: "
+                        << fileName << '\n';
+                    return false;
+                }
                 pTransition->reset();
                 continue;
             }
 
             MapEdgeTransition transition = {};
             transition.destinationMapFileName = destinationMap;
+            transition.nativeArrivalStartEdge = nativeArrivalStartEdge;
 
             int travelDays = 0;
 
@@ -802,6 +868,13 @@ bool MapStats::applyOutdoorNavigationRows(const std::vector<std::vector<std::str
             const std::string arrivalZValue = trimCopy(getColumnValue(row, navigationArrivalZColumn(*edge)));
             const bool hasExplicitArrivalPosition =
                 !arrivalXValue.empty() || !arrivalYValue.empty() || !arrivalZValue.empty();
+
+            if (hasExplicitArrivalPosition && nativeArrivalStartEdge.has_value())
+            {
+                std::cerr << "Map navigation row combines native arrival start with explicit position for map file: "
+                    << fileName << '\n';
+                return false;
+            }
 
             if (hasExplicitArrivalPosition)
             {

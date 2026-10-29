@@ -1,0 +1,7 @@
+{
+  "failed_attempt": "travel-effects-002",
+  "reason": "Existing check reads pWorld->pendingMapMove after production GameplayScreenRuntime moves the confirmed request into GameSession and clears map queue.",
+  "evidence": "game/gameplay/GameplayScreenRuntime.cpp:2334-2337",
+  "fix": "Check already-exposed pendingSessionMapMove; no production ownership changes or bypass.",
+  "production_changed": false
+}

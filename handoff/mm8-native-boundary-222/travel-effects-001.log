@@ -1,0 +1,4 @@
+  outdoor actors: total=202 map_delta=143 spawn=59 textured=202 missing=0
+  outdoor sprite objects: total=0 textured=0 missing=0
+[FAIL] app_map_transition_confirm_applies_oe_travel_side_effects - ordinary east boundary did not queue a positioned map_boundary confirmation
+Regression suite summary: passed=0 failed=1

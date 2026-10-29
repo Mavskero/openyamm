@@ -1398,6 +1398,7 @@ TEST_CASE("persistent lua runtime travel state survives save data round trip")
     transportMove.travelPlan.mode = TravelPlanMode::Transport;
     transportMove.travelPlan.goldFare = 55;
     transportMove.travelPlan.travelDays = 6;
+    transportMove.nativeArrivalStartEdge = OpenYAMM::Game::MapBoundaryEdge::West;
     runtimeState.pendingMapMove = transportMove;
 
     PendingMapMove walkingMove = transportMove;
@@ -1407,6 +1408,7 @@ TEST_CASE("persistent lua runtime travel state survives save data round trip")
     walkingMove.travelPlan.foodRequired = 5;
     walkingMove.travelPlan.exitCallback =
         OpenYAMM::Game::EventRuntimeState::DeferredTravelExitCallback{50207, 3, 207};
+    walkingMove.nativeArrivalStartEdge = OpenYAMM::Game::MapBoundaryEdge::South;
     runtimeState.pendingDialogueContext.emplace();
     runtimeState.pendingDialogueContext->kind = OpenYAMM::Game::DialogueContextKind::MapTransition;
     runtimeState.pendingDialogueContext->transitionMapMove = walkingMove;
@@ -1420,6 +1422,7 @@ TEST_CASE("persistent lua runtime travel state survives save data round trip")
     saveData.pendingMapMove = transportMove;
     saveData.pendingMapMove->traceSourceKind = "breach_maze";
     saveData.pendingMapMove->travelPlan = {};
+    saveData.pendingMapMove->nativeArrivalStartEdge = OpenYAMM::Game::MapBoundaryEdge::North;
 
     const std::filesystem::path savePath =
         std::filesystem::temp_directory_path() / "openyamm_persistent_lua_runtime_state_roundtrip.oysav";
@@ -1460,6 +1463,7 @@ TEST_CASE("persistent lua runtime travel state survives save data round trip")
         CHECK(actual.traceEventId == expected.traceEventId);
         CHECK(actual.traceDestinationName == expected.traceDestinationName);
         CHECK(actual.travelPlan == expected.travelPlan);
+        CHECK(actual.nativeArrivalStartEdge == expected.nativeArrivalStartEdge);
     };
     REQUIRE(loaded->pendingMapMove);
     REQUIRE(loadedState.pendingMapMove);
@@ -1499,11 +1503,17 @@ TEST_CASE("persistent lua runtime travel state survives save data round trip")
     CHECK_FALSE(OpenYAMM::Game::saveGameDataToPath(savePath, invalid, error));
     CHECK(readBinaryFileBytes(savePath) == originalBytes);
 
-    // The root move's None plan is the final record: mode, three costs and the absent callback flag.
+    invalid = saveData;
+    invalid.pendingMapMove->nativeArrivalStartEdge = static_cast<OpenYAMM::Game::MapBoundaryEdge>(255);
+    CHECK_FALSE(OpenYAMM::Game::saveGameDataToPath(savePath, invalid, error));
+    CHECK(readBinaryFileBytes(savePath) == originalBytes);
+
+    // The root move's None plan precedes its present native-start selector at the end of the save.
     constexpr size_t NonePlanBytes = sizeof(uint8_t) + 3 * sizeof(int32_t) + sizeof(bool);
-    REQUIRE(originalBytes.size() > NonePlanBytes);
+    constexpr size_t NativeStartBytes = sizeof(bool) + sizeof(uint8_t);
+    REQUIRE(originalBytes.size() > NonePlanBytes + NativeStartBytes);
     std::vector<uint8_t> corrupt = originalBytes;
-    corrupt[corrupt.size() - NonePlanBytes] = 255;
+    corrupt[corrupt.size() - NonePlanBytes - NativeStartBytes] = 255;
     const std::filesystem::path corruptPath = savePath.string() + ".corrupt";
     {
         std::ofstream output(corruptPath, std::ios::binary | std::ios::trunc);

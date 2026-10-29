@@ -1,0 +1,27 @@
+{
+  "legacy_input": "local-data/validation/yell-actual-213/actual-001/continued.oysav",
+  "sha256": "b0ae671ef8a7129205596752840c90af588e9077bb58be27acf3e63564bdbe69",
+  "bytes": 2743380,
+  "version": 104,
+  "original_is_read_only_input": true,
+  "selector_coverage": "root North=0, active-world East, nested transition West; queued move and travel plan round trip; invalid 255 writer/reader rejection",
+  "legacy_scope": "real104 load, no claim of populated old queued-selector fixture; older selectors default absent",
+  "new_unit_cases": 0,
+  "full_historical_matrix": false,
+  "status": "PASS",
+  "checks": {
+    "legacy104_read": true,
+    "save105_root_north": true,
+    "world_east": true,
+    "dialogue_west": true,
+    "travel_plan_and_costs_unchanged": true,
+    "invalid_writer_atomic": true,
+    "invalid_reader_rejected": true,
+    "legacy_input_unchanged": true
+  },
+  "output": "local-data/validation/mm8-native-boundary-222/selector105.oysav",
+  "output_version": 105,
+  "output_sha256": "4154d8ac9163a6d41f62b7ab3848d68f0f3d5e1b60b0c201e8cc26b15993b403",
+  "initial_helper_compile_failure": "codec-compile-001 omitted inherited BX_CONFIG_DEBUG definition; compile flags corrected only in local helper, no production rebuild",
+  "production_source_changed_for_helper_failure": false
+}

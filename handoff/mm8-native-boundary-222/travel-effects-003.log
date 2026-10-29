@@ -1,0 +1,7 @@
+  outdoor actors: total=202 map_delta=143 spawn=59 textured=202 missing=0
+  outdoor sprite objects: total=0 textured=0 missing=0
+[AssetLoadWarning] kind=audio phase=play path="audio/pc5240b.wav" result=loaded load_us=381 frames=23535
+  outdoor actors: total=83 map_delta=27 spawn=56 textured=83 missing=0
+  outdoor sprite objects: total=0 textured=0 missing=0
+[PASS] app_map_transition_confirm_applies_oe_travel_side_effects
+Regression suite summary: passed=1 failed=0

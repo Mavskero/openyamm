@@ -54,6 +54,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -84,6 +85,33 @@ struct ArcomageLibrary;
 class ItemTable;
 struct GameApplicationTestAccess;
 struct ItemDefinition;
+
+struct OutdoorMapStartPoint
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    float yawRadians = 0.0f;
+};
+
+std::optional<OutdoorMapStartPoint> resolveOutdoorMapStartPoint(
+    const Engine::AssetFileSystem &assetFileSystem,
+    const OutdoorMapData &outdoorMapData,
+    std::string_view startName);
+
+struct OutdoorNativeArrivalFloor
+{
+    float height = 0.0f;
+    bool onWater = false;
+    bool onBurning = false;
+};
+
+std::optional<OutdoorNativeArrivalFloor> resolveOutdoorNativeArrivalFloor(
+    const Engine::AssetFileSystem &assetFileSystem,
+    const OutdoorMapData &outdoorMapData,
+    float x,
+    float y,
+    bool levitateActive);
 
 class OutdoorGameView
     : public IGameplayOverlaySceneAdapter

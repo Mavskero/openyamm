@@ -8,6 +8,7 @@
 #include "game/maps/MapDeltaData.h"
 #include "game/outdoor/OutdoorMechanismAudio.h"
 #include "game/party/Party.h"
+#include "game/tables/MapStats.h"
 #include "game/tables/PortraitFxEventTable.h"
 
 #include <array>
@@ -170,6 +171,7 @@ struct EventRuntimeState
         std::optional<int32_t> directionDegrees;
         std::optional<int32_t> lookAngleDegrees;
         bool useMapStartPosition = false;
+        std::optional<MapBoundaryEdge> nativeArrivalStartEdge;
         bool useFullscreenLoading = false;
         // Applied by the App's map-move transaction; legacy queued moves have already paid.
         DeferredTravelPlan travelPlan;

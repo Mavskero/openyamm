@@ -39,7 +39,8 @@ namespace OpenYAMM::Game
 {
 namespace
 {
-constexpr uint32_t SaveVersion = 104;
+constexpr uint32_t SaveVersion = 105;
+constexpr uint32_t SaveVersionNativeArrivalStart = 105;
 constexpr uint32_t SaveVersionDeferredTravel = 104;
 constexpr uint32_t SaveVersionReusableMercenarySlots = 103;
 constexpr uint32_t SaveVersionSessionLocations = 102;
@@ -2424,10 +2425,12 @@ void writeValue(BinaryWriter &writer, const EventRuntimeState::PendingMapMove &v
     writeValue(writer, value.traceEventId);
     writeValue(writer, value.traceDestinationName);
     writeValue(writer, value.travelPlan);
+    writeValue(writer, value.nativeArrivalStartEdge);
 }
 
 bool readValue(BinaryReader &reader, EventRuntimeState::PendingMapMove &value)
 {
+    value.nativeArrivalStartEdge.reset();
     return readValue(reader, value.x)
         && readValue(reader, value.y)
         && readValue(reader, value.z)
@@ -2442,7 +2445,10 @@ bool readValue(BinaryReader &reader, EventRuntimeState::PendingMapMove &value)
         && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.traceActionId))
         && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.traceEventId))
         && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.traceDestinationName))
-        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.travelPlan));
+        && (reader.version() < SaveVersionDeferredTravel || readValue(reader, value.travelPlan))
+        && (reader.version() < SaveVersionNativeArrivalStart || readValue(reader, value.nativeArrivalStartEdge))
+        && (!value.nativeArrivalStartEdge.has_value()
+            || static_cast<uint8_t>(*value.nativeArrivalStartEdge) <= static_cast<uint8_t>(MapBoundaryEdge::West));
 }
 
 void writeValue(BinaryWriter &writer, const EventRuntimeState::PendingDialogueContext &value)
@@ -4916,6 +4922,12 @@ bool validateSavedTravelPlans(const GameSaveData &data, std::string &error)
 {
     const auto validateMove = [&error](const std::optional<EventRuntimeState::PendingMapMove> &move)
     {
+        if (move && move->nativeArrivalStartEdge.has_value()
+            && static_cast<uint8_t>(*move->nativeArrivalStartEdge) > static_cast<uint8_t>(MapBoundaryEdge::West))
+        {
+            error = "Invalid native outdoor arrival start";
+            return false;
+        }
         return !move || validateDeferredTravelPlan(move->travelPlan, error);
     };
     const auto validateState = [&validateMove](const std::optional<EventRuntimeState> &state)

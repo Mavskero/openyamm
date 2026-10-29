@@ -20866,7 +20866,14 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
                 return false;
             }
 
-            const int expectedTravelDays = pCurrentMap->eastTransition->travelDays;
+            constexpr int ExpectedTravelDays = 5;
+            if (toLowerCopy(pCurrentMap->eastTransition->destinationMapFileName) != "out06.odm"
+                || pCurrentMap->eastTransition->travelDays != ExpectedTravelDays
+                || pCurrentMap->eastTransition->nativeArrivalStartEdge != MapBoundaryEdge::West)
+            {
+                failure = "Out02 east route differs from native Out06/five-day/West Start metadata";
+                return false;
+            }
             Party &party = pPartyRuntime->party();
             Character *pActiveMember = party.activeMember();
 
@@ -20878,10 +20885,12 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
 
             const float bodyRadius = 37.0f;
             const OutdoorMoveState initialMoveState = pPartyRuntime->movementState();
+            // Out02 has no Party Start: its center fallback is Z=513, while this Y=0 east-edge
+            // terrain is Z=0. Establish a grounded boundary pose instead of retaining center altitude.
             pPartyRuntime->teleportTo(
                 static_cast<float>(pCurrentMap->outdoorBounds.maxX) - bodyRadius - 1.0f,
                 initialMoveState.y,
-                initialMoveState.footZ);
+                0.0f);
 
             pEventRuntimeState->pendingDialogueContext.reset();
             pEventRuntimeState->pendingMapMove.reset();
@@ -20896,9 +20905,24 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
                 || pendingContext->kind != DialogueContextKind::MapTransition
                 || pendingContext->sourceId != static_cast<uint32_t>(MapBoundaryEdge::East)
                 || !pendingContext->transitionMapMove
+                || pendingContext->transitionMapMove->nativeArrivalStartEdge != MapBoundaryEdge::West
                 || pendingContext->transitionMapMove->traceSourceKind != "map_boundary")
             {
-                failure = "ordinary east boundary did not queue a positioned map_boundary confirmation";
+                const OutdoorMoveState &state = pPartyRuntime->movementState();
+                const std::optional<MapBoundaryEdge> &blockedEdge =
+                    pPartyRuntime->movementEvents().blockedBoundaryEdge;
+                std::ostringstream detail;
+                detail << "ordinary east boundary did not queue a positioned map_boundary confirmation"
+                       << " pos=(" << state.x << ',' << state.y << ',' << state.footZ << ')'
+                       << " airborne=" << state.airborne
+                       << " supportOnWater=" << state.supportOnWater
+                       << " supportOnBurning=" << state.supportOnBurning
+                       << " flying=" << pPartyRuntime->partyMovementState().flying
+                       << " blockedEdge=" << (blockedEdge
+                            ? std::to_string(static_cast<unsigned>(*blockedEdge)) : "none")
+                       << " pendingContext.kind=" << (pendingContext
+                            ? std::to_string(static_cast<unsigned>(pendingContext->kind)) : "none");
+                failure = detail.str();
                 return false;
             }
 
@@ -20949,7 +20973,7 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
             GameApplicationTestAccess::executeActiveDialogAction(application);
 
             const float expectedGameMinutes =
-                initialGameMinutes + static_cast<float>(expectedTravelDays) * 1440.0f;
+                initialGameMinutes + static_cast<float>(ExpectedTravelDays) * 1440.0f;
             constexpr int ExpectedOutdoorTravelFood = 5;
             if (std::abs(pWorld->gameMinutes() - initialGameMinutes) > 0.01f
                 || party.food() != initialFood
@@ -20963,23 +20987,21 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
                 return false;
             }
 
-            const EventRuntimeState::PendingMapMove *pPendingMapMove = pWorld->pendingMapMove();
+            // Closing the confirmation transfers ownership from the map to the session queue.
+            const auto &pendingSessionMove = GameApplicationTestAccess::pendingSessionMapMove(application);
+            const EventRuntimeState::PendingMapMove *pPendingMapMove =
+                pendingSessionMove ? &*pendingSessionMove : nullptr;
 
             if (pPendingMapMove == nullptr
                 || !pPendingMapMove->mapName.has_value()
-                || *pPendingMapMove->mapName != "Out06.odm"
+                || toLowerCopy(*pPendingMapMove->mapName) != "out06.odm"
                 || pPendingMapMove->travelPlan.mode != EventRuntimeState::TravelPlanMode::TravelDays
-                || pPendingMapMove->travelPlan.travelDays != expectedTravelDays
+                || pPendingMapMove->travelPlan.travelDays != ExpectedTravelDays
                 || pPendingMapMove->travelPlan.foodRequired != ExpectedOutdoorTravelFood
-                || pPendingMapMove->travelPlan.goldFare != 0)
+                || pPendingMapMove->travelPlan.goldFare != 0
+                || pPendingMapMove->nativeArrivalStartEdge != MapBoundaryEdge::West)
             {
                 failure = "map transition confirm did not queue the destination map move";
-                return false;
-            }
-
-            if (!pPendingMapMove->directionDegrees.has_value() || *pPendingMapMove->directionDegrees != 0)
-            {
-                failure = "map transition confirm did not preserve the crossed boundary facing";
                 return false;
             }
 
@@ -20991,7 +21013,7 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
 
             const std::optional<MapAssetInfo> &loadedMap = GameApplicationTestAccess::gameDataLoader(application).getSelectedMap();
 
-            if (!loadedMap || toLowerCopy(loadedMap->map.fileName) != "out06.odm")
+            if (!loadedMap || toLowerCopy(loadedMap->map.fileName) != "out06.odm" || !loadedMap->outdoorMapData)
             {
                 failure = "map transition confirm did not load the destination outdoor map";
                 return false;
@@ -21025,11 +21047,31 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
                 return false;
             }
 
-            const float expectedYawRadians = 0.0f;
-
-            if (angleDistanceRadians(GameApplicationTestAccess::cameraYawRadians(application), expectedYawRadians) > 0.0001f)
+            // Independent source values: original Out06 West Start, not the crossed edge's heading.
+            constexpr float ExpectedStartX = -22080.0f;
+            constexpr float ExpectedStartY = -5776.0f;
+            constexpr float ExpectedMarkerZ = 480.0f;
+            // Native cell (20,75): four height bytes are 15, descriptor 794 has no water/burn flags.
+            constexpr float ExpectedGroundZ = 480.0f;
+            constexpr float ExpectedYawRadians = 0.0f;
+            const std::optional<OutdoorMapStartPoint> startPoint = resolveOutdoorMapStartPoint(
+                assetFileSystem, *loadedMap->outdoorMapData, "West Start");
+            if (!startPoint || startPoint->x != ExpectedStartX || startPoint->y != ExpectedStartY
+                || startPoint->z != ExpectedMarkerZ
+                || angleDistanceRadians(startPoint->yawRadians, ExpectedYawRadians) > 0.0001f)
             {
-                failure = "map transition confirm did not face east after an eastward boundary arrival";
+                failure = "destination West Start differs from the original marker XYZ/yaw";
+                return false;
+            }
+
+            const OutdoorMoveState &arrivedState = pArrivedPartyRuntime->movementState();
+            if (arrivedState.x != ExpectedStartX || arrivedState.y != ExpectedStartY
+                || arrivedState.footZ != ExpectedGroundZ || arrivedState.fallStartZ != ExpectedGroundZ
+                || arrivedState.supportKind != OutdoorSupportKind::Terrain || arrivedState.airborne
+                || angleDistanceRadians(GameApplicationTestAccess::cameraYawRadians(application),
+                    ExpectedYawRadians) > 0.0001f)
+            {
+                failure = "native boundary arrival did not use West Start XY/yaw and native terrain Z";
                 return false;
             }
 

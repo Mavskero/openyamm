@@ -1,0 +1,25 @@
+{
+  "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-221/runtime-001",
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/mm8-native-boundary-222/runtime-001",
+  "added_members": [
+    "data_tables/map_navigation.txt"
+  ],
+  "changed_members": [],
+  "native_navigation_sha256": "3c706f9eb10d9743ba86870e69820ca6d591db3cc8cba46f2f793d6aa1ecc3df",
+  "native_source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/mm8-native-boundary-222/world-rule-output-001/world_rule_conversion.json",
+  "unchanged_existing_rules": [
+    "data_tables/town_portal_switch.txt",
+    "data_tables/transport_locations.txt",
+    "data_tables/hw_water_textures.txt",
+    "data_tables/overlay.txt",
+    "data_tables/outdoor_travels.txt",
+    "data_tables/transport_index.txt",
+    "data_tables/house_exits.txt",
+    "data_tables/house_rules.txt",
+    "data_tables/continent_settings.txt"
+  ],
+  "all_other_archive_members_retained": true,
+  "all_worlds_retained": true,
+  "controlled_gameplay_fixtures": false,
+  "new_release": false
+}

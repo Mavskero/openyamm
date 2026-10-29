@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-29T17:42:09.126457+00:00",
+  "source_base": "61e7a801d80900ade5fa1d2ed44cfa7d8ba01483",
+  "files": {
+    "game/app/GameApplication.cpp": "3fd32ddc36d97c86c28a1b244cd29db4ad4c0942a2128e57a29942e6be3d3d05",
+    "game/events/EventRuntime.h": "3af3f90e5154d086c9995bb27e1cda5674d7544ece940ec16929bc13569548ef",
+    "game/gameplay/GameplayDialogController.cpp": "ec1eeec5a3e2c41d9a0ce82645e1c2b1e0bb75fb757aefa23f8803a08d0bb0b6",
+    "game/maps/SaveGame.cpp": "8641063db61df0b32d81cd250db05b369a82273a78c01b1733cc214edbac60ec",
+    "game/maps/SaveGame.h": "bc56c46c4f341703a90ca75b6f6ca19218f650596bde7727c93d754abcaf8960",
+    "game/outdoor/HeadlessOutdoorDiagnostics.cpp": "5b3206f0566eeded6bb3c730bb2e241cb788c9e6e0aaad614a3c42d733856e5f",
+    "game/outdoor/OutdoorGameView.cpp": "e6f36c7daa2ec2b515abc2f3013219f8109858c10df753348e1606c808dda9eb",
+    "game/outdoor/OutdoorGameView.h": "cd75997420dc4eb6e67d2560f5beb4af233216cd270f1093a7a9e73d316a9fd9",
+    "game/scene/OutdoorSceneRuntime.cpp": "d9d5068ae5a8eec7dd65ab302c024f25d7fdc10ba979cc147d9333b0e2df5bb0",
+    "game/tables/MapStats.cpp": "dcbad12f075085dce3f85ed462443147720a2f4235d46071d88288056e1a5714",
+    "game/tables/MapStats.h": "97e7879ab04751eccb658154494643e21c3b5d2e8390cd308b4b3a28fa0d7b11",
+    "tests/HouseDialogueRegressionTests.cpp": "4235451a17312ea3c9df90e0634c5ee1ce9ddc25d079d1d9bde7b04477cf0db4",
+    "tools/mmerge_import/WorldRuleResources.cpp": "a3b6289316b85bb2d2412df2ddc33bbc6fd7b9df795b228dd57d18921e526d02"
+  },
+  "agents_frozen": true,
+  "main_only_build_owner": true,
+  "changes_since_001": "Only existing headless case origin footZHint=0 and failure diagnostics; production frozen.",
+  "changes_since_002": "Only existing headless case reads actual session-owned queue after dialogue close; production frozen."
+}

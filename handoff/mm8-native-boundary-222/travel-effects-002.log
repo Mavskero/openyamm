@@ -1,0 +1,5 @@
+  outdoor actors: total=202 map_delta=143 spawn=59 textured=202 missing=0
+  outdoor sprite objects: total=0 textured=0 missing=0
+[AssetLoadWarning] kind=audio phase=play path="audio/pc5240a.wav" result=loaded load_us=753 frames=33472
+[FAIL] app_map_transition_confirm_applies_oe_travel_side_effects - map transition confirm did not queue the destination map move
+Regression suite summary: passed=0 failed=1

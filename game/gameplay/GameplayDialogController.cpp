@@ -682,6 +682,7 @@ bool samePendingMapMove(
         && left.mapName == right.mapName
         && left.directionDegrees == right.directionDegrees
         && left.useMapStartPosition == right.useMapStartPosition
+        && left.nativeArrivalStartEdge == right.nativeArrivalStartEdge
         && left.useFullscreenLoading == right.useFullscreenLoading
         && left.travelPlan == right.travelPlan;
 }
@@ -2645,6 +2646,7 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 pendingMove.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
                 pendingMove.travelPlan.travelDays = std::max(0, (*pTransition)->travelDays);
                 pendingMove.travelPlan.foodRequired = mapTransitionTravelFoodRequired(context, **pTransition);
+                pendingMove.nativeArrivalStartEdge = (*pTransition)->nativeArrivalStartEdge;
             }
             logMapTransitionConfirmed(
                 context.eventRuntimeState,
@@ -2692,6 +2694,7 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
         pendingMapMove.mapName = (*pTransition)->destinationMapFileName;
         pendingMapMove.directionDegrees = (*pTransition)->directionDegrees;
         pendingMapMove.useMapStartPosition = (*pTransition)->useMapStartPosition;
+        pendingMapMove.nativeArrivalStartEdge = (*pTransition)->nativeArrivalStartEdge;
         pendingMapMove.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
         pendingMapMove.travelPlan.travelDays = std::max(0, (*pTransition)->travelDays);
         pendingMapMove.travelPlan.foodRequired = mapTransitionTravelFoodRequired(context, **pTransition);
@@ -2703,13 +2706,14 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
             0,
             (*pTransition)->destinationMapFileName);
 
-        if (context.eventRuntimeState.pendingDialogueContext->kind == DialogueContextKind::MapTransition)
+        if (!pendingMapMove.nativeArrivalStartEdge
+            && context.eventRuntimeState.pendingDialogueContext->kind == DialogueContextKind::MapTransition)
         {
             pendingMapMove.directionDegrees = boundaryTravelHeadingDegrees(
                 static_cast<MapBoundaryEdge>(context.eventRuntimeState.pendingDialogueContext->sourceId));
         }
 
-        if (!(*pTransition)->useMapStartPosition
+        if (!pendingMapMove.nativeArrivalStartEdge && !(*pTransition)->useMapStartPosition
             && (*pTransition)->arrivalX.has_value()
             && (*pTransition)->arrivalY.has_value()
             && (*pTransition)->arrivalZ.has_value())
