@@ -425,6 +425,9 @@ void GameplayUiRuntime::clear()
     m_iconAssetScaleTier = Engine::AssetScaleTier::X1;
     m_fontAssetScaleTier = Engine::AssetScaleTier::X1;
     m_layoutsLoaded = false;
+    m_uiTextTableLoadAttempted = false;
+    m_uiTextTableValid = false;
+    m_uiTextTable = {};
     m_assetsPreloaded = false;
 }
 
@@ -440,6 +443,9 @@ void GameplayUiRuntime::bindDataRepository(const GameDataRepository *pDataReposi
     m_townPortalBackgroundTextureName.clear();
     m_townPortalDestinations.clear();
     m_townPortalDestinationsLoaded = false;
+    m_uiTextTableLoadAttempted = false;
+    m_uiTextTableValid = false;
+    m_uiTextTable = {};
     m_pDataRepository = pDataRepository;
 }
 
@@ -477,14 +483,48 @@ const Engine::AssetFileSystem *GameplayUiRuntime::assetFileSystem() const
 
 bool GameplayUiRuntime::ensureGameplayLayoutsLoaded(const GameplayUiController &uiController)
 {
-    if (m_layoutsLoaded)
-    {
-        return true;
-    }
-
     if (m_pAssetFileSystem == nullptr)
     {
         return false;
+    }
+
+    if (!m_uiTextTableLoadAttempted)
+    {
+        m_uiTextTableLoadAttempted = true;
+        constexpr const char *UiTextPath = "Data/data_tables/ui_text.txt";
+        if (!m_pAssetFileSystem->exists(UiTextPath))
+        {
+            std::fprintf(stderr,
+                "GameplayUiRuntime: ui_text.txt missing; using English defaults for legacy assets.\n");
+            m_uiTextTableValid = true;
+        }
+        else
+        {
+            const std::optional<std::string> text = m_pAssetFileSystem->readTextFile(UiTextPath);
+            const std::optional<Engine::TextTable> table = text && text->size() <= 64 * 1024
+                ? Engine::TextTable::parseTabSeparated(*text) : std::nullopt;
+            std::vector<std::vector<std::string>> rows;
+            if (table)
+            {
+                for (size_t index = 0; index < table->getRowCount(); ++index)
+                {
+                    rows.push_back(table->getRow(index));
+                }
+            }
+            m_uiTextTableValid = table && m_uiTextTable.loadFromRows(rows);
+            if (!m_uiTextTableValid)
+            {
+                std::fprintf(stderr, "GameplayUiRuntime: invalid ui_text.txt; rebuild/reimport the runtime assets.\n");
+            }
+        }
+    }
+    if (!m_uiTextTableValid)
+    {
+        return false;
+    }
+    if (m_layoutsLoaded)
+    {
+        return true;
     }
 
     m_layoutManager.clear();
@@ -506,6 +546,11 @@ bool GameplayUiRuntime::ensureGameplayLayoutsLoaded(const GameplayUiController &
     clearHudLayoutLookupCaches();
     m_layoutsLoaded = true;
     return true;
+}
+
+const UiTextTable &GameplayUiRuntime::uiTextTable() const
+{
+    return m_uiTextTable;
 }
 
 void GameplayUiRuntime::preloadReferencedAssets()

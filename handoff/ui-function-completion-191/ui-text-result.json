@@ -1,0 +1,248 @@
+{
+  "checkpoint": 191,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-29T04:38:32.507972+00:00",
+  "source_base": "5bfe9bfcad9461366e826a3cf1a8a1e4b8582bb4",
+  "scope": "Observed mixed-language HUD/save/question/beacon captions and missing direct Lloyd SPELL font",
+  "runtime": "local-data/validation/ui-function-completion-191/runtime-003",
+  "prior_accepted_result": "scoped-result.json",
+  "runtime_diffs": [
+    {
+      "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/core-ui-text-001/core_conversion.json",
+      "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-001",
+      "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-002",
+      "added_members": [
+        "data_tables/ui_text.txt"
+      ],
+      "changed_members": [],
+      "ui_text_sha256": "8807e7762c452d9183df11204a3aa40e392c24292b2e59d1b51d2e142f344580",
+      "all_prior_archive_members_retained": true,
+      "controlled_gameplay_fixtures": false,
+      "release_created": false
+    },
+    {
+      "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/ui-font-001/ui_conversion.json",
+      "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-002",
+      "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-003",
+      "added_members": [
+        "icons/spell.fnt"
+      ],
+      "changed_members": [],
+      "spell_font_sha256": "a13d255263c694c84395f434ded4d5d129ad7683d4567a18f68c69feb4a8dfd1",
+      "all_prior_archive_members_retained": true,
+      "controlled_gameplay_fixtures": false,
+      "release_created": false
+    }
+  ],
+  "text_sources": {
+    "table": "data_tables/ui_text.txt",
+    "count": 13,
+    "original_globaltxt_ids": [
+      34,
+      375,
+      523,
+      19,
+      56,
+      57,
+      109,
+      110,
+      437,
+      436
+    ],
+    "project_translations": {
+      "ui.empty_slot": "空槽",
+      "ui.menu": "菜单",
+      "ui.submit": "提交"
+    },
+    "selected_source": "Data/10 LocZHCN.EnglishT.lod::global.txt"
+  },
+  "font_source": {
+    "member": "icons/spell.fnt",
+    "bytes": 25344,
+    "original_source": "Data/10 LocZHCN.EnglishT.lod::spell.fnt",
+    "required_direct_code_reference": "SPELL",
+    "no_substitute_font": true
+  },
+  "implementation": "Typed UI table loaded once per resource binding, explicit English legacy behavior when absent; present invalid resource fails loading. Empty save slot localization is presentation-only; original names/internal sentinel/editor remain unchanged.",
+  "checks": {
+    "build-native-011": {
+      "record": "local-data/validation/ui-function-completion-191/build-native-011.command.json",
+      "argv": [
+        "cmake",
+        "--build",
+        "build-apple",
+        "--target",
+        "openyamm",
+        "readable_scroll_capture",
+        "core_import",
+        "-j3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 68.42
+    },
+    "build-native-012": {
+      "record": "local-data/validation/ui-function-completion-191/build-native-012.command.json",
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "readable_scroll_capture",
+        "ui_import",
+        "-j3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 4.904
+    },
+    "core-import-001": {
+      "record": "local-data/validation/ui-function-completion-191/core-import-001.command.json",
+      "argv": [
+        "openyamm/build-apple/core_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "local-data/validation/ui-function-completion-191/core-ui-text-001"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.129
+    },
+    "ui-import-001": {
+      "record": "local-data/validation/ui-function-completion-191/ui-import-001.command.json",
+      "argv": [
+        "openyamm/build-apple/ui_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "openyamm/assets_dev/engine/ui/gameplay",
+        "3",
+        "local-data/validation/ui-function-completion-191/ui-font-001"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.754
+    },
+    "assemble-runtime-002": {
+      "record": "local-data/validation/ui-function-completion-191/assemble-runtime-002.command.json",
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-191/assemble_runtime_ui_text.py"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.002
+    },
+    "assemble-runtime-003": {
+      "record": "local-data/validation/ui-function-completion-191/assemble-runtime-003.command.json",
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-191/assemble_runtime_font.py"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 2.11
+    },
+    "configure-ios-002": {
+      "record": "local-data/validation/ui-function-completion-191/configure-ios-002.command.json",
+      "argv": [
+        "cmake",
+        "-S",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm",
+        "-B",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm/build-ios-xcode"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 1.142
+    },
+    "build-ios-002": {
+      "record": "local-data/validation/ui-function-completion-191/build-ios-002.command.json",
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 48.598
+    },
+    "ui-text-preview-002": {
+      "record": "local-data/validation/ui-function-completion-191/ui-text-preview-002.command.json",
+      "argv": [
+        "openyamm/build-apple/readable_scroll_capture",
+        "local-data/validation/ui-function-completion-191/runtime-003",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-191/ui-text-002",
+        "--ui-text-only"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 12.008
+    }
+  },
+  "actual": {
+    "passed": true,
+    "captures": 4,
+    "frames": 29,
+    "elapsed_ms": 11793,
+    "visual_review": "required",
+    "device": false,
+    "campaign_replay": false,
+    "save_write": false,
+    "normal_frames": 0,
+    "new_unit_cases": 0
+  },
+  "fixtures": {
+    "scope": "Four UI-only Metal previews on original normal132 input: HUD menu, empty save slots, empty Lloyd set page, recalled beacon duration. UI overlays opened directly; one temporary172800-second beacon inserted only for recall presentation. No cast, travel, save write or campaign progression; delta0 throughout; source file unchanged.",
+    "capture_limit": 4,
+    "wall_limit_seconds": 45,
+    "device": false,
+    "new_unit_cases": 0
+  },
+  "visual_review": "ui-text-visual-review.json",
+  "reviewed_images": 4,
+  "font_load_warnings": 0,
+  "earlier_visual_failure": {
+    "attempt": "ui-text-001",
+    "driver_passed": true,
+    "visual_passed": false,
+    "reason": "Lloyd set/recall direct SPELL labels were absent; original font existed but importer did not collect code-only references.",
+    "retained": true,
+    "elapsed_ms_zero": "Old SDL-after-shutdown timer was zero; preserved wrapper time12.663s is authoritative. Current helper uses steady_clock."
+  },
+  "source_build_only": [
+    "Question Submit/Cancel translations",
+    "English resource branch",
+    "Explicit legacy-resource English defaults",
+    "Malformed present resource rejection"
+  ],
+  "new_unit_cases": 0,
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "device_or_simulator": false,
+  "new_release": false,
+  "runtime_uploaded": false,
+  "save_version": 103,
+  "save_version_changed": false,
+  "full_goal_complete": false,
+  "all_ui_complete": false,
+  "natural_campaign": false,
+  "limitations": [
+    "UI overlays opened directly, one temporary beacon for display, no spell casting/travel/save writing.",
+    "Prior actual-007 accepted evidence retained without replay; not a second claim of those flows on runtime003.",
+    "Existing iOS compiler warnings remain; build success does not imply warning-free code.",
+    "RC3 attachments do not include190/191 changes."
+  ],
+  "owned_jobs": [],
+  "agents": "All three Sol6.1/max writers completed and frozen; main integrated, built and inspected."
+}

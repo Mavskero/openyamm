@@ -11,6 +11,7 @@
 #include "game/gameplay/HouseServiceRuntime.h"
 #include "game/gameplay/ReputationRuntime.h"
 #include "game/tables/HouseServiceTextTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/tables/ItemTable.h"
 #include "game/StringUtils.h"
 
@@ -1241,8 +1242,11 @@ void GameplayDialogueRenderer::renderDialogueOverlay(
 
     if (pendingInputPromptHint(view))
     {
-        renderDialogueLabelById(view, "DialogueOkButton", "Submit", width, height, renderAboveHud);
-        renderDialogueLabelById(view, "DialogueGoodbyeButton", "Cancel", width, height, renderAboveHud);
+        const UiTextTable &text = view.gameplayUiRuntime().uiTextTable();
+        renderDialogueLabelById(view, "DialogueOkButton", text.text(UiTextTable::Message::Submit),
+            width, height, renderAboveHud);
+        renderDialogueLabelById(view, "DialogueGoodbyeButton", text.text(UiTextTable::Message::Cancel),
+            width, height, renderAboveHud);
     }
     else if (view.activeEventDialog().presentation == EventDialogPresentation::Transition
         && !view.activeEventDialog().actions.empty())

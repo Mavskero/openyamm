@@ -152,6 +152,127 @@ bool insideViewport(const GameplayResolvedHudLayoutElement &rect, int width, int
 // One consolidated UI flow. Its item/dialog/storage fixtures are recorded below.
 struct ApplicationCaptureTestAccess
 {
+    // A separate four-image preview for the newly localized labels; no reader/save replay.
+    static int previewUiText(std::filesystem::path runtime, std::filesystem::path input,
+        std::filesystem::path output)
+    {
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "UI text preview output must be new");
+        const std::vector<char> originalBytes = fileBytes(input);
+        std::string error;
+        const std::optional<GameSaveData> source = loadGameDataFromPath(input, error);
+        require(source && source->party.members.size() == 4, "Expected unchanged normal132 input");
+        std::filesystem::create_directories(output);
+        std::filesystem::current_path(output);
+        std::ofstream(output / "fixture.json")
+            << "{\"scope\":\"Four UI-only Metal previews on original normal132 input: HUD menu, empty save "
+               "slots, empty Lloyd set page, recalled beacon duration. UI overlays opened directly; one "
+               "temporary172800-second beacon inserted only for recall presentation. No cast, travel, "
+               "save write or campaign progression; delta0 throughout; source file unchanged.\","
+               "\"capture_limit\":4,\"wall_limit_seconds\":45,\"device\":false,\"new_unit_cases\":0}\n";
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings(output / "settings.ini", settings, error), "Cannot write isolated UI settings");
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM UI Text Preview";
+        config.assetRoot = runtime.string();
+        config.activeWorldId = source->mapFileName.starts_with("7") ? "mm7" : "mm6";
+        config.startupMapFileOverride = source->mapFileName;
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        const std::array<const char *, 4> names{"localized-hud", "localized-empty-slots",
+            "localized-beacon-set", "localized-beacon-recall"};
+        unsigned frames = 0, readyFrame = 8, captured = 0;
+        std::string pending;
+        bool complete = false;
+        const auto started = std::chrono::steady_clock::now();
+        const auto elapsedMs = [&]()
+        {
+            return std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - started).count();
+        };
+        Engine::EngineApplication app(config,
+            [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+            [&]()
+            {
+                require(bgfx::getRendererType() == bgfx::RendererType::Metal, "Actual Metal renderer required");
+                return game.initializeRenderer() && game.loadSessionFromPath(input);
+            },
+            [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+            [&](int width, int height, float wheel, float)
+            {
+                require(++frames <= 240 && elapsedMs() < 45000, "UI text preview exceeded bound");
+                game.renderFrame(width, height, wheel, 0.0f);
+                if (complete) return;
+                GameplayScreenRuntime &screen = game.m_gameSession.gameplayScreenRuntime();
+                if (!pending.empty())
+                {
+                    if (const auto image = Engine::BgfxContext::consumeScreenshot(pending))
+                    {
+                        SDL_Surface *pSurface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                            SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()),
+                            int(image->width * 4));
+                        require(pSurface != nullptr, "Cannot wrap UI text screenshot");
+                        const bool saved = SDL_SaveBMP(pSurface, (output / (pending + ".bmp")).c_str());
+                        SDL_DestroySurface(pSurface);
+                        require(saved, "Cannot save UI text screenshot");
+                        pending.clear();
+                        ++captured;
+                        if (captured == 1)
+                        {
+                            screen.openSaveGameOverlay();
+                        }
+                        else if (captured == 2)
+                        {
+                            screen.saveGameScreenState() = {};
+                            screen.openUtilitySpellOverlay(GameplayUiController::UtilitySpellOverlayMode::LloydsBeacon,
+                                33, 0, false);
+                        }
+                        else if (captured == 3)
+                        {
+                            Character *pCaster = game.m_pMapSceneRuntime->party().member(0);
+                            require(pCaster != nullptr, "No caster for UI-only beacon fixture");
+                            LloydBeacon beacon;
+                            beacon.mapName = source->mapFileName;
+                            beacon.locationName = "UI preview";
+                            beacon.remainingSeconds = 172800.0f;
+                            pCaster->lloydsBeacons[0] = std::move(beacon);
+                            screen.utilitySpellOverlay().lloydRecallMode = true;
+                        }
+                        else
+                        {
+                            require(fileBytes(input) == originalBytes, "Read-only source save changed");
+                            complete = true;
+                            SDL_Event quit = {};
+                            quit.type = SDL_EVENT_QUIT;
+                            require(SDL_PushEvent(&quit), "Cannot queue preview exit");
+                        }
+                        readyFrame = frames + 4;
+                    }
+                }
+                else if (frames >= readyFrame)
+                {
+                    require(captured < names.size(), "Too many UI screenshots");
+                    pending = names[captured];
+                    bgfx::requestScreenShot(BGFX_INVALID_HANDLE, pending.c_str());
+                }
+            }, [&]() { game.shutdownApplication(); });
+        require(app.run() == 0 && complete && captured == names.size(), "UI text preview incomplete");
+        std::ofstream(output / "result.json")
+            << "{\"passed\":true,\"captures\":" << captured << ",\"frames\":" << frames
+            << ",\"elapsed_ms\":" << elapsedMs()
+            << ",\"visual_review\":\"required\",\"device\":false,\"campaign_replay\":false,"
+               "\"save_write\":false,\"normal_frames\":0,\"new_unit_cases\":0}\n";
+        return 0;
+    }
+
     static int run(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
     {
         runtime = std::filesystem::canonical(runtime);
@@ -847,8 +968,11 @@ int main(int argc, char **argv)
 {
     try
     {
+        if (argc == 5 && std::string_view(argv[4]) == "--ui-text-only")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::previewUiText(argv[1], argv[2], argv[3]);
         if (argc != 4)
-            throw std::runtime_error("readable_scroll_capture COMPLETE_RUNTIME READONLY_NORMAL132_SEED NEW_OUTPUT");
+            throw std::runtime_error("readable_scroll_capture COMPLETE_RUNTIME READONLY_NORMAL132_SEED NEW_OUTPUT "
+                "[--ui-text-only]");
         return OpenYAMM::Game::ApplicationCaptureTestAccess::run(argv[1], argv[2], argv[3]);
     }
     catch (const std::exception &failure)

@@ -15,6 +15,7 @@
 #include "game/tables/MonsterTable.h"
 #include "game/tables/RosterTable.h"
 #include "game/tables/SpellTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/GameplayHudCommon.h"
 #include "game/ui/CharacterSkillsLayout.h"
 #include "game/ui/CharacterSkillRows.h"
@@ -1094,6 +1095,27 @@ size_t utilityOverlayMaxLloydBeaconSlots(const Character *pCharacter)
 std::string formatUtilityDurationText(float remainingSeconds)
 {
     return lloydsBeaconRemainingDurationText(remainingSeconds);
+}
+
+std::string localizedBeaconDurationText(GameplayScreenRuntime &context, float remainingSeconds)
+{
+    const std::string duration = formatUtilityDurationText(remainingSeconds);
+    if (duration.size() < 2)
+    {
+        return duration;
+    }
+
+    const std::string number = duration.substr(0, duration.size() - 1);
+    const bool singular = number == "1";
+    UiTextTable::Message unit;
+    switch (duration.back())
+    {
+        case 'd': unit = singular ? UiTextTable::Message::Day : UiTextTable::Message::Days; break;
+        case 'h': unit = singular ? UiTextTable::Message::Hour : UiTextTable::Message::Hours; break;
+        case 'm': unit = singular ? UiTextTable::Message::Minute : UiTextTable::Message::Minutes; break;
+        default: return duration;
+    }
+    return number + " " + context.gameplayUiRuntime().uiTextTable().text(unit);
 }
 
 void renderHudLines(
@@ -3710,6 +3732,15 @@ void GameplayPartyOverlayRenderer::renderSaveLoadOverlay(
         std::string label = slotIndex < slots.size() ? slots[slotIndex].fileLabel : std::string();
 
         if (std::strcmp(pScreenName, "SaveGame") == 0
+            && slotIndex < slots.size()
+            && !slots[slotIndex].populated
+            && slots[slotIndex].fileLabel == "Empty"
+            && slots[slotIndex].locationName.empty())
+        {
+            label = context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::EmptySlot);
+        }
+
+        if (std::strcmp(pScreenName, "SaveGame") == 0
             && pSaveGameScreen != nullptr
             && pSaveGameScreen->editActive
             && slotIndex == pSaveGameScreen->editSlotIndex)
@@ -4618,6 +4649,7 @@ void GameplayPartyOverlayRenderer::renderUtilitySpellOverlay(GameplayScreenRunti
 
     if (context.utilitySpellOverlayReadOnly().mode == GameplayUiController::UtilitySpellOverlayMode::LloydsBeacon)
     {
+        const UiTextTable &uiText = context.gameplayUiRuntime().uiTextTable();
         const std::vector<std::string> orderedLayoutIds = context.sortedHudLayoutIdsForScreen("LloydsBeacon");
         const auto resolveLayout =
             [&context, width, height](
@@ -4713,7 +4745,12 @@ void GameplayPartyOverlayRenderer::renderUtilitySpellOverlay(GameplayScreenRunti
 
             if (!pLayout->labelText.empty())
             {
-                context.renderLayoutLabel(*pLayout, *resolved, pLayout->labelText);
+                const std::string label = layoutId == "LloydsBeaconSetModeText"
+                    ? uiText.text(UiTextTable::Message::BeaconSet)
+                    : layoutId == "LloydsBeaconRecallModeText"
+                        ? uiText.text(UiTextTable::Message::BeaconRecall)
+                        : pLayout->labelText;
+                context.renderLayoutLabel(*pLayout, *resolved, label);
                 continue;
             }
 
@@ -4852,7 +4889,7 @@ void GameplayPartyOverlayRenderer::renderUtilitySpellOverlay(GameplayScreenRunti
             else if (!recallMode)
             {
                 renderLabel(
-                    "Available",
+                    uiText.text(UiTextTable::Message::BeaconAvailable),
                     previewX,
                     previewY,
                     previewWidth,
@@ -4882,7 +4919,7 @@ void GameplayPartyOverlayRenderer::renderUtilitySpellOverlay(GameplayScreenRunti
                 UiLayoutManager::TextAlignX::Center,
                 UiLayoutManager::TextAlignY::Middle);
             renderLabel(
-                formatUtilityDurationText(pBeacon->remainingSeconds),
+                localizedBeaconDurationText(context, pBeacon->remainingSeconds),
                 slotRect->x - 10.0f * slotRect->scale,
                 slotRect->y + slotRect->height + 4.0f * slotRect->scale,
                 slotRect->width + 20.0f * slotRect->scale,

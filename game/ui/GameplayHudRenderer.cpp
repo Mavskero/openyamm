@@ -2,6 +2,7 @@
 
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/gameplay/TurnBasedCombatRuntime.h"
+#include "game/tables/UiTextTable.h"
 
 #include <algorithm>
 #include <cmath>
@@ -726,7 +727,8 @@ void GameplayHudRenderer::renderGameplayHud(GameplayScreenRuntime &context, int 
 
         if (menuButton)
         {
-            context.renderLayoutLabel(*pMenuLayout, *menuButton, pMenuLayout->labelText);
+            context.renderLayoutLabel(*pMenuLayout, *menuButton,
+                context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::Menu));
         }
     }
 

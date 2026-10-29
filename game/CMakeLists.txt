@@ -37,6 +37,7 @@ add_library(openyamm_game STATIC
     tables/ClassSkillTable.cpp
     tables/CombatTextTable.cpp
     tables/HouseServiceTextTable.cpp
+    tables/UiTextTable.cpp
     events/EventDialogContent.cpp
     events/EventRuntime.cpp
     events/ScriptedEventProgram.cpp

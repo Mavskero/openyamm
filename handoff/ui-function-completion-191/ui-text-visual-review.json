@@ -1,0 +1,30 @@
+{
+  "recorded_at": "2026-10-29T04:38:32.507972+00:00",
+  "method": "Main inspected all four actual Metal PNGs via view_image; lossless BMP-to-PNG conversion. No image generation or editing.",
+  "images": [
+    {
+      "file": "local-data/validation/ui-function-completion-191/ui-text-002/localized-hud.png",
+      "sha256": "e04d2245cd17de1f53b6fb669731f58065e1037df9837e2b80f60ec46afaf9b0",
+      "accepted": true,
+      "observation": "HUD menu label 菜单 is visible in its button."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/ui-text-002/localized-empty-slots.png",
+      "sha256": "f3bb9892e13a2b2386fd12d255e4486e822ea42aa9807aaf31dd4c685671a7ee",
+      "accepted": true,
+      "observation": "Ten empty save slots display 空槽 within the existing rows."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/ui-text-002/localized-beacon-set.png",
+      "sha256": "fe82eb7500b706f1bdd7fcfb9954bff8ee70f6f64009b935a55480708d8aac56",
+      "accepted": true,
+      "observation": "设立道标 title and 可选 empty-slot text are visible."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/ui-text-002/localized-beacon-recall.png",
+      "sha256": "de3198540c17291cda98acdd196c3983b85c2255e98c59d6986c1abf02089710",
+      "accepted": true,
+      "observation": "回到道标, fixture location UI preview and remaining duration 2 天 are visible. Black preview is the declared no-image fixture, not accepted travel artwork."
+    }
+  ]
+}

@@ -8,6 +8,7 @@
 #include "game/party/PartySpellSystem.h"
 #include "game/tables/FaceAnimationTable.h"
 #include "game/tables/PortraitFxEventTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/GameplayHudCommon.h"
 #include "game/ui/AppleTextTextureCache.h"
 #include "game/ui/GameplayUiController.h"
@@ -132,6 +133,7 @@ public:
     const Engine::AssetFileSystem *assetFileSystem() const;
 
     bool ensureGameplayLayoutsLoaded(const GameplayUiController &uiController);
+    const UiTextTable &uiTextTable() const;
     void preloadReferencedAssets();
 
     GameplayAssetLoadCache &assetLoadCache();
@@ -357,6 +359,9 @@ private:
     Engine::AssetScaleTier m_iconAssetScaleTier = Engine::AssetScaleTier::X1;
     Engine::AssetScaleTier m_fontAssetScaleTier = Engine::AssetScaleTier::X1;
     bool m_layoutsLoaded = false;
+    bool m_uiTextTableLoadAttempted = false;
+    bool m_uiTextTableValid = false;
+    UiTextTable m_uiTextTable;
     bool m_assetsPreloaded = false;
     bool m_portraitRuntimeLoaded = false;
     bool m_houseVideoPlayerInitialized = false;

@@ -283,6 +283,9 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
 
     // WinGameScreen references ENDGAME directly, outside the YAML layouts.
     fonts.insert("endgame.fnt");
+    // Lloyd's Beacon draws slot labels directly, outside its YAML layout.
+    const std::set<std::string> requiredDynamicFontReferences = {"spell.fnt"};
+    fonts.insert(requiredDynamicFontReferences.begin(), requiredDynamicFontReferences.end());
 
     // Separate original icon and language-image namespaces. Conditional UI packs override their own namespace.
     Owners iconOwners;
@@ -404,6 +407,7 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
             const Owners::const_iterator owner = fontOwners.find(name);
             if (owner == fontOwners.end())
             {
+                require(!requiredDynamicFontReferences.contains(name), "Missing required dynamic UI font: " + name);
                 missingFonts.insert(name);
                 continue;
             }

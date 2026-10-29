@@ -1,0 +1,13 @@
+{
+  "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/ui-font-001/ui_conversion.json",
+  "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-002",
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-003",
+  "added_members": [
+    "icons/spell.fnt"
+  ],
+  "changed_members": [],
+  "spell_font_sha256": "a13d255263c694c84395f434ded4d5d129ad7683d4567a18f68c69feb4a8dfd1",
+  "all_prior_archive_members_retained": true,
+  "controlled_gameplay_fixtures": false,
+  "release_created": false
+}

@@ -7,6 +7,7 @@
 #include "game/tables/ObjectTable.h"
 #include "game/tables/CombatTextTable.h"
 #include "game/tables/HouseServiceTextTable.h"
+#include "game/tables/UiTextTable.h"
 
 #include <charconv>
 #include <array>
@@ -233,6 +234,44 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     };
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
+    using UiMessage = Game::UiTextTable::Message;
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 10> uiTextSources{{
+        {UiMessage::Cancel, 34},
+        {UiMessage::BeaconSet, 375},
+        {UiMessage::BeaconRecall, 523},
+        {UiMessage::BeaconAvailable, 19},
+        {UiMessage::Day, 56},
+        {UiMessage::Days, 57},
+        {UiMessage::Hour, 109},
+        {UiMessage::Hours, 110},
+        {UiMessage::Minute, 437},
+        {UiMessage::Minutes, 436},
+    }};
+    // These short UI captions have no translated equivalents in the original GlobalTxt.
+    constexpr std::array<std::pair<UiMessage, const char *>, 3> projectUiTranslations{{
+        {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
+    }};
+    const Game::UiTextTable englishUiText;
+    Rows uiText;
+    for (const auto &[message, translation] : projectUiTranslations)
+    {
+        uiText.push_back({Game::UiTextTable::key(message), chinese ? translation : englishUiText.text(message)});
+    }
+    for (const auto &[message, id] : uiTextSources)
+    {
+        if (!globalText.contains(id))
+        {
+            throw std::runtime_error("Missing UI text in global.txt: " + std::to_string(id));
+        }
+        uiText.push_back({Game::UiTextTable::key(message), globalText.at(id)[1]});
+    }
+    Game::UiTextTable uiTextCheck;
+    if (!uiTextCheck.loadFromRows(uiText))
+    {
+        throw std::runtime_error("Unsupported UI text in global.txt conversion");
+    }
+    const size_t uiTextCount = uiText.size();
+    tables["ui_text.txt"] = std::move(uiText);
     const std::array<std::pair<uint32_t, const char *>, 6> combatTextIds{{
         {164, "combat.melee_hit"}, {189, "combat.projectile_hit"}, {175, "combat.kill"},
         {635, "combat.stun"}, {636, "combat.paralyze"}, {480, "combat.enemy_nearby"}}};
@@ -696,7 +735,22 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         << "\"house_service_text_count\":" << houseServiceTextCount << ",\"house_service_text_source\":"
         << std::quoted(chinese ? "Data/10 LocZHCN.EnglishT.lod::global.txt" : "Data/mmmerge.T.lod::global.txt") << ','
         << "\"house_service_source_ids\":[56,57,68,86,97,104,113,128,134,140,152,155,159,160,168,178,179,195,196,197,198,199,200,404,405,414,446,448,527,529,536,537,538,540,541,542,561,563,569,570,663],"
-        << "\"typed_validation\":true,\"map_count\":" << maps.size()
+        << "\"ui_text_count\":" << uiTextCount << ",\"ui_text_source\":"
+        << std::quoted(chinese ? "Data/10 LocZHCN.EnglishT.lod::global.txt" : "Data/mmmerge.T.lod::global.txt")
+        << ",\"ui_text_source_ids\":[";
+    for (size_t index = 0; index < uiTextSources.size(); ++index)
+    {
+        manifest << (index == 0 ? "" : ",") << uiTextSources[index].second;
+    }
+    manifest << "],\"ui_text_project_translations\":[";
+    for (size_t index = 0; index < projectUiTranslations.size(); ++index)
+    {
+        const auto &[message, translation] = projectUiTranslations[index];
+        manifest << (index == 0 ? "" : ",") << "{\"key\":" << std::quoted(Game::UiTextTable::key(message))
+            << ",\"en\":" << std::quoted(englishUiText.text(message))
+            << ",\"zh-CN\":" << std::quoted(translation) << "}";
+    }
+    manifest << "],\"typed_validation\":true,\"map_count\":" << maps.size()
         << ",\"map_name_translations\":" << mapTranslations
         << ",\"map_translation_identity_mismatches\":" << mapTranslationMismatches
         << ",\"missing_map_geometry\":[" << missingMaps.str() << "]"
