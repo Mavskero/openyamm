@@ -21,6 +21,7 @@
 #include "game/tables/ItemTable.h"
 #include "game/tables/MergedBaseTables.h"
 #include "game/tables/MonsterTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/SpriteObjectDefs.h"
 #include "game/StringUtils.h"
 #include "game/scene/OutdoorSceneRuntime.h"
@@ -577,23 +578,6 @@ uint8_t initialInteractiveDecorationState(
     }
 
     return 0;
-}
-
-std::string formatFoundItemStatusText(int goldAmount, const std::string &itemName)
-{
-    const std::string resolvedItemName = itemName.empty() ? "item" : itemName;
-
-    if (goldAmount > 0)
-    {
-        return "You found " + std::to_string(goldAmount) + " gold and an item (" + resolvedItemName + ")!";
-    }
-
-    return "You found an item (" + resolvedItemName + ")!";
-}
-
-std::string formatFoundGoldStatusText(int goldAmount)
-{
-    return "You found " + std::to_string(std::max(0, goldAmount)) + " gold!";
 }
 
 uint32_t currentAnimationTicks()
@@ -4946,10 +4930,7 @@ bool OutdoorInteractionController::tryActivateActorInspectEvent(OutdoorGameView 
                     autoLootActiveCorpseView(*view.m_pOutdoorWorldRuntime, view.m_pOutdoorPartyRuntime->party(),
                                              &view.data().itemTable(), &view.heldInventoryItem());
 
-                if (!lootResult.statusText.empty())
-                {
-                    view.setStatusBarEvent(lootResult.statusText);
-                }
+                view.m_gameSession.gameplayScreenRuntime().showCorpseAutoLootFeedback(lootResult);
 
                 if (lootResult.lootedAny && !lootResult.firstItemName.empty())
                 {
@@ -5329,8 +5310,11 @@ bool OutdoorInteractionController::tryActivateWorldItemInspectEvent(
     }
 
     const ItemDefinition *pItemDefinition = view.data().itemTable().get(pWorldItem->item.objectDescriptionId);
+    const UiTextTable &uiText = view.m_gameSession.gameplayScreenRuntime().gameplayUiRuntime().uiTextTable();
     const std::string itemName =
         pItemDefinition != nullptr && !pItemDefinition->name.empty() ? pItemDefinition->name : "item";
+    const std::string feedbackItemName = pItemDefinition != nullptr && !pItemDefinition->name.empty()
+        ? pItemDefinition->name : uiText.text(UiTextTable::Message::GenericItemName);
 
     if (pWorldItem->isGold)
     {
@@ -5343,7 +5327,7 @@ bool OutdoorInteractionController::tryActivateWorldItemInspectEvent(
 
         const int goldAmount = static_cast<int>(std::max<uint32_t>(1u, worldItem.goldAmount));
         view.m_pOutdoorPartyRuntime->party().addGold(goldAmount);
-        view.setStatusBarEvent(formatFoundGoldStatusText(goldAmount));
+        view.setStatusBarEvent(uiText.formatFoundGold(static_cast<uint32_t>(std::max(0, goldAmount))));
 
         if (EventRuntimeState *pEventRuntimeState = view.m_pOutdoorWorldRuntime->eventRuntimeState())
         {
@@ -5375,7 +5359,7 @@ bool OutdoorInteractionController::tryActivateWorldItemInspectEvent(
             recipientMemberIndex,
             SpeechId::FoundItem,
             true);
-        view.setStatusBarEvent(formatFoundItemStatusText(0, itemName));
+        view.setStatusBarEvent(uiText.formatItemFeedback(UiTextTable::Message::FoundItemFormat, feedbackItemName));
 
         if (EventRuntimeState *pEventRuntimeState = view.m_pOutdoorWorldRuntime->eventRuntimeState())
         {
@@ -5407,7 +5391,7 @@ bool OutdoorInteractionController::tryActivateWorldItemInspectEvent(
             view.m_pOutdoorPartyRuntime->party().activeMemberIndex(),
             SpeechId::FoundItem,
             true);
-        view.setStatusBarEvent(formatFoundItemStatusText(0, itemName));
+        view.setStatusBarEvent(uiText.formatItemFeedback(UiTextTable::Message::FoundItemFormat, feedbackItemName));
 
         if (EventRuntimeState *pEventRuntimeState = view.m_pOutdoorWorldRuntime->eventRuntimeState())
         {

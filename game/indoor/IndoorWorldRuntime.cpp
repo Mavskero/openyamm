@@ -1,4 +1,5 @@
 #include "game/indoor/IndoorWorldRuntime.h"
+#include "game/app/GameSession.h"
 #include <stdexcept>
 
 #include "game/SpriteObjectDefs.h"
@@ -40,11 +41,13 @@
 #include "game/maps/MapAssetLoader.h"
 #include "game/mm9/Mm9BarrelRuntime.h"
 #include "game/party/EventSpellBuffs.h"
+#include "game/party/PartySpellSystem.h"
 #include "game/party/SpellIds.h"
 #include "game/tables/ObjectTable.h"
 #include "game/tables/SpriteTables.h"
 #include "game/tables/MonsterProjectileTable.h"
 #include "game/tables/SpellTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/GameplayOverlayTypes.h"
 #include "game/ui/GameplayMinimapTransform.h"
 #include "game/ui/WizardEyeMinimapRules.h"
@@ -917,16 +920,6 @@ uint32_t monsterActorAttackSeed(
         ^ salt;
 }
 
-std::string formatFoundItemStatusText(const std::string &itemName)
-{
-    const std::string resolvedItemName = itemName.empty() ? "item" : itemName;
-    return "You found an item (" + resolvedItemName + ")!";
-}
-
-std::string formatFoundGoldStatusText(int goldAmount)
-{
-    return "You found " + std::to_string(std::max(0, goldAmount)) + " gold!";
-}
 constexpr float ActiveActorUpdateRange = 10240.0f;
 constexpr float IndoorActorDetectRange = 5120.0f;
 constexpr int IndoorActorDetectPortalLimit = 30;
@@ -12085,6 +12078,8 @@ bool IndoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successRo
     input.successRoll = successRoll;
     input.caughtRoll = caughtRoll;
     const StealingAttemptResult stealResult = resolveStealingAttempt(*pMember, input);
+    GameplayScreenRuntime *pFeedbackRuntime = boundGameSession() != nullptr
+        ? &boundGameSession()->gameplayScreenRuntime() : nullptr;
 
     applyStealingAttemptResult(*this, m_pParty, stealResult);
 
@@ -12092,7 +12087,9 @@ bool IndoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successRo
     {
         if (m_pGameplayView != nullptr)
         {
-            m_pGameplayView->setStatusBarEvent("You need Stealing skill.");
+            m_pGameplayView->setStatusBarEvent(pFeedbackRuntime != nullptr
+                ? pFeedbackRuntime->stealingFailureStatusText(stealResult, pMember->name)
+                : "You need Stealing skill.");
         }
 
         return true;
@@ -12102,14 +12099,16 @@ bool IndoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successRo
     {
         if (m_pGameplayView != nullptr)
         {
-            const char *pStatusText = stealResult.outcome == StealingOutcomeKind::TooFar
+            const std::string statusText = pFeedbackRuntime != nullptr
+                ? pFeedbackRuntime->stealingFailureStatusText(stealResult, pMember->name)
+                : stealResult.outcome == StealingOutcomeKind::TooFar
                 ? "Too far away."
                 : stealResult.outcome == StealingOutcomeKind::NothingToSteal
                     ? "Nothing to steal."
                     : stealResult.caught
                         ? "Caught stealing!"
                         : "Failed to steal.";
-            m_pGameplayView->setStatusBarEvent(pStatusText);
+            m_pGameplayView->setStatusBarEvent(statusText);
         }
 
         return true;
@@ -12135,7 +12134,10 @@ bool IndoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successRo
 
         if (m_pGameplayView != nullptr)
         {
-            m_pGameplayView->setStatusBarEvent("You found " + std::to_string(std::max(0, adjustedGold)) + " gold!");
+            m_pGameplayView->setStatusBarEvent(pFeedbackRuntime != nullptr
+                ? pFeedbackRuntime->gameplayUiRuntime().uiTextTable().formatFoundGold(
+                    static_cast<uint32_t>(std::max(0, adjustedGold)))
+                : "You found " + std::to_string(std::max(0, adjustedGold)) + " gold!");
         }
 
         return true;
@@ -12167,7 +12169,9 @@ bool IndoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successRo
     {
         if (m_pGameplayView != nullptr)
         {
-            m_pGameplayView->setStatusBarEvent("Pack is Full!");
+            m_pGameplayView->setStatusBarEvent(pFeedbackRuntime != nullptr
+                ? pFeedbackRuntime->gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::PackFull)
+                : "Pack is Full!");
         }
 
         return true;
@@ -12179,8 +12183,14 @@ bool IndoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successRo
     {
         const ItemDefinition *pDefinition = m_pItemTable != nullptr ? m_pItemTable->get(stolenItem.itemId) : nullptr;
         const std::string itemName =
-            pDefinition != nullptr && !pDefinition->name.empty() ? pDefinition->name : "item";
-        m_pGameplayView->setStatusBarEvent("You found an item (" + itemName + ")!");
+            pDefinition != nullptr && !pDefinition->name.empty() ? pDefinition->name
+                : pFeedbackRuntime != nullptr
+                    ? pFeedbackRuntime->gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::GenericItemName)
+                    : "item";
+        m_pGameplayView->setStatusBarEvent(pFeedbackRuntime != nullptr
+            ? pFeedbackRuntime->gameplayUiRuntime().uiTextTable().formatItemFeedback(
+                UiTextTable::Message::FoundItemFormat, itemName)
+            : "You found an item (" + itemName + ")!");
     }
 
     return true;
@@ -13565,12 +13575,15 @@ bool IndoorWorldRuntime::tryStartArmageddon(
     size_t casterMemberIndex,
     uint32_t skillLevel,
     SkillMastery skillMastery,
-    std::string &failureText)
+    std::string &failureText,
+    PartySpellFailureReason &failureReason)
 {
+    failureReason = PartySpellFailureReason::None;
     (void)casterMemberIndex;
     (void)skillLevel;
     (void)skillMastery;
     failureText = "Spell failed";
+    failureReason = PartySpellFailureReason::ArmageddonIndoors;
     return false;
 }
 
@@ -14661,11 +14674,15 @@ bool IndoorWorldRuntime::activateWorldHit(const GameplayWorldHit &hit)
             pMapDeltaData->spriteObjects.erase(
                 pMapDeltaData->spriteObjects.begin() + std::ptrdiff_t(hit.worldItem->worldItemIndex));
 
-            const std::string statusText = formatFoundGoldStatusText(adjustedGoldAmount);
+            const std::string statusText = "You found " + std::to_string(std::max(0, adjustedGoldAmount)) + " gold!";
 
             if (m_pGameplayView != nullptr)
             {
-                m_pGameplayView->setStatusBarEvent(statusText);
+                GameSession *pSession = boundGameSession();
+                m_pGameplayView->setStatusBarEvent(pSession != nullptr
+                    ? pSession->gameplayUiRuntime().uiTextTable().formatFoundGold(
+                        static_cast<uint32_t>(std::max(0, adjustedGoldAmount)))
+                    : statusText);
             }
 
             if (m_pEventRuntimeState != nullptr && *m_pEventRuntimeState)
@@ -14699,7 +14716,15 @@ bool IndoorWorldRuntime::activateWorldHit(const GameplayWorldHit &hit)
 
         if (m_pGameplayView != nullptr)
         {
-            m_pGameplayView->setStatusBarEvent(formatFoundItemStatusText(itemName));
+            GameSession *pSession = boundGameSession();
+            const std::string feedbackItemName = pItemDefinition != nullptr && !pItemDefinition->name.empty()
+                ? pItemDefinition->name
+                : pSession != nullptr ? pSession->gameplayUiRuntime().uiTextTable().text(
+                    UiTextTable::Message::GenericItemName) : "item";
+            m_pGameplayView->setStatusBarEvent(pSession != nullptr
+                ? pSession->gameplayUiRuntime().uiTextTable().formatItemFeedback(
+                    UiTextTable::Message::FoundItemFormat, feedbackItemName)
+                : "You found an item (" + feedbackItemName + ")!");
         }
 
         if (m_pEventRuntimeState != nullptr && *m_pEventRuntimeState)
@@ -15648,7 +15673,11 @@ bool IndoorWorldRuntime::activateSemanticWorldItem(size_t worldItemIndex)
     m_pParty->requestSound(SoundId::Gold);
     if (m_pGameplayView != nullptr)
     {
-        m_pGameplayView->setStatusBarEvent(formatWorldItemPickupStatusText(randomPoolItem, *m_pItemTable));
+        GameSession *pSession = boundGameSession();
+        m_pGameplayView->setStatusBarEvent(pSession != nullptr
+            ? formatWorldItemPickupStatusText(
+                randomPoolItem, *m_pItemTable, pSession->gameplayUiRuntime().uiTextTable())
+            : formatWorldItemPickupStatusText(randomPoolItem, *m_pItemTable, UiTextTable{}));
     }
     return true;
 }
@@ -16433,7 +16462,14 @@ bool IndoorWorldRuntime::autoLootMapActorCorpse(size_t actorIndex)
 
     if (m_pGameplayView != nullptr && !lootResult.statusText.empty())
     {
-        m_pGameplayView->setStatusBarEvent(lootResult.statusText);
+        if (GameSession *pSession = boundGameSession())
+        {
+            pSession->gameplayScreenRuntime().showCorpseAutoLootFeedback(lootResult);
+        }
+        else
+        {
+            m_pGameplayView->setStatusBarEvent(lootResult.statusText);
+        }
     }
 
     if (m_pEventRuntimeState != nullptr && *m_pEventRuntimeState)

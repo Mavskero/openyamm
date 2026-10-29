@@ -3,6 +3,7 @@
 #include "game/gameplay/GameplayRuntimeInterfaces.h"
 #include "game/party/EventSpellBuffs.h"
 #include "game/party/Party.h"
+#include "game/party/PartySpellSystem.h"
 #include "tests/RegressionGameData.h"
 
 #include <algorithm>
@@ -714,8 +715,10 @@ public:
         size_t casterMemberIndex,
         uint32_t skillLevel,
         Game::SkillMastery skillMastery,
-        std::string &failureText) override
+        std::string &failureText,
+        Game::PartySpellFailureReason &failureReason) override
     {
+        failureReason = Game::PartySpellFailureReason::None;
         (void)casterMemberIndex;
         (void)skillLevel;
         (void)skillMastery;

@@ -1721,38 +1721,75 @@ InventoryItem *inventoryItemAtMutable(Character &character, uint8_t gridX, uint8
     return nullptr;
 }
 
-bool identifyInventoryItemInstance(InventoryItem &item, const ItemDefinition &itemDefinition, std::string &statusText)
+void setItemOperationFeedback(
+    ItemOperationFeedback *pFeedback,
+    ItemOperationFeedback::Outcome outcome,
+    const std::string &itemName = {})
 {
+    if (pFeedback != nullptr)
+    {
+        pFeedback->outcome = outcome;
+        pFeedback->itemName = itemName;
+    }
+}
+
+bool identifyInventoryItemInstance(
+    InventoryItem &item,
+    const ItemDefinition &itemDefinition,
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
+{
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
+
     if (item.identified || !ItemRuntime::requiresIdentification(itemDefinition))
     {
         statusText = "Already identified.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::AlreadyIdentified);
         return false;
     }
 
     item.identified = true;
-    statusText = "Identified " + ItemRuntime::displayName(item, itemDefinition) + ".";
+    const std::string itemName = ItemRuntime::displayName(item, itemDefinition);
+    statusText = "Identified " + itemName + ".";
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Identified, itemName);
     return true;
 }
 
-bool repairInventoryItemInstance(InventoryItem &item, const ItemDefinition &itemDefinition, std::string &statusText)
+bool repairInventoryItemInstance(
+    InventoryItem &item,
+    const ItemDefinition &itemDefinition,
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
+
     if (!item.broken)
     {
         statusText = "Nothing to repair.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NothingToRepair);
         return false;
     }
 
     item.broken = false;
     item.identified = true;
-    statusText = "Repaired " + ItemRuntime::displayName(item, itemDefinition) + ".";
+    const std::string itemName = ItemRuntime::displayName(item, itemDefinition);
+    statusText = "Repaired " + itemName + ".";
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Repaired, itemName);
     return true;
 }
 
-bool identifyEquippedItemInstance(EquippedItemRuntimeState &runtimeState, const ItemDefinition &itemDefinition, std::string &statusText)
+bool identifyEquippedItemInstance(
+    EquippedItemRuntimeState &runtimeState,
+    const ItemDefinition &itemDefinition,
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
+
     if (runtimeState.identified || !ItemRuntime::requiresIdentification(itemDefinition))
     {
         statusText = "Already identified.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::AlreadyIdentified);
         return false;
     }
 
@@ -1766,15 +1803,24 @@ bool identifyEquippedItemInstance(EquippedItemRuntimeState &runtimeState, const 
     displayItem.specialEnchantId = runtimeState.specialEnchantId;
     displayItem.artifactId = runtimeState.artifactId;
     displayItem.rarity = runtimeState.rarity;
-    statusText = "Identified " + ItemRuntime::displayName(displayItem, itemDefinition) + ".";
+    const std::string itemName = ItemRuntime::displayName(displayItem, itemDefinition);
+    statusText = "Identified " + itemName + ".";
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Identified, itemName);
     return true;
 }
 
-bool repairEquippedItemInstance(EquippedItemRuntimeState &runtimeState, const ItemDefinition &itemDefinition, std::string &statusText)
+bool repairEquippedItemInstance(
+    EquippedItemRuntimeState &runtimeState,
+    const ItemDefinition &itemDefinition,
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
+
     if (!runtimeState.broken)
     {
         statusText = "Nothing to repair.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NothingToRepair);
         return false;
     }
 
@@ -1789,7 +1835,9 @@ bool repairEquippedItemInstance(EquippedItemRuntimeState &runtimeState, const It
     displayItem.specialEnchantId = runtimeState.specialEnchantId;
     displayItem.artifactId = runtimeState.artifactId;
     displayItem.rarity = runtimeState.rarity;
-    statusText = "Repaired " + ItemRuntime::displayName(displayItem, itemDefinition) + ".";
+    const std::string itemName = ItemRuntime::displayName(displayItem, itemDefinition);
+    statusText = "Repaired " + itemName + ".";
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Repaired, itemName);
     return true;
 }
 }
@@ -5747,9 +5795,11 @@ bool Party::tryIdentifyMemberInventoryItem(
     uint8_t gridX,
     uint8_t gridY,
     size_t inspectorMemberIndex,
-    std::string &statusText)
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
     statusText.clear();
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
     Character *pMember = member(memberIndex);
     const Character *pInspector = bestPartyWideUtilitySkillMember("IdentifyItem");
     const Character *pRequestedInspector = member(inspectorMemberIndex);
@@ -5764,6 +5814,7 @@ bool Party::tryIdentifyMemberInventoryItem(
     if (pItem == nullptr)
     {
         statusText = "No item there.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NoItem);
         logItemInteractionResult(
             "identify",
             pInspector,
@@ -5780,6 +5831,7 @@ bool Party::tryIdentifyMemberInventoryItem(
     if (pItemDefinition == nullptr)
     {
         statusText = "Unavailable.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Unavailable);
         logItemInteractionResult(
             "identify",
             pInspector,
@@ -5794,6 +5846,7 @@ bool Party::tryIdentifyMemberInventoryItem(
     if (pItem->identified || !ItemRuntime::requiresIdentification(*pItemDefinition))
     {
         statusText = "Already identified.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::AlreadyIdentified);
         logItemInteractionResult(
             "identify",
             pInspector,
@@ -5808,6 +5861,7 @@ bool Party::tryIdentifyMemberInventoryItem(
     if (pInspector == nullptr || !ItemRuntime::canCharacterIdentifyItem(*pInspector, *pItemDefinition))
     {
         statusText = "Identify Failed";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::IdentifyFailed);
         logItemInteractionResult(
             "identify",
             pInspector,
@@ -5819,7 +5873,7 @@ bool Party::tryIdentifyMemberInventoryItem(
         return false;
     }
 
-    const bool identified = identifyInventoryItemInstance(*pItem, *pItemDefinition, statusText);
+    const bool identified = identifyInventoryItemInstance(*pItem, *pItemDefinition, statusText, pFeedback);
 
     if (identified)
     {
@@ -5843,9 +5897,11 @@ bool Party::tryRepairMemberInventoryItem(
     uint8_t gridX,
     uint8_t gridY,
     size_t inspectorMemberIndex,
-    std::string &statusText)
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
     statusText.clear();
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
     Character *pMember = member(memberIndex);
     const Character *pInspector = bestPartyWideUtilitySkillMember("RepairItem");
     const Character *pRequestedInspector = member(inspectorMemberIndex);
@@ -5860,6 +5916,7 @@ bool Party::tryRepairMemberInventoryItem(
     if (pItem == nullptr)
     {
         statusText = "No item there.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NoItem);
         logItemInteractionResult(
             "repair",
             pInspector,
@@ -5876,6 +5933,7 @@ bool Party::tryRepairMemberInventoryItem(
     if (pItemDefinition == nullptr)
     {
         statusText = "Unavailable.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Unavailable);
         logItemInteractionResult(
             "repair",
             pInspector,
@@ -5890,6 +5948,7 @@ bool Party::tryRepairMemberInventoryItem(
     if (!pItem->broken)
     {
         statusText = "Nothing to repair.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NothingToRepair);
         logItemInteractionResult(
             "repair",
             pInspector,
@@ -5904,6 +5963,7 @@ bool Party::tryRepairMemberInventoryItem(
     if (pInspector == nullptr || !ItemRuntime::canCharacterRepairItem(*pInspector, *pItemDefinition))
     {
         statusText = "Repair Failed";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::RepairFailed);
         logItemInteractionResult(
             "repair",
             pInspector,
@@ -5915,7 +5975,7 @@ bool Party::tryRepairMemberInventoryItem(
         return false;
     }
 
-    const bool repaired = repairInventoryItemInstance(*pItem, *pItemDefinition, statusText);
+    const bool repaired = repairInventoryItemInstance(*pItem, *pItemDefinition, statusText, pFeedback);
 
     if (repaired)
     {
@@ -5939,9 +5999,11 @@ bool Party::identifyMemberInventoryItem(
     size_t memberIndex,
     uint8_t gridX,
     uint8_t gridY,
-    std::string &statusText)
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
     statusText.clear();
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
     Character *pMember = member(memberIndex);
 
     if (pMember == nullptr || m_pItemTable == nullptr)
@@ -5954,6 +6016,7 @@ bool Party::identifyMemberInventoryItem(
     if (pItem == nullptr)
     {
         statusText = "No item there.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NoItem);
         logItemInteractionResult(
             "identify",
             nullptr,
@@ -5970,6 +6033,7 @@ bool Party::identifyMemberInventoryItem(
     if (pItemDefinition == nullptr)
     {
         statusText = "Unavailable.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Unavailable);
         logItemInteractionResult(
             "identify",
             nullptr,
@@ -5981,7 +6045,7 @@ bool Party::identifyMemberInventoryItem(
         return false;
     }
 
-    const bool identified = identifyInventoryItemInstance(*pItem, *pItemDefinition, statusText);
+    const bool identified = identifyInventoryItemInstance(*pItem, *pItemDefinition, statusText, pFeedback);
 
     if (identified)
     {
@@ -6004,9 +6068,11 @@ bool Party::repairMemberInventoryItem(
     size_t memberIndex,
     uint8_t gridX,
     uint8_t gridY,
-    std::string &statusText)
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
     statusText.clear();
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
     Character *pMember = member(memberIndex);
 
     if (pMember == nullptr || m_pItemTable == nullptr)
@@ -6019,6 +6085,7 @@ bool Party::repairMemberInventoryItem(
     if (pItem == nullptr)
     {
         statusText = "No item there.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NoItem);
         logItemInteractionResult(
             "repair",
             nullptr,
@@ -6035,6 +6102,7 @@ bool Party::repairMemberInventoryItem(
     if (pItemDefinition == nullptr)
     {
         statusText = "Unavailable.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Unavailable);
         logItemInteractionResult(
             "repair",
             nullptr,
@@ -6046,7 +6114,7 @@ bool Party::repairMemberInventoryItem(
         return false;
     }
 
-    const bool repaired = repairInventoryItemInstance(*pItem, *pItemDefinition, statusText);
+    const bool repaired = repairInventoryItemInstance(*pItem, *pItemDefinition, statusText, pFeedback);
 
     if (repaired)
     {
@@ -6070,9 +6138,11 @@ bool Party::tryIdentifyEquippedItem(
     size_t memberIndex,
     EquipmentSlot slot,
     size_t inspectorMemberIndex,
-    std::string &statusText)
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
     statusText.clear();
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
     Character *pMember = member(memberIndex);
     const Character *pInspector = bestPartyWideUtilitySkillMember("IdentifyItem");
     const Character *pRequestedInspector = member(inspectorMemberIndex);
@@ -6087,6 +6157,7 @@ bool Party::tryIdentifyEquippedItem(
     if (itemId == 0)
     {
         statusText = "No item there.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NoItem);
         logItemInteractionResult(
             "identify",
             pInspector,
@@ -6104,6 +6175,7 @@ bool Party::tryIdentifyEquippedItem(
     if (pItemDefinition == nullptr)
     {
         statusText = "Unavailable.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Unavailable);
         logItemInteractionResult(
             "identify",
             pInspector,
@@ -6118,6 +6190,7 @@ bool Party::tryIdentifyEquippedItem(
     if (runtimeState.identified || !ItemRuntime::requiresIdentification(*pItemDefinition))
     {
         statusText = "Already identified.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::AlreadyIdentified);
         logItemInteractionResult(
             "identify",
             pInspector,
@@ -6132,6 +6205,7 @@ bool Party::tryIdentifyEquippedItem(
     if (pInspector == nullptr || !ItemRuntime::canCharacterIdentifyItem(*pInspector, *pItemDefinition))
     {
         statusText = "Identify Failed";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::IdentifyFailed);
         logItemInteractionResult(
             "identify",
             pInspector,
@@ -6143,7 +6217,7 @@ bool Party::tryIdentifyEquippedItem(
         return false;
     }
 
-    const bool identified = identifyEquippedItemInstance(runtimeState, *pItemDefinition, statusText);
+    const bool identified = identifyEquippedItemInstance(runtimeState, *pItemDefinition, statusText, pFeedback);
 
     if (identified)
     {
@@ -6166,9 +6240,11 @@ bool Party::tryRepairEquippedItem(
     size_t memberIndex,
     EquipmentSlot slot,
     size_t inspectorMemberIndex,
-    std::string &statusText)
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
     statusText.clear();
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
     Character *pMember = member(memberIndex);
     const Character *pInspector = bestPartyWideUtilitySkillMember("RepairItem");
     const Character *pRequestedInspector = member(inspectorMemberIndex);
@@ -6183,6 +6259,7 @@ bool Party::tryRepairEquippedItem(
     if (itemId == 0)
     {
         statusText = "No item there.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NoItem);
         logItemInteractionResult(
             "repair",
             pInspector,
@@ -6200,6 +6277,7 @@ bool Party::tryRepairEquippedItem(
     if (pItemDefinition == nullptr)
     {
         statusText = "Unavailable.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Unavailable);
         logItemInteractionResult(
             "repair",
             pInspector,
@@ -6214,6 +6292,7 @@ bool Party::tryRepairEquippedItem(
     if (!runtimeState.broken)
     {
         statusText = "Nothing to repair.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NothingToRepair);
         logItemInteractionResult(
             "repair",
             pInspector,
@@ -6228,6 +6307,7 @@ bool Party::tryRepairEquippedItem(
     if (pInspector == nullptr || !ItemRuntime::canCharacterRepairItem(*pInspector, *pItemDefinition))
     {
         statusText = "Repair Failed";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::RepairFailed);
         logItemInteractionResult(
             "repair",
             pInspector,
@@ -6239,7 +6319,7 @@ bool Party::tryRepairEquippedItem(
         return false;
     }
 
-    const bool repaired = repairEquippedItemInstance(runtimeState, *pItemDefinition, statusText);
+    const bool repaired = repairEquippedItemInstance(runtimeState, *pItemDefinition, statusText, pFeedback);
 
     if (repaired)
     {
@@ -6258,9 +6338,14 @@ bool Party::tryRepairEquippedItem(
     return repaired;
 }
 
-bool Party::identifyEquippedItem(size_t memberIndex, EquipmentSlot slot, std::string &statusText)
+bool Party::identifyEquippedItem(
+    size_t memberIndex,
+    EquipmentSlot slot,
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
     statusText.clear();
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
     Character *pMember = member(memberIndex);
 
     if (pMember == nullptr || m_pItemTable == nullptr)
@@ -6273,6 +6358,7 @@ bool Party::identifyEquippedItem(size_t memberIndex, EquipmentSlot slot, std::st
     if (itemId == 0)
     {
         statusText = "No item there.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NoItem);
         logItemInteractionResult(
             "identify",
             nullptr,
@@ -6290,6 +6376,7 @@ bool Party::identifyEquippedItem(size_t memberIndex, EquipmentSlot slot, std::st
     if (pItemDefinition == nullptr)
     {
         statusText = "Unavailable.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Unavailable);
         logItemInteractionResult(
             "identify",
             nullptr,
@@ -6301,7 +6388,7 @@ bool Party::identifyEquippedItem(size_t memberIndex, EquipmentSlot slot, std::st
         return false;
     }
 
-    const bool identified = identifyEquippedItemInstance(runtimeState, *pItemDefinition, statusText);
+    const bool identified = identifyEquippedItemInstance(runtimeState, *pItemDefinition, statusText, pFeedback);
 
     if (identified)
     {
@@ -6320,9 +6407,14 @@ bool Party::identifyEquippedItem(size_t memberIndex, EquipmentSlot slot, std::st
     return identified;
 }
 
-bool Party::repairEquippedItem(size_t memberIndex, EquipmentSlot slot, std::string &statusText)
+bool Party::repairEquippedItem(
+    size_t memberIndex,
+    EquipmentSlot slot,
+    std::string &statusText,
+    ItemOperationFeedback *pFeedback)
 {
     statusText.clear();
+    setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::None);
     Character *pMember = member(memberIndex);
 
     if (pMember == nullptr || m_pItemTable == nullptr)
@@ -6335,6 +6427,7 @@ bool Party::repairEquippedItem(size_t memberIndex, EquipmentSlot slot, std::stri
     if (itemId == 0)
     {
         statusText = "No item there.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::NoItem);
         logItemInteractionResult(
             "repair",
             nullptr,
@@ -6352,6 +6445,7 @@ bool Party::repairEquippedItem(size_t memberIndex, EquipmentSlot slot, std::stri
     if (pItemDefinition == nullptr)
     {
         statusText = "Unavailable.";
+        setItemOperationFeedback(pFeedback, ItemOperationFeedback::Outcome::Unavailable);
         logItemInteractionResult(
             "repair",
             nullptr,
@@ -6363,7 +6457,7 @@ bool Party::repairEquippedItem(size_t memberIndex, EquipmentSlot slot, std::stri
         return false;
     }
 
-    const bool repaired = repairEquippedItemInstance(runtimeState, *pItemDefinition, statusText);
+    const bool repaired = repairEquippedItemInstance(runtimeState, *pItemDefinition, statusText, pFeedback);
 
     if (repaired)
     {

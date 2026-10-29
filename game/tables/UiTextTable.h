@@ -179,13 +179,28 @@ public:
         SpellNotSkilledEnough,
         SpellCanceled,
         SpellUnknownAttack,
+        SpellArmageddonAlreadyActive,
+        SpellArmageddonDailyLimit,
+        FoundGoldFormat,
+        FoundItemFormat,
+        PackFull,
+        GenericItemName,
+        StealingSkillRequired,
+        InteractionTooFar,
+        StealingNothing,
+        StealingCaughtFormat,
+        StealingFailedFormat,
+        ItemIdentifiedFormat,
+        ItemRepairedFormat,
+        ItemUnavailable,
+        FoundGoldAndItemFormat,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
     // Validate the current schema or migrate a complete older prefix with
-    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122, 132 or 149 keys.
+    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122, 132, 149 or 164 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;
@@ -202,6 +217,9 @@ public:
     std::string formatTransitionLeave(const std::string &name) const;
     std::string formatTransitionEnter(const std::string &name) const;
     std::string formatSpellPrompt(Message message, const std::string &spellName) const;
+    std::string formatFoundGold(uint32_t amount) const;
+    std::string formatFoundGoldAndItem(uint32_t amount, const std::string &name) const;
+    std::string formatItemFeedback(Message message, const std::string &name) const;
     static const char *key(Message message);
 
 private:

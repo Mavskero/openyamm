@@ -1,0 +1,63 @@
+{
+  "source_root": "local-data/validation/mm8-runtime-076/source-001",
+  "global_sources": [
+    "Data/mmmerge.T.lod/global.txt",
+    "Data/10 LocZHCN.EnglishT.lod/global.txt"
+  ],
+  "authenticated": {
+    "376": {
+      "english": "%s was caught stealing!",
+      "chinese": "%s偷东西被抓！",
+      "key": "ui.stealing_caught"
+    },
+    "377": {
+      "english": "%s failed to steal anything!",
+      "chinese": "%s什么东西都没有偷到！",
+      "key": "ui.stealing_failed"
+    },
+    "467": {
+      "english": "You found %lu gold!",
+      "chinese": "你找到%lu个金币！",
+      "key": "ui.found_gold"
+    },
+    "471": {
+      "english": "You found an item (%s)!",
+      "chinese": "你找到一件物品（%s）！",
+      "key": "ui.found_item"
+    },
+    "563": {
+      "english": "Pack is Full!",
+      "chinese": "行囊满了！",
+      "key": "ui.pack_full"
+    },
+    "490": {
+      "english": "You found %d gold and an item (%s)!",
+      "chinese": "你找到%d个金币和一件物品（%s）！",
+      "key": "ui.found_gold_and_item"
+    }
+  },
+  "ui": {
+    "old_count": 164,
+    "new_count": 179,
+    "new_source_rows": 6,
+    "new_project_translations": 9,
+    "source_rows_total": 128,
+    "project_rows_total": 51
+  },
+  "template_invariants": [
+    "Original467 uses%lu;490 uses%d and%s; no printf on names",
+    "Multi-parameter replacement from right to left; percent signs in names remain literal"
+  ],
+  "existing_house_source_reused": {
+    "446": "Identify Failed/鉴定物品失败",
+    "448": "Repair Failed/修理物品失败",
+    "project": "ShopNoItem/ShopAlreadyIdentified/ShopNothingToRepair unchanged"
+  },
+  "save_version": 105,
+  "validation_scope": "Source review, native/core import/assembly/unsigned generic iOS passed; no new cases, App/gameplay/campaign/device run.",
+  "party_item_operation": "Eight original inventory/equipment APIs append optional pure-output feedback; eligibility and mutations are unchanged. Shared service maps all five source kinds after both success and failure.",
+  "failed_world_item_commit": "If updateWorldItemInspectState rejects the local copy, report Unavailable rather than the pre-commit success text; false return and original world item remain unchanged.",
+  "armageddon": "World producers return precise transient reason alongside legacy diagnostic text; Party forwards it and shared display localizes active/daily-limit reasons.",
+  "pickup": "Current-language single/mixed loot, event-granted items, pack-full and named stealing feedback share existing UiText/ScreenRuntime; legacy diagnostic strings retained.",
+  "bound_session_contract": "Normal App6517/6845 -> GameplayController38 -> GameSession521 binds the world to its owning session. Unbound fixtures retain existing English diagnostic behavior; no eligibility or transaction fallback added."
+}

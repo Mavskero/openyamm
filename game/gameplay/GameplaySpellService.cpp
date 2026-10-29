@@ -886,6 +886,12 @@ void GameplaySpellService::applyFailureFeedback(
         case PartySpellFailureReason::SummonLimitReached:
             message = UiMessage::SpellSummonLimitReached;
             break;
+        case PartySpellFailureReason::ArmageddonAlreadyActive:
+            message = UiMessage::SpellArmageddonAlreadyActive;
+            break;
+        case PartySpellFailureReason::ArmageddonDailyLimit:
+            message = UiMessage::SpellArmageddonDailyLimit;
+            break;
         case PartySpellFailureReason::None:
             break;
     }

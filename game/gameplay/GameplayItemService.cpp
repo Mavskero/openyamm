@@ -10,10 +10,13 @@
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/items/InventoryItemMixingRuntime.h"
 #include "game/items/InventoryItemUseRuntime.h"
+#include "game/party/Party.h"
 #include "game/party/SpellIds.h"
+#include "game/tables/HouseServiceTextTable.h"
 #include "game/tables/MergedBaseTables.h"
 #include "game/tables/ObjectTable.h"
 #include "game/tables/PotionNoteTable.h"
+#include "game/tables/UiTextTable.h"
 
 #include <algorithm>
 #include <cctype>
@@ -34,6 +37,67 @@ constexpr float PotionExplosionForwardOffset = 64.0f;
 constexpr float PotionExplosionHeightOffset = 96.0f;
 constexpr uint32_t AutoNoteVariableTag = 0x00E1u;
 
+bool finishItemOperation(
+    GameSession &session,
+    const ItemOperationFeedback &feedback,
+    std::string &statusText,
+    bool result)
+{
+    using HouseMessage = HouseServiceTextTable::Message;
+    HouseMessage houseMessage = HouseMessage::Count;
+    std::string localizedText;
+
+    switch (feedback.outcome)
+    {
+        case ItemOperationFeedback::Outcome::NoItem:
+            houseMessage = HouseMessage::ShopNoItem;
+            break;
+        case ItemOperationFeedback::Outcome::Unavailable:
+            localizedText = session.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::ItemUnavailable);
+            break;
+        case ItemOperationFeedback::Outcome::AlreadyIdentified:
+            houseMessage = HouseMessage::ShopAlreadyIdentified;
+            break;
+        case ItemOperationFeedback::Outcome::IdentifyFailed:
+            houseMessage = HouseMessage::ShopIdentifyFailed;
+            break;
+        case ItemOperationFeedback::Outcome::Identified:
+            localizedText = session.gameplayUiRuntime().uiTextTable().formatItemFeedback(
+                UiTextTable::Message::ItemIdentifiedFormat, feedback.itemName);
+            break;
+        case ItemOperationFeedback::Outcome::NothingToRepair:
+            houseMessage = HouseMessage::ShopNothingToRepair;
+            break;
+        case ItemOperationFeedback::Outcome::RepairFailed:
+            houseMessage = HouseMessage::ShopRepairFailed;
+            break;
+        case ItemOperationFeedback::Outcome::Repaired:
+            localizedText = session.gameplayUiRuntime().uiTextTable().formatItemFeedback(
+                UiTextTable::Message::ItemRepairedFormat, feedback.itemName);
+            break;
+        case ItemOperationFeedback::Outcome::None:
+        default:
+            return result;
+    }
+
+    if (houseMessage != HouseMessage::Count)
+    {
+        const HouseServiceTextTable *pTextTable = session.gameplayScreenRuntime().houseServiceTextTable();
+
+        if (pTextTable != nullptr)
+        {
+            localizedText = pTextTable->format(houseMessage);
+        }
+    }
+
+    if (!localizedText.empty())
+    {
+        statusText = std::move(localizedText);
+    }
+
+    return result;
+}
+
 enum class ActiveLootOperation
 {
     ForceIdentify,
@@ -46,9 +110,11 @@ bool applyLootOperation(
     const ItemTable &itemTable,
     ActiveLootOperation operation,
     const Character *pInspector,
-    std::string &statusText)
+    std::string &statusText,
+    ItemOperationFeedback &feedback)
 {
     statusText.clear();
+    feedback = {};
 
     if (lootItem.isGold)
     {
@@ -60,6 +126,7 @@ bool applyLootOperation(
     if (pItemDefinition == nullptr)
     {
         statusText = "Unavailable.";
+        feedback.outcome = ItemOperationFeedback::Outcome::Unavailable;
         return false;
     }
 
@@ -69,46 +136,57 @@ bool applyLootOperation(
             if (lootItem.item.identified || !ItemRuntime::requiresIdentification(*pItemDefinition))
             {
                 statusText = "Already identified.";
+                feedback.outcome = ItemOperationFeedback::Outcome::AlreadyIdentified;
                 return false;
             }
 
             lootItem.item.identified = true;
-            statusText = "Identified " + ItemRuntime::displayName(lootItem.item, *pItemDefinition) + ".";
+            feedback.outcome = ItemOperationFeedback::Outcome::Identified;
+            feedback.itemName = ItemRuntime::displayName(lootItem.item, *pItemDefinition);
+            statusText = "Identified " + feedback.itemName + ".";
             return true;
 
         case ActiveLootOperation::IdentifyWithSkill:
             if (lootItem.item.identified || !ItemRuntime::requiresIdentification(*pItemDefinition))
             {
                 statusText = "Already identified.";
+                feedback.outcome = ItemOperationFeedback::Outcome::AlreadyIdentified;
                 return false;
             }
 
             if (pInspector == nullptr || !ItemRuntime::canCharacterIdentifyItem(*pInspector, *pItemDefinition))
             {
                 statusText = IdentifyFailedText;
+                feedback.outcome = ItemOperationFeedback::Outcome::IdentifyFailed;
                 return false;
             }
 
             lootItem.item.identified = true;
-            statusText = "Identified " + ItemRuntime::displayName(lootItem.item, *pItemDefinition) + ".";
+            feedback.outcome = ItemOperationFeedback::Outcome::Identified;
+            feedback.itemName = ItemRuntime::displayName(lootItem.item, *pItemDefinition);
+            statusText = "Identified " + feedback.itemName + ".";
             return true;
 
         case ActiveLootOperation::RepairWithSkill:
             if (!lootItem.item.broken)
             {
                 statusText = "Nothing to repair.";
+                feedback.outcome = ItemOperationFeedback::Outcome::NothingToRepair;
                 return false;
             }
 
             if (pInspector == nullptr || !ItemRuntime::canCharacterRepairItem(*pInspector, *pItemDefinition))
             {
                 statusText = RepairFailedText;
+                feedback.outcome = ItemOperationFeedback::Outcome::RepairFailed;
                 return false;
             }
 
             lootItem.item.broken = false;
             lootItem.item.identified = true;
-            statusText = "Repaired " + ItemRuntime::displayName(lootItem.item, *pItemDefinition) + ".";
+            feedback.outcome = ItemOperationFeedback::Outcome::Repaired;
+            feedback.itemName = ItemRuntime::displayName(lootItem.item, *pItemDefinition);
+            statusText = "Repaired " + feedback.itemName + ".";
             return true;
     }
 
@@ -127,8 +205,10 @@ bool applyWorldItemOperation(
     const ItemTable &itemTable,
     ActiveLootOperation operation,
     const Character *pInspector,
-    std::string &statusText)
+    std::string &statusText,
+    ItemOperationFeedback &feedback)
 {
+    feedback = {};
     GameplayWorldItemInspectState worldItemState = {};
 
     if (!worldRuntime.worldItemInspectState(worldItemIndex, worldItemState) || worldItemState.isGold)
@@ -139,12 +219,19 @@ bool applyWorldItemOperation(
     GameplayChestItemState lootItem = {};
     lootItem.item = worldItemState.item;
 
-    if (!applyLootOperation(lootItem, itemTable, operation, pInspector, statusText))
+    if (!applyLootOperation(lootItem, itemTable, operation, pInspector, statusText, feedback))
     {
         return false;
     }
 
-    return worldRuntime.updateWorldItemInspectState(worldItemIndex, lootItem.item);
+    if (!worldRuntime.updateWorldItemInspectState(worldItemIndex, lootItem.item))
+    {
+        feedback = {};
+        feedback.outcome = ItemOperationFeedback::Outcome::Unavailable;
+        statusText = "Unavailable.";
+        return false;
+    }
+    return true;
 }
 
 std::string lowerAscii(std::string value)
@@ -751,6 +838,11 @@ bool GameplayItemService::identifyInspectedItem(
     std::string &statusText)
 {
     statusText.clear();
+    ItemOperationFeedback feedback = {};
+    const auto finish = [&](bool result)
+    {
+        return finishItemOperation(m_session, feedback, statusText, result);
+    };
 
     Party *pParty = activeParty(m_session);
     IGameplayWorldRuntime *pWorldRuntime = m_session.activeWorldRuntime();
@@ -758,24 +850,26 @@ bool GameplayItemService::identifyInspectedItem(
 
     if (pParty == nullptr || pItemTable == nullptr)
     {
-        return false;
+        return finish(false);
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Inventory)
     {
-        return pParty->identifyMemberInventoryItem(
+        return finish(pParty->identifyMemberInventoryItem(
             overlay.sourceMemberIndex,
             overlay.sourceGridX,
             overlay.sourceGridY,
-            statusText);
+            statusText,
+            &feedback));
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Equipment)
     {
-        return pParty->identifyEquippedItem(
+        return finish(pParty->identifyEquippedItem(
             overlay.sourceMemberIndex,
             overlay.sourceEquipmentSlot,
-            statusText);
+            statusText,
+            &feedback));
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Chest && pWorldRuntime != nullptr)
@@ -784,7 +878,7 @@ bool GameplayItemService::identifyInspectedItem(
 
         if (pChestView == nullptr || overlay.sourceLootItemIndex >= pChestView->items.size())
         {
-            return false;
+            return finish(false);
         }
 
         if (!applyLootOperation(
@@ -792,13 +886,14 @@ bool GameplayItemService::identifyInspectedItem(
                 *pItemTable,
                 ActiveLootOperation::ForceIdentify,
                 nullptr,
-                statusText))
+                statusText,
+                feedback))
         {
-            return false;
+            return finish(false);
         }
 
         pWorldRuntime->commitActiveChestView();
-        return true;
+        return finish(true);
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Corpse && pWorldRuntime != nullptr)
@@ -807,7 +902,7 @@ bool GameplayItemService::identifyInspectedItem(
 
         if (pCorpseView == nullptr || overlay.sourceLootItemIndex >= pCorpseView->items.size())
         {
-            return false;
+            return finish(false);
         }
 
         if (!applyLootOperation(
@@ -815,27 +910,29 @@ bool GameplayItemService::identifyInspectedItem(
                 *pItemTable,
                 ActiveLootOperation::ForceIdentify,
                 nullptr,
-                statusText))
+                statusText,
+                feedback))
         {
-            return false;
+            return finish(false);
         }
 
         pWorldRuntime->commitActiveCorpseView();
-        return true;
+        return finish(true);
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::WorldItem && pWorldRuntime != nullptr)
     {
-        return applyWorldItemOperation(
+        return finish(applyWorldItemOperation(
             *pWorldRuntime,
             overlay.sourceWorldItemIndex,
             *pItemTable,
             ActiveLootOperation::ForceIdentify,
             nullptr,
-            statusText);
+            statusText,
+            feedback));
     }
 
-    return false;
+    return finish(false);
 }
 
 bool GameplayItemService::tryIdentifyInspectedItem(
@@ -844,6 +941,11 @@ bool GameplayItemService::tryIdentifyInspectedItem(
     std::string &statusText)
 {
     statusText.clear();
+    ItemOperationFeedback feedback = {};
+    const auto finish = [&](bool result)
+    {
+        return finishItemOperation(m_session, feedback, statusText, result);
+    };
 
     Party *pParty = activeParty(m_session);
     IGameplayWorldRuntime *pWorldRuntime = m_session.activeWorldRuntime();
@@ -851,7 +953,7 @@ bool GameplayItemService::tryIdentifyInspectedItem(
 
     if (pParty == nullptr || pItemTable == nullptr)
     {
-        return false;
+        return finish(false);
     }
 
     const Character *pRequestedInspector = pParty->member(inspectorMemberIndex);
@@ -859,26 +961,28 @@ bool GameplayItemService::tryIdentifyInspectedItem(
 
     if (pRequestedInspector == nullptr)
     {
-        return false;
+        return finish(false);
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Inventory)
     {
-        return pParty->tryIdentifyMemberInventoryItem(
+        return finish(pParty->tryIdentifyMemberInventoryItem(
             overlay.sourceMemberIndex,
             overlay.sourceGridX,
             overlay.sourceGridY,
             inspectorMemberIndex,
-            statusText);
+            statusText,
+            &feedback));
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Equipment)
     {
-        return pParty->tryIdentifyEquippedItem(
+        return finish(pParty->tryIdentifyEquippedItem(
             overlay.sourceMemberIndex,
             overlay.sourceEquipmentSlot,
             inspectorMemberIndex,
-            statusText);
+            statusText,
+            &feedback));
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Chest && pWorldRuntime != nullptr)
@@ -887,7 +991,7 @@ bool GameplayItemService::tryIdentifyInspectedItem(
 
         if (pChestView == nullptr || overlay.sourceLootItemIndex >= pChestView->items.size())
         {
-            return false;
+            return finish(false);
         }
 
         if (!applyLootOperation(
@@ -895,13 +999,14 @@ bool GameplayItemService::tryIdentifyInspectedItem(
                 *pItemTable,
                 ActiveLootOperation::IdentifyWithSkill,
                 pInspector,
-                statusText))
+                statusText,
+                feedback))
         {
-            return false;
+            return finish(false);
         }
 
         pWorldRuntime->commitActiveChestView();
-        return true;
+        return finish(true);
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Corpse && pWorldRuntime != nullptr)
@@ -910,7 +1015,7 @@ bool GameplayItemService::tryIdentifyInspectedItem(
 
         if (pCorpseView == nullptr || overlay.sourceLootItemIndex >= pCorpseView->items.size())
         {
-            return false;
+            return finish(false);
         }
 
         if (!applyLootOperation(
@@ -918,27 +1023,29 @@ bool GameplayItemService::tryIdentifyInspectedItem(
                 *pItemTable,
                 ActiveLootOperation::IdentifyWithSkill,
                 pInspector,
-                statusText))
+                statusText,
+                feedback))
         {
-            return false;
+            return finish(false);
         }
 
         pWorldRuntime->commitActiveCorpseView();
-        return true;
+        return finish(true);
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::WorldItem && pWorldRuntime != nullptr)
     {
-        return applyWorldItemOperation(
+        return finish(applyWorldItemOperation(
             *pWorldRuntime,
             overlay.sourceWorldItemIndex,
             *pItemTable,
             ActiveLootOperation::IdentifyWithSkill,
             pInspector,
-            statusText);
+            statusText,
+            feedback));
     }
 
-    return false;
+    return finish(false);
 }
 
 bool GameplayItemService::tryRepairInspectedItem(
@@ -947,6 +1054,11 @@ bool GameplayItemService::tryRepairInspectedItem(
     std::string &statusText)
 {
     statusText.clear();
+    ItemOperationFeedback feedback = {};
+    const auto finish = [&](bool result)
+    {
+        return finishItemOperation(m_session, feedback, statusText, result);
+    };
 
     Party *pParty = activeParty(m_session);
     IGameplayWorldRuntime *pWorldRuntime = m_session.activeWorldRuntime();
@@ -954,7 +1066,7 @@ bool GameplayItemService::tryRepairInspectedItem(
 
     if (pParty == nullptr || pItemTable == nullptr)
     {
-        return false;
+        return finish(false);
     }
 
     const Character *pRequestedInspector = pParty->member(inspectorMemberIndex);
@@ -962,26 +1074,28 @@ bool GameplayItemService::tryRepairInspectedItem(
 
     if (pRequestedInspector == nullptr)
     {
-        return false;
+        return finish(false);
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Inventory)
     {
-        return pParty->tryRepairMemberInventoryItem(
+        return finish(pParty->tryRepairMemberInventoryItem(
             overlay.sourceMemberIndex,
             overlay.sourceGridX,
             overlay.sourceGridY,
             inspectorMemberIndex,
-            statusText);
+            statusText,
+            &feedback));
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Equipment)
     {
-        return pParty->tryRepairEquippedItem(
+        return finish(pParty->tryRepairEquippedItem(
             overlay.sourceMemberIndex,
             overlay.sourceEquipmentSlot,
             inspectorMemberIndex,
-            statusText);
+            statusText,
+            &feedback));
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Chest && pWorldRuntime != nullptr)
@@ -990,7 +1104,7 @@ bool GameplayItemService::tryRepairInspectedItem(
 
         if (pChestView == nullptr || overlay.sourceLootItemIndex >= pChestView->items.size())
         {
-            return false;
+            return finish(false);
         }
 
         if (!applyLootOperation(
@@ -998,13 +1112,14 @@ bool GameplayItemService::tryRepairInspectedItem(
                 *pItemTable,
                 ActiveLootOperation::RepairWithSkill,
                 pInspector,
-                statusText))
+                statusText,
+                feedback))
         {
-            return false;
+            return finish(false);
         }
 
         pWorldRuntime->commitActiveChestView();
-        return true;
+        return finish(true);
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::Corpse && pWorldRuntime != nullptr)
@@ -1013,7 +1128,7 @@ bool GameplayItemService::tryRepairInspectedItem(
 
         if (pCorpseView == nullptr || overlay.sourceLootItemIndex >= pCorpseView->items.size())
         {
-            return false;
+            return finish(false);
         }
 
         if (!applyLootOperation(
@@ -1021,27 +1136,29 @@ bool GameplayItemService::tryRepairInspectedItem(
                 *pItemTable,
                 ActiveLootOperation::RepairWithSkill,
                 pInspector,
-                statusText))
+                statusText,
+                feedback))
         {
-            return false;
+            return finish(false);
         }
 
         pWorldRuntime->commitActiveCorpseView();
-        return true;
+        return finish(true);
     }
 
     if (overlay.sourceType == GameplayUiController::ItemInspectSourceType::WorldItem && pWorldRuntime != nullptr)
     {
-        return applyWorldItemOperation(
+        return finish(applyWorldItemOperation(
             *pWorldRuntime,
             overlay.sourceWorldItemIndex,
             *pItemTable,
             ActiveLootOperation::RepairWithSkill,
             pInspector,
-            statusText);
+            statusText,
+            feedback));
     }
 
-    return false;
+    return finish(false);
 }
 
 void GameplayItemService::closeReadableScrollOverlay()

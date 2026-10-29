@@ -2770,20 +2770,22 @@ PartySpellCastResult PartySpellSystem::castSpell(
             if (spellId == SpellId::Armageddon)
             {
                 std::string failureText;
+                PartySpellFailureReason failureReason = PartySpellFailureReason::None;
 
                 if (!worldRuntime.tryStartArmageddon(
                         request.casterMemberIndex,
                         skillLevel,
                         skillMastery,
-                        failureText))
+                        failureText,
+                        failureReason))
                 {
                     return makeFailureWithRecovery(
                         PartySpellCastStatus::Failed,
                         rule->targetKind,
                         rule->effectKind,
                         failureText.empty() ? SpellFailedText : failureText,
-                        failureText.empty()
-                            ? PartySpellFailureReason::GenericSpellFailed : PartySpellFailureReason::None);
+                        failureReason == PartySpellFailureReason::None && failureText.empty()
+                            ? PartySpellFailureReason::GenericSpellFailed : failureReason);
                 }
 
                 castSucceeded = true;

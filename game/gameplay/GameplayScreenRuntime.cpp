@@ -5,6 +5,8 @@
 #include "game/content/MercenaryReleaseProfile.h"
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/GameplayItemService.h"
+#include "game/gameplay/CorpseLootRuntime.h"
+#include "game/gameplay/StealingRuntime.h"
 #include "game/gameplay/NpcFollowerRuntime.h"
 #include "game/gameplay/GameplaySpeechRules.h"
 #include "game/gameplay/GameplayDialogContextBuilder.h"
@@ -19,6 +21,7 @@
 #include "game/party/SpellSchool.h"
 #include "game/StringUtils.h"
 #include "game/tables/MergedBaseTables.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/GameplayJournalMapUi.h"
 #include "game/ui/SpellbookUiLayout.h"
 
@@ -2411,11 +2414,13 @@ bool GameplayScreenRuntime::tryAutoPlaceHeldInventoryItemOnPartyMember(size_t me
             heldItem,
             *pParty,
             memberIndex,
-            failureStatus))
+            failureStatus,
+            gameplayUiRuntime().uiTextTable()))
     {
         if (showFailureStatus)
         {
-            setStatusBarEvent(failureStatus.empty() ? "Pack is Full!" : failureStatus);
+            setStatusBarEvent(failureStatus.empty()
+                ? gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::PackFull) : failureStatus);
         }
 
         playSpeechReaction(memberIndex, SpeechId::InventoryRoom, true);
@@ -2424,6 +2429,53 @@ bool GameplayScreenRuntime::tryAutoPlaceHeldInventoryItemOnPartyMember(size_t me
     }
 
     return true;
+}
+
+std::string GameplayScreenRuntime::stealingFailureStatusText(
+    const StealingAttemptResult &result, const std::string &memberName) const
+{
+    using Message = UiTextTable::Message;
+    const UiTextTable &uiText = gameplayUiRuntime().uiTextTable();
+    if (!result.handled)
+    {
+        return uiText.text(Message::StealingSkillRequired);
+    }
+    if (result.outcome == StealingOutcomeKind::TooFar)
+    {
+        return uiText.text(Message::InteractionTooFar);
+    }
+    if (result.outcome == StealingOutcomeKind::NothingToSteal)
+    {
+        return uiText.text(Message::StealingNothing);
+    }
+    return uiText.formatItemFeedback(
+        result.caught ? Message::StealingCaughtFormat : Message::StealingFailedFormat, memberName);
+}
+
+void GameplayScreenRuntime::showCorpseAutoLootFeedback(const GameplayCorpseAutoLootResult &result)
+{
+    using Message = UiTextTable::Message;
+    const UiTextTable &uiText = gameplayUiRuntime().uiTextTable();
+    const uint32_t goldAmount = static_cast<uint32_t>(std::max(0, result.goldAmount));
+    std::string statusText = result.statusText;
+    if (!result.firstItemName.empty())
+    {
+        statusText = goldAmount > 0
+            ? uiText.formatFoundGoldAndItem(goldAmount, result.firstItemName)
+            : uiText.formatItemFeedback(Message::FoundItemFormat, result.firstItemName);
+    }
+    else if (goldAmount > 0)
+    {
+        statusText = uiText.formatFoundGold(goldAmount);
+    }
+    else if (result.inventoryFullFeedback)
+    {
+        statusText = uiText.text(Message::PackFull);
+    }
+    if (!statusText.empty())
+    {
+        setStatusBarEvent(statusText);
+    }
 }
 
 void GameplayScreenRuntime::closeSpellbookOverlay(const std::string &statusText)

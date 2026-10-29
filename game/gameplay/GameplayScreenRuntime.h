@@ -52,6 +52,8 @@ class SpecialItemEnchantTable;
 struct HouseEntry;
 struct ItemDefinition;
 struct MercenaryReleaseProfile;
+struct GameplayCorpseAutoLootResult;
+struct StealingAttemptResult;
 
 class GameplayScreenRuntime
 {
@@ -281,6 +283,9 @@ public:
         bool lloydRecallMode = false);
     void closeUtilitySpellOverlayAfterSpellResolution(uint32_t spellId);
     bool tryAutoPlaceHeldInventoryItemOnPartyMember(size_t memberIndex, bool showFailureStatus);
+    std::string stealingFailureStatusText(
+        const StealingAttemptResult &result, const std::string &memberName) const;
+    void showCorpseAutoLootFeedback(const GameplayCorpseAutoLootResult &result);
     GameplayItemService &itemService() const;
     GameplayFxService &fxService() const;
     GameplaySpellService &spellService() const;

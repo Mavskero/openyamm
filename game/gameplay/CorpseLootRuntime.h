@@ -22,6 +22,7 @@ struct GameplayCorpseAutoLootResult
     int goldAmount = 0;
     std::string firstItemName;
     std::string statusText;
+    bool inventoryFullFeedback = false;
 };
 
 GameplayCorpseViewState buildMonsterCorpseView(

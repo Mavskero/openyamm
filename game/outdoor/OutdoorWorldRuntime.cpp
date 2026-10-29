@@ -1,4 +1,5 @@
 #include "game/outdoor/OutdoorWorldRuntime.h"
+#include "game/app/GameSession.h"
 
 #include "game/data/ActorNameResolver.h"
 #include "game/debug/GameplayDebugTrace.h"
@@ -35,12 +36,14 @@
 #include "game/outdoor/OutdoorPathfindingBuilder.h"
 #include "game/outdoor/OutdoorPartyRuntime.h"
 #include "game/party/EventSpellBuffs.h"
+#include "game/party/PartySpellSystem.h"
 #include "game/scene/OutdoorSceneRuntime.h"
 #include "game/party/SpellIds.h"
 #include "game/audio/SoundIds.h"
 #include "game/SpriteObjectDefs.h"
 #include "game/party/SkillData.h"
 #include "game/tables/ObjectTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/StringUtils.h"
 #include "game/ui/GameplayOverlayTypes.h"
 #include "game/ui/GameplayMinimapTransform.h"
@@ -15030,6 +15033,8 @@ bool OutdoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successR
     input.successRoll = successRoll;
     input.caughtRoll = caughtRoll;
     const StealingAttemptResult stealResult = resolveStealingAttempt(*pMember, input);
+    GameplayScreenRuntime *pFeedbackRuntime = boundGameSession() != nullptr
+        ? &boundGameSession()->gameplayScreenRuntime() : nullptr;
 
     applyStealingAttemptResult(*this, m_pParty, stealResult);
 
@@ -15037,7 +15042,9 @@ bool OutdoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successR
     {
         if (m_pInteractionView != nullptr)
         {
-            m_pInteractionView->setStatusBarEvent("You need Stealing skill.");
+            m_pInteractionView->setStatusBarEvent(pFeedbackRuntime != nullptr
+                ? pFeedbackRuntime->stealingFailureStatusText(stealResult, pMember->name)
+                : "You need Stealing skill.");
         }
 
         return true;
@@ -15047,14 +15054,16 @@ bool OutdoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successR
     {
         if (m_pInteractionView != nullptr)
         {
-            const char *pStatusText = stealResult.outcome == StealingOutcomeKind::TooFar
+            const std::string statusText = pFeedbackRuntime != nullptr
+                ? pFeedbackRuntime->stealingFailureStatusText(stealResult, pMember->name)
+                : stealResult.outcome == StealingOutcomeKind::TooFar
                 ? "Too far away."
                 : stealResult.outcome == StealingOutcomeKind::NothingToSteal
                     ? "Nothing to steal."
                     : stealResult.caught
                         ? "Caught stealing!"
                         : "Failed to steal.";
-            m_pInteractionView->setStatusBarEvent(pStatusText);
+            m_pInteractionView->setStatusBarEvent(statusText);
         }
 
         return true;
@@ -15079,7 +15088,10 @@ bool OutdoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successR
 
         if (m_pInteractionView != nullptr)
         {
-            m_pInteractionView->setStatusBarEvent("You found " + std::to_string(std::max(0, adjustedGold)) + " gold!");
+            m_pInteractionView->setStatusBarEvent(pFeedbackRuntime != nullptr
+                ? pFeedbackRuntime->gameplayUiRuntime().uiTextTable().formatFoundGold(
+                    static_cast<uint32_t>(std::max(0, adjustedGold)))
+                : "You found " + std::to_string(std::max(0, adjustedGold)) + " gold!");
         }
 
         return true;
@@ -15111,7 +15123,9 @@ bool OutdoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successR
     {
         if (m_pInteractionView != nullptr)
         {
-            m_pInteractionView->setStatusBarEvent("Pack is Full!");
+            m_pInteractionView->setStatusBarEvent(pFeedbackRuntime != nullptr
+                ? pFeedbackRuntime->gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::PackFull)
+                : "Pack is Full!");
         }
 
         return true;
@@ -15123,8 +15137,14 @@ bool OutdoorWorldRuntime::tryStealFromActor(size_t actorIndex, uint32_t successR
     {
         const ItemDefinition *pDefinition = m_pItemTable != nullptr ? m_pItemTable->get(stolenItem.itemId) : nullptr;
         const std::string itemName =
-            pDefinition != nullptr && !pDefinition->name.empty() ? pDefinition->name : "item";
-        m_pInteractionView->setStatusBarEvent("You found an item (" + itemName + ")!");
+            pDefinition != nullptr && !pDefinition->name.empty() ? pDefinition->name
+                : pFeedbackRuntime != nullptr
+                    ? pFeedbackRuntime->gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::GenericItemName)
+                    : "item";
+        m_pInteractionView->setStatusBarEvent(pFeedbackRuntime != nullptr
+            ? pFeedbackRuntime->gameplayUiRuntime().uiTextTable().formatItemFeedback(
+                UiTextTable::Message::FoundItemFormat, itemName)
+            : "You found an item (" + itemName + ")!");
     }
 
     return true;
@@ -18058,7 +18078,10 @@ bool OutdoorWorldRuntime::activateSemanticWorldItem(size_t worldItemIndex)
     m_pParty->requestSound(SoundId::Gold);
     if (m_pInteractionView != nullptr)
     {
-        m_pInteractionView->setStatusBarEvent(formatWorldItemPickupStatusText(pickupItem, *m_pItemTable));
+        GameSession *pSession = boundGameSession();
+        m_pInteractionView->setStatusBarEvent(pSession != nullptr
+            ? formatWorldItemPickupStatusText(pickupItem, *m_pItemTable, pSession->gameplayUiRuntime().uiTextTable())
+            : formatWorldItemPickupStatusText(pickupItem, *m_pItemTable, UiTextTable{}));
     }
     return true;
 }
@@ -20253,19 +20276,23 @@ bool OutdoorWorldRuntime::tryStartArmageddon(
     size_t casterMemberIndex,
     uint32_t skillLevel,
     SkillMastery skillMastery,
-    std::string &failureText)
+    std::string &failureText,
+    PartySpellFailureReason &failureReason)
 {
+    failureReason = PartySpellFailureReason::None;
     failureText.clear();
 
     if (m_pParty == nullptr)
     {
         failureText = "Spell failed";
+        failureReason = PartySpellFailureReason::GenericSpellFailed;
         return false;
     }
 
     if (isArmageddonActive())
     {
         failureText = "Armageddon already active";
+        failureReason = PartySpellFailureReason::ArmageddonAlreadyActive;
         return false;
     }
 
@@ -20274,6 +20301,7 @@ bool OutdoorWorldRuntime::tryStartArmageddon(
     if (pCaster == nullptr)
     {
         failureText = "Spell failed";
+        failureReason = PartySpellFailureReason::GenericSpellFailed;
         return false;
     }
 
@@ -20282,6 +20310,7 @@ bool OutdoorWorldRuntime::tryStartArmageddon(
     if (pCaster->armageddonCastsToday >= castLimit)
     {
         failureText = "No Armageddon casts left today";
+        failureReason = PartySpellFailureReason::ArmageddonDailyLimit;
         return false;
     }
 

@@ -85,6 +85,8 @@ enum class PartySpellFailureReason : uint8_t
     WandAlreadyCharged,
     ItemQualityTooLow,
     SummonLimitReached,
+    ArmageddonAlreadyActive,
+    ArmageddonDailyLimit,
 };
 
 struct PartySpellCastRequest

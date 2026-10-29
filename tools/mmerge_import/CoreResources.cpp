@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 122> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 128> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -359,10 +359,16 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::SpellHostileCreaturesNearby, 638},
         {UiMessage::SpellItemQualityTooLow, 585},
         {UiMessage::SpellSummonLimitReached, 648},
+        {UiMessage::FoundGoldFormat, 467},
+        {UiMessage::FoundItemFormat, 471},
+        {UiMessage::PackFull, 563},
+        {UiMessage::StealingCaughtFormat, 376},
+        {UiMessage::StealingFailedFormat, 377},
+        {UiMessage::FoundGoldAndItemFormat, 490},
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 42> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 51> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -406,6 +412,15 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::SpellNotSkilledEnough, "魔法技能不足"},
         {UiMessage::SpellCanceled, "已取消施法"},
         {UiMessage::SpellUnknownAttack, "未知的攻击法术"},
+        {UiMessage::SpellArmageddonAlreadyActive, "末日审判已经生效"},
+        {UiMessage::SpellArmageddonDailyLimit, "今天的末日审判施放次数已用完"},
+        {UiMessage::GenericItemName, "物品"},
+        {UiMessage::StealingSkillRequired, "需要偷窃技能。"},
+        {UiMessage::InteractionTooFar, "距离太远。"},
+        {UiMessage::StealingNothing, "没有可偷取的物品。"},
+        {UiMessage::ItemIdentifiedFormat, "已鉴定%s。"},
+        {UiMessage::ItemRepairedFormat, "已修理%s。"},
+        {UiMessage::ItemUnavailable, "暂不可用。"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

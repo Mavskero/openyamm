@@ -3,6 +3,7 @@
 #include "game/items/ItemGenerator.h"
 #include "game/party/Party.h"
 #include "game/tables/ItemTable.h"
+#include "game/tables/UiTextTable.h"
 
 #include <algorithm>
 
@@ -98,11 +99,13 @@ bool applyWorldItemPolicyActions(
     return true;
 }
 
-std::string formatWorldItemPickupStatusText(const InventoryItem &item, const ItemTable &itemTable)
+std::string formatWorldItemPickupStatusText(
+    const InventoryItem &item, const ItemTable &itemTable, const UiTextTable &uiText)
 {
     const ItemDefinition *pDefinition = itemTable.get(item.objectDescriptionId);
     const std::string itemName =
-        pDefinition != nullptr && !pDefinition->name.empty() ? pDefinition->name : "item";
-    return "You found an item (" + itemName + ")!";
+        pDefinition != nullptr && !pDefinition->name.empty()
+            ? pDefinition->name : uiText.text(UiTextTable::Message::GenericItemName);
+    return uiText.formatItemFeedback(UiTextTable::Message::FoundItemFormat, itemName);
 }
 }

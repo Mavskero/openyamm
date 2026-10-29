@@ -1,0 +1,32 @@
+{
+  "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-failure-ui-224/runtime-001",
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-item-feedback-225/runtime-001",
+  "changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "added_members": [],
+  "old_ui_count": 164,
+  "new_ui_count": 179,
+  "added_keys": [
+    "ui.spell_armageddon_already_active",
+    "ui.spell_armageddon_daily_limit",
+    "ui.generic_item_name",
+    "ui.stealing_skill_required",
+    "ui.interaction_too_far",
+    "ui.stealing_nothing",
+    "ui.item_identified",
+    "ui.item_repaired",
+    "ui.item_unavailable",
+    "ui.found_gold",
+    "ui.found_item",
+    "ui.pack_full",
+    "ui.stealing_caught",
+    "ui.stealing_failed",
+    "ui.found_gold_and_item"
+  ],
+  "all_old_caption_values_retained": true,
+  "ui_text_sha256": "29e629974c654991fac368f05a0c0f34014be79ebc9ba73bd9c78fc00b51d89d",
+  "combat223_navigation222_and_all_other_members_worlds_retained": true,
+  "controlled_fixtures": false,
+  "new_release": false
+}

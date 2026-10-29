@@ -14,6 +14,7 @@
 #include "game/outdoor/OutdoorPartyRuntime.h"
 #include "game/outdoor/OutdoorWorldRuntime.h"
 #include "game/party/Party.h"
+#include "game/party/PartySpellSystem.h"
 
 #include "tests/RegressionGameData.h"
 #include "tests/RegressionMapLoader.h"
@@ -633,8 +634,10 @@ public:
         size_t casterMemberIndex,
         uint32_t skillLevel,
         OpenYAMM::Game::SkillMastery skillMastery,
-        std::string &failureText) override
+        std::string &failureText,
+        OpenYAMM::Game::PartySpellFailureReason &failureReason) override
     {
+        failureReason = OpenYAMM::Game::PartySpellFailureReason::None;
         (void)casterMemberIndex;
         (void)skillLevel;
         (void)skillMastery;

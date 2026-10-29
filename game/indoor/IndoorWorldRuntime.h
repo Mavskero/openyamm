@@ -480,7 +480,8 @@ public:
         size_t casterMemberIndex,
         uint32_t skillLevel,
         SkillMastery skillMastery,
-        std::string &failureText) override;
+        std::string &failureText,
+        PartySpellFailureReason &failureReason) override;
     bool canActivateWorldHit(
         const GameplayWorldHit &hit,
         GameplayInteractionMethod interactionMethod) const override;

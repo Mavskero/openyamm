@@ -1,0 +1,22 @@
+{
+  "published_base": "ipados-ui-cumulative-214-20261029",
+  "requires_current_Save105_source_build": true,
+  "overlay_files": {
+    "runtime-overlay/engine/data_tables/ui_text.txt": {
+      "bytes": 7248,
+      "sha256": "29e629974c654991fac368f05a0c0f34014be79ebc9ba73bd9c78fc00b51d89d"
+    },
+    "runtime-overlay/engine/data_tables/combat_text.txt": {
+      "bytes": 309,
+      "sha256": "06d0f1eed423ab355639a1146cb75fe58a3e8cb9ba7db19df1227d3ce321e120"
+    },
+    "runtime-overlay/engine/data_tables/map_navigation.txt": {
+      "bytes": 2163,
+      "sha256": "3c706f9eb10d9743ba86870e69820ca6d591db3cc8cba46f2f793d6aa1ecc3df"
+    }
+  },
+  "relative_to_224": "ui_text replaced only",
+  "all_worlds_and_other_engine_members_retained": true,
+  "new_release": false,
+  "new_device_matrix": false
+}

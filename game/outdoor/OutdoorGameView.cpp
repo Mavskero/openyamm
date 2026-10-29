@@ -1323,23 +1323,6 @@ std::string formatMonsterResistanceText(int value)
     return value >= 200 ? "Imm" : std::to_string(value);
 }
 
-std::string formatFoundItemStatusText(int goldAmount, const std::string &itemName)
-{
-    const std::string resolvedItemName = itemName.empty() ? "item" : itemName;
-
-    if (goldAmount > 0)
-    {
-        return "You found " + std::to_string(goldAmount) + " gold and an item (" + resolvedItemName + ")!";
-    }
-
-    return "You found an item (" + resolvedItemName + ")!";
-}
-
-std::string formatFoundGoldStatusText(int goldAmount)
-{
-    return "You found " + std::to_string(std::max(0, goldAmount)) + " gold!";
-}
-
 std::string resolveItemInspectDetailText(const InventoryItem *pItemState, const ItemDefinition &itemDefinition)
 {
     const bool isBroken = pItemState != nullptr && pItemState->broken;

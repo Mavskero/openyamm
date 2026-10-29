@@ -8,6 +8,7 @@
 #include "game/items/ItemRuntime.h"
 #include "game/party/Party.h"
 #include "game/tables/ItemTable.h"
+#include "game/tables/UiTextTable.h"
 
 #include <optional>
 #include <string>
@@ -27,13 +28,14 @@ void forceEventGrantedItemIdentificationState(InventoryItem &item, const ItemTab
     }
 }
 
-std::string eventGrantedItemStatusName(const InventoryItem &item, const ItemTable &itemTable)
+std::string eventGrantedItemStatusName(
+    const InventoryItem &item, const ItemTable &itemTable, const UiTextTable &uiText)
 {
     const ItemDefinition *pItemDefinition = itemTable.get(item.objectDescriptionId);
 
     if (pItemDefinition == nullptr)
     {
-        return "item";
+        return uiText.text(UiTextTable::Message::GenericItemName);
     }
 
     if (!pItemDefinition->unidentifiedName.empty()
@@ -43,7 +45,8 @@ std::string eventGrantedItemStatusName(const InventoryItem &item, const ItemTabl
         return pItemDefinition->unidentifiedName;
     }
 
-    return !pItemDefinition->name.empty() ? pItemDefinition->name : "item";
+    return !pItemDefinition->name.empty()
+        ? pItemDefinition->name : uiText.text(UiTextTable::Message::GenericItemName);
 }
 
 void notifyEventGrantedItemReceived(
@@ -58,7 +61,9 @@ void notifyEventGrantedItemReceived(
         pParty->requestSound(SoundId::Gold);
     }
 
-    runtime.setStatusBarEvent("You found something (" + eventGrantedItemStatusName(item, itemTable) + ")!");
+    const UiTextTable &uiText = runtime.gameplayUiRuntime().uiTextTable();
+    runtime.setStatusBarEvent(uiText.formatItemFeedback(
+        UiTextTable::Message::FoundItemFormat, eventGrantedItemStatusName(item, itemTable, uiText)));
 }
 } // namespace
 
@@ -273,7 +278,8 @@ bool GameplayHeldItemController::tryAutoPlaceHeldInventoryItemOnPartyMember(
     GameplayUiController::HeldInventoryItemState &heldInventoryItem,
     Party &party,
     size_t memberIndex,
-    std::string &failureStatus)
+    std::string &failureStatus,
+    const UiTextTable &uiText)
 {
     failureStatus.clear();
 
@@ -285,7 +291,7 @@ bool GameplayHeldItemController::tryAutoPlaceHeldInventoryItemOnPartyMember(
     if (!party.tryAutoPlaceItemInMemberInventory(memberIndex, heldInventoryItem.item))
     {
         failureStatus = party.lastStatus().empty() || party.lastStatus() == "inventory full"
-            ? "Pack is Full!"
+            ? uiText.text(UiTextTable::Message::PackFull)
             : party.lastStatus();
         return false;
     }

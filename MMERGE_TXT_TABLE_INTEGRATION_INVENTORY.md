@@ -1,5 +1,10 @@
 # MMMerge TXT table integration inventory
 
+Checkpoint225 adds6 original Global rows376/377/467/471/563/490 and9 project captions:179UI keys,128source/51project.
+Complete old164/earlier prefixes andalloldvalues retained;467 uses%lu,490 uses%d/%s without printf on names.
+Existing HouseServiceText item statuses reused without schema changes. Native/core/unsignediOS pass;0cases/App/device.
+See `handoff/spell-item-feedback-225/README.md`; default225changesonlyui_text,Combat223/navigation222/worlds retained.
+
 Checkpoint224 adds10 original Global rows and5 explicit project captions:164UI keys,122 source/42 project.
 Complete old149 and previous prefixes remain accepted; all old values retained. Typed transient failure reasons
 feed shared localized display; casting rules and Save105 unchanged. Native/core/unsignediOS pass,0cases/App/device.

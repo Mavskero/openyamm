@@ -7,6 +7,7 @@
 #include "game/party/Party.h"
 #include "game/tables/ChestTable.h"
 #include "game/tables/ItemTable.h"
+#include "game/tables/UiTextTable.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -218,7 +219,7 @@ TEST_CASE("semantic world-item pickup feedback uses the standard found-item stat
     item.objectDescriptionId = 379;
 
     CHECK_EQ(
-        OpenYAMM::Game::formatWorldItemPickupStatusText(item, itemTable),
+        OpenYAMM::Game::formatWorldItemPickupStatusText(item, itemTable, OpenYAMM::Game::UiTextTable{}),
         "You found an item (item)!");
 }
 

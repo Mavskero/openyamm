@@ -1,0 +1,76 @@
+{
+  "checkpoint": 225,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-30T02:45:06.906219+08:00",
+  "source_base": "9fd2a2f4e24be6a9a0cb64f542182eaaa400ea40",
+  "runtime": "local-data/validation/spell-item-feedback-225/runtime-001",
+  "scope": [
+    "Typed Armageddon active/daily-limit failure feedback",
+    "Unified identify/repair presentation across inventory/equipment/chest/corpse/world",
+    "Localized pickup/gold/event-item/pack-full/stealing/corpse-loot feedback through shared UI",
+    "World-item write rejection reports unavailable instead of premature success"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:39:44.730744+00:00",
+      "finished_at": "2026-10-29T18:41:41.602846+00:00",
+      "elapsed_seconds": 116.872102
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:41:46.200124+00:00",
+      "finished_at": "2026-10-29T18:41:46.338324+00:00",
+      "elapsed_seconds": 0.1382
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:41:54.182653+00:00",
+      "finished_at": "2026-10-29T18:41:56.560779+00:00",
+      "elapsed_seconds": 2.378126
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:41:54.183388+00:00",
+      "finished_at": "2026-10-29T18:43:48.363349+00:00",
+      "elapsed_seconds": 114.179961
+    }
+  },
+  "source_files_verified": 29,
+  "ui_text_count": 179,
+  "ui_old164_complete_prefix_accepted": true,
+  "ui_source_count": 128,
+  "ui_project_count": 51,
+  "new_source_global_ids": [
+    376,
+    377,
+    467,
+    471,
+    563,
+    490
+  ],
+  "all_old_caption_values_retained": true,
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "combat223_navigation222_and_all_other_archive_members_worlds_retained": true,
+  "save_version": 105,
+  "casting_eligibility_cost_recovery_rng_inventory_rules_changed": false,
+  "world_item_failed_commit_feedback_corrected": true,
+  "new_cases": 0,
+  "existing_cases_executed": 0,
+  "app_gui_runs": 0,
+  "headless_gameplay_runs": 0,
+  "campaign_replays": 0,
+  "device_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "No new affected pixels/touch, natural campaign or full item-source runtime matrix acceptance",
+    "Test overrides/call sites synchronized mechanically, not executed",
+    "Unknown dynamic text remains original; remaining consumable/book/reward feedback is next concrete work"
+  ]
+}

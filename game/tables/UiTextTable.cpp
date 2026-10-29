@@ -184,6 +184,21 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.spell_not_skilled_enough", "Not skilled enough"},
     {"ui.spell_canceled", "Spell canceled"},
     {"ui.spell_unknown_attack", "Unknown attack spell"},
+    {"ui.spell_armageddon_already_active", "Armageddon already active"},
+    {"ui.spell_armageddon_daily_limit", "No Armageddon casts left today"},
+    {"ui.found_gold", "You found %lu gold!"},
+    {"ui.found_item", "You found an item (%s)!"},
+    {"ui.pack_full", "Pack is Full!"},
+    {"ui.generic_item_name", "item"},
+    {"ui.stealing_skill_required", "You need Stealing skill."},
+    {"ui.interaction_too_far", "Too far away."},
+    {"ui.stealing_nothing", "Nothing to steal."},
+    {"ui.stealing_caught", "%s was caught stealing!"},
+    {"ui.stealing_failed", "%s failed to steal anything!"},
+    {"ui.item_identified", "Identified %s."},
+    {"ui.item_repaired", "Repaired %s."},
+    {"ui.item_unavailable", "Unavailable."},
+    {"ui.found_gold_and_item", "You found %d gold and an item (%s)!"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -238,7 +253,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 115/116 with initial skill training captions and base-attribute requirements,
     // the 119 with skill category headings, the 122 with NPC confirmations,
     // the 132 with ordinary travel and fine captions,
-    // and the 149 with spell feedback and target-selection captions.
+    // the 149 with spell feedback and target-selection captions,
+    // and the 164 with spell failure captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -256,6 +272,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t NpcConfirmationMessageCount = size_t(Message::MoreInformation);
     constexpr size_t TravelMessageCount = size_t(Message::FinishCurrentAction);
     constexpr size_t SpellMessageCount = size_t(Message::SpellFailed);
+    constexpr size_t SpellFailureMessageCount = size_t(Message::SpellArmageddonAlreadyActive);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -273,7 +290,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != SkillHeadingMessageCount
         && schemaMessageCount != NpcConfirmationMessageCount
         && schemaMessageCount != TravelMessageCount
-        && schemaMessageCount != SpellMessageCount)
+        && schemaMessageCount != SpellMessageCount
+        && schemaMessageCount != SpellFailureMessageCount)
     {
         return false;
     }
@@ -298,6 +316,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
             || (index == size_t(Message::ItemTypeFormat)
                 && itemTypeParameterOffset(row[1]) == std::string::npos)
             || (index == size_t(Message::ScoreFormat) && !hasExpectedParameters(row[1], {"%lu"}))
+            || (index == size_t(Message::FoundGoldFormat) && !hasExpectedParameters(row[1], {"%lu"}))
+            || (index == size_t(Message::FoundGoldAndItemFormat) && !hasExpectedParameters(row[1], {"%d", "%s"}))
             || (index == size_t(Message::CharacterFormat) && !hasExpectedParameters(row[1], {"%s", "%u", "%s"}))
             || (index == size_t(Message::SkillTrainingOffer) && !hasExpectedParameters(row[1], {"%s", "%s", "%lu"}))
             || (index == size_t(Message::SkillTrainingLearned) && !hasExpectedParameters(row[1], {"%s", "%s", "%s"}))
@@ -310,7 +330,12 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
                     || index == size_t(Message::SpellSelectCharacterFormat)
                     || index == size_t(Message::SpellSelectGroundFormat)
                     || index == size_t(Message::SpellSelectTargetFormat)
-                    || index == size_t(Message::SpellCastFormat))
+                    || index == size_t(Message::SpellCastFormat)
+                    || index == size_t(Message::FoundItemFormat)
+                    || index == size_t(Message::StealingCaughtFormat)
+                    || index == size_t(Message::StealingFailedFormat)
+                    || index == size_t(Message::ItemIdentifiedFormat)
+                    || index == size_t(Message::ItemRepairedFormat))
                 && !hasExpectedParameters(row[1], {"%s"})))
         {
             return false;
@@ -473,6 +498,47 @@ std::string UiTextTable::formatSpellPrompt(Message message, const std::string &s
         case Message::SpellSelectTargetFormat:
         case Message::SpellCastFormat:
             return formatStringParameter(text(message), spellName);
+
+        default:
+            return {};
+    }
+}
+
+std::string UiTextTable::formatFoundGold(uint32_t amount) const
+{
+    std::string result = text(Message::FoundGoldFormat);
+    if (!hasExpectedParameters(result, {"%lu"}))
+    {
+        return {};
+    }
+    result.replace(result.find("%lu"), 3, std::to_string(amount));
+    return result;
+}
+
+std::string UiTextTable::formatFoundGoldAndItem(uint32_t amount, const std::string &name) const
+{
+    std::string result = text(Message::FoundGoldAndItemFormat);
+    if (!hasExpectedParameters(result, {"%d", "%s"}))
+    {
+        return {};
+    }
+    const size_t goldOffset = result.find("%d");
+    const size_t itemOffset = result.find("%s", goldOffset + 2);
+    result.replace(itemOffset, 2, name);
+    result.replace(goldOffset, 2, std::to_string(amount));
+    return result;
+}
+
+std::string UiTextTable::formatItemFeedback(Message message, const std::string &name) const
+{
+    switch (message)
+    {
+        case Message::FoundItemFormat:
+        case Message::StealingCaughtFormat:
+        case Message::StealingFailedFormat:
+        case Message::ItemIdentifiedFormat:
+        case Message::ItemRepairedFormat:
+            return formatStringParameter(text(message), name);
 
         default:
             return {};

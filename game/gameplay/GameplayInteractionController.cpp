@@ -14,6 +14,7 @@
 #include "game/items/ItemRuntime.h"
 #include "game/party/SpellIds.h"
 #include "game/tables/ItemTable.h"
+#include "game/tables/UiTextTable.h"
 
 #include <SDL3/SDL_timer.h>
 
@@ -460,17 +461,6 @@ void setSingleContextAction(
     state.primaryIndex = 0;
 }
 
-std::string formatFoundItemStatusText(const std::string &itemName)
-{
-    const std::string resolvedItemName = itemName.empty() ? "item" : itemName;
-    return "You found an item (" + resolvedItemName + ")!";
-}
-
-std::string formatFoundGoldStatusText(int goldAmount)
-{
-    return "You found " + std::to_string(std::max(0, goldAmount)) + " gold!";
-}
-
 int followerAdjustedGoldAmount(int goldAmount, const EventRuntimeState *pEventRuntimeState)
 {
     if (pEventRuntimeState == nullptr || goldAmount <= 0)
@@ -550,14 +540,15 @@ bool dropHeldItemToActiveWorld(
 
 std::string worldItemDisplayName(
     const GameplayWorldItemInspectState &worldItemState,
-    const ItemTable *pItemTable)
+    const ItemTable *pItemTable,
+    const std::string &fallbackName = "item")
 {
     const ItemDefinition *pItemDefinition =
         pItemTable != nullptr ? pItemTable->get(worldItemState.item.objectDescriptionId) : nullptr;
 
     return pItemDefinition != nullptr && !pItemDefinition->name.empty()
         ? pItemDefinition->name
-        : "item";
+        : fallbackName;
 }
 
 bool canStoreWorldItemInInventory(
@@ -622,6 +613,7 @@ bool tryActivateWorldItem(
     }
 
     GameplayUiController::HeldInventoryItemState &heldItem = runtime.heldInventoryItem();
+    const UiTextTable &uiText = runtime.gameplayUiRuntime().uiTextTable();
     size_t recipientMemberIndex = 0;
     const bool canStoreInInventory =
         !worldItemState.isGold
@@ -639,7 +631,7 @@ bool tryActivateWorldItem(
     {
         if (!worldItemState.isGold && !canStoreInInventory && heldItem.active)
         {
-            runtime.setStatusBarEvent("Pack is Full!");
+            runtime.setStatusBarEvent(uiText.text(UiTextTable::Message::PackFull));
             runtime.playSpeechReaction(pParty->activeMemberIndex(), SpeechId::InventoryRoom, true);
         }
 
@@ -660,7 +652,7 @@ bool tryActivateWorldItem(
             worldRuntime.eventRuntimeState());
         pParty->addGold(goldAmount);
         pParty->requestSound(SoundId::Gold);
-        const std::string statusText = formatFoundGoldStatusText(goldAmount);
+        const std::string statusText = uiText.formatFoundGold(static_cast<uint32_t>(std::max(0, goldAmount)));
         runtime.setStatusBarEvent(statusText);
         recordWorldItemActivationResult(
             worldRuntime,
@@ -669,6 +661,8 @@ bool tryActivateWorldItem(
     }
 
     const std::string itemName = worldItemDisplayName(removedItemState, runtime.itemTable());
+    const std::string feedbackItemName = worldItemDisplayName(
+        removedItemState, runtime.itemTable(), uiText.text(UiTextTable::Message::GenericItemName));
 
     if (pickupDecision.destination == GameplayWorldItemPickupDestination::Inventory)
     {
@@ -686,7 +680,7 @@ bool tryActivateWorldItem(
             + " member_index=" + std::to_string(recipientMemberIndex));
         pParty->requestSound(SoundId::Gold);
         runtime.playSpeechReaction(recipientMemberIndex, SpeechId::FoundItem, true);
-        runtime.setStatusBarEvent(formatFoundItemStatusText(itemName));
+        runtime.setStatusBarEvent(uiText.formatItemFeedback(UiTextTable::Message::FoundItemFormat, feedbackItemName));
         recordWorldItemActivationResult(worldRuntime, "picked up " + itemName);
         return true;
     }
@@ -701,7 +695,7 @@ bool tryActivateWorldItem(
         + " world_item_index=" + std::to_string(worldItemIndex));
     pParty->requestSound(SoundId::Gold);
     runtime.playSpeechReaction(pParty->activeMemberIndex(), SpeechId::FoundItem, true);
-    runtime.setStatusBarEvent(formatFoundItemStatusText(itemName));
+    runtime.setStatusBarEvent(uiText.formatItemFeedback(UiTextTable::Message::FoundItemFormat, feedbackItemName));
     recordWorldItemActivationResult(worldRuntime, "picked up " + itemName + " into hand");
     return true;
 }

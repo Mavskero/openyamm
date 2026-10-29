@@ -32,6 +32,26 @@ struct MercenaryReleaseProfile;
 class StandardItemEnchantTable;
 class SpecialItemEnchantTable;
 
+// Transient operation output; item state and legacy diagnostic text remain authoritative.
+struct ItemOperationFeedback
+{
+    enum class Outcome
+    {
+        None,
+        NoItem,
+        Unavailable,
+        AlreadyIdentified,
+        IdentifyFailed,
+        Identified,
+        NothingToRepair,
+        RepairFailed,
+        Repaired,
+    };
+
+    Outcome outcome = Outcome::None;
+    std::string itemName;
+};
+
 struct LloydBeacon
 {
     std::string mapName;
@@ -562,41 +582,49 @@ public:
         uint8_t gridX,
         uint8_t gridY,
         size_t inspectorMemberIndex,
-        std::string &statusText);
+        std::string &statusText,
+        ItemOperationFeedback *pFeedback = nullptr);
     bool tryRepairMemberInventoryItem(
         size_t memberIndex,
         uint8_t gridX,
         uint8_t gridY,
         size_t inspectorMemberIndex,
-        std::string &statusText);
+        std::string &statusText,
+        ItemOperationFeedback *pFeedback = nullptr);
     bool identifyMemberInventoryItem(
         size_t memberIndex,
         uint8_t gridX,
         uint8_t gridY,
-        std::string &statusText);
+        std::string &statusText,
+        ItemOperationFeedback *pFeedback = nullptr);
     bool repairMemberInventoryItem(
         size_t memberIndex,
         uint8_t gridX,
         uint8_t gridY,
-        std::string &statusText);
+        std::string &statusText,
+        ItemOperationFeedback *pFeedback = nullptr);
     bool tryIdentifyEquippedItem(
         size_t memberIndex,
         EquipmentSlot slot,
         size_t inspectorMemberIndex,
-        std::string &statusText);
+        std::string &statusText,
+        ItemOperationFeedback *pFeedback = nullptr);
     bool tryRepairEquippedItem(
         size_t memberIndex,
         EquipmentSlot slot,
         size_t inspectorMemberIndex,
-        std::string &statusText);
+        std::string &statusText,
+        ItemOperationFeedback *pFeedback = nullptr);
     bool identifyEquippedItem(
         size_t memberIndex,
         EquipmentSlot slot,
-        std::string &statusText);
+        std::string &statusText,
+        ItemOperationFeedback *pFeedback = nullptr);
     bool repairEquippedItem(
         size_t memberIndex,
         EquipmentSlot slot,
-        std::string &statusText);
+        std::string &statusText,
+        ItemOperationFeedback *pFeedback = nullptr);
     bool setMemberClassName(
         size_t memberIndex,
         const std::string &className,

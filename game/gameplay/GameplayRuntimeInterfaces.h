@@ -24,6 +24,7 @@ struct GameplayMinimapLineState;
 struct GameplayMinimapMarkerState;
 struct GameplayInputFrame;
 struct PartySpellCastResult;
+enum class PartySpellFailureReason : uint8_t;
 
 enum class ActorAiUpdateMode : uint8_t
 {
@@ -798,7 +799,8 @@ public:
         size_t casterMemberIndex,
         uint32_t skillLevel,
         SkillMastery skillMastery,
-        std::string &failureText) = 0;
+        std::string &failureText,
+        PartySpellFailureReason &failureReason) = 0;
     virtual bool canActivateWorldHit(
         const GameplayWorldHit &hit,
         GameplayInteractionMethod interactionMethod) const = 0;

@@ -4,6 +4,14 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 225 ACCEPTED_SOURCE_SCOPED: `handoff/spell-item-feedback-225/scoped-result.json`.
+  Typed Armageddon limits, all five identify/repair sources, pickup/loot/stealing feedback use current language;
+  rejected world-item state write no longer reports success. Ui179 accepts old164;128source/51project, Save105 fixed.
+  Native116.872s/core0.138s/assembly2.378s/unsignediOS114.180s pass;29 built-source hashes match,0cases/App/device/campaign.
+  Complete default225 changesonlyui_text; Combat223/navigation222/worlds retained, fixed214/195/RCs preserved.
+  Source/build scope only; no new pixels/touch/fullcampaign claim. GoalACTIVE/~85%lowconfidence. Next concrete
+  consumable/mixing/book/reward feedback; no broad audit/replay or new device checkpoint.
+
 - 224 ACCEPTED_SOURCE_SCOPED: `handoff/spell-failure-ui-224/scoped-result.json`.
   Precise spell-failure metadata and shared display localize 12 fixed reasons plus skill/cancel/attack errors;
   both world views retain service-localized success. UiText164 accepts complete old149;122 source/42 project rows.

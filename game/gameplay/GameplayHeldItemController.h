@@ -11,6 +11,7 @@ namespace OpenYAMM::Game
 class GameplayScreenRuntime;
 class ItemTable;
 class Party;
+class UiTextTable;
 struct EventRuntimeState;
 
 class GameplayHeldItemController
@@ -32,6 +33,7 @@ public:
         GameplayUiController::HeldInventoryItemState &heldInventoryItem,
         Party &party,
         size_t memberIndex,
-        std::string &failureStatus);
+        std::string &failureStatus,
+        const UiTextTable &uiText);
 };
 } // namespace OpenYAMM::Game

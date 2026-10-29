@@ -11,6 +11,7 @@
 #include "game/gameplay/ReputationRuntime.h"
 #include "game/StringUtils.h"
 #include "game/tables/ItemTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/ui/KeyboardScreenLayout.h"
 #include "game/ui/GameplayJournalMapUi.h"
@@ -325,11 +326,6 @@ struct InventoryItemScreenRect
     float width = 0.0f;
     float height = 0.0f;
 };
-
-std::string formatFoundGoldStatusText(int goldAmount)
-{
-    return "You found " + std::to_string(std::max(0, goldAmount)) + " gold!";
-}
 
 int followerAdjustedGoldAmount(int goldAmount, const EventRuntimeState *pEventRuntimeState)
 {
@@ -4612,7 +4608,8 @@ void GameplayOverlayInputController::handleLootOverlayInput(
                             static_cast<int>(takenItem.goldAmount),
                             view.worldRuntime() != nullptr ? view.worldRuntime()->eventRuntimeState() : nullptr);
                         view.party()->addGold(goldAmount);
-                        view.setStatusBarEvent(formatFoundGoldStatusText(goldAmount));
+                        view.setStatusBarEvent(view.gameplayUiRuntime().uiTextTable().formatFoundGold(
+                            static_cast<uint32_t>(std::max(0, goldAmount))));
                     }
                     else
                     {
@@ -4764,7 +4761,8 @@ void GameplayOverlayInputController::handleLootOverlayInput(
                                 static_cast<int>(removedItem.goldAmount),
                                 view.worldRuntime() != nullptr ? view.worldRuntime()->eventRuntimeState() : nullptr);
                             view.party()->addGold(goldAmount);
-                            view.setStatusBarEvent(formatFoundGoldStatusText(goldAmount));
+                            view.setStatusBarEvent(view.gameplayUiRuntime().uiTextTable().formatFoundGold(
+                                static_cast<uint32_t>(std::max(0, goldAmount))));
                         }
                         else
                         {
