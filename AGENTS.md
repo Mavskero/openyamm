@@ -4,6 +4,14 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 226 ACCEPTED_SOURCE_SCOPED: `handoff/consumable-feedback-226/scoped-result.json`.
+  Consumable/book/mix/reward feedback uses typed actual result and current names; no UI RNG. DimensionDoor failure
+  now emits reason before original earlyreturn. Burning/drowning transient enum keeps damage/ticks/priority/Snapshot.
+  UI210 acceptsold179;146source/64project,Save105 fixed. Native94.865s/core0.177s/assembly2.147s/iOS84.348s pass;
+  13sources/newheader hashmatch,0cases/App/campaign/device/release. Complete default226changesonlyui_text;
+  Combat223/navigation222/worlds andfixed214/195/RCs retained. Source/buildscope, no affectedpixel/touch/fullcampaign
+  claim; fullgoalACTIVE/~85%lowconfidence. Continue concrete equipment feedback review, no broad replay matrix.
+
 - 225 ACCEPTED_SOURCE_SCOPED: `handoff/spell-item-feedback-225/scoped-result.json`.
   Typed Armageddon limits, all five identify/repair sources, pickup/loot/stealing feedback use current language;
   rejected world-item state write no longer reports success. Ui179 accepts old164;128source/51project, Save105 fixed.

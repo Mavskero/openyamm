@@ -1,0 +1,42 @@
+{
+  "source_root": "local-data/validation/mm8-runtime-076/source-001",
+  "new_original_global_ids": [
+    36,
+    380,
+    381,
+    382,
+    444,
+    652,
+    125,
+    97,
+    653,
+    121,
+    14,
+    162,
+    231,
+    58,
+    220,
+    76,
+    661,
+    660
+  ],
+  "ui_old_count": 179,
+  "ui_new_count": 210,
+  "source_ui_count": 146,
+  "project_ui_count": 64,
+  "new_source_rows": 18,
+  "new_project_rows": 13,
+  "precise_source_notes": [
+    "Global36 has trailing space in original Chinese; retain original template",
+    "Global444 is Ooops!;125 is fixed +2 Skill Points!, not a generic numeric template",
+    "Global382 receives the actual selected condition, with6 source-authenticated labels",
+    "Global661/660 burning/drowning are mapped via transient movement enum"
+  ],
+  "pure_use_metadata": "Original failure/action/status/consumption/recovery/speech remains; result adds reason, name, selected condition and original reward kind/amount/stat key. Lamp December resistance is recorded in the original random branch, no UI RNG.",
+  "mixing": "Existing handled/action/success/failureDamageLevel distinguish all3 visible outcomes; MixingRuntime unchanged. Dead unused makeFailureResult excluded.",
+  "dimension_door_failure": "Unconsumed branch now displays failure before existing early return; overlay, held clear and character screen rules retained.",
+  "movement": "New shared PartyMovementStatus enum only; runtime clear/set follows original text lifecycle. Damage/ticks/burning-before-drowning/Snapshot unchanged; unknown/unbound text retained.",
+  "cross_review": "UseRuntime owner inspected main display mapping/common sink/DimensionDoor branch and found no material defect. No new tests or App run.",
+  "save_version": 105,
+  "validation_scope": "Native/core/assembly/unsigned generic iOS passed; no new cases, GUI/headless gameplay, campaign or device runs."
+}

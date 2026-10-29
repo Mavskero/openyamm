@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 128> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 146> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -365,10 +365,28 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::StealingCaughtFormat, 376},
         {UiMessage::StealingFailedFormat, 377},
         {UiMessage::FoundGoldAndItemFormat, 490},
+        {UiMessage::ItemMixExplosion, 444},
+        {UiMessage::ItemCannotUseFormat, 36},
+        {UiMessage::ItemTargetInactiveFormat, 382},
+        {UiMessage::ItemUseUnderwater, 652},
+        {UiMessage::ItemSpellLearningSkillRequiredFormat, 381},
+        {UiMessage::ItemSpellAlreadyKnownFormat, 380},
+        {UiMessage::ItemHorseshoeSkillPoints, 125},
+        {UiMessage::ItemRewardGold, 97},
+        {UiMessage::ItemRewardFood, 653},
+        {UiMessage::ItemRewardPermanent, 121},
+        {UiMessage::ConditionAsleep, 14},
+        {UiMessage::ConditionParalyzed, 162},
+        {UiMessage::ConditionUnconscious, 231},
+        {UiMessage::ConditionDead, 58},
+        {UiMessage::ConditionPetrified, 220},
+        {UiMessage::ConditionEradicated, 76},
+        {UiMessage::PartyBurning, 661},
+        {UiMessage::PartyDrowning, 660},
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 51> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 64> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -421,6 +439,19 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::ItemIdentifiedFormat, "已鉴定%s。"},
         {UiMessage::ItemRepairedFormat, "已修理%s。"},
         {UiMessage::ItemUnavailable, "暂不可用。"},
+        {UiMessage::ItemMixedPotion, "药剂混合完成"},
+        {UiMessage::ItemTargetInactive, "该队员当前无法行动"},
+        {UiMessage::ItemSkillsAlreadyKnownFormat, "你已经学会%s中的一项或多项技能"},
+        {UiMessage::ItemSkillsNotLearnableFormat, "该角色无法学习%s中的技能"},
+        {UiMessage::ItemSkillLearningFailed, "未能学会此技能"},
+        {UiMessage::ItemSkillLearnedFormat, "已学会%s"},
+        {UiMessage::ItemSkillsLearnedFormat, "已学会%s中的技能"},
+        {UiMessage::ItemRewardValueFormat, "+%u %s"},
+        {UiMessage::ItemRewardExclaimFormat, "+%u %s！"},
+        {UiMessage::ItemRewardPermanentFormat, "+%u %s（%s）"},
+        {UiMessage::ItemSpellDataMissing, "缺少法术数据"},
+        {UiMessage::ItemUnknownScrollSpell, "未知的卷轴法术"},
+        {UiMessage::ItemConnectorInvalidState, "连接石状态无效。"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

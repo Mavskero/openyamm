@@ -10650,7 +10650,17 @@ void IndoorWorldRuntime::updateWorldMovement(
 
     if (m_pGameplayView != nullptr && m_pPartyRuntime != nullptr && !m_pPartyRuntime->movementStatusText().empty())
     {
-        m_pGameplayView->setStatusBarEvent(m_pPartyRuntime->movementStatusText());
+        const std::string *pStatusText = &m_pPartyRuntime->movementStatusText();
+        if (GameSession *pSession = boundGameSession())
+        {
+            const std::string &localizedStatusText = pSession->gameplayUiRuntime().uiTextTable().movementStatusText(
+                m_pPartyRuntime->movementStatus());
+            if (!localizedStatusText.empty())
+            {
+                pStatusText = &localizedStatusText;
+            }
+        }
+        m_pGameplayView->setStatusBarEvent(*pStatusText);
     }
 }
 

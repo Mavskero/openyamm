@@ -52,6 +52,7 @@ void OutdoorPartyRuntime::update(
     GameplayWorldMovementFrameDiagnostics *pPerformanceDiagnostics)
 {
     m_movementStatusText.clear();
+    m_movementStatus = PartyMovementStatus::None;
     m_movementDriver.update(input, deltaSeconds, pPerformanceDiagnostics);
 
     uint64_t stageBeginTickCount = pPerformanceDiagnostics != nullptr ? SDL_GetTicksNS() : 0;
@@ -87,10 +88,12 @@ void OutdoorPartyRuntime::update(
     if (effects.burningDamageTicks > 0)
     {
         m_movementStatusText = "You are burning!";
+        m_movementStatus = PartyMovementStatus::Burning;
     }
     else if (effects.waterDamageTicks > 0)
     {
         m_movementStatusText = "You are drowning!";
+        m_movementStatus = PartyMovementStatus::Drowning;
     }
 
     if (pPerformanceDiagnostics != nullptr)
@@ -156,6 +159,11 @@ const Party &OutdoorPartyRuntime::party() const
 Party &OutdoorPartyRuntime::party()
 {
     return m_party;
+}
+
+PartyMovementStatus OutdoorPartyRuntime::movementStatus() const
+{
+    return m_movementStatus;
 }
 
 const std::string &OutdoorPartyRuntime::movementStatusText() const

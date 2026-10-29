@@ -9,6 +9,7 @@
 namespace OpenYAMM::Game
 {
 enum class SkillMastery;
+enum class PartyMovementStatus : uint8_t;
 
 class UiTextTable
 {
@@ -194,16 +195,48 @@ public:
         ItemRepairedFormat,
         ItemUnavailable,
         FoundGoldAndItemFormat,
+        ItemMixedPotion,
+        ItemMixExplosion,
+        ItemCannotUseFormat,
+        ItemTargetInactiveFormat,
+        ItemTargetInactive,
+        ItemUseUnderwater,
+        ItemSpellLearningSkillRequiredFormat,
+        ItemSpellAlreadyKnownFormat,
+        ItemSkillsAlreadyKnownFormat,
+        ItemSkillsNotLearnableFormat,
+        ItemSkillLearningFailed,
+        ItemSkillLearnedFormat,
+        ItemSkillsLearnedFormat,
+        ItemHorseshoeSkillPoints,
+        ItemRewardValueFormat,
+        ItemRewardExclaimFormat,
+        ItemRewardPermanentFormat,
+        ItemRewardGold,
+        ItemRewardFood,
+        ItemRewardPermanent,
+        ItemSpellDataMissing,
+        ItemUnknownScrollSpell,
+        ItemConnectorInvalidState,
+        ConditionAsleep,
+        ConditionParalyzed,
+        ConditionUnconscious,
+        ConditionDead,
+        ConditionPetrified,
+        ConditionEradicated,
+        PartyBurning,
+        PartyDrowning,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
     // Validate the current schema or migrate a complete older prefix with
-    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122, 132, 149 or 164 keys.
+    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122, 132, 149, 164 or 179 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;
+    const std::string &movementStatusText(PartyMovementStatus status) const;
     std::string formatItemType(const std::string &type) const;
     std::string formatWinScore(uint64_t score) const;
     std::string formatWinCharacter(const std::string &name, uint32_t level, const std::string &className) const;
@@ -220,6 +253,8 @@ public:
     std::string formatFoundGold(uint32_t amount) const;
     std::string formatFoundGoldAndItem(uint32_t amount, const std::string &name) const;
     std::string formatItemFeedback(Message message, const std::string &name) const;
+    std::string formatItemReward(
+        Message message, uint32_t amount, const std::string &name, const std::string &suffix = {}) const;
     static const char *key(Message message);
 
 private:

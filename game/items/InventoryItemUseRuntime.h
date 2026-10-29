@@ -43,6 +43,37 @@ struct InventoryItemUseContext
     float gameMinutes = 0.0f;
 };
 
+struct InventoryItemUseFeedback
+{
+    enum class Reason : uint8_t
+    {
+        None,
+        CannotUse,
+        InactiveCharacter,
+        Underwater,
+        SpellLearningSkillRequired,
+        SkillBookNotLearnable,
+        SkillLearningFailed,
+    };
+
+    enum class RewardKind : uint8_t
+    {
+        None,
+        Stat,
+        Gold,
+        Food,
+        SkillPoints,
+        Experience,
+    };
+
+    Reason reason = Reason::None;
+    std::string itemName;
+    std::optional<CharacterCondition> condition;
+    RewardKind rewardKind = RewardKind::None;
+    uint32_t rewardAmount = 0;
+    std::string rewardStatKey;
+};
+
 struct InventoryItemUseResult
 {
     bool handled = false;
@@ -59,6 +90,7 @@ struct InventoryItemUseResult
     std::optional<SoundId> soundId;
     std::string readableTitle;
     std::string readableBody;
+    InventoryItemUseFeedback feedback;
 };
 
 class InventoryItemUseRuntime

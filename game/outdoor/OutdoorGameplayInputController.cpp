@@ -192,7 +192,10 @@ void OutdoorGameplayInputController::updateCameraFromInput(
 
                     if (!view.m_pOutdoorPartyRuntime->movementStatusText().empty())
                     {
-                        view.setStatusBarEvent(view.m_pOutdoorPartyRuntime->movementStatusText());
+                        const std::string &localizedStatusText = view.m_gameSession.gameplayUiRuntime()
+                            .uiTextTable().movementStatusText(view.m_pOutdoorPartyRuntime->movementStatus());
+                        view.setStatusBarEvent(localizedStatusText.empty()
+                            ? view.m_pOutdoorPartyRuntime->movementStatusText() : localizedStatusText);
                     }
 
                     if (frameAdvanceResult.shouldOpenEventDialog)

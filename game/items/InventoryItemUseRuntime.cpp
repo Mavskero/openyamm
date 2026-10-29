@@ -14,6 +14,9 @@ namespace OpenYAMM::Game
 {
 namespace
 {
+using FeedbackReason = InventoryItemUseFeedback::Reason;
+using RewardKind = InventoryItemUseFeedback::RewardKind;
+
 constexpr int MinutesPerDay = 24 * 60;
 constexpr int DaysPerMonth = 28;
 constexpr uint32_t GreenAppleItemId = 655;
@@ -497,9 +500,10 @@ bool canUseSpellItem(const Character &member)
             && *condition != CharacterCondition::Eradicated);
 }
 
-std::string inactiveCharacterStatusText(const Character &member)
+std::string inactiveCharacterStatusText(const Character &member, InventoryItemUseFeedback &feedback)
 {
     const std::optional<CharacterCondition> condition = majorCondition(member);
+    feedback.condition = condition;
 
     if (condition)
     {
@@ -563,7 +567,23 @@ void addPermanentResistanceBonus(Character &member, int CharacterResistanceSet::
     member.permanentBonuses.resistances.*field += value;
 }
 
-std::string applyGenieLampReward(Party &party, Character &member, size_t memberIndex, float gameMinutes)
+void recordRewardFeedback(
+    InventoryItemUseFeedback &feedback,
+    RewardKind rewardKind,
+    int amount,
+    const std::string &statKey = {})
+{
+    feedback.rewardKind = rewardKind;
+    feedback.rewardAmount = static_cast<uint32_t>(amount);
+    feedback.rewardStatKey = statKey;
+}
+
+std::string applyGenieLampReward(
+    Party &party,
+    Character &member,
+    size_t memberIndex,
+    float gameMinutes,
+    InventoryItemUseFeedback &feedback)
 {
     const int value = monthWeekFromGameMinutes(gameMinutes) + 1;
 
@@ -571,42 +591,53 @@ std::string applyGenieLampReward(Party &party, Character &member, size_t memberI
     {
         case 0:
             addPermanentStatBonus(member, &CharacterStatBonuses::might, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Might");
             return "+" + std::to_string(value) + " Might Permanent";
         case 1:
             addPermanentStatBonus(member, &CharacterStatBonuses::intellect, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Intellect");
             return "+" + std::to_string(value) + " Intellect Permanent";
         case 2:
             addPermanentStatBonus(member, &CharacterStatBonuses::personality, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Personality");
             return "+" + std::to_string(value) + " Personality Permanent";
         case 3:
             addPermanentStatBonus(member, &CharacterStatBonuses::endurance, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Endurance");
             return "+" + std::to_string(value) + " Endurance Permanent";
         case 4:
             addPermanentStatBonus(member, &CharacterStatBonuses::accuracy, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Accuracy");
             return "+" + std::to_string(value) + " Accuracy Permanent";
         case 5:
             addPermanentStatBonus(member, &CharacterStatBonuses::speed, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Speed");
             return "+" + std::to_string(value) + " Speed Permanent";
         case 6:
             addPermanentStatBonus(member, &CharacterStatBonuses::luck, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Luck");
             return "+" + std::to_string(value) + " Luck Permanent";
         case 7:
         {
             const int gold = 1000 * value;
             party.addGold(gold);
+            recordRewardFeedback(feedback, RewardKind::Gold, gold);
             return "+" + std::to_string(gold) + " Gold";
         }
         case 8:
         {
             const int food = 5 * value;
             party.addFood(food);
+            recordRewardFeedback(feedback, RewardKind::Food, food);
             return "+" + std::to_string(food) + " Food";
         }
         case 9:
             member.skillPoints += static_cast<uint32_t>(2 * value);
+            recordRewardFeedback(feedback, RewardKind::SkillPoints, 2 * value);
             return "+" + std::to_string(2 * value) + " Skill Points";
         case 10:
             party.addExperienceToMember(memberIndex, 2500LL * value);
+            recordRewardFeedback(feedback, RewardKind::Experience, 2500 * value);
             return "+" + std::to_string(2500 * value) + " Experience";
         case 11:
         {
@@ -617,21 +648,27 @@ std::string applyGenieLampReward(Party &party, Character &member, size_t memberI
             {
                 case 0:
                     addPermanentResistanceBonus(member, &CharacterResistanceSet::fire, value);
+                    recordRewardFeedback(feedback, RewardKind::Stat, value, "FireResistance");
                     return "+" + std::to_string(value) + " Fire Permanent";
                 case 1:
                     addPermanentResistanceBonus(member, &CharacterResistanceSet::air, value);
+                    recordRewardFeedback(feedback, RewardKind::Stat, value, "AirResistance");
                     return "+" + std::to_string(value) + " Air Permanent";
                 case 2:
                     addPermanentResistanceBonus(member, &CharacterResistanceSet::water, value);
+                    recordRewardFeedback(feedback, RewardKind::Stat, value, "WaterResistance");
                     return "+" + std::to_string(value) + " Water Permanent";
                 case 3:
                     addPermanentResistanceBonus(member, &CharacterResistanceSet::earth, value);
+                    recordRewardFeedback(feedback, RewardKind::Stat, value, "EarthResistance");
                     return "+" + std::to_string(value) + " Earth Permanent";
                 case 4:
                     addPermanentResistanceBonus(member, &CharacterResistanceSet::mind, value);
+                    recordRewardFeedback(feedback, RewardKind::Stat, value, "MindResistance");
                     return "+" + std::to_string(value) + " Mind Permanent";
                 default:
                     addPermanentResistanceBonus(member, &CharacterResistanceSet::body, value);
+                    recordRewardFeedback(feedback, RewardKind::Stat, value, "BodyResistance");
                     return "+" + std::to_string(value) + " Body Permanent";
             }
         }
@@ -642,7 +679,7 @@ std::string applyGenieLampReward(Party &party, Character &member, size_t memberI
     return {};
 }
 
-std::string applyDeckOfFateReward(Character &member, float gameMinutes)
+std::string applyDeckOfFateReward(Character &member, float gameMinutes, InventoryItemUseFeedback &feedback)
 {
     const int value = monthWeekFromGameMinutes(gameMinutes) + 1;
 
@@ -650,39 +687,51 @@ std::string applyDeckOfFateReward(Character &member, float gameMinutes)
     {
         case 0:
             addPermanentStatBonus(member, &CharacterStatBonuses::might, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Might");
             return "+" + std::to_string(value) + " Might!";
         case 1:
             addPermanentStatBonus(member, &CharacterStatBonuses::intellect, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Intellect");
             return "+" + std::to_string(value) + " Intellect!";
         case 2:
             addPermanentStatBonus(member, &CharacterStatBonuses::personality, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Personality");
             return "+" + std::to_string(value) + " Personality!";
         case 3:
             addPermanentStatBonus(member, &CharacterStatBonuses::endurance, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Endurance");
             return "+" + std::to_string(value) + " Endurance!";
         case 4:
             addPermanentStatBonus(member, &CharacterStatBonuses::accuracy, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Accuracy");
             return "+" + std::to_string(value) + " Accuracy!";
         case 5:
             addPermanentStatBonus(member, &CharacterStatBonuses::speed, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Speed");
             return "+" + std::to_string(value) + " Speed!";
         case 6:
             addPermanentStatBonus(member, &CharacterStatBonuses::luck, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "Luck");
             return "+" + std::to_string(value) + " Luck!";
         case 7:
             addPermanentResistanceBonus(member, &CharacterResistanceSet::fire, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "FireResistance");
             return "+" + std::to_string(value) + " Fire Resistance!";
         case 8:
             addPermanentResistanceBonus(member, &CharacterResistanceSet::air, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "AirResistance");
             return "+" + std::to_string(value) + " Air Resistance!";
         case 9:
             addPermanentResistanceBonus(member, &CharacterResistanceSet::water, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "WaterResistance");
             return "+" + std::to_string(value) + " Water Resistance!";
         case 10:
             addPermanentResistanceBonus(member, &CharacterResistanceSet::earth, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "EarthResistance");
             return "+" + std::to_string(value) + " Earth Resistance!";
         case 11:
             addPermanentResistanceBonus(member, &CharacterResistanceSet::body, value);
+            recordRewardFeedback(feedback, RewardKind::Stat, value, "BodyResistance");
             return "+" + std::to_string(value) + " Body Resistance!";
         default:
             break;
@@ -735,13 +784,16 @@ SkillMastery requiredMasteryForSpell(uint32_t spellId)
 }
 
 InventoryItemUseResult makeFailure(
-    InventoryItemUseAction action,
+    const InventoryItemUseResult &source,
+    FeedbackReason reason,
     const std::string &statusText,
     std::optional<SpeechId> speechId = std::nullopt)
 {
     InventoryItemUseResult result = {};
     result.handled = true;
-    result.action = action;
+    result.action = source.action;
+    result.feedback = source.feedback;
+    result.feedback.reason = reason;
     result.statusText = statusText;
     result.speechId = speechId;
     return result;
@@ -879,9 +931,17 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
     const ItemDefinition *pItemDefinition = itemTable.get(item.objectDescriptionId);
     Character *pTargetMember = party.member(targetMemberIndex);
 
+    if (pItemDefinition != nullptr)
+    {
+        result.feedback.itemName = pItemDefinition->name;
+    }
+
     if (pItemDefinition == nullptr || pTargetMember == nullptr)
     {
-        return makeFailure(result.action, "Item can not be used that way");
+        return makeFailure(
+            result,
+            FeedbackReason::CannotUse,
+            "Item can not be used that way");
     }
 
     switch (result.action)
@@ -890,24 +950,36 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
         {
             if (!canUseSpellItem(*pTargetMember))
             {
-                return makeFailure(result.action, inactiveCharacterStatusText(*pTargetMember));
+                return makeFailure(
+                    result,
+                    FeedbackReason::InactiveCharacter,
+                    inactiveCharacterStatusText(*pTargetMember, result.feedback));
             }
 
             if (context.underwater)
             {
-                return makeFailure(result.action, "You can not do that while you are underwater!");
+                return makeFailure(
+                    result,
+                    FeedbackReason::Underwater,
+                    "You can not do that while you are underwater!");
             }
 
             if (pTargetMember->recoverySecondsRemaining > 0.0f)
             {
-                return makeFailure(result.action, "That player is not active");
+                return makeFailure(
+                    result,
+                    FeedbackReason::InactiveCharacter,
+                    "That player is not active");
             }
 
             const std::optional<uint32_t> spellId = tryParseSpellId(*pItemDefinition);
 
             if (!spellId)
             {
-                return makeFailure(result.action, itemCannotBeUsedStatusText(*pItemDefinition));
+                return makeFailure(
+                    result,
+                    FeedbackReason::CannotUse,
+                    itemCannotBeUsedStatusText(*pItemDefinition));
             }
 
             result.handled = true;
@@ -923,17 +995,26 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
         {
             if (!canUseSpellItem(*pTargetMember))
             {
-                return makeFailure(result.action, inactiveCharacterStatusText(*pTargetMember));
+                return makeFailure(
+                    result,
+                    FeedbackReason::InactiveCharacter,
+                    inactiveCharacterStatusText(*pTargetMember, result.feedback));
             }
 
             if (context.underwater)
             {
-                return makeFailure(result.action, "You can not do that while you are underwater!");
+                return makeFailure(
+                    result,
+                    FeedbackReason::Underwater,
+                    "You can not do that while you are underwater!");
             }
 
             if (pTargetMember->recoverySecondsRemaining > 0.0f)
             {
-                return makeFailure(result.action, "That player is not active");
+                return makeFailure(
+                    result,
+                    FeedbackReason::InactiveCharacter,
+                    "That player is not active");
             }
 
             result.handled = true;
@@ -949,7 +1030,10 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
         {
             if (!canUseSpellItem(*pTargetMember))
             {
-                return makeFailure(result.action, inactiveCharacterStatusText(*pTargetMember));
+                return makeFailure(
+                    result,
+                    FeedbackReason::InactiveCharacter,
+                    inactiveCharacterStatusText(*pTargetMember, result.feedback));
             }
 
             const std::optional<uint32_t> spellId = tryParseSpellId(*pItemDefinition);
@@ -957,7 +1041,8 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
             if (!spellId)
             {
                 return makeFailure(
-                    result.action,
+                    result,
+                    FeedbackReason::CannotUse,
                     itemCannotBeUsedStatusText(*pItemDefinition),
                     SpeechId::CantLearnSpell);
             }
@@ -967,7 +1052,8 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
             if (!skillName)
             {
                 return makeFailure(
-                    result.action,
+                    result,
+                    FeedbackReason::CannotUse,
                     itemCannotBeUsedStatusText(*pItemDefinition),
                     SpeechId::CantLearnSpell);
             }
@@ -977,7 +1063,8 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
             if (pSkill == nullptr || pSkill->mastery == SkillMastery::None || pSkill->level == 0)
             {
                 return makeFailure(
-                    result.action,
+                    result,
+                    FeedbackReason::SpellLearningSkillRequired,
                     "You don't have the skill to learn " + itemDisplayNameForStatus(*pItemDefinition),
                     SpeechId::CantLearnSpell);
             }
@@ -987,7 +1074,8 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
             if (requiredMastery != SkillMastery::None && pSkill->mastery < requiredMastery)
             {
                 return makeFailure(
-                    result.action,
+                    result,
+                    FeedbackReason::SpellLearningSkillRequired,
                     "You don't have the skill to learn " + itemDisplayNameForStatus(*pItemDefinition),
                     SpeechId::CantLearnSpell);
             }
@@ -995,7 +1083,8 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
             if (pTargetMember->knowsSpell(*spellId))
             {
                 result = makeFailure(
-                    result.action,
+                    result,
+                    FeedbackReason::None,
                     "You already know the " + itemDisplayNameForStatus(*pItemDefinition) + " spell");
                 result.alreadyKnown = true;
                 return result;
@@ -1015,7 +1104,10 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
 
             if (targetSkills.empty())
             {
-                return makeFailure(result.action, itemCannotBeUsedStatusText(*pItemDefinition));
+                return makeFailure(
+                    result,
+                    FeedbackReason::CannotUse,
+                    itemCannotBeUsedStatusText(*pItemDefinition));
             }
 
             std::vector<std::string> learnableSkills;
@@ -1050,7 +1142,8 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
             if (hasAlreadyKnownSkill)
             {
                 result = makeFailure(
-                    result.action,
+                    result,
+                    FeedbackReason::None,
                     "You already know one or more skills in " + itemDisplayNameForStatus(*pItemDefinition));
                 result.alreadyKnown = true;
                 return result;
@@ -1059,7 +1152,8 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
             if (learnableSkills.size() != targetSkills.size())
             {
                 result = makeFailure(
-                    result.action,
+                    result,
+                    FeedbackReason::SkillBookNotLearnable,
                     "This character cannot learn the skills in " + itemDisplayNameForStatus(*pItemDefinition));
                 return result;
             }
@@ -1068,7 +1162,10 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
             {
                 if (!party.learnMemberSkill(targetMemberIndex, skillName))
                 {
-                    return makeFailure(result.action, "The skill could not be learned");
+                    return makeFailure(
+                        result,
+                        FeedbackReason::SkillLearningFailed,
+                        "The skill could not be learned");
                 }
             }
 
@@ -1103,7 +1200,11 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
                     return result;
                 }
 
-                return makeFailure(result.action, itemCannotBeUsedStatusText(*pItemDefinition), SpeechId::PotionFail);
+                return makeFailure(
+                    result,
+                    FeedbackReason::CannotUse,
+                    itemCannotBeUsedStatusText(*pItemDefinition),
+                    SpeechId::PotionFail);
             }
 
             if (applyBoostPotion(*pTargetMember, potionId, potionPower))
@@ -1260,7 +1361,11 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
                 return result;
             }
 
-            return makeFailure(result.action, itemCannotBeUsedStatusText(*pItemDefinition), SpeechId::PotionFail);
+            return makeFailure(
+                result,
+                FeedbackReason::CannotUse,
+                itemCannotBeUsedStatusText(*pItemDefinition),
+                SpeechId::PotionFail);
         }
 
         case InventoryItemUseAction::ReadMessageScroll:
@@ -1270,12 +1375,18 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
 
             if (pEntry == nullptr || pEntry->text.empty())
             {
-                return makeFailure(result.action, itemCannotBeUsedStatusText(*pItemDefinition));
+                return makeFailure(
+                    result,
+                    FeedbackReason::CannotUse,
+                    itemCannotBeUsedStatusText(*pItemDefinition));
             }
 
             if (!canUseSpellItem(*pTargetMember))
             {
-                return makeFailure(result.action, inactiveCharacterStatusText(*pTargetMember));
+                return makeFailure(
+                    result,
+                    FeedbackReason::InactiveCharacter,
+                    inactiveCharacterStatusText(*pTargetMember, result.feedback));
             }
 
             result.handled = true;
@@ -1290,6 +1401,7 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
             result.handled = true;
             result.consumed = true;
             result.statusText = "+2 Skill Points!";
+            recordRewardFeedback(result.feedback, RewardKind::SkillPoints, 2);
             result.soundId = SoundId::Quest;
             result.speechId = SpeechId::QuestGot;
             return result;
@@ -1299,7 +1411,8 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
         {
             result.handled = true;
             result.consumed = true;
-            result.statusText = applyGenieLampReward(party, *pTargetMember, targetMemberIndex, context.gameMinutes);
+            result.statusText = applyGenieLampReward(
+                party, *pTargetMember, targetMemberIndex, context.gameMinutes, result.feedback);
             result.soundId = SoundId::Chimes;
             result.speechId = SpeechId::QuestGot;
 
@@ -1328,7 +1441,7 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
         {
             result.handled = true;
             result.consumed = true;
-            result.statusText = applyDeckOfFateReward(*pTargetMember, context.gameMinutes);
+            result.statusText = applyDeckOfFateReward(*pTargetMember, context.gameMinutes, result.feedback);
             return result;
         }
 
@@ -1356,7 +1469,10 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
 
         case InventoryItemUseAction::UseReagent:
         {
-            return makeFailure(result.action, itemCannotBeUsedStatusText(*pItemDefinition));
+            return makeFailure(
+                result,
+                FeedbackReason::CannotUse,
+                itemCannotBeUsedStatusText(*pItemDefinition));
         }
 
         case InventoryItemUseAction::UseConnectorStone:
@@ -1369,7 +1485,10 @@ InventoryItemUseResult InventoryItemUseRuntime::useItemOnMember(
         case InventoryItemUseAction::None:
         default:
         {
-            return makeFailure(result.action, itemCannotBeUsedStatusText(*pItemDefinition));
+            return makeFailure(
+                result,
+                FeedbackReason::CannotUse,
+                itemCannotBeUsedStatusText(*pItemDefinition));
         }
     }
 }

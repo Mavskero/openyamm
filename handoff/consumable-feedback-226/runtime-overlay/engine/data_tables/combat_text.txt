@@ -1,0 +1,7 @@
+"combat.melee_hit"	"%s攻击%s，造成%lu点破坏"
+"combat.projectile_hit"	"%s射击%s，造成%lu点伤害"
+"combat.kill"	"%s造成%lu点伤害，杀死%s"
+"combat.stun"	"%s打昏了%s"
+"combat.paralyze"	"%s麻痹了%s"
+"combat.enemy_nearby"	"附近有敌人！"
+"combat.evades_damage"	"%s躲过了攻击"

@@ -2,6 +2,7 @@
 
 #include "game/indoor/IndoorMovementController.h"
 #include "game/gameplay/PartyJumpState.h"
+#include "game/gameplay/PartyMovementStatus.h"
 #include "game/party/Party.h"
 
 #include <optional>
@@ -47,6 +48,7 @@ public:
     const IndoorMoveState &movementState() const;
     const Party &party() const;
     Party &party();
+    PartyMovementStatus movementStatus() const;
     const std::string &movementStatusText() const;
     float partyX() const;
     float partyY() const;
@@ -78,5 +80,6 @@ private:
     PartyJumpState m_jumpState;
     float m_burningDamageTimerSeconds = 0.0f;
     std::string m_movementStatusText;
+    PartyMovementStatus m_movementStatus = PartyMovementStatus::None;
 };
 }

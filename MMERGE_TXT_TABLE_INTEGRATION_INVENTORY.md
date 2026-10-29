@@ -1,5 +1,11 @@
 # MMMerge TXT table integration inventory
 
+Checkpoint226 adds18 original Global rows and13 project captions:210UI keys,146source/64project.
+Complete old179/earlier prefixes andalloldvalues retained. Condition labels/Gold/Food/Permanent areoriginal;
+stat/skill/resistance names reuseCharacterInspectTable. Consumable reward uses recorded result, no UI RNG;
+burning/drowning mapping uses transient shared enum. Native/core/unsignediOS pass;0cases/App/device.
+See `handoff/consumable-feedback-226/README.md`; default226changesonlyui_text,otherengine/worlds retained.
+
 Checkpoint225 adds6 original Global rows376/377/467/471/563/490 and9 project captions:179UI keys,128source/51project.
 Complete old164/earlier prefixes andalloldvalues retained;467 uses%lu,490 uses%d/%s without printf on names.
 Existing HouseServiceText item statuses reused without schema changes. Native/core/unsignediOS pass;0cases/App/device.

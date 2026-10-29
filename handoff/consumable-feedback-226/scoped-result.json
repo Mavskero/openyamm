@@ -1,0 +1,89 @@
+{
+  "checkpoint": 226,
+  "status": "ACCEPTED_SOURCE_SCOPED",
+  "completed_at": "2026-10-30T03:03:30.328899+08:00",
+  "source_base": "cd0cdd3381964d32a663443d5965757c4940b11d",
+  "runtime": "local-data/validation/consumable-feedback-226/runtime-001",
+  "scope": [
+    "Precise consumable/book/mixing/reward feedback uses current language and actual selected result",
+    "Unconsumed Dimension Door scroll failure now displays reason before existing early return",
+    "Burning/drowning feedback uses transient shared enum without damage/timer/priority changes"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T18:57:53.941641+00:00",
+      "finished_at": "2026-10-29T18:59:28.806906+00:00",
+      "elapsed_seconds": 94.865265
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T19:00:00.109194+00:00",
+      "finished_at": "2026-10-29T19:00:00.285696+00:00",
+      "elapsed_seconds": 0.176502
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T19:00:07.282434+00:00",
+      "finished_at": "2026-10-29T19:00:09.429250+00:00",
+      "elapsed_seconds": 2.146816
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T19:00:07.284194+00:00",
+      "finished_at": "2026-10-29T19:01:31.632405+00:00",
+      "elapsed_seconds": 84.348211
+    }
+  },
+  "source_files_verified": 13,
+  "new_header_included": true,
+  "ui_text_count": 210,
+  "ui_old179_complete_prefix_accepted": true,
+  "ui_source_count": 146,
+  "ui_project_count": 64,
+  "new_source_global_ids": [
+    36,
+    380,
+    381,
+    382,
+    444,
+    652,
+    125,
+    97,
+    653,
+    121,
+    14,
+    162,
+    231,
+    58,
+    220,
+    76,
+    661,
+    660
+  ],
+  "all_old_caption_values_retained": true,
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "combat223_navigation222_and_all_other_archive_members_worlds_retained": true,
+  "save_version": 105,
+  "rules_rng_consumption_damage_timers_snapshot_changed": false,
+  "dimension_door_failure_feedback_fixed": true,
+  "mixing_runtime_changed": false,
+  "new_cases": 0,
+  "existing_cases_executed": 0,
+  "app_gui_runs": 0,
+  "headless_gameplay_runs": 0,
+  "campaign_replays": 0,
+  "device_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "Source/import/build only; no actual book/lamp/card/hazard pixels/touch acceptance",
+    "Unknown dynamic text and readable content retained",
+    "Full natural campaign completion and target-iPad conditional flows remain unproved"
+  ]
+}

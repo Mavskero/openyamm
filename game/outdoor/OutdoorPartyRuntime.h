@@ -1,6 +1,7 @@
 #pragma once
 
 #include "game/events/EventRuntime.h"
+#include "game/gameplay/PartyMovementStatus.h"
 #include "game/outdoor/OutdoorMovementDriver.h"
 #include "game/party/Party.h"
 
@@ -46,6 +47,7 @@ public:
     const OutdoorPartyMovementState &partyMovementState() const;
     const Party &party() const;
     Party &party();
+    PartyMovementStatus movementStatus() const;
     const std::string &movementStatusText() const;
     float partyX() const;
     float partyY() const;
@@ -72,6 +74,7 @@ private:
     OutdoorMovementDriver m_movementDriver;
     Party m_party;
     std::string m_movementStatusText;
+    PartyMovementStatus m_movementStatus = PartyMovementStatus::None;
     bool m_debugFlyingOverride = false;
 };
 }

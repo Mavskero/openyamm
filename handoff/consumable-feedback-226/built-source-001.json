@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-30T02:57:53.823204+08:00",
+  "source_base": "cd0cdd3381964d32a663443d5965757c4940b11d",
+  "files": {
+    "game/gameplay/GameplayItemService.cpp": "83403ed9e792453714abf81ffcc533db4a2a6bc4c6a2689402bd2bab0fd6901b",
+    "game/gameplay/PartyMovementStatus.h": "1e355325b694cf3babf2ac1c4916d440c6a01cf20b514d5d717e5076109836ba",
+    "game/indoor/IndoorPartyRuntime.cpp": "afafeaf34a32ae2a42f248018a328150b2609b2527eb66880a562fa2e7d3d1b7",
+    "game/indoor/IndoorPartyRuntime.h": "497f65e15a0b8fe89f00e8c3db6c64fa76fc9ef5df3cfefb21e412590227d618",
+    "game/indoor/IndoorWorldRuntime.cpp": "ba59ef37dd6dbf8bf85f2ba5222d441276d986612bf6559632ccca6628255dff",
+    "game/items/InventoryItemUseRuntime.cpp": "49af8a92b25c733d36832fd8829455eaa01b71f794a7c86fae3d65a7e4f8bb1c",
+    "game/items/InventoryItemUseRuntime.h": "0c7946afd7a947839d10a71e3d21e8e2e9956a1b3ee2093d1bfb218ad75bb503",
+    "game/outdoor/OutdoorGameplayInputController.cpp": "556b8ea830a101b4bcd56920fda561df62de9357011852ead9df6be4af542ce6",
+    "game/outdoor/OutdoorPartyRuntime.cpp": "767f6efe986c108e07b2c34c679676c000598401d44e19795a64f316d62f8304",
+    "game/outdoor/OutdoorPartyRuntime.h": "5310470517d85caa07335ec3bab180e3f1560e45be24f17ff7d69d1feb75e85e",
+    "game/tables/UiTextTable.cpp": "884469747fccedbbf1fed85c8001b79e8e834ab79b4af1731c30a8a45c421d92",
+    "game/tables/UiTextTable.h": "523a2ea48388fd6ef066c8acc518b2e97d4c2445c418de895008b0f96256b1cf",
+    "tools/mmerge_import/CoreResources.cpp": "7a75019c1b44dd9482001d8867ac8e13ec2a35d099c8bd287480f9cf0e557373"
+  },
+  "agents_frozen": true,
+  "main_build_owner": true,
+  "new_header_included": true
+}

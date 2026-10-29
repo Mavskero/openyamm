@@ -12,6 +12,7 @@
 #include "game/items/InventoryItemUseRuntime.h"
 #include "game/party/Party.h"
 #include "game/party/SpellIds.h"
+#include "game/tables/CharacterInspectTable.h"
 #include "game/tables/HouseServiceTextTable.h"
 #include "game/tables/MergedBaseTables.h"
 #include "game/tables/ObjectTable.h"
@@ -96,6 +97,145 @@ bool finishItemOperation(
     }
 
     return result;
+}
+
+std::string itemUseFeedbackText(
+    const InventoryItemUseResult &result,
+    const UiTextTable &uiText,
+    const CharacterInspectTable &inspectTable)
+{
+    using Message = UiTextTable::Message;
+    using Reason = InventoryItemUseFeedback::Reason;
+    using RewardKind = InventoryItemUseFeedback::RewardKind;
+    const InventoryItemUseFeedback &feedback = result.feedback;
+    const std::string itemName = feedback.itemName.empty()
+        ? uiText.text(Message::GenericItemName) : feedback.itemName;
+
+    switch (feedback.reason)
+    {
+        case Reason::CannotUse:
+            return uiText.formatItemFeedback(Message::ItemCannotUseFormat, itemName);
+        case Reason::InactiveCharacter:
+        {
+            if (!feedback.condition)
+            {
+                return uiText.text(Message::ItemTargetInactive);
+            }
+            Message conditionMessage = Message::Count;
+            switch (*feedback.condition)
+            {
+                case CharacterCondition::Asleep:
+                    conditionMessage = Message::ConditionAsleep;
+                    break;
+                case CharacterCondition::Paralyzed:
+                    conditionMessage = Message::ConditionParalyzed;
+                    break;
+                case CharacterCondition::Unconscious:
+                    conditionMessage = Message::ConditionUnconscious;
+                    break;
+                case CharacterCondition::Dead:
+                    conditionMessage = Message::ConditionDead;
+                    break;
+                case CharacterCondition::Petrified:
+                    conditionMessage = Message::ConditionPetrified;
+                    break;
+                case CharacterCondition::Eradicated:
+                    conditionMessage = Message::ConditionEradicated;
+                    break;
+                default:
+                    return result.statusText;
+            }
+            return uiText.formatItemFeedback(Message::ItemTargetInactiveFormat, uiText.text(conditionMessage));
+        }
+        case Reason::Underwater:
+            return uiText.text(Message::ItemUseUnderwater);
+        case Reason::SpellLearningSkillRequired:
+            return uiText.formatItemFeedback(Message::ItemSpellLearningSkillRequiredFormat, itemName);
+        case Reason::SkillBookNotLearnable:
+            return uiText.formatItemFeedback(Message::ItemSkillsNotLearnableFormat, itemName);
+        case Reason::SkillLearningFailed:
+            return uiText.text(Message::ItemSkillLearningFailed);
+        case Reason::None:
+            break;
+    }
+
+    if (result.alreadyKnown)
+    {
+        if (result.action == InventoryItemUseAction::LearnSpell)
+        {
+            return uiText.formatItemFeedback(Message::ItemSpellAlreadyKnownFormat, itemName);
+        }
+        if (result.action == InventoryItemUseAction::LearnSkill)
+        {
+            return uiText.formatItemFeedback(Message::ItemSkillsAlreadyKnownFormat, itemName);
+        }
+    }
+    if (!result.consumed)
+    {
+        return result.statusText;
+    }
+    if (result.action == InventoryItemUseAction::LearnSkill)
+    {
+        if (result.learnedSkills.size() == 1)
+        {
+            const SkillInspectEntry *pSkill = inspectTable.getSkill(result.learnedSkills.front());
+            return pSkill != nullptr && !pSkill->name.empty()
+                ? uiText.formatItemFeedback(Message::ItemSkillLearnedFormat, pSkill->name) : result.statusText;
+        }
+        if (!result.learnedSkills.empty())
+        {
+            return uiText.formatItemFeedback(Message::ItemSkillsLearnedFormat, itemName);
+        }
+    }
+    if (result.action == InventoryItemUseAction::UseHorseshoe
+        && feedback.rewardKind == RewardKind::SkillPoints && feedback.rewardAmount == 2)
+    {
+        return uiText.text(Message::ItemHorseshoeSkillPoints);
+    }
+
+    std::string rewardName;
+    std::string statKey;
+    switch (feedback.rewardKind)
+    {
+        case RewardKind::Gold:
+            rewardName = uiText.text(Message::ItemRewardGold);
+            break;
+        case RewardKind::Food:
+            rewardName = uiText.text(Message::ItemRewardFood);
+            break;
+        case RewardKind::SkillPoints:
+            statKey = "SkillPoints";
+            break;
+        case RewardKind::Experience:
+            statKey = "Experience";
+            break;
+        case RewardKind::Stat:
+            statKey = feedback.rewardStatKey;
+            break;
+        case RewardKind::None:
+            return result.statusText;
+    }
+    if (!statKey.empty())
+    {
+        const StatInspectEntry *pStat = inspectTable.getStat(statKey);
+        if (pStat != nullptr)
+        {
+            rewardName = pStat->name;
+        }
+    }
+    if (rewardName.empty())
+    {
+        return result.statusText;
+    }
+    if (result.action == InventoryItemUseAction::UseGenieLamp && feedback.rewardKind == RewardKind::Stat)
+    {
+        return uiText.formatItemReward(
+            Message::ItemRewardPermanentFormat, feedback.rewardAmount, rewardName,
+            uiText.text(Message::ItemRewardPermanent));
+    }
+    const Message rewardMessage = result.action == InventoryItemUseAction::UseDeckOfFate
+        ? Message::ItemRewardExclaimFormat : Message::ItemRewardValueFormat;
+    return uiText.formatItemReward(rewardMessage, feedback.rewardAmount, rewardName);
 }
 
 enum class ActiveLootOperation
@@ -345,7 +485,9 @@ bool tryUseConnectorStone(GameplayScreenRuntime &runtime, GameplayUiController::
         const CombatTextTable *text = runtime.combatTextTable();
         const std::string message = text != nullptr
             ? text->format(CombatTextTable::Message::EnemyNearby, {}, {}, 0) : std::string{};
-        runtime.setStatusBarEvent(message.empty() ? "Enemies nearby!" : message);
+        runtime.setStatusBarEvent(message.empty()
+            ? runtime.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::SpellHostileCreaturesNearby)
+            : message);
     }
     else if (result == ConnectorUseResult::Called)
     {
@@ -374,7 +516,8 @@ bool tryUseConnectorStone(GameplayScreenRuntime &runtime, GameplayUiController::
         state->pendingDialogueContext = std::move(dialogue);
     }
     else if (result == ConnectorUseResult::InvalidState)
-        runtime.setStatusBarEvent("Invalid connector state.");
+        runtime.setStatusBarEvent(
+            runtime.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::ItemConnectorInvalidState));
     return true;
 }
 
@@ -447,6 +590,8 @@ bool GameplayItemService::tryUseHeldItemOnPartyMember(
         return false;
     }
 
+    const UiTextTable &uiText = runtime.gameplayUiRuntime().uiTextTable();
+    const CharacterInspectTable &inspectTable = m_session.data().characterInspectTable();
     if (tryUseConnectorStone(runtime, heldItem, uiController))
     {
         return true;
@@ -498,7 +643,7 @@ bool GameplayItemService::tryUseHeldItemOnPartyMember(
 
             if (pSpellTable == nullptr)
             {
-                runtime.setStatusBarEvent("Spell data missing");
+                runtime.setStatusBarEvent(uiText.text(UiTextTable::Message::ItemSpellDataMissing));
                 return true;
             }
 
@@ -506,7 +651,7 @@ bool GameplayItemService::tryUseHeldItemOnPartyMember(
 
             if (pSpellEntry == nullptr)
             {
-                runtime.setStatusBarEvent("Unknown scroll spell");
+                runtime.setStatusBarEvent(uiText.text(UiTextTable::Message::ItemUnknownScrollSpell));
                 return true;
             }
 
@@ -530,6 +675,14 @@ bool GameplayItemService::tryUseHeldItemOnPartyMember(
     }
     else if (useResult.action == InventoryItemUseAction::UseDimensionDoorScroll)
     {
+        if (!useResult.consumed)
+        {
+            const std::string statusText = itemUseFeedbackText(useResult, uiText, inspectTable);
+            if (!statusText.empty())
+            {
+                runtime.setStatusBarEvent(statusText);
+            }
+        }
         if (useResult.consumed && openDimensionDoorOverlay(runtime))
         {
             heldItem = {};
@@ -613,9 +766,10 @@ bool GameplayItemService::tryUseHeldItemOnPartyMember(
         }
     }
 
-    if (!useResult.statusText.empty())
+    const std::string statusText = itemUseFeedbackText(useResult, uiText, inspectTable);
+    if (!statusText.empty())
     {
-        runtime.setStatusBarEvent(useResult.statusText);
+        runtime.setStatusBarEvent(statusText);
     }
 
     const bool scrollOpenedInventoryTarget =
@@ -768,9 +922,26 @@ bool GameplayItemService::tryUseHeldItemOnInventoryItem(
         runtime.playSpeechReaction(memberIndex, SpeechId::PotionFail, true);
     }
 
-    if (!mixResult.statusText.empty())
+    const UiTextTable &uiText = runtime.gameplayUiRuntime().uiTextTable();
+    std::string statusText = mixResult.statusText;
+    if (mixResult.action == InventoryItemMixAction::RechargePotion && !mixResult.success)
     {
-        runtime.setStatusBarEvent(mixResult.statusText);
+        statusText = uiText.text(UiTextTable::Message::SpellWandAlreadyCharged);
+    }
+    else if (mixResult.success
+             && (mixResult.action == InventoryItemMixAction::PotionMix
+                 || mixResult.action == InventoryItemMixAction::ReagentBottleMix))
+    {
+        statusText = uiText.text(UiTextTable::Message::ItemMixedPotion);
+    }
+    else if (mixResult.action == InventoryItemMixAction::PotionMix
+             && !mixResult.success && mixResult.failureDamageLevel != 0)
+    {
+        statusText = uiText.text(UiTextTable::Message::ItemMixExplosion);
+    }
+    if (!statusText.empty())
+    {
+        runtime.setStatusBarEvent(statusText);
     }
 
     return true;

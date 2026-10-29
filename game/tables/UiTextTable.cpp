@@ -1,4 +1,5 @@
 #include "game/tables/UiTextTable.h"
+#include "game/gameplay/PartyMovementStatus.h"
 #include "game/party/SkillData.h"
 
 #include <algorithm>
@@ -199,6 +200,37 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.item_repaired", "Repaired %s."},
     {"ui.item_unavailable", "Unavailable."},
     {"ui.found_gold_and_item", "You found %d gold and an item (%s)!"},
+    {"ui.item_mixed_potion", "Mixed potion"},
+    {"ui.item_mix_explosion", "Ooops!"},
+    {"ui.item_cannot_use", "%s can not be used that way"},
+    {"ui.item_target_inactive_format", "That player is %s"},
+    {"ui.item_target_inactive", "That player is not active"},
+    {"ui.item_use_underwater", "You can not do that while you are underwater!"},
+    {"ui.item_spell_learning_skill_required", "You don't have the skill to learn %s"},
+    {"ui.item_spell_already_known", "You already know the %s spell"},
+    {"ui.item_skills_already_known", "You already know one or more skills in %s"},
+    {"ui.item_skills_not_learnable", "This character cannot learn the skills in %s"},
+    {"ui.item_skill_learning_failed", "The skill could not be learned"},
+    {"ui.item_skill_learned", "Learned %s"},
+    {"ui.item_skills_learned", "Learned the skills in %s"},
+    {"ui.item_horseshoe_skill_points", "+2 Skill Points!"},
+    {"ui.item_reward_value", "+%u %s"},
+    {"ui.item_reward_exclaim", "+%u %s!"},
+    {"ui.item_reward_permanent_format", "+%u %s %s"},
+    {"ui.item_reward_gold", "Gold"},
+    {"ui.item_reward_food", "Food"},
+    {"ui.item_reward_permanent", "Permanent"},
+    {"ui.item_spell_data_missing", "Spell data missing"},
+    {"ui.item_unknown_scroll_spell", "Unknown scroll spell"},
+    {"ui.item_connector_invalid_state", "Invalid connector state."},
+    {"ui.condition_asleep", "Asleep"},
+    {"ui.condition_paralyzed", "Paralyzed"},
+    {"ui.condition_unconscious", "Unconscious"},
+    {"ui.condition_dead", "Dead"},
+    {"ui.condition_petrified", "Stoned"},
+    {"ui.condition_eradicated", "Eradicated"},
+    {"ui.party_burning", "You are burning!"},
+    {"ui.party_drowning", "You are drowning!"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -254,7 +286,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 119 with skill category headings, the 122 with NPC confirmations,
     // the 132 with ordinary travel and fine captions,
     // the 149 with spell feedback and target-selection captions,
-    // and the 164 with spell failure captions.
+    // the 164 with spell failure captions,
+    // and the 179 with item feedback and stealing captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -273,6 +306,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t TravelMessageCount = size_t(Message::FinishCurrentAction);
     constexpr size_t SpellMessageCount = size_t(Message::SpellFailed);
     constexpr size_t SpellFailureMessageCount = size_t(Message::SpellArmageddonAlreadyActive);
+    constexpr size_t ItemFeedbackMessageCount = size_t(Message::ItemMixedPotion);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -291,7 +325,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != NpcConfirmationMessageCount
         && schemaMessageCount != TravelMessageCount
         && schemaMessageCount != SpellMessageCount
-        && schemaMessageCount != SpellFailureMessageCount)
+        && schemaMessageCount != SpellFailureMessageCount
+        && schemaMessageCount != ItemFeedbackMessageCount)
     {
         return false;
     }
@@ -323,6 +358,10 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
             || (index == size_t(Message::SkillTrainingLearned) && !hasExpectedParameters(row[1], {"%s", "%s", "%s"}))
             || (index == size_t(Message::SkillTrainingRequirement)
                 && !hasExpectedParameters(row[1], {"%s", "%u", "%s", "%s"}))
+            || ((index == size_t(Message::ItemRewardValueFormat) || index == size_t(Message::ItemRewardExclaimFormat))
+                && !hasExpectedParameters(row[1], {"%u", "%s"}))
+            || (index == size_t(Message::ItemRewardPermanentFormat)
+                && !hasExpectedParameters(row[1], {"%u", "%s", "%s"}))
             || ((index == size_t(Message::NpcDismissFormat)
                     || index == size_t(Message::TransitionLeaveFormat)
                     || index == size_t(Message::TransitionEnterFormat)
@@ -335,7 +374,15 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
                     || index == size_t(Message::StealingCaughtFormat)
                     || index == size_t(Message::StealingFailedFormat)
                     || index == size_t(Message::ItemIdentifiedFormat)
-                    || index == size_t(Message::ItemRepairedFormat))
+                    || index == size_t(Message::ItemRepairedFormat)
+                    || index == size_t(Message::ItemCannotUseFormat)
+                    || index == size_t(Message::ItemTargetInactiveFormat)
+                    || index == size_t(Message::ItemSpellLearningSkillRequiredFormat)
+                    || index == size_t(Message::ItemSpellAlreadyKnownFormat)
+                    || index == size_t(Message::ItemSkillsAlreadyKnownFormat)
+                    || index == size_t(Message::ItemSkillsNotLearnableFormat)
+                    || index == size_t(Message::ItemSkillLearnedFormat)
+                    || index == size_t(Message::ItemSkillsLearnedFormat))
                 && !hasExpectedParameters(row[1], {"%s"})))
         {
             return false;
@@ -371,6 +418,19 @@ const std::string &UiTextTable::skillMasteryName(SkillMastery mastery) const
             return text(Message::SkillGrandmaster);
         default:
             return text(Message::None);
+    }
+}
+
+const std::string &UiTextTable::movementStatusText(PartyMovementStatus status) const
+{
+    switch (status)
+    {
+        case PartyMovementStatus::Burning:
+            return text(Message::PartyBurning);
+        case PartyMovementStatus::Drowning:
+            return text(Message::PartyDrowning);
+        default:
+            return text(Message::Count);
     }
 }
 
@@ -538,11 +598,55 @@ std::string UiTextTable::formatItemFeedback(Message message, const std::string &
         case Message::StealingFailedFormat:
         case Message::ItemIdentifiedFormat:
         case Message::ItemRepairedFormat:
+        case Message::ItemCannotUseFormat:
+        case Message::ItemTargetInactiveFormat:
+        case Message::ItemSpellLearningSkillRequiredFormat:
+        case Message::ItemSpellAlreadyKnownFormat:
+        case Message::ItemSkillsAlreadyKnownFormat:
+        case Message::ItemSkillsNotLearnableFormat:
+        case Message::ItemSkillLearnedFormat:
+        case Message::ItemSkillsLearnedFormat:
             return formatStringParameter(text(message), name);
 
         default:
             return {};
     }
+}
+
+std::string UiTextTable::formatItemReward(
+    Message message, uint32_t amount, const std::string &name, const std::string &suffix) const
+{
+    std::string result = text(message);
+    switch (message)
+    {
+        case Message::ItemRewardValueFormat:
+        case Message::ItemRewardExclaimFormat:
+            if (!hasExpectedParameters(result, {"%u", "%s"}))
+            {
+                return {};
+            }
+            break;
+
+        case Message::ItemRewardPermanentFormat:
+            if (!hasExpectedParameters(result, {"%u", "%s", "%s"}))
+            {
+                return {};
+            }
+            break;
+
+        default:
+            return {};
+    }
+    const size_t amountOffset = result.find("%u");
+    const size_t nameOffset = result.find("%s", amountOffset + 2);
+    if (message == Message::ItemRewardPermanentFormat)
+    {
+        const size_t suffixOffset = result.find("%s", nameOffset + 2);
+        result.replace(suffixOffset, 2, suffix);
+    }
+    result.replace(nameOffset, 2, name);
+    result.replace(amountOffset, 2, std::to_string(amount));
+    return result;
 }
 
 const char *UiTextTable::key(Message message)

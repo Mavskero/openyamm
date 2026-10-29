@@ -155,6 +155,7 @@ void IndoorPartyRuntime::update(
     bool turnBasedPhysicsStep)
 {
     m_movementStatusText.clear();
+    m_movementStatus = PartyMovementStatus::None;
 
     if (deltaSeconds <= 0.0f)
     {
@@ -375,6 +376,7 @@ void IndoorPartyRuntime::update(
         if (effects.burningDamageTicks > 0)
         {
             m_movementStatusText = "You are burning!";
+            m_movementStatus = PartyMovementStatus::Burning;
         }
     }
     else
@@ -423,6 +425,11 @@ const Party &IndoorPartyRuntime::party() const
 Party &IndoorPartyRuntime::party()
 {
     return m_party;
+}
+
+PartyMovementStatus IndoorPartyRuntime::movementStatus() const
+{
+    return m_movementStatus;
 }
 
 const std::string &IndoorPartyRuntime::movementStatusText() const
