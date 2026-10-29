@@ -74,6 +74,7 @@ private:
     uint64_t m_lastClickedSlotTicks = 0;
     size_t m_lastClickedSlotIndex = static_cast<size_t>(-1);
     std::vector<SaveSlotSummary> m_slots;
+    std::string m_errorText;
     bool m_slotsLoaded = false;
 
     static std::vector<SaveSlotSummary> s_cachedSlots;

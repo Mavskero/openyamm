@@ -12,6 +12,7 @@
 #include <cstring>
 #include <optional>
 #include <string_view>
+#include <system_error>
 #include <unordered_set>
 #include <utility>
 
@@ -504,35 +505,25 @@ void LoadGameScreen::drawScreen(float deltaSeconds)
     static_cast<void>(deltaSeconds);
 
     ensureLayoutLoaded();
-    const bool escapePressed = isScancodeHeld(SDL_SCANCODE_ESCAPE);
-    const bool returnPressed = isScancodeHeld(SDL_SCANCODE_RETURN);
+    const bool escapeHeld = isScancodeHeld(SDL_SCANCODE_ESCAPE);
+    const bool returnHeld = isScancodeHeld(SDL_SCANCODE_RETURN);
+    const bool escapePressed = inputFrame().scancodePressCount(SDL_SCANCODE_ESCAPE) != 0
+        || (escapeHeld && !m_escapePressed);
+    const bool returnPressed = inputFrame().scancodePressCount(SDL_SCANCODE_RETURN) != 0
+        || (returnHeld && !m_returnPressed);
+    m_escapePressed = escapeHeld;
+    m_returnPressed = returnHeld;
 
     if (escapePressed)
     {
-        if (!m_escapePressed)
-        {
-            cancel();
-            m_escapePressed = true;
-            return;
-        }
-    }
-    else
-    {
-        m_escapePressed = false;
+        cancel();
+        return;
     }
 
     if (returnPressed)
     {
-        if (!m_returnPressed)
-        {
-            tryLoadSelectedSlot();
-            m_returnPressed = true;
-            return;
-        }
-    }
-    else
-    {
-        m_returnPressed = false;
+        tryLoadSelectedSlot();
+        return;
     }
 
     if (mouseWheelDelta() > 0.0f && m_scrollOffset > 0)
@@ -670,7 +661,11 @@ void LoadGameScreen::drawScreen(float deltaSeconds)
         drawLayoutText(layoutId, m_slots[slotIndex].fileLabel, rowColor);
     }
 
-    if (!m_slots.empty())
+    if (!m_errorText.empty())
+    {
+        drawLayoutText("LoadGameSelectedName", m_errorText, 0xff4040ffu);
+    }
+    else if (!m_slots.empty())
     {
         const SaveSlotSummary &slot = m_slots[std::min(m_selectedIndex, m_slots.size() - 1)];
         drawLayoutText("LoadGameSelectedName", slot.locationName);
@@ -699,12 +694,31 @@ void LoadGameScreen::drawScreen(float deltaSeconds)
 void LoadGameScreen::refreshSaveSlots()
 {
     m_slots.clear();
-    m_slotsLoaded = false;
-    std::filesystem::create_directories("saves");
-
-    for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator("saves"))
+    m_errorText.clear();
+    m_slotsLoaded = true;
+    invalidateCachedSaveSlots();
+    std::error_code directoryError;
+    std::filesystem::create_directories("saves", directoryError);
+    if (directoryError)
     {
-        if (!entry.is_regular_file() || toLowerCopy(entry.path().extension().string()) != ".oysav")
+        m_errorText = "无法访问存档目录";
+        return;
+    }
+
+    const std::filesystem::directory_iterator end;
+    std::filesystem::directory_iterator entries("saves", directoryError);
+    while (!directoryError && entries != end)
+    {
+        const std::filesystem::directory_entry entry = *entries;
+        std::error_code entryError;
+        const bool regularFile = entry.is_regular_file(entryError);
+        entries.increment(directoryError);
+        if (entryError)
+        {
+            directoryError = entryError;
+            break;
+        }
+        if (!regularFile || toLowerCopy(entry.path().extension().string()) != ".oysav")
         {
             continue;
         }
@@ -714,6 +728,7 @@ void LoadGameScreen::refreshSaveSlots()
 
         if (!saveData)
         {
+            m_errorText = "部分存档无法读取，原文件已保留";
             continue;
         }
 
@@ -749,6 +764,12 @@ void LoadGameScreen::refreshSaveSlots()
 
         m_slots.push_back(std::move(slot));
     }
+    if (directoryError)
+    {
+        m_slots.clear();
+        m_errorText = "无法读取存档目录";
+        return;
+    }
 
     std::sort(
         m_slots.begin(),
@@ -766,14 +787,17 @@ void LoadGameScreen::refreshSaveSlots()
     m_scrollOffset = 0;
     m_lastClickedSlotIndex = static_cast<size_t>(-1);
     m_lastClickedSlotTicks = 0;
-    m_slotsLoaded = true;
-    s_cachedSlots = m_slots;
-    s_cachedSlotsValid = true;
+    if (m_errorText.empty())
+    {
+        s_cachedSlots = m_slots;
+        s_cachedSlotsValid = true;
+    }
 }
 
 void LoadGameScreen::loadCachedSaveSlots()
 {
     m_slots = s_cachedSlots;
+    m_errorText.clear();
 
     if (m_selectedIndex >= m_slots.size())
     {
@@ -793,7 +817,13 @@ bool LoadGameScreen::tryLoadSelectedSlot()
         return false;
     }
 
-    return m_loadAction(m_slots[m_selectedIndex].path);
+    if (!m_loadAction(m_slots[m_selectedIndex].path))
+    {
+        m_errorText = "所选存档无法读取，原文件已保留";
+        invalidateCachedSaveSlots();
+        return false;
+    }
+    return true;
 }
 
 void LoadGameScreen::cancel()

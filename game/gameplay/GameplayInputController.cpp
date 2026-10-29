@@ -4,6 +4,7 @@
 #include "game/gameplay/GameplayActionController.h"
 #include "game/app/GameSettings.h"
 #include "game/gameplay/GameplayInputFrame.h"
+#include "game/gameplay/GameplayPartyOverlayInputController.h"
 #include "game/gameplay/GameplayScreenController.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/gameplay/GameplaySpellActionController.h"
@@ -12,6 +13,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <algorithm>
 #include <optional>
 
 namespace OpenYAMM::Game
@@ -175,6 +177,12 @@ void GameplayInputController::handleStandardUiHotkeys(
     GameplayScreenRuntime &context,
     const GameplayStandardUiHotkeyConfig &config)
 {
+    const GameplayUiController::ReadableScrollOverlayState &reader = context.readableScrollOverlayReadOnly();
+    if ((reader.active && reader.persistent) || reader.blockInputUntilRelease)
+    {
+        return;
+    }
+
     // This latch belongs to the shared Escape gesture, including transitions between overlays.
     if (!isScancodeActive(SDL_SCANCODE_ESCAPE, config.pInputFrame, config.pKeyboardState))
     {
@@ -198,6 +206,8 @@ void GameplayInputController::handleStandardUiHotkeys(
     const bool quickReferenceActive = context.quickReferenceScreenState().active;
     const bool houseShopActive = context.houseShopOverlay().active;
     const bool houseBankInputActive = context.houseBankState().inputActive();
+    const bool utilitySpellModalActive = context.utilitySpellOverlayReadOnly().active
+        && context.utilitySpellOverlayReadOnly().mode != GameplayUiController::UtilitySpellOverlayMode::InventoryTarget;
     const bool gameplayHudActive = context.currentHudScreenState() == GameplayHudScreenState::Gameplay;
     const bool canOpenRestFromGameplay =
         config.canOpenRest
@@ -230,6 +240,13 @@ void GameplayInputController::handleStandardUiHotkeys(
             return;
         }
 
+        if (utilitySpellModalActive)
+        {
+            // The modal handles this gesture in the world-input gate and consumes the closing frame.
+            context.interactionState().closeOverlayLatch = false;
+            return;
+        }
+
         if (pWorldRuntime != nullptr && closeActiveLootViewFromEscape(context, *pWorldRuntime))
         {
             return;
@@ -237,6 +254,12 @@ void GameplayInputController::handleStandardUiHotkeys(
 
         if (spellbookActive)
         {
+            if (context.spellbookReadOnly().inspectSelected)
+            {
+                // Let the inspect layer consume Escape before the spellbook itself can close.
+                context.interactionState().closeOverlayLatch = false;
+                return;
+            }
             context.closeSpellbookOverlay();
             context.interactionState().menuToggleLatch = true;
             return;
@@ -282,6 +305,7 @@ void GameplayInputController::handleStandardUiHotkeys(
         && !journalActive
         && !quickReferenceActive
         && !context.inventoryNestedOverlay().active
+        && !utilitySpellModalActive
         && !houseShopActive
         && !houseBankInputActive
         && !config.blockMenuToggle;
@@ -620,6 +644,31 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
     GameplayScreenState::QuickSpellState &quickSpellState = screenState.quickSpellState();
     GameplayScreenState::GameplayMouseLookState &gameplayMouseLookState = screenState.gameplayMouseLookState();
 
+    GameplayInputFrame fallbackReaderInput = {};
+    if (config.pInputFrame == nullptr)
+    {
+        fallbackReaderInput.screenWidth = config.screenWidth;
+        fallbackReaderInput.screenHeight = config.screenHeight;
+        fallbackReaderInput.pointerX = config.pointerX;
+        fallbackReaderInput.pointerY = config.pointerY;
+        fallbackReaderInput.leftMouseButton.held = config.leftButtonPressed;
+        fallbackReaderInput.rightMouseButton.held = config.rightButtonPressed;
+        fallbackReaderInput.mouseWheelDelta = config.mouseWheelDelta;
+        if (config.pKeyboardState != nullptr)
+        {
+            std::copy_n(config.pKeyboardState, SDL_SCANCODE_COUNT, fallbackReaderInput.keyboardHeld.begin());
+        }
+    }
+    const GameplayInputFrame &readerInput = config.pInputFrame != nullptr ? *config.pInputFrame : fallbackReaderInput;
+    if (GameplayPartyOverlayInputController::handleReadableScrollOverlayInput(context, readerInput))
+    {
+        gameplayMouseLookState.clear();
+        context.updatePreviousKeyboardStateSnapshot(readerInput.keyboardState());
+        frameResult.journalInputConsumed = true;
+        frameResult.worldInputBlocked = true;
+        return frameResult;
+    }
+
     IGameplayWorldRuntime *pWorldRuntime = context.worldRuntime();
     const bool hasActiveLootView =
         pWorldRuntime != nullptr
@@ -737,6 +786,12 @@ GameplaySharedInputFrameResult GameplayInputController::updateSharedGameplayInpu
 
     if (frameResult.journalInputConsumed)
     {
+        if (context.readableScrollOverlayReadOnly().persistent)
+        {
+            gameplayMouseLookState.clear();
+            frameResult.mouseLookPolicy = {};
+        }
+        frameResult.worldInputBlocked = true;
         return frameResult;
     }
 

@@ -1,0 +1,262 @@
+{
+  "checkpoint": 191,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-29T04:11:40.082332+00:00",
+  "source_base": "cd8e60e4babb6c93fce547d09c297e5a5a2f60a2",
+  "scope": "Consolidated device-independent reader/dialogue/input/save/journal/menu UI fixes",
+  "full_goal_complete": false,
+  "all_ui_complete": false,
+  "natural_campaign": false,
+  "device_or_simulator": false,
+  "new_release": false,
+  "runtime_uploaded": false,
+  "save_version": 103,
+  "save_version_changed": false,
+  "runtime": "local-data/validation/ui-function-completion-191/runtime-001",
+  "runtime_changes": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/story-001/story_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-independent-completion-190/runtime-003",
+    "changed_members": [],
+    "added_members": [
+      "data_tables/credits.txt"
+    ],
+    "credits_sha256": "b2f60f5ce30c93aea0072a6cd278fa3be41f10d09cef746fb5456c2f585c3c7b",
+    "controlled_gameplay_fixtures": false,
+    "natural_campaign_validated": false,
+    "physical_device_validation": false,
+    "release_created": false,
+    "all_prior_archive_members_retained": true,
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-001"
+  },
+  "builds": {
+    "build-native-010": {
+      "record": "local-data/validation/ui-function-completion-191/build-native-010.command.json",
+      "argv": [
+        "cmake",
+        "--build",
+        "build-apple",
+        "--target",
+        "openyamm",
+        "readable_scroll_capture",
+        "-j3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/openyamm",
+      "pid": 69008,
+      "started_at": "2026-10-29T04:05:48.900820+00:00",
+      "finished_at": "2026-10-29T04:05:53.275886+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 600.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/build-native-010.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/openyamm/../.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "build-ios-001": {
+      "record": "local-data/validation/ui-function-completion-191/build-ios-001.command.json",
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 70107,
+      "started_at": "2026-10-29T04:07:06.636295+00:00",
+      "finished_at": "2026-10-29T04:08:18.908677+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 900.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "story-import-001": {
+      "record": "local-data/validation/ui-function-completion-191/story-import-001.command.json",
+      "argv": [
+        "openyamm/build-apple/story_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "local-data/validation/ui-function-completion-191/story-001"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 65037,
+      "started_at": "2026-10-29T04:00:41.260003+00:00",
+      "finished_at": "2026-10-29T04:00:41.447471+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 180.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/story-import-001.log",
+      "executed_binary": "openyamm/build-apple/story_import",
+      "executed_binary_sha256": "590263c6250cccb5af42b01af3ae537d3d141d5aa4e92d54e4f3df4fddad5b2c",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "assemble-runtime-001": {
+      "record": "local-data/validation/ui-function-completion-191/assemble-runtime-001.command.json",
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-191/assemble_runtime.py"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 65172,
+      "started_at": "2026-10-29T04:00:50.429005+00:00",
+      "finished_at": "2026-10-29T04:00:52.587907+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 60.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/assemble-runtime-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/python3",
+      "executed_binary_sha256": "30b2a6bf9706029b609327ca5db722cd458239df96efc87e1f8e37beed49db2e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "actual-run-007": {
+      "record": "local-data/validation/ui-function-completion-191/actual-run-007.command.json",
+      "argv": [
+        "openyamm/build-apple/readable_scroll_capture",
+        "local-data/validation/ui-function-completion-191/runtime-001",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-191/actual-007"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 69472,
+      "started_at": "2026-10-29T04:06:22.339420+00:00",
+      "finished_at": "2026-10-29T04:06:36.068245+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 90.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/actual-run-007.log",
+      "executed_binary": "openyamm/build-apple/readable_scroll_capture",
+      "executed_binary_sha256": "74aacd65217b3e55896c9956b649eeaba97de2d17b236f0c5298d2c4a73ac4c0",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "actual": {
+    "passed": true,
+    "frames": 141,
+    "phase": 35,
+    "elapsed_ms": 13570,
+    "drawable": [
+      2420,
+      1668
+    ],
+    "menu_same_batch_return_callbacks": 1,
+    "menu_same_batch_escape_callbacks": 2,
+    "menu_callbacks_reloaded_game": false,
+    "reader_persists_after_release": true,
+    "pointer_next": true,
+    "pointer_previous": true,
+    "page_down_presses": 1,
+    "page_count": 2,
+    "close_gesture_consumed": true,
+    "captures": 9,
+    "normal_frames": 30,
+    "normal_seconds": 0.500061662868,
+    "final_save_verified": true,
+    "completed_inspect_touch_checked": true,
+    "save_directory_error_checked": true,
+    "failed_save_visible": true,
+    "dialogue_topic_geometry_checked": true,
+    "visual_review": "required",
+    "natural_campaign": false,
+    "device_acceptance": false,
+    "new_unit_tests": 0,
+    "old_route_replays": 0,
+    "cold_replays": 0,
+    "failure": ""
+  },
+  "actual_scope": "Original normal132 MM7 save; held scroll2125 and NPC100/house617 fixtures; UI delta0 then30 normal frames and explicit atomic overwrite/decode; isolated failure directory; no original save change.",
+  "visual_review": "local-data/validation/ui-function-completion-191/visual-review.json",
+  "visual_reviewed_images": 9,
+  "actual_credits_pages": [
+    1,
+    2
+  ],
+  "credits_reported_page_count": 12,
+  "other_fixes_acceptance": "Bank/rest/travel/loot/settings/Arcomage/spell/Utility/journal branches are source and native/iOS build reviewed; no full interactive matrix.",
+  "new_unit_cases": 0,
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "failed_app_attempts_preserved": [
+    {
+      "attempt": "actual-001",
+      "failure": "Real right portrait input did not open the scroll",
+      "disposition": "Driver omitted modern-cursor warmup before portrait inspection.",
+      "original_retained": true
+    },
+    {
+      "attempt": "actual-002",
+      "failure": "Reader UI changed the checked full Party snapshot",
+      "disposition": "Overbroad whole-Party byte comparison; early everOwned explanation was not sufficient and is withdrawn.",
+      "original_retained": true
+    },
+    {
+      "attempt": "actual-003",
+      "failure": "Reader UI changed the checked full Party snapshot",
+      "disposition": "Whole-Party byte comparison replaced by affected inventory/economy/progression invariants; no full-byte claim.",
+      "original_retained": true
+    },
+    {
+      "attempt": "actual-004",
+      "failure": "Short Escape did not close the dialogue",
+      "disposition": "Driver assumed one Escape closes house dialogue, but normal first Escape returns to resident selection. Pixels also exposed reader side-margin defect, fixed.",
+      "original_retained": true
+    },
+    {
+      "attempt": "actual-005",
+      "failure": "Actual save-slot click did not begin editing",
+      "disposition": "Driver assumed a single slot click starts name editing; corrected to the existing Save button.",
+      "original_retained": true
+    },
+    {
+      "attempt": "actual-006",
+      "failure": "Final save lost the held scroll, original roster/Gold/food or normal time: ",
+      "disposition": "Driver counted normal frames while Save cancellation had returned to its paused parent menu; saved data retained, clock correctly paused. Error text was shortened after visual review.",
+      "original_retained": true
+    }
+  ],
+  "limitations": [
+    "Physical target-iPad touch/IME/keyboard behavior not newly accepted.",
+    "Controlled UI flow is not a natural campaign or exhaustive UI/resolution/roster test.",
+    "Read-load menu short-key callbacks counted but did not reload a game.",
+    "No full Party-byte preservation claim.",
+    "Historical RC3 attachments do not include190 or191 source/runtime changes."
+  ],
+  "owners": {
+    "main": "integration/build/App/runtime/records",
+    "subagents": [
+      "sol_ui_actions_191",
+      "sol_ui_dialogs_191",
+      "sol_event_lifecycle_191"
+    ],
+    "model": "gpt-6.1-sol/max",
+    "all_collected": true
+  },
+  "owned_jobs": [],
+  "user_direction": "Continue concrete device-independent development; no repeated device checkpoints or broad campaign replay gates."
+}

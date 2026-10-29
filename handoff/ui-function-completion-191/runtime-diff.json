@@ -1,0 +1,15 @@
+{
+  "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/story-001/story_conversion.json",
+  "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-independent-completion-190/runtime-003",
+  "changed_members": [],
+  "added_members": [
+    "data_tables/credits.txt"
+  ],
+  "credits_sha256": "b2f60f5ce30c93aea0072a6cd278fa3be41f10d09cef746fb5456c2f585c3c7b",
+  "controlled_gameplay_fixtures": false,
+  "natural_campaign_validated": false,
+  "physical_device_validation": false,
+  "release_created": false,
+  "all_prior_archive_members_retained": true,
+  "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-001"
+}

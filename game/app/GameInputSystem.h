@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <deque>
+#include <optional>
 #include <string>
 
 namespace OpenYAMM::Game
@@ -72,7 +73,14 @@ private:
         float y = 0.0f;
     };
 
+    struct MobileInspectTarget
+    {
+        float x = 0.0f;
+        float y = 0.0f;
+    };
+
     GameplayInputFrame m_frame = {};
+    uint64_t m_inputFrameId = 0;
     std::string m_pendingTextInput;
     std::array<uint16_t, SDL_SCANCODE_COUNT> m_pendingKeyboardPressCounts = {};
     std::deque<SDL_MouseButtonEvent> m_pendingMouseButtons;
@@ -81,6 +89,7 @@ private:
     std::array<bool, SDL_SCANCODE_COUNT> m_previousKeyboardHeld = {};
     std::array<bool, KeyboardActionCount> m_previousActionHeld = {};
     std::array<MobileTouchPoint, 8> m_mobileTouches = {};
+    std::optional<MobileInspectTarget> m_mobileInspectTarget;
     std::deque<MobileHudTap> m_mobilePendingHudTaps;
     bool m_mobilePendingHudRelease = false;
     float m_mobilePendingHudReleaseX = 0.0f;

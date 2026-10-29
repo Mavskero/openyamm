@@ -47,6 +47,9 @@ struct GameplayInputFrame
     std::array<bool, SDL_SCANCODE_COUNT> keyboardHeld = {};
     std::array<uint16_t, SDL_SCANCODE_COUNT> keyboardPressCounts = {};
     std::array<GameplayButtonInputState, KeyboardActionCount> actions = {};
+    // Nonzero IDs identify one input update, including copies dispatched to different UI layers.
+    // Zero preserves held-key semantics for callers that construct input without a frame clock.
+    uint64_t frameId = 0;
 
     const bool *keyboardState() const
     {

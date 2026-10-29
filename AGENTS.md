@@ -5,7 +5,7 @@ These rules apply to all AI-generated contributions in this repository.
 ## iPadOS handoff (2026-10-29)
 
 - Current development direction: finish device-independent source/runtime work before more device checkpoints.
-  See `handoff/device-independent-completion-190/README.md`; this consolidated batch has no new Release/device task.
+  See `handoff/ui-function-completion-191/README.md` and the preceding190 source batch; no new Release/device task.
   Do not mistake unchanged RC3 attachments for its local runtime, or replay accepted campaigns as a routine gate.
 - Read `IPADOS_HANDOFF.md` for the RC3 / Save103 state and fresh-host build instructions.
 - `handoff/ipados-rc2-20261028/` contains historical source-workspace records, not active

@@ -704,7 +704,7 @@ void ArcomageScreen::updateHumanInput(
 
     const bool escapeDown = isScancodeHeld(SDL_SCANCODE_ESCAPE);
 
-    if (escapeDown && !m_escapeLatch)
+    if (inputFrame().scancodePressCount(SDL_SCANCODE_ESCAPE) != 0 || (escapeDown && !m_escapeLatch))
     {
         m_rules.resign(0, m_state);
     }
@@ -910,7 +910,8 @@ void ArcomageScreen::updateFinishInput()
     m_hoveredHandIndex.reset();
     const bool escapeDown = isScancodeHeld(SDL_SCANCODE_ESCAPE);
 
-    if ((escapeDown && !m_escapeLatch) || leftMouseJustPressed() || rightMouseJustPressed())
+    if (inputFrame().scancodePressCount(SDL_SCANCODE_ESCAPE) != 0
+        || (escapeDown && !m_escapeLatch) || leftMouseJustPressed() || rightMouseJustPressed())
     {
         m_shouldClose = true;
     }

@@ -81,6 +81,15 @@ bool hasActiveLootView(const GameplayScreenRuntime &runtime)
         && (pWorldRuntime->activeChestView() != nullptr || pWorldRuntime->activeCorpseView() != nullptr);
 }
 
+void seedLootOverlayKeyLatches(
+    GameplayOverlayInteractionState &state,
+    const GameplayInputFrame &input)
+{
+    state.lootChestItemLatch = input.isScancodeHeld(SDL_SCANCODE_RETURN);
+    state.chestSelectUpLatch = input.isScancodeHeld(SDL_SCANCODE_UP);
+    state.chestSelectDownLatch = input.isScancodeHeld(SDL_SCANCODE_DOWN);
+}
+
 float vecDeltaSquared(const bx::Vec3 &left, const bx::Vec3 &right)
 {
     const float deltaX = left.x - right.x;
@@ -1656,6 +1665,7 @@ GameplayInteractionController::updateWorldInteractionFrame(
         hasKeyboardUseHit = true;
     }
 
+    const bool hadLootViewBeforeKeyboardInteraction = hasActiveLootView(runtime);
     const KeyboardInteractionResult keyboardInteractionResult =
         updateKeyboardInteraction(
             worldInteractionInputState,
@@ -1675,6 +1685,10 @@ GameplayInteractionController::updateWorldInteractionFrame(
         result.keyboardUseActivated = true;
         clearWorldHover(pWorldRuntime);
         runtime.clearContextActionState();
+        if (!hadLootViewBeforeKeyboardInteraction && hasActiveLootView(runtime))
+        {
+            seedLootOverlayKeyLatches(overlayInteractionState, input);
+        }
     }
 
     if (heldItemActive)
@@ -1953,8 +1967,7 @@ GameplayInteractionController::updateWorldInteractionFrame(
 
             if (!hadLootViewBeforeActivation && hasActiveLootView(runtime))
             {
-                // Match keyboard activation's protection against immediate Return-key looting.
-                overlayInteractionState.lootChestItemLatch = true;
+                seedLootOverlayKeyLatches(overlayInteractionState, input);
             }
 
             return result;
@@ -2023,7 +2036,7 @@ GameplayInteractionController::updateWorldInteractionFrame(
 
         if (!hadLootViewBeforeActivation && hasLootViewAfterActivation)
         {
-            overlayInteractionState.lootChestItemLatch = true;
+            seedLootOverlayKeyLatches(overlayInteractionState, input);
         }
     }
 

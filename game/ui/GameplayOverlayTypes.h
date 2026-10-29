@@ -264,6 +264,8 @@ enum class GameplayDialoguePointerTargetType
 {
     None,
     Action,
+    PreviousPage,
+    NextPage,
     CloseButton
 };
 
@@ -683,6 +685,11 @@ struct GameplayOverlayInteractionState
     GameplayQuickReferencePointerTarget quickReferencePressedTarget = {};
     bool dialogueClickLatch = false;
     GameplayDialoguePointerTarget dialoguePressedTarget = {};
+    std::string dialogueTopicContentKey;
+    size_t dialogueTopicPageIndex = 0;
+    size_t dialogueTopicSelectedIndex = 0;
+    bool dialogueTopicPageUpLatch = false;
+    bool dialogueTopicPageDownLatch = false;
     bool houseShopClickLatch = false;
     size_t houseShopPressedSlotIndex = static_cast<size_t>(-1);
     bool chestClickLatch = false;
@@ -700,6 +707,7 @@ struct GameplayOverlayInteractionState
     bool eventDialogSelectUpLatch = false;
     bool eventDialogSelectDownLatch = false;
     bool eventDialogAcceptLatch = false;
+    uint64_t eventDialogAcceptConsumedFrameId = 0;
     std::array<bool, 5> eventDialogPartySelectLatches = {};
     bool activateInspectLatch = false;
     bool itemInspectInteractionLatch = false;

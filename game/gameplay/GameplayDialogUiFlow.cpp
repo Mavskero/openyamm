@@ -9,12 +9,21 @@ namespace OpenYAMM::Game
 {
 namespace
 {
-void resetDialogInteractionState(GameplayDialogUiFlowState &state, bool suppressInitialAccept)
+void resetDialogInteractionState(
+    GameplayDialogUiFlowState &state,
+    bool suppressInitialAccept,
+    const GameplayInputFrame *pOpeningInput = nullptr)
 {
     state.selectionIndex = 0;
     state.interactionState.eventDialogSelectUpLatch = false;
     state.interactionState.eventDialogSelectDownLatch = false;
     state.interactionState.eventDialogAcceptLatch = suppressInitialAccept;
+    // A completed opener tap has held=false too. Its frame must still belong to
+    // this presentation, and a close/reset must retain that consumption stamp.
+    if (pOpeningInput != nullptr && pOpeningInput->frameId != 0)
+    {
+        state.interactionState.eventDialogAcceptConsumedFrameId = pOpeningInput->frameId;
+    }
     state.interactionState.eventDialogPartySelectLatches.fill(false);
 }
 
@@ -49,7 +58,8 @@ void presentActiveEventDialog(
         state,
         options.suppressInitialAcceptIfActivationKeysHeld
             && options.pInputFrame != nullptr
-            && shouldSuppressInitialAccept(*options.pInputFrame));
+            && shouldSuppressInitialAccept(*options.pInputFrame),
+        options.suppressInitialAcceptIfActivationKeysHeld ? options.pInputFrame : nullptr);
 }
 
 void presentPendingEventDialog(
@@ -99,7 +109,8 @@ void presentPendingEventDialog(
         state,
         options.suppressInitialAcceptIfActivationKeysHeld
             && options.pInputFrame != nullptr
-            && shouldSuppressInitialAccept(*options.pInputFrame));
+            && shouldSuppressInitialAccept(*options.pInputFrame),
+        options.suppressInitialAcceptIfActivationKeysHeld ? options.pInputFrame : nullptr);
 
     if (onOpened)
     {

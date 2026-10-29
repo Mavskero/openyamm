@@ -201,6 +201,12 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         pTouch->y = event.tfinger.y;
         pTouch->debugConsoleGestureCandidate =
             event.tfinger.y >= 0.0f && event.tfinger.y <= MobileDebugConsoleGestureTopEdgeNormalized;
+        if (std::any_of(m_mobileTouches.begin(), m_mobileTouches.end(), [](const MobileTouchPoint &touch)
+            { return touch.active && touch.role == MobileTouchRole::InspectModifier; }))
+        {
+            // Keep this gesture owned by inspection even if both edges precede the next frame.
+            pTouch->role = MobileTouchRole::InspectTarget;
+        }
         return;
     }
 
@@ -239,6 +245,7 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                 m_mobilePendingHudTaps.clear();
                 m_mobilePendingHudRelease = false;
                 m_mobilePendingCameraTap = false;
+                m_mobileInspectTarget.reset();
                 m_mobileJumpDoubleTapGesture.cancel();
                 m_mobileDebugConsoleToggleRequested = true;
             }
@@ -255,11 +262,36 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         {
             if (event.type == SDL_EVENT_FINGER_CANCELED)
             {
+                if (pTouch->role == MobileTouchRole::InspectModifier || pTouch->role == MobileTouchRole::InspectTarget)
+                {
+                    m_mobileInspectTarget.reset();
+                }
                 if (pTouch->role == MobileTouchRole::Hud && pTouch->hudPressDelivered)
                 {
                     m_mobilePendingHudRelease = true;
                     m_mobilePendingHudReleaseX = -1.0f;
                     m_mobilePendingHudReleaseY = -1.0f;
+                }
+                *pTouch = {};
+                return;
+            }
+
+            if (pTouch->role == MobileTouchRole::InspectModifier)
+            {
+                m_mobileInspectTarget.reset();
+                *pTouch = {};
+                return;
+            }
+
+            const bool inspectModifierHeld =
+                std::any_of(m_mobileTouches.begin(), m_mobileTouches.end(), [](const MobileTouchPoint &touch)
+                { return touch.active && touch.role == MobileTouchRole::InspectModifier; });
+            if (pTouch->role == MobileTouchRole::InspectTarget
+                || (inspectModifierHeld && pTouch->role != MobileTouchRole::DebugConsoleGesture))
+            {
+                if (inspectModifierHeld)
+                {
+                    m_mobileInspectTarget = MobileInspectTarget{event.tfinger.x, event.tfinger.y};
                 }
                 *pTouch = {};
                 return;
@@ -341,6 +373,12 @@ void GameInputSystem::updateFromEngineInput(
     bool mobileInspectControlEnabled)
 {
     m_frame = {};
+    ++m_inputFrameId;
+    if (m_inputFrameId == 0)
+    {
+        ++m_inputFrameId;
+    }
+    m_frame.frameId = m_inputFrameId;
     m_frame.screenWidth = screenWidth;
     m_frame.screenHeight = screenHeight;
     m_frame.mouseWheelDelta = blockGameplayInput ? 0.0f : mouseWheelDelta;
@@ -377,6 +415,7 @@ void GameInputSystem::updateFromEngineInput(
         m_mobilePendingHudRelease = false;
         m_mobilePendingHudDragRelease = false;
         m_mobilePendingCameraTap = false;
+        m_mobileInspectTarget.reset();
         m_mobileJumpDoubleTapGesture.cancel();
         m_mobileTouches = {};
         m_pendingMouseButtons.clear();
@@ -663,11 +702,22 @@ void GameInputSystem::updateFromEngineInput(
             }
         }
 
+        // A second finger can finish before the modifier's first role assignment.
+        // Reuse only its coordinates, never replay that inspection as a left click.
+        if (!m_mobilePendingHudTaps.empty())
+        {
+            const MobileHudTap &tap = m_mobilePendingHudTaps.back();
+            m_mobileInspectTarget = MobileInspectTarget{tap.x, tap.y};
+        }
         m_mobilePendingHudTaps.clear();
         m_mobilePendingHudRelease = false;
         m_mobilePendingHudDragRelease = false;
         m_mobilePendingCameraTap = false;
         m_mobileJumpDoubleTapGesture.cancel();
+    }
+    else
+    {
+        m_mobileInspectTarget.reset();
     }
 
     bool hasMovementTouch = false;
@@ -740,8 +790,6 @@ void GameInputSystem::updateFromEngineInput(
     bool hasInspectTargetTouch = false;
     float hudTouchX = 0.0f;
     float hudTouchY = 0.0f;
-    float inspectTargetX = 0.0f;
-    float inspectTargetY = 0.0f;
 
     for (MobileTouchPoint &touch : m_mobileTouches)
     {
@@ -847,8 +895,10 @@ void GameInputSystem::updateFromEngineInput(
         {
             hasNonHudMobileTouch = true;
             hasInspectTargetTouch = true;
-            inspectTargetX = touch.x * static_cast<float>(screenWidth);
-            inspectTargetY = touch.y * static_cast<float>(screenHeight);
+            if (inspectModifierHeld)
+            {
+                m_mobileInspectTarget = MobileInspectTarget{touch.x, touch.y};
+            }
         }
         else if (touch.role == MobileTouchRole::Hud && !hasHudTouch)
         {
@@ -886,15 +936,18 @@ void GameInputSystem::updateFromEngineInput(
 
     if (inspectModifierHeld)
     {
-        if (hasInspectTargetTouch)
-        {
-            m_frame.pointerFromTouch = true;
-            m_frame.pointerX = inspectTargetX;
-            m_frame.pointerY = inspectTargetY;
-        }
-
+        m_frame.pointerFromTouch = true;
+        m_frame.pointerX = m_mobileInspectTarget ? m_mobileInspectTarget->x * static_cast<float>(screenWidth) : -1.0f;
+        m_frame.pointerY = m_mobileInspectTarget ? m_mobileInspectTarget->y * static_cast<float>(screenHeight) : -1.0f;
         leftMouseButtonHeld = false;
         rightMouseButtonHeld = true;
+        if (m_previousLeftMouseButtonHeld)
+        {
+            // Switching a delivered HUD press to inspection cancels its release outside all targets.
+            m_frame.pointerX = -1.0f;
+            m_frame.pointerY = -1.0f;
+            rightMouseButtonHeld = false;
+        }
     }
     else if (pendingHudDragIsUiGesture)
     {
@@ -1022,6 +1075,7 @@ void GameInputSystem::resetRelativeMouseMotion()
 
 void GameInputSystem::suppressMouseButtonsUntilReleased()
 {
+    m_mobileInspectTarget.reset();
     m_pendingMouseButtons.clear();
     m_deliveredMouseButtons = 0;
     m_suppressLeftMouseButtonUntilReleased = true;

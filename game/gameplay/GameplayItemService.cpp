@@ -458,6 +458,7 @@ bool GameplayItemService::tryUseHeldItemOnPartyMember(
     else if (useResult.action == InventoryItemUseAction::ReadMessageScroll)
     {
         GameplayUiController::ReadableScrollOverlayState &overlay = uiController.readableScrollOverlay();
+        overlay = {};
         overlay.active = true;
         overlay.title = useResult.readableTitle;
         overlay.body = useResult.readableBody;

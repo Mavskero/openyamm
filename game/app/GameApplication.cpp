@@ -2832,8 +2832,7 @@ GameApplication::GameApplication(const Engine::ApplicationConfig &config)
             const std::vector<uint8_t> &previewBmp,
             std::string &error) -> bool
         {
-            static_cast<void>(error);
-            return quickSaveToPath(path, saveName, previewBmp);
+            return quickSaveToPath(path, saveName, previewBmp, &error);
         });
     m_gameSession.setSettingsChangedCallback(
         [this](const GameSettings &settings)
@@ -8023,13 +8022,23 @@ bool GameApplication::quickSave()
 bool GameApplication::quickSaveToPath(
     const std::filesystem::path &path,
     const std::string &saveName,
-    const std::vector<uint8_t> &previewBmp)
+    const std::vector<uint8_t> &previewBmp,
+    std::string *pError)
 {
+    if (pError != nullptr)
+    {
+        pError->clear();
+    }
+
     const std::optional<MapAssetInfo> &selectedMap = m_gameDataLoader.getSelectedMap();
 
     if (!selectedMap || m_pMapSceneRuntime == nullptr)
     {
         GAMEPLAY_DEBUG_TRACE("save_game_failed path=\"" + path.string() + "\" reason=unavailable");
+        if (pError != nullptr)
+        {
+            *pError = "当前无法保存游戏";
+        }
         reportQuickSaveStatus("Quick save unavailable");
         return false;
     }
@@ -8037,6 +8046,10 @@ bool GameApplication::quickSaveToPath(
     if (!selectedMap->map.runtimeRestrictions.allowSaveGame && !isAutosavePath(path))
     {
         GAMEPLAY_DEBUG_TRACE("save_game_failed path=\"" + path.string() + "\" reason=restricted_map");
+        if (pError != nullptr)
+        {
+            *pError = "此处不能保存游戏";
+        }
         reportQuickSaveStatus("Quick save unavailable here");
         return false;
     }
@@ -8047,6 +8060,10 @@ bool GameApplication::quickSaveToPath(
     if (!saveData)
     {
         GAMEPLAY_DEBUG_TRACE("save_game_failed path=\"" + path.string() + "\" reason=no_save_data");
+        if (pError != nullptr)
+        {
+            *pError = "无法生成存档数据";
+        }
         reportQuickSaveStatus("Quick save unavailable");
         return false;
     }
@@ -8070,6 +8087,10 @@ bool GameApplication::quickSaveToPath(
             "save_game_failed path=\"" + path.string() + "\""
             + " map=\"" + saveData->mapFileName + "\""
             + " reason=\"" + error + "\"");
+        if (pError != nullptr)
+        {
+            *pError = error;
+        }
         reportQuickSaveStatus("Quick save failed: " + error);
         return false;
     }
@@ -8763,6 +8784,20 @@ void GameApplication::reportQuickSaveStatus(const std::string &status)
     if (EventRuntimeState *pEventRuntimeState = m_gameplayController.eventRuntimeState())
     {
         pEventRuntimeState->lastActivationResult = status;
+    }
+    if (m_pMapSceneRuntime != nullptr)
+    {
+        // Keep the full diagnostic above; the ordinary HUD needs a readable result too.
+        std::string message = status;
+        if (status.starts_with("Quick save failed")) message = "保存失败，请检查存储空间或存档文件";
+        else if (status == "Quick save unavailable here") message = "此处不能保存游戏";
+        else if (status == "Quick save unavailable") message = "当前无法保存游戏";
+        else if (status == "Quick save written") message = "游戏已保存";
+        else if (status.starts_with("Quick load failed")) message = "读取失败，请检查存档与游戏资源";
+        else if (status == "Quick load unavailable") message = "当前无法读取存档";
+        else if (status == "Quick load applied") message = "存档已读取";
+        m_gameSession.gameplayScreenRuntime().setStatusBarEvent(
+            message, 5.0f, GameplayUiController::StatusBarEventPriority::High);
     }
 }
 

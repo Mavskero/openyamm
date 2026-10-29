@@ -31,8 +31,9 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cmath>
-#include <cstdlib>
+#include <limits>
 #include <optional>
 #include <random>
 #include <sstream>
@@ -4720,7 +4721,17 @@ GameplayDialogController::Result GameplayDialogController::confirmHouseBankInput
         return returnToHouseBankMainDialog(context);
     }
 
-    const int requestedAmount = houseBankState.inputText.empty() ? 0 : std::atoi(houseBankState.inputText.c_str());
+    uint64_t parsedAmount = 0;
+    const std::string &amountText = houseBankState.inputText;
+    const std::from_chars_result parsed =
+        std::from_chars(amountText.data(), amountText.data() + amountText.size(), parsedAmount);
+    if (parsed.ec != std::errc{} || parsed.ptr != amountText.data() + amountText.size())
+    {
+        return returnToHouseBankMainDialog(context);
+    }
+    // The ten-digit input can exceed int; transactions already clamp to the available balance.
+    const int requestedAmount = static_cast<int>(
+        std::min<uint64_t>(parsedAmount, std::numeric_limits<int>::max()));
 
     if (requestedAmount <= 0)
     {

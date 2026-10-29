@@ -14,6 +14,7 @@
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/ui/KeyboardScreenLayout.h"
 #include "game/ui/GameplayJournalMapUi.h"
+#include "game/ui/DialogueTopicLayout.h"
 
 #include <SDL3/SDL.h>
 
@@ -54,9 +55,24 @@ void latchGameplayMenuEscape(GameplayScreenRuntime &view)
     view.interactionState().menuToggleLatch = true;
 }
 
-void latchControlsEscape(GameplayScreenRuntime &view)
+bool consumeOverlayCloseHotkey(const GameplayInputFrame &input, bool &closeLatch, bool closeOnReturn)
 {
-    view.interactionState().controlsToggleLatch = true;
+    const bool held = input.isScancodeHeld(SDL_SCANCODE_ESCAPE)
+        || (closeOnReturn && input.isScancodeHeld(SDL_SCANCODE_RETURN));
+    const bool pressed = input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0
+        || (closeOnReturn && input.scancodePressCount(SDL_SCANCODE_RETURN) != 0);
+    // A fresh keydown can follow a release between frames while the old latch is still set.
+    const bool requested = pressed || (held && !closeLatch);
+    closeLatch = held;
+    return requested;
+}
+
+void selectDialogueTopicPage(GameplayScreenRuntime &view, const DialogueTopicLayout &layout, size_t pageIndex)
+{
+    GameplayOverlayInteractionState &state = view.interactionState();
+    state.dialogueTopicPageIndex = std::min(pageIndex, layout.pages.size() - 1);
+    view.eventDialogSelectionIndex() = layout.pages[state.dialogueTopicPageIndex].rows.front().actionIndex;
+    state.dialogueTopicSelectedIndex = view.eventDialogSelectionIndex();
 }
 
 constexpr float HudFontIntegerSnapThreshold = 0.1f;
@@ -398,19 +414,17 @@ void handlePointerClickRelease(
 }
 
 std::optional<SDL_Scancode> firstNewlyPressedScancode(
-    const bool *pKeyboardState,
+    const GameplayInputFrame &input,
     const std::array<uint8_t, SDL_SCANCODE_COUNT> &previousKeyboardState)
 {
-    if (pKeyboardState == nullptr)
+    for (int scancode = SDL_SCANCODE_UNKNOWN + 1; scancode < SDL_SCANCODE_COUNT; ++scancode)
     {
-        return std::nullopt;
-    }
-
-    for (int scancode = 0; scancode < SDL_SCANCODE_COUNT; ++scancode)
-    {
-        if (pKeyboardState[scancode] && previousKeyboardState[scancode] == 0)
+        const SDL_Scancode key = static_cast<SDL_Scancode>(scancode);
+        if (key != SDL_SCANCODE_ESCAPE
+            && (input.scancodePressCount(key) != 0
+                || (input.isScancodeHeld(key) && previousKeyboardState[scancode] == 0)))
         {
-            return static_cast<SDL_Scancode>(scancode);
+            return key;
         }
     }
 
@@ -797,7 +811,6 @@ bool GameplayOverlayInputController::handleRestOverlayInput(
     GameplayScreenRuntime &view,
     const GameplayInputFrame &input)
 {
-    const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
     GameplayUiController::RestScreenState &restScreen = view.restScreenState();
@@ -841,8 +854,11 @@ bool GameplayOverlayInputController::handleRestOverlayInput(
             return targetMinuteOfDay - minutesOfDay;
         };
 
-    if (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE])
+    const bool escapeActive = input.isScancodeHeld(SDL_SCANCODE_ESCAPE)
+        || input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0;
+    if (escapeActive)
     {
+        // The shared Escape latch also carries an upstream source-action veto.
         if (!view.interactionState().closeOverlayLatch)
         {
             view.interactionState().closeOverlayLatch = true;
@@ -1233,7 +1249,6 @@ bool GameplayOverlayInputController::handleControlsOverlayInput(
     GameplayScreenRuntime &view,
     const GameplayInputFrame &input)
 {
-    const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
     GameplayUiController::ControlsScreenState &controlsScreen = view.controlsScreenState();
@@ -1248,21 +1263,12 @@ bool GameplayOverlayInputController::handleControlsOverlayInput(
         return false;
     }
 
-    const bool closePressed =
-        pKeyboardState != nullptr && (pKeyboardState[SDL_SCANCODE_ESCAPE] || pKeyboardState[SDL_SCANCODE_RETURN]);
-
-    if (closePressed)
+    if (consumeOverlayCloseHotkey(input, view.interactionState().controlsToggleLatch, true))
     {
-        if (!view.interactionState().controlsToggleLatch)
-        {
-            view.closeControlsOverlay();
-            latchGameplayMenuEscape(view);
-            view.interactionState().controlsToggleLatch = true;
-        }
-    }
-    else
-    {
-        view.interactionState().controlsToggleLatch = false;
+        const bool heldCloseKey = view.interactionState().controlsToggleLatch;
+        view.closeControlsOverlay();
+        view.interactionState().menuToggleLatch = input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
+        view.interactionState().controlsToggleLatch = heldCloseKey;
     }
 
     if (!controlsScreen.active)
@@ -1582,7 +1588,6 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
     GameplayScreenRuntime &view,
     const GameplayInputFrame &input)
 {
-    const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
     GameplayUiController::KeyboardScreenState &keyboardScreen = view.keyboardScreenState();
@@ -1595,20 +1600,13 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
         return false;
     }
 
-    const bool closePressed = pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE];
-
-    if (closePressed)
+    if (consumeOverlayCloseHotkey(input, view.interactionState().keyboardToggleLatch, false))
     {
-        if (!view.interactionState().keyboardToggleLatch)
-        {
-            view.closeKeyboardOverlayToControls();
-            latchControlsEscape(view);
-            view.interactionState().keyboardToggleLatch = true;
-        }
-    }
-    else
-    {
-        view.interactionState().keyboardToggleLatch = false;
+        const bool heldCloseKey = view.interactionState().keyboardToggleLatch;
+        view.closeKeyboardOverlayToControls();
+        view.interactionState().controlsToggleLatch = input.isScancodeHeld(SDL_SCANCODE_ESCAPE)
+            || input.isScancodeHeld(SDL_SCANCODE_RETURN);
+        view.interactionState().keyboardToggleLatch = heldCloseKey;
     }
 
     if (!keyboardScreen.active)
@@ -1619,7 +1617,7 @@ bool GameplayOverlayInputController::handleKeyboardOverlayInput(
     if (keyboardScreen.waitingForBinding)
     {
         const std::optional<SDL_Scancode> reboundScancode =
-            firstNewlyPressedScancode(pKeyboardState, view.previousKeyboardState());
+            firstNewlyPressedScancode(input, view.previousKeyboardState());
 
         if (reboundScancode.has_value())
         {
@@ -1787,7 +1785,6 @@ bool GameplayOverlayInputController::handleVideoOptionsOverlayInput(
     GameplayScreenRuntime &view,
     const GameplayInputFrame &input)
 {
-    const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
     GameplayUiController::VideoOptionsScreenState &videoOptionsScreen = view.videoOptionsScreenState();
@@ -1800,21 +1797,12 @@ bool GameplayOverlayInputController::handleVideoOptionsOverlayInput(
         return false;
     }
 
-    const bool closePressed =
-        pKeyboardState != nullptr && (pKeyboardState[SDL_SCANCODE_ESCAPE] || pKeyboardState[SDL_SCANCODE_RETURN]);
-
-    if (closePressed)
+    if (consumeOverlayCloseHotkey(input, view.interactionState().videoOptionsToggleLatch, true))
     {
-        if (!view.interactionState().videoOptionsToggleLatch)
-        {
-            view.closeVideoOptionsOverlay();
-            latchControlsEscape(view);
-            view.interactionState().videoOptionsToggleLatch = true;
-        }
-    }
-    else
-    {
-        view.interactionState().videoOptionsToggleLatch = false;
+        const bool heldCloseKey = view.interactionState().videoOptionsToggleLatch;
+        view.closeVideoOptionsOverlay();
+        view.interactionState().controlsToggleLatch = heldCloseKey;
+        view.interactionState().videoOptionsToggleLatch = heldCloseKey;
     }
 
     if (!videoOptionsScreen.active)
@@ -2303,7 +2291,7 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
                 {
                     --journalScreen.questPage;
                 }
-                else if (delta > 0)
+                else if (delta > 0 && journalScreen.questPage < std::numeric_limits<size_t>::max())
                 {
                     ++journalScreen.questPage;
                 }
@@ -2314,7 +2302,7 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
                 {
                     --journalScreen.storyPage;
                 }
-                else if (delta > 0)
+                else if (delta > 0 && journalScreen.storyPage < std::numeric_limits<size_t>::max())
                 {
                     ++journalScreen.storyPage;
                 }
@@ -2325,7 +2313,7 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
                 {
                     --journalScreen.notesPage;
                 }
-                else if (delta > 0)
+                else if (delta > 0 && journalScreen.notesPage < std::numeric_limits<size_t>::max())
                 {
                     ++journalScreen.notesPage;
                 }
@@ -2379,7 +2367,8 @@ bool GameplayOverlayInputController::handleJournalOverlayInput(
         view.interactionState().journalMapKeyZoomLatch = false;
     }
 
-    if (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE])
+    if (input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0
+        || (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE]))
     {
         if (!view.interactionState().closeOverlayLatch)
         {
@@ -2897,6 +2886,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
     const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
+    const bool bankInputActive = view.houseBankState().inputActive();
 
     if (view.partyReadOnly() != nullptr)
     {
@@ -2912,11 +2902,11 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         {
             if (pKeyboardState[PartySelectScancodes[memberIndex]])
             {
-                if (!view.interactionState().eventDialogPartySelectLatches[memberIndex])
+                if (!bankInputActive && !view.interactionState().eventDialogPartySelectLatches[memberIndex])
                 {
                     view.trySelectPartyMember(memberIndex, false);
-                    view.interactionState().eventDialogPartySelectLatches[memberIndex] = true;
                 }
+                view.interactionState().eventDialogPartySelectLatches[memberIndex] = true;
             }
             else
             {
@@ -2929,7 +2919,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         view.interactionState().eventDialogPartySelectLatches.fill(false);
     }
 
-    if (view.houseBankState().inputActive())
+    if (bankInputActive)
     {
         appendDigitTextInput(view.houseBankState().inputText, input.textInput, 10);
 
@@ -2960,55 +2950,55 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
 
         for (size_t digit = 0; digit < view.interactionState().houseBankDigitLatches.size(); ++digit)
         {
-            const bool pressed = pKeyboardState[DigitScancodes[digit]]
-                || pKeyboardState[KeypadDigitScancodes[digit]];
-
-            if (pressed)
+            const bool held = input.isScancodeHeld(DigitScancodes[digit])
+                || input.isScancodeHeld(KeypadDigitScancodes[digit]);
+            size_t pressCount = size_t(input.scancodePressCount(DigitScancodes[digit]))
+                + input.scancodePressCount(KeypadDigitScancodes[digit]);
+            if (pressCount == 0 && held && !view.interactionState().houseBankDigitLatches[digit])
             {
-                if (input.textInput.empty()
-                    && !view.interactionState().houseBankDigitLatches[digit]
-                    && view.houseBankState().inputText.size() < 10)
-                {
-                    view.houseBankState().inputText.push_back(static_cast<char>('0' + digit));
-                }
-
-                view.interactionState().houseBankDigitLatches[digit] = true;
+                pressCount = 1;
             }
-            else
+            if (input.textInput.empty() && view.houseBankState().inputText.size() < 10)
             {
-                view.interactionState().houseBankDigitLatches[digit] = false;
+                const size_t available = 10 - view.houseBankState().inputText.size();
+                view.houseBankState().inputText.append(std::min(pressCount, available), static_cast<char>('0' + digit));
             }
+            view.interactionState().houseBankDigitLatches[digit] = held;
         }
 
-        const bool backspacePressed = pKeyboardState[SDL_SCANCODE_BACKSPACE];
-
-        if (backspacePressed)
+        const bool backspaceHeld = input.isScancodeHeld(SDL_SCANCODE_BACKSPACE);
+        size_t eraseCount = input.scancodePressCount(SDL_SCANCODE_BACKSPACE);
+        if (eraseCount == 0 && backspaceHeld && !view.interactionState().houseBankBackspaceLatch)
         {
-            if (!view.interactionState().houseBankBackspaceLatch && !view.houseBankState().inputText.empty())
-            {
-                view.houseBankState().inputText.pop_back();
-            }
-
-            view.interactionState().houseBankBackspaceLatch = true;
+            eraseCount = 1;
         }
-        else
+        if (eraseCount != 0)
         {
-            view.interactionState().houseBankBackspaceLatch = false;
+            std::string &text = view.houseBankState().inputText;
+            text.erase(text.size() - std::min(eraseCount, text.size()));
         }
+        view.interactionState().houseBankBackspaceLatch = backspaceHeld;
 
-        const bool confirmPressed = pKeyboardState[SDL_SCANCODE_RETURN] || pKeyboardState[SDL_SCANCODE_KP_ENTER];
-
+        const bool confirmHeld = input.isScancodeHeld(SDL_SCANCODE_RETURN)
+            || input.isScancodeHeld(SDL_SCANCODE_KP_ENTER);
+        const bool confirmPressed = input.scancodePressCount(SDL_SCANCODE_RETURN) != 0
+            || input.scancodePressCount(SDL_SCANCODE_KP_ENTER) != 0
+            || (confirmHeld && !view.interactionState().houseBankConfirmLatch
+                && !view.interactionState().eventDialogAcceptLatch);
+        // The parent topic's Return can open this prompt, and a held confirmation
+        // must not activate a parent topic after the transaction returns there.
+        const bool parentAcceptHeld = input.isScancodeHeld(SDL_SCANCODE_RETURN)
+            || input.isScancodeHeld(SDL_SCANCODE_SPACE);
+        view.interactionState().houseBankConfirmLatch = confirmHeld;
+        view.interactionState().eventDialogAcceptLatch = parentAcceptHeld;
         if (confirmPressed)
         {
-            if (!view.interactionState().houseBankConfirmLatch)
-            {
-                view.confirmHouseBankInput();
-                view.interactionState().houseBankConfirmLatch = true;
-            }
-        }
-        else
-        {
-            view.interactionState().houseBankConfirmLatch = false;
+            const std::array<bool, 5> partySelectionHeld = view.interactionState().eventDialogPartySelectLatches;
+            view.confirmHouseBankInput();
+            view.interactionState().houseBankConfirmLatch = confirmHeld;
+            view.interactionState().eventDialogAcceptLatch = parentAcceptHeld;
+            view.interactionState().eventDialogPartySelectLatches = partySelectionHeld;
+            return;
         }
 
         view.refreshHouseBankInputDialog();
@@ -3052,6 +3042,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
             {
                 if (target.type == GameplayDialoguePointerTargetType::CloseButton)
                 {
+                    view.interactionState().dialogueTopicContentKey.clear();
                     view.handleDialogueCloseRequest();
                     latchGameplayMenuEscape(view);
                 }
@@ -3063,6 +3054,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         {
             if (!view.interactionState().closeOverlayLatch)
             {
+                view.interactionState().dialogueTopicContentKey.clear();
                 view.handleDialogueCloseRequest();
                 latchGameplayMenuEscape(view);
                 view.interactionState().closeOverlayLatch = true;
@@ -3078,34 +3070,25 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
 
     if (!view.activeEventDialog().actions.empty() && !isResidentSelectionMode)
     {
-        if (pKeyboardState[SDL_SCANCODE_UP])
+        const bool upHeld = input.isScancodeHeld(SDL_SCANCODE_UP);
+        const bool downHeld = input.isScancodeHeld(SDL_SCANCODE_DOWN);
+        const bool upPressed = input.scancodePressCount(SDL_SCANCODE_UP) != 0
+            || (upHeld && !view.interactionState().eventDialogSelectUpLatch);
+        const bool downPressed = input.scancodePressCount(SDL_SCANCODE_DOWN) != 0
+            || (downHeld && !view.interactionState().eventDialogSelectDownLatch);
+        if (upPressed)
         {
-            if (!view.interactionState().eventDialogSelectUpLatch)
-            {
-                view.eventDialogSelectionIndex() = view.eventDialogSelectionIndex() == 0
-                    ? (view.activeEventDialog().actions.size() - 1)
-                    : (view.eventDialogSelectionIndex() - 1);
-                view.interactionState().eventDialogSelectUpLatch = true;
-            }
+            view.eventDialogSelectionIndex() = view.eventDialogSelectionIndex() == 0
+                ? (view.activeEventDialog().actions.size() - 1)
+                : (view.eventDialogSelectionIndex() - 1);
         }
-        else
+        if (downPressed)
         {
-            view.interactionState().eventDialogSelectUpLatch = false;
+            view.eventDialogSelectionIndex() =
+                (view.eventDialogSelectionIndex() + 1) % view.activeEventDialog().actions.size();
         }
-
-        if (pKeyboardState[SDL_SCANCODE_DOWN])
-        {
-            if (!view.interactionState().eventDialogSelectDownLatch)
-            {
-                view.eventDialogSelectionIndex() =
-                    (view.eventDialogSelectionIndex() + 1) % view.activeEventDialog().actions.size();
-                view.interactionState().eventDialogSelectDownLatch = true;
-            }
-        }
-        else
-        {
-            view.interactionState().eventDialogSelectDownLatch = false;
-        }
+        view.interactionState().eventDialogSelectUpLatch = upHeld;
+        view.interactionState().eventDialogSelectDownLatch = downHeld;
     }
     else
     {
@@ -3122,27 +3105,59 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         return;
     }
 
-    const bool acceptPressed = pKeyboardState[SDL_SCANCODE_RETURN] || pKeyboardState[SDL_SCANCODE_SPACE];
-
-    if (acceptPressed && !isResidentSelectionMode)
+    if (!isResidentSelectionMode && !view.houseShopOverlay().active && !view.inventoryNestedOverlay().active)
     {
-        if (!view.interactionState().eventDialogAcceptLatch)
+        const std::optional<DialogueTopicLayout> topics = resolveDialogueTopicLayout(view, screenWidth, screenHeight);
+        const bool pageUpHeld = input.isScancodeHeld(SDL_SCANCODE_PAGEUP);
+        const bool pageDownHeld = input.isScancodeHeld(SDL_SCANCODE_PAGEDOWN);
+        const bool pageUp = input.scancodePressCount(SDL_SCANCODE_PAGEUP) != 0
+            || (pageUpHeld && !view.interactionState().dialogueTopicPageUpLatch);
+        const bool pageDown = input.scancodePressCount(SDL_SCANCODE_PAGEDOWN) != 0
+            || (pageDownHeld && !view.interactionState().dialogueTopicPageDownLatch);
+        view.interactionState().dialogueTopicPageUpLatch = pageUpHeld;
+        view.interactionState().dialogueTopicPageDownLatch = pageDownHeld;
+        if (topics && topics->pages.size() > 1)
         {
-            if (view.activeEventDialog().actions.empty())
+            if ((pageUp || input.mouseWheelDelta > 0.0f) && topics->pageIndex > 0)
             {
-                view.handleDialogueCloseRequest();
+                selectDialogueTopicPage(view, *topics, topics->pageIndex - 1);
             }
-            else
+            else if ((pageDown || input.mouseWheelDelta < 0.0f) && topics->pageIndex + 1 < topics->pages.size())
             {
-                view.executeActiveDialogAction();
+                selectDialogueTopicPage(view, *topics, topics->pageIndex + 1);
             }
-
-            view.interactionState().eventDialogAcceptLatch = true;
         }
     }
-    else
+
+    const bool acceptHeld = input.isScancodeHeld(SDL_SCANCODE_RETURN) || input.isScancodeHeld(SDL_SCANCODE_SPACE);
+    const bool hasInputFrameId = input.frameId != 0;
+    const bool acceptPressed = hasInputFrameId
+        && (input.scancodePressCount(SDL_SCANCODE_RETURN) != 0 || input.scancodePressCount(SDL_SCANCODE_SPACE) != 0);
+    const bool acceptConsumedThisFrame = hasInputFrameId
+        && view.interactionState().eventDialogAcceptConsumedFrameId == input.frameId;
+    const bool acceptRequested = !isResidentSelectionMode && !acceptConsumedThisFrame
+        && (acceptPressed || (acceptHeld && !view.interactionState().eventDialogAcceptLatch));
+    view.interactionState().eventDialogAcceptLatch = !isResidentSelectionMode && acceptHeld;
+
+    if (acceptRequested)
     {
-        view.interactionState().eventDialogAcceptLatch = false;
+        if (hasInputFrameId)
+        {
+            view.interactionState().eventDialogAcceptConsumedFrameId = input.frameId;
+        }
+        if (view.activeEventDialog().actions.empty())
+        {
+            view.interactionState().dialogueTopicContentKey.clear();
+            view.handleDialogueCloseRequest();
+        }
+        else
+        {
+            view.executeActiveDialogAction();
+        }
+        if (hasInputFrameId)
+        {
+            view.interactionState().eventDialogAcceptConsumedFrameId = input.frameId;
+        }
     }
 
     const float dialogMouseX = input.pointerX;
@@ -3682,227 +3697,26 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
             }
             else
             {
-                const GameplayScreenRuntime::HudLayoutElement *pEventDialogLayout =
-                    view.findHudLayoutElement("DialogueEventDialog");
-                const GameplayScreenRuntime::HudLayoutElement *pTopicRowLayout =
-                    view.findHudLayoutElement("DialogueTopicRow_1");
-                const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedTopicRowTemplate =
-                    pTopicRowLayout != nullptr
-                    ? view.resolveHudLayoutElement(
-                        "DialogueTopicRow_1",
-                        screenWidth,
-                        screenHeight,
-                        pTopicRowLayout->width,
-                        pTopicRowLayout->height)
-                    : std::nullopt;
-                const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedEventDialog =
-                    (showEventDialogPanel && pEventDialogLayout != nullptr && pTopicRowLayout != nullptr)
-                    ? view.resolveHudLayoutElement(
-                        "DialogueEventDialog",
-                        screenWidth,
-                        screenHeight,
-                        pEventDialogLayout->width,
-                        pEventDialogLayout->height)
-                    : std::nullopt;
-
-                if (resolvedEventDialog && pTopicRowLayout != nullptr)
+                const std::optional<DialogueTopicLayout> topics =
+                    resolveDialogueTopicLayout(view, screenWidth, screenHeight);
+                if (topics)
                 {
-                    const bool isTransitionDialog =
-                        view.activeEventDialog().presentation == EventDialogPresentation::Transition;
-
-                    if (isTransitionDialog)
+                    for (const DialogueTopicRow &row : topics->pages[topics->pageIndex].rows)
                     {
-                        const GameplayScreenRuntime::HudLayoutElement *pOkLayout =
-                            view.findHudLayoutElement("DialogueOkButton");
-                        const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedOk =
-                            pOkLayout != nullptr
-                            ? view.resolveHudLayoutElement(
-                                "DialogueOkButton",
-                                screenWidth,
-                                screenHeight,
-                                pOkLayout->width,
-                                pOkLayout->height)
-                            : std::nullopt;
-
-                        if (resolvedOk
-                            && !view.activeEventDialog().actions.empty()
-                            && mouseX >= resolvedOk->x
-                            && mouseX < resolvedOk->x + resolvedOk->width
-                            && mouseY >= resolvedOk->y
-                            && mouseY < resolvedOk->y + resolvedOk->height)
+                        if (view.isPointerInsideResolvedElement(row.rect, mouseX, mouseY))
                         {
-                            return {GameplayDialoguePointerTargetType::Action, 0};
+                            return {GameplayDialoguePointerTargetType::Action, row.actionIndex};
                         }
                     }
-
-                    const float panelScale = resolvedEventDialog->scale;
-                    const float panelPaddingX = 10.0f * panelScale;
-                    const float panelPaddingY = 10.0f * panelScale;
-                    const float panelInnerX = resolvedEventDialog->x + panelPaddingX;
-                    const float panelInnerY = resolvedEventDialog->y + panelPaddingY;
-                    const float panelInnerWidth = resolvedEventDialog->width - panelPaddingX * 2.0f;
-                    const float sectionGap = 8.0f * panelScale;
-                    const float houseTitleToPortraitGap = 2.0f * panelScale;
-                    const GameplayScreenRuntime::HudLayoutElement *pNpcPortraitLayout =
-                        view.findHudLayoutElement("DialogueNpcPortrait");
-                    const GameplayScreenRuntime::HudLayoutElement *pHouseTitleLayout =
-                        view.findHudLayoutElement("DialogueHouseTitle");
-                    const GameplayScreenRuntime::HudLayoutElement *pNpcNameLayout =
-                        view.findHudLayoutElement("DialogueNpcName");
-                    const GameplayScreenRuntime::HudLayoutElement *pEffectiveHouseTitleLayout =
-                        pHouseTitleLayout != nullptr ? pHouseTitleLayout : pNpcNameLayout;
-                    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedPortraitTemplate =
-                        pNpcPortraitLayout != nullptr
-                        ? view.resolveHudLayoutElement(
-                            "DialogueNpcPortrait",
-                            screenWidth,
-                            screenHeight,
-                            pNpcPortraitLayout->width,
-                            pNpcPortraitLayout->height)
-                        : std::nullopt;
-                    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedNpcNameTemplate =
-                        pNpcNameLayout != nullptr
-                        ? view.resolveHudLayoutElement(
-                            "DialogueNpcName",
-                            screenWidth,
-                            screenHeight,
-                            pNpcNameLayout->width,
-                            pNpcNameLayout->height)
-                        : std::nullopt;
-                    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolvedHouseTitleTemplate =
-                        pEffectiveHouseTitleLayout != nullptr
-                        ? view.resolveHudLayoutElement(
-                            pEffectiveHouseTitleLayout->id,
-                            screenWidth,
-                            screenHeight,
-                            pEffectiveHouseTitleLayout->width,
-                            pEffectiveHouseTitleLayout->height)
-                        : std::nullopt;
-                    const float portraitAreaHeight =
-                        resolvedPortraitTemplate ? resolvedPortraitTemplate->height : 80.0f * panelScale;
-                    const float portraitBaseY =
-                        resolvedPortraitTemplate ? resolvedPortraitTemplate->y : panelInnerY;
-                    const float nameHeight =
-                        resolvedNpcNameTemplate ? resolvedNpcNameTemplate->height : 20.0f * panelScale;
-                    const float nameOffsetY = resolvedNpcNameTemplate && resolvedPortraitTemplate
-                        ? (resolvedNpcNameTemplate->y - resolvedPortraitTemplate->y)
-                        : portraitAreaHeight + 2.0f * panelScale;
-                    const std::optional<GameplayScreenRuntime::HudFontHandle> topicFont =
-                        view.findHudFont(pTopicRowLayout->fontName);
-                    const float topicFontScale =
-                        snappedHudFontScale(resolvedTopicRowTemplate ? resolvedTopicRowTemplate->scale : panelScale);
-                    const float topicLineHeight = topicFont
-                        ? static_cast<float>(topicFont->fontHeight) * topicFontScale
-                        : 20.0f * panelScale;
-                    const float topicWrapWidth = 140.0f
-                        * (resolvedTopicRowTemplate ? resolvedTopicRowTemplate->scale : panelScale);
-                    const float topicTextWidthScaled = std::max(
-                        0.0f,
-                        std::min(
-                            resolvedTopicRowTemplate ? resolvedTopicRowTemplate->width : panelInnerWidth,
-                            topicWrapWidth)
-                            - std::abs(pTopicRowLayout->textPadX * topicFontScale) * 2.0f
-                            - 4.0f * topicFontScale);
-                    const float topicTextWidth =
-                        std::max(0.0f, topicTextWidthScaled / std::max(1.0f, topicFontScale));
-                    const float rowGap = 4.0f * panelScale;
-                    const size_t visibleActionCount = std::min<size_t>(view.activeEventDialog().actions.size(), 5);
-                    float contentY = panelInnerY;
-                    std::vector<float> actionRowHeights;
-                    std::vector<float> actionPressHeights;
-
-                    actionRowHeights.reserve(visibleActionCount);
-                    actionPressHeights.reserve(visibleActionCount);
-
-                    if ((pHostHouseEntry != nullptr || isTransitionDialog) && pEffectiveHouseTitleLayout != nullptr)
+                    if (topics->pageIndex > 0
+                        && view.isPointerInsideResolvedElement(topics->previousButton, mouseX, mouseY))
                     {
-                        const float houseTitleHeight = resolvedHouseTitleTemplate
-                            ? resolvedHouseTitleTemplate->height
-                            : 20.0f * panelScale;
-                        contentY += houseTitleHeight + houseTitleToPortraitGap;
+                        return {GameplayDialoguePointerTargetType::PreviousPage, 0};
                     }
-
-                    contentY = std::max(contentY, portraitBaseY);
-
-                    const float portraitY = std::round(contentY);
-                    float nextContentY = portraitY + portraitAreaHeight;
-
-                    if (!isTransitionDialog
-                        && pNpcNameLayout != nullptr
-                        && !view.activeEventDialog().title.empty())
+                    if (topics->pageIndex + 1 < topics->pages.size()
+                        && view.isPointerInsideResolvedElement(topics->nextButton, mouseX, mouseY))
                     {
-                        nextContentY = portraitY + nameOffsetY + nameHeight;
-                    }
-
-                    contentY = nextContentY + (isTransitionDialog ? 15.0f * panelScale : sectionGap);
-                    const float availableHeight =
-                        resolvedEventDialog->y + resolvedEventDialog->height - panelPaddingY - contentY;
-
-                    for (size_t actionIndex = 0; actionIndex < visibleActionCount; ++actionIndex)
-                    {
-                        std::string label = view.activeEventDialog().actions[actionIndex].label;
-
-                        if (!view.activeEventDialog().actions[actionIndex].enabled
-                            && !view.activeEventDialog().actions[actionIndex].disabledReason.empty())
-                        {
-                            label += " [disabled]";
-                        }
-
-                        std::vector<std::string> wrappedLines = topicFont
-                            ? view.wrapHudTextToWidth(*topicFont, label, topicTextWidth)
-                            : std::vector<std::string>{label};
-
-                        if (wrappedLines.empty())
-                        {
-                            wrappedLines.push_back(label);
-                        }
-
-                        const float minimumRowHeight = resolvedTopicRowTemplate
-                            ? resolvedTopicRowTemplate->height
-                            : pTopicRowLayout->height * panelScale;
-                        const float wrappedRowHeight = static_cast<float>(wrappedLines.size()) * topicLineHeight;
-                        actionRowHeights.push_back(std::max(minimumRowHeight, wrappedRowHeight));
-                        actionPressHeights.push_back(std::max(topicLineHeight, wrappedRowHeight));
-                    }
-
-                    float totalHeight = 0.0f;
-
-                    for (size_t actionIndex = 0; actionIndex < actionRowHeights.size(); ++actionIndex)
-                    {
-                        totalHeight += actionRowHeights[actionIndex];
-
-                        if (actionIndex + 1 < actionRowHeights.size())
-                        {
-                            totalHeight += rowGap;
-                        }
-                    }
-
-                    const float topicListCenterOffsetY = 8.0f * panelScale;
-                    float rowY = contentY + std::max(0.0f, (availableHeight - totalHeight) * 0.5f)
-                        - topicListCenterOffsetY;
-
-                    for (size_t actionIndex = 0; actionIndex < visibleActionCount; ++actionIndex)
-                    {
-                        const float rowX = resolvedTopicRowTemplate ? resolvedTopicRowTemplate->x : panelInnerX;
-                        const float rowWidth = resolvedTopicRowTemplate
-                            ? resolvedTopicRowTemplate->width
-                            : panelInnerWidth;
-                        const float rowHeight = actionRowHeights[actionIndex];
-                        const float pressAreaInsetY = 2.0f * panelScale;
-                        const float pressAreaHeight = std::min(
-                            rowHeight,
-                            actionPressHeights[actionIndex] + pressAreaInsetY * 2.0f);
-                        const float pressAreaY = rowY + (rowHeight - pressAreaHeight) * 0.5f;
-
-                        if (mouseX >= rowX
-                            && mouseX < rowX + rowWidth
-                            && mouseY >= pressAreaY
-                            && mouseY < pressAreaY + pressAreaHeight)
-                        {
-                            return {GameplayDialoguePointerTargetType::Action, actionIndex};
-                        }
-
-                        rowY += rowHeight + rowGap;
+                        return {GameplayDialoguePointerTargetType::NextPage, 0};
                     }
                 }
             }
@@ -3943,7 +3757,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         view.interactionState().dialoguePressedTarget,
         noneDialogueTarget,
         findDialoguePointerTarget,
-        [&view](const GameplayDialoguePointerTarget &target)
+        [&view, screenWidth, screenHeight](const GameplayDialoguePointerTarget &target)
         {
             if (target.type == GameplayDialoguePointerTargetType::Action
                 && target.index < view.activeEventDialog().actions.size())
@@ -3951,8 +3765,27 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                 view.eventDialogSelectionIndex() = target.index;
                 view.executeActiveDialogAction();
             }
+            else if (target.type == GameplayDialoguePointerTargetType::PreviousPage
+                || target.type == GameplayDialoguePointerTargetType::NextPage)
+            {
+                const std::optional<DialogueTopicLayout> topics =
+                    resolveDialogueTopicLayout(view, screenWidth, screenHeight);
+                if (topics)
+                {
+                    if (target.type == GameplayDialoguePointerTargetType::PreviousPage && topics->pageIndex > 0)
+                    {
+                        selectDialogueTopicPage(view, *topics, topics->pageIndex - 1);
+                    }
+                    else if (target.type == GameplayDialoguePointerTargetType::NextPage
+                        && topics->pageIndex + 1 < topics->pages.size())
+                    {
+                        selectDialogueTopicPage(view, *topics, topics->pageIndex + 1);
+                    }
+                }
+            }
             else if (target.type == GameplayDialoguePointerTargetType::CloseButton)
             {
+                view.interactionState().dialogueTopicContentKey.clear();
                 view.handleDialogueCloseRequest();
                 latchGameplayMenuEscape(view);
             }
@@ -3964,6 +3797,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
     {
         if (!view.interactionState().closeOverlayLatch)
         {
+            view.interactionState().dialogueTopicContentKey.clear();
             view.handleDialogueCloseRequest();
             latchGameplayMenuEscape(view);
             view.interactionState().closeOverlayLatch = true;
@@ -4414,45 +4248,37 @@ void GameplayOverlayInputController::handleLootOverlayInput(
         view.interactionState().chestSelectionIndex = itemCount - 1;
     }
 
-    if (pKeyboardState[SDL_SCANCODE_UP])
+    const bool upHeld = input.isScancodeHeld(SDL_SCANCODE_UP);
+    const bool downHeld = input.isScancodeHeld(SDL_SCANCODE_DOWN);
+    const bool upPressed = input.scancodePressCount(SDL_SCANCODE_UP) != 0
+        || (upHeld && !view.interactionState().chestSelectUpLatch);
+    const bool downPressed = input.scancodePressCount(SDL_SCANCODE_DOWN) != 0
+        || (downHeld && !view.interactionState().chestSelectDownLatch);
+    if (upPressed && itemCount > 0)
     {
-        if (!view.interactionState().chestSelectUpLatch && itemCount > 0)
-        {
-            view.interactionState().chestSelectionIndex =
-                (view.interactionState().chestSelectionIndex == 0) ? (itemCount - 1) : (view.interactionState().chestSelectionIndex - 1);
-            view.interactionState().chestSelectUpLatch = true;
-        }
+        view.interactionState().chestSelectionIndex =
+            (view.interactionState().chestSelectionIndex == 0) ? (itemCount - 1) : (view.interactionState().chestSelectionIndex - 1);
     }
-    else
+    if (downPressed && itemCount > 0)
     {
-        view.interactionState().chestSelectUpLatch = false;
+        view.interactionState().chestSelectionIndex = (view.interactionState().chestSelectionIndex + 1) % itemCount;
     }
+    view.interactionState().chestSelectUpLatch = upHeld;
+    view.interactionState().chestSelectDownLatch = downHeld;
 
-    if (pKeyboardState[SDL_SCANCODE_DOWN])
-    {
-        if (!view.interactionState().chestSelectDownLatch && itemCount > 0)
-        {
-            view.interactionState().chestSelectionIndex = (view.interactionState().chestSelectionIndex + 1) % itemCount;
-            view.interactionState().chestSelectDownLatch = true;
-        }
-    }
-    else
-    {
-        view.interactionState().chestSelectDownLatch = false;
-    }
-
-    const bool lootPressed = pKeyboardState[SDL_SCANCODE_RETURN];
+    const bool lootHeld = input.isScancodeHeld(SDL_SCANCODE_RETURN);
+    const bool lootPressed = input.scancodePressCount(SDL_SCANCODE_RETURN) != 0
+        || (lootHeld && !view.interactionState().lootChestItemLatch);
+    view.interactionState().lootChestItemLatch = lootHeld;
 
     if (lootPressed)
     {
-        if (!view.interactionState().lootChestItemLatch
-            && !view.inventoryNestedOverlay().active
+        if (!view.inventoryNestedOverlay().active
             && itemCount > 0
             && view.party() != nullptr)
         {
             if (!view.allowSourceGameplayAction(SourceActionChestClickItem, 10))
             {
-                view.interactionState().lootChestItemLatch = true;
                 return;
             }
             const GameplayChestViewState *pCurrentChestView =
@@ -4537,13 +4363,7 @@ void GameplayOverlayInputController::handleLootOverlayInput(
                     }
                 }
             }
-
-            view.interactionState().lootChestItemLatch = true;
         }
-    }
-    else
-    {
-        view.interactionState().lootChestItemLatch = false;
     }
 
     const bool closePressed = pKeyboardState[SDL_SCANCODE_ESCAPE];

@@ -21,6 +21,7 @@
 #include "game/ui/CharacterStatLayout.h"
 #include "game/ui/GameplayJournalMapUi.h"
 #include "game/ui/JournalTextLayout.h"
+#include "game/ui/ReadableScrollLayout.h"
 #include "game/party/SkillData.h"
 #include "game/gameplay/GameplayScreenRuntime.h"
 #include "game/ui/SpellbookUiLayout.h"
@@ -4294,13 +4295,15 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
             stackedMetrics.dividerGapBefore = 7.0f * bodyFontScale;
             stackedMetrics.dividerGapAfter = 9.0f * bodyFontScale;
         }
-        const auto renderStackedPage = [&](const JournalTextLayout &layout, size_t requestedPage)
+        const auto renderStackedPage = [&](const JournalTextLayout &layout, size_t &pageIndex)
         {
             if (layout.pages.empty())
             {
+                pageIndex = 0;
                 return;
             }
-            const JournalTextPage &page = layout.pages[std::min(requestedPage, layout.pages.size() - 1)];
+            pageIndex = std::min(pageIndex, layout.pages.size() - 1);
+            const JournalTextPage &page = layout.pages[pageIndex];
             for (const JournalTextPageEntry &entry : page.entries)
             {
                 if (entry.dividerY && dividerTexture)
@@ -4353,6 +4356,7 @@ void GameplayPartyOverlayRenderer::renderJournalOverlay(GameplayScreenRuntime &c
                         bodyFontScale)
                     : std::vector<JournalStoryPage>{};
             const size_t pageIndex = pages.empty() ? 0 : std::min(journalScreen.storyPage, pages.size() - 1);
+            journalScreen.storyPage = pageIndex;
 
             if (!pages.empty())
             {
@@ -7189,7 +7193,7 @@ void GameplayPartyOverlayRenderer::renderSpellInspectOverlay(GameplayScreenRunti
 
 void GameplayPartyOverlayRenderer::renderReadableScrollOverlay(GameplayScreenRuntime &context, int width, int height)
 {
-    const GameplayUiController::ReadableScrollOverlayState &overlay = context.readableScrollOverlayReadOnly();
+    GameplayUiController::ReadableScrollOverlayState &overlay = context.readableScrollOverlay();
 
     if (!overlay.active
         || !context.hasHudRenderResources()
@@ -7208,44 +7212,15 @@ void GameplayPartyOverlayRenderer::renderReadableScrollOverlay(GameplayScreenRun
         return;
     }
 
-    const GameplayUiViewportRect uiViewport = GameplayHudCommon::computeUiViewportRect(width, height);
-    const float baseScale = std::min(uiViewport.width / HudReferenceWidth, uiViewport.height / HudReferenceHeight);
-    const float popupScale = std::clamp(baseScale, pRootLayout->minScale, pRootLayout->maxScale);
-    const GameplayScreenRuntime::ResolvedHudLayoutElement provisionalRoot = {
-        0.0f,
-        0.0f,
-        pRootLayout->width * popupScale,
-        pRootLayout->height * popupScale,
-        popupScale
-    };
-    const std::optional<GameplayScreenRuntime::HudFontHandle> bodyFont = context.findHudFont("SMALLNUM");
-    const GameplayScreenRuntime::HudFontHandle *pBodyFont = bodyFont ? &*bodyFont : nullptr;
-    const float bodyLineHeight =
-        pBodyFont != nullptr ? static_cast<float>(pBodyFont->fontHeight) * popupScale : 12.0f * popupScale;
-    const GameplayScreenRuntime::ResolvedHudLayoutElement bodyRectForSizing = GameplayHudCommon::resolveAttachedHudLayoutRect(
-        pBodyLayout->attachTo,
-        provisionalRoot,
-        pBodyLayout->width * popupScale,
-        pBodyLayout->height * popupScale,
-        pBodyLayout->gapX,
-        pBodyLayout->gapY,
-        popupScale);
-    const float bodyWidthScaled =
-        std::max(0.0f, bodyRectForSizing.width - std::abs(pBodyLayout->textPadX * popupScale) * 2.0f);
-    const float bodyWidth = std::max(0.0f, bodyWidthScaled / std::max(1.0f, popupScale));
-    const std::vector<std::string> bodyLines =
-        pBodyFont != nullptr
-            ? context.wrapHudTextToWidth(*pBodyFont, overlay.body, bodyWidth)
-            : std::vector<std::string>{overlay.body};
-    const float bodyHeight = bodyLines.empty() ? bodyLineHeight : bodyLineHeight * static_cast<float>(bodyLines.size());
-    static constexpr float ReadableScrollBottomPadding = 15.0f;
-    const float rootWidth = provisionalRoot.width;
-    const float rootHeight = std::max(
-        provisionalRoot.height,
-        bodyRectForSizing.y + bodyHeight + ReadableScrollBottomPadding * popupScale);
-    const float rootX = std::round(uiViewport.x + (uiViewport.width - rootWidth) * 0.5f);
-    const float rootY = std::round(uiViewport.y + (uiViewport.height - rootHeight) * 0.5f);
-    const GameplayScreenRuntime::ResolvedHudLayoutElement rootRect = {rootX, rootY, rootWidth, rootHeight, popupScale};
+    const std::optional<ReadableScrollLayout> scrollLayout = resolveReadableScrollLayout(context, width, height);
+    if (!scrollLayout)
+    {
+        return;
+    }
+    overlay.persistent = overlay.persistent || scrollLayout->pageCount > 1;
+    overlay.pageIndex = std::min(overlay.pageIndex, scrollLayout->pageCount - 1);
+    const GameplayResolvedHudLayoutElement &rootRect = scrollLayout->rootRect;
+    const float popupScale = rootRect.scale;
 
     setupHudProjection(width, height);
 
@@ -7353,41 +7328,108 @@ void GameplayPartyOverlayRenderer::renderReadableScrollOverlay(GameplayScreenRun
         context.submitHudTexturedQuad(*texture, resolved->x, resolved->y, resolved->width, resolved->height);
     }
 
-    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> titleRect = resolveLayout("SpellInspectTitle");
-
-    if (titleRect)
-    {
-        context.renderLayoutLabel(*pTitleLayout, *titleRect, overlay.title);
-    }
-
-    if (pBodyFont == nullptr)
+    const std::optional<GameplayHudFontHandle> titleFont =
+        context.findHudFont(pTitleLayout->fontName.empty() ? "Create" : pTitleLayout->fontName);
+    const std::optional<GameplayHudFontHandle> bodyFont = context.findHudFont("SMALLNUM");
+    if (!titleFont || !bodyFont)
     {
         return;
     }
 
-    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> bodyBaseRect = resolveLayout("SpellInspectBody");
-
-    if (!bodyBaseRect)
+    const auto renderLine = [&context](const GameplayHudFontHandle &font, const std::string &line,
+                                float textX, float textY, float scale, uint32_t color)
     {
-        return;
+        bgfx::TextureHandle colored = context.ensureHudFontMainTextureColor(font, color);
+        if (!bgfx::isValid(colored))
+        {
+            colored = font.mainTextureHandle;
+        }
+        context.renderHudFontLayer(font, font.shadowTextureHandle, line, textX, textY, scale);
+        context.renderHudFontLayer(font, colored, line, textX, textY, scale);
+    };
+    float titleY = scrollLayout->titleRect.y
+        + (scrollLayout->titleRect.height
+              - scrollLayout->titleLineHeight * static_cast<float>(scrollLayout->titleLines.size())) * 0.5f;
+    for (const std::string &line : scrollLayout->titleLines)
+    {
+        float lineWidth = context.measureHudTextWidth(*titleFont, line) * scrollLayout->titleRect.scale;
+#if defined(__APPLE__)
+        if (hasUtf8MultibyteText(line))
+        {
+            const std::optional<Engine::AppleTextImageSize> imageSize =
+                Engine::measureAppleTextImageSize(line, titleFont->fontHeight * scrollLayout->titleRect.scale);
+            if (imageSize)
+            {
+                lineWidth = imageSize->width + std::max(1.0f, scrollLayout->titleRect.scale);
+            }
+        }
+#endif
+        const float titleX = scrollLayout->titleRect.x + (scrollLayout->titleRect.width - lineWidth) * 0.5f;
+        renderLine(*titleFont, line, std::round(titleX), std::round(titleY),
+            scrollLayout->titleRect.scale, pTitleLayout->textColorAbgr);
+        titleY += scrollLayout->titleLineHeight;
     }
 
-    bgfx::TextureHandle coloredMainTextureHandle =
-        context.ensureHudFontMainTextureColor(*pBodyFont, pBodyLayout->textColorAbgr);
-
-    if (!bgfx::isValid(coloredMainTextureHandle))
+    const size_t firstLine = overlay.pageIndex * scrollLayout->linesPerPage;
+    const size_t lastLine = std::min(scrollLayout->bodyLines.size(), firstLine + scrollLayout->linesPerPage);
+    float textY = scrollLayout->bodyRect.y;
+    for (size_t lineIndex = firstLine; lineIndex < lastLine; ++lineIndex)
     {
-        coloredMainTextureHandle = pBodyFont->mainTextureHandle;
+        renderLine(*bodyFont, scrollLayout->bodyLines[lineIndex],
+            std::round(scrollLayout->bodyRect.x), std::round(textY), popupScale, pBodyLayout->textColorAbgr);
+        textY += scrollLayout->lineHeight;
     }
 
-    float textX = std::round(bodyBaseRect->x + pBodyLayout->textPadX * popupScale);
-    float textY = std::round(bodyBaseRect->y + pBodyLayout->textPadY * popupScale);
-
-    for (const std::string &line : bodyLines)
+    if (scrollLayout->pageCount > 1 || overlay.persistent)
     {
-        context.renderHudFontLayer(*pBodyFont, pBodyFont->shadowTextureHandle, line, textX, textY, popupScale);
-        context.renderHudFontLayer(*pBodyFont, coloredMainTextureHandle, line, textX, textY, popupScale);
-        textY += bodyLineHeight;
+        const PointerRenderInput pointer = pointerRenderInput(context);
+        const auto renderButton = [&context, &pointer, pBodyLayout](
+                                      const GameplayResolvedHudLayoutElement &rect,
+                                      const std::string &label, bool enabled)
+        {
+            const bool hovered = enabled
+                && context.isPointerInsideResolvedElement(rect, pointer.mouseX, pointer.mouseY);
+            const uint32_t fillColor = hovered
+                ? (pointer.isLeftMousePressed ? makeAbgrColor(87, 58, 29) : makeAbgrColor(112, 79, 39))
+                : makeAbgrColor(54, 34, 17);
+            const std::optional<GameplayHudTextureHandle> border =
+                context.gameplayUiRuntime().ensureSolidHudTextureLoaded(
+                    "__readable_scroll_border__", makeAbgrColor(166, 130, 69));
+            const std::optional<GameplayHudTextureHandle> fill =
+                context.gameplayUiRuntime().ensureSolidHudTextureLoaded(
+                    "__readable_scroll_fill_" + std::to_string(fillColor), fillColor);
+            if (border && fill)
+            {
+                const float inset = rect.scale;
+                context.submitHudTexturedQuad(*border, rect.x, rect.y, rect.width, rect.height);
+                context.submitHudTexturedQuad(*fill, rect.x + inset, rect.y + inset,
+                    rect.width - 2.0f * inset, rect.height - 2.0f * inset);
+            }
+            UiLayoutManager::LayoutElement labelLayout = *pBodyLayout;
+            labelLayout.fontName = "SMALLNUM";
+            labelLayout.textPadX = 0.0f;
+            labelLayout.textPadY = 0.0f;
+            labelLayout.textAlignX = UiLayoutManager::TextAlignX::Center;
+            labelLayout.textAlignY = UiLayoutManager::TextAlignY::Middle;
+            labelLayout.textColorAbgr = enabled ? makeAbgrColor(255, 255, 155) : makeAbgrColor(156, 137, 106);
+            context.renderLayoutLabel(labelLayout, rect, label);
+        };
+        renderButton(scrollLayout->previousButton, "<", overlay.pageIndex > 0);
+        renderButton(scrollLayout->nextButton, ">", overlay.pageIndex + 1 < scrollLayout->pageCount);
+        renderButton(scrollLayout->closeButton, "X", true);
+
+        GameplayResolvedHudLayoutElement pageRect = scrollLayout->nextButton;
+        pageRect.x += pageRect.width + 8.0f * popupScale;
+        pageRect.width = scrollLayout->closeButton.x - pageRect.x - 8.0f * popupScale;
+        UiLayoutManager::LayoutElement pageLabel = *pBodyLayout;
+        pageLabel.fontName = "SMALLNUM";
+        pageLabel.textPadX = 0.0f;
+        pageLabel.textPadY = 0.0f;
+        pageLabel.textAlignX = UiLayoutManager::TextAlignX::Center;
+        pageLabel.textAlignY = UiLayoutManager::TextAlignY::Middle;
+        pageLabel.textColorAbgr = makeAbgrColor(255, 255, 155);
+        context.renderLayoutLabel(pageLabel, pageRect,
+            std::to_string(overlay.pageIndex + 1) + " / " + std::to_string(scrollLayout->pageCount));
     }
 }
 

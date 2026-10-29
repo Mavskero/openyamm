@@ -39,6 +39,71 @@ const std::vector<TableSpec> StoryTables = {
     {"quests.txt", "english/quests.txt", 2, {1}},
 };
 
+struct CreditsText
+{
+    std::string text;
+    size_t sourceLines = 0;
+    size_t outputLines = 0;
+    size_t nonemptyLines = 0;
+    size_t headingMarkers = 0;
+    size_t layoutControls = 0;
+};
+
+CreditsText normalizeCreditsText(const std::string &decoded)
+{
+    CreditsText credits;
+    std::istringstream input(decoded);
+    std::string sourceLine;
+    bool pendingBlankLine = false;
+    while (std::getline(input, sourceLine))
+    {
+        ++credits.sourceLines;
+        std::string line;
+        for (unsigned char character : sourceLine)
+        {
+            if (character == '\t')
+            {
+                line += ' ';
+            }
+            else if (character >= 32 && character != 127)
+            {
+                line += static_cast<char>(character);
+            }
+            else if (character != '\r')
+            {
+                ++credits.layoutControls;
+            }
+        }
+        const size_t first = line.find_first_not_of(' ');
+        line = first == std::string::npos
+            ? "" : line.substr(first, line.find_last_not_of(' ') - first + 1);
+        if (!line.empty() && line.front() == '_')
+        {
+            line.erase(0, 1);
+            ++credits.headingMarkers;
+        }
+        if (line.empty())
+        {
+            pendingBlankLine = !credits.text.empty();
+            continue;
+        }
+        if (pendingBlankLine)
+        {
+            credits.text += '\n';
+            ++credits.outputLines;
+            pendingBlankLine = false;
+        }
+        credits.text += line + '\n';
+        ++credits.outputLines;
+        ++credits.nonemptyLines;
+    }
+    if (credits.nonemptyLines == 0)
+    {
+        throw std::runtime_error("Original credits text is empty");
+    }
+    return credits;
+}
+
 std::optional<uint32_t> rowId(const std::vector<std::string> &row)
 {
     if (row.empty() || row[0].empty())
@@ -173,6 +238,10 @@ void convertStoryResources(const std::filesystem::path &source, const std::files
     const std::filesystem::path base = sourceRoot / "Data/mmmerge.T.lod";
     const std::filesystem::path localized = sourceRoot / "Data/10 LocZHCN.EnglishT.lod";
     const bool chinese = std::filesystem::exists(localized);
+    const std::filesystem::path creditsArchive = chinese ? localized : base;
+    size_t creditsGlyphs = 0;
+    const CreditsText credits = normalizeCreditsText(
+        decodeLegacyText(readLodText(creditsArchive, "Credits.txt"), chinese, creditsGlyphs));
     const std::optional<CrossContinentsIntroProfile> crossContinents = loadCrossContinentsIntroProfile(sourceRoot);
     const std::optional<BlasterLearningProfile> blasterLearning = loadBlasterLearningProfile(sourceRoot, chinese);
     std::map<std::string, Rows> tables;
@@ -353,7 +422,13 @@ void convertStoryResources(const std::filesystem::path &source, const std::files
     }
     manifest << "\n],\"validated_npcs\":" << npcs.entries().size()
         << ",\"visible_quest_texts\":" << quests.entries().size()
-        << ",\"table_loaders_validated\":true}\n";
+        << ",\"table_loaders_validated\":true,\"credits\":{\"source_archive\":"
+        << std::quoted(creditsArchive.filename().string())
+        << ",\"source\":\"Credits.txt\",\"output\":\"engine/data_tables/credits.txt\""
+        << ",\"source_lines\":" << credits.sourceLines << ",\"output_lines\":" << credits.outputLines
+        << ",\"nonempty_lines\":" << credits.nonemptyLines << ",\"restored_glyphs\":" << creditsGlyphs
+        << ",\"removed_heading_markers\":" << credits.headingMarkers
+        << ",\"removed_layout_controls\":" << credits.layoutControls << "}}\n";
     if (!std::filesystem::create_directories(destination))
     {
         throw std::runtime_error("Story destination was created by another operation");
@@ -364,6 +439,7 @@ void convertStoryResources(const std::filesystem::path &source, const std::files
         {
             writeText(destination / "engine/data_tables" / name, serializeTextRows(rows));
         }
+        writeText(destination / "engine/data_tables/credits.txt", credits.text);
         writeText(destination / "story_conversion.json", manifest.str());
     }
     catch (...)

@@ -1,5 +1,6 @@
 #include "game/ui/GameplayDialogueRenderer.h"
 #include "game/ui/GameplayHudCommon.h"
+#include "game/ui/DialogueTopicLayout.h"
 #include "game/ui/Utf8Text.h"
 #if defined(__APPLE__)
 #include "engine/AppleText.h"
@@ -306,55 +307,53 @@ struct DialogueBodyTextMetrics
 
 float snappedHudFontScale(float scale);
 
-float dialogueTitleLineAdvance(const GameplayScreenRuntime::HudFontHandle &font, float fontScale)
-{
-    return static_cast<float>(std::max(1, font.fontHeight - 3)) * fontScale;
-}
-
 float renderWrappedCenteredDialogueTitle(
     GameplayScreenRuntime &view,
     const GameplayScreenRuntime::HudLayoutElement &layout,
     const GameplayScreenRuntime::ResolvedHudLayoutElement &resolved,
-    const std::string &label)
+    const std::string &label,
+    bool useTopicPanelMetrics)
 {
     if (label.empty())
     {
         return 0.0f;
     }
 
-    const std::optional<GameplayScreenRuntime::HudFontHandle> font = view.findHudFont(layout.fontName);
+    std::optional<DialogueTopicTextLayout> text = layoutDialogueTopicText(view, layout, resolved, label);
 
-    if (!font)
+    if (!text)
     {
         view.renderLayoutLabel(layout, resolved, label);
         return resolved.height;
     }
 
-    const float fontScale = snappedHudFontScale(resolved.scale * std::max(0.1f, layout.textScale));
-    const float textWidthScaled =
-        std::max(0.0f, resolved.width - std::abs(layout.textPadX * resolved.scale) * 2.0f);
-    const float textWrapWidth = textWidthScaled / std::max(1.0f, fontScale);
-    std::vector<std::string> wrappedLines = view.wrapHudTextToWidth(*font, label, textWrapWidth);
-
-    if (wrappedLines.empty())
+    if (!useTopicPanelMetrics)
     {
-        wrappedLines.push_back(label);
+        // Resident cards and map transitions retain their separate authored layout.
+        const float wrapWidth = std::max(0.0f,
+            resolved.width - 2.0f * std::abs(layout.textPadX * resolved.scale));
+        text->lines = view.wrapHudTextToWidth(text->font, label, wrapWidth / std::max(1.0f, text->fontScale));
+        if (text->lines.empty())
+        {
+            text->lines.push_back(label);
+        }
+        text->lineHeight = text->font.fontHeight * text->fontScale;
+        text->lineAdvance = std::max(1, text->font.fontHeight - 3) * text->fontScale;
+        text->height = text->lineHeight + static_cast<float>(text->lines.size() - 1) * text->lineAdvance;
     }
 
-    const float lineHeight = static_cast<float>(font->fontHeight) * fontScale;
-    const float lineAdvance = dialogueTitleLineAdvance(*font, fontScale);
-    const float textHeight = lineHeight + static_cast<float>(wrappedLines.size() - 1) * lineAdvance;
+    const float textHeight = text->height;
     const float startY = resolved.y + std::max(0.0f, (resolved.height - textHeight) * 0.5f);
     GameplayScreenRuntime::HudLayoutElement lineLayout = layout;
     lineLayout.textAlignX = UiLayoutManager::TextAlignX::Center;
     lineLayout.textAlignY = UiLayoutManager::TextAlignY::Middle;
 
-    for (size_t lineIndex = 0; lineIndex < wrappedLines.size(); ++lineIndex)
+    for (size_t lineIndex = 0; lineIndex < text->lines.size(); ++lineIndex)
     {
         GameplayScreenRuntime::ResolvedHudLayoutElement resolvedLine = resolved;
-        resolvedLine.y = startY + static_cast<float>(lineIndex) * lineAdvance;
-        resolvedLine.height = lineHeight;
-        view.renderLayoutLabel(lineLayout, resolvedLine, wrappedLines[lineIndex]);
+        resolvedLine.y = startY + static_cast<float>(lineIndex) * text->lineAdvance;
+        resolvedLine.height = text->lineHeight;
+        view.renderLayoutLabel(lineLayout, resolvedLine, text->lines[lineIndex]);
     }
 
     return textHeight;
@@ -2005,7 +2004,8 @@ void GameplayDialogueRenderer::renderDialogueEventPanel(
                     view,
                     *pEffectiveHouseTitleLayout,
                     resolvedHouseTitle,
-                    houseTitle);
+                    houseTitle,
+                    !isResidentSelectionMode && !isTransitionDialog);
             resolvedHouseTitle.height = std::max(resolvedHouseTitle.height, renderedTitleHeight);
         }
 
@@ -2026,6 +2026,8 @@ void GameplayDialogueRenderer::renderDialogueEventPanel(
          nameOffsetY,
          nameScale,
          panelScale,
+         isResidentSelectionMode,
+         isTransitionDialog,
          portraitAreaHeight,
          portraitAreaWidth,
          portraitBorderHeight,
@@ -2147,7 +2149,8 @@ void GameplayDialogueRenderer::renderDialogueEventPanel(
                 resolvedName.height = nameHeight;
                 resolvedName.scale = nameScale;
                 const float renderedNameHeight =
-                    renderWrappedCenteredDialogueTitle(view, *pNpcNameLayout, resolvedName, name);
+                    renderWrappedCenteredDialogueTitle(view, *pNpcNameLayout, resolvedName, name,
+                        !isResidentSelectionMode && !isTransitionDialog);
                 nextY = resolvedName.y + std::max(resolvedName.height, renderedNameHeight);
             }
 
@@ -2289,9 +2292,7 @@ void GameplayDialogueRenderer::renderDialogueEventPanel(
             return;
         }
 
-        if (pTopicRowLayout != nullptr
-            && ((!suppressServiceTopicsForShopOverlay && !view.activeEventDialog().actions.empty())
-                || hoveredHouseServiceTopicText.has_value()))
+        if (pTopicRowLayout != nullptr && hoveredHouseServiceTopicText.has_value())
         {
             const std::optional<GameplayScreenRuntime::HudFontHandle> topicFont =
                 view.findHudFont(pTopicRowLayout->fontName);
@@ -2435,6 +2436,82 @@ void GameplayDialogueRenderer::renderDialogueEventPanel(
                 }
 
                 rowY += actionRowHeights[actionIndex] + rowGap;
+            }
+        }
+
+        if (pTopicRowLayout != nullptr && !hoveredHouseServiceTopicText
+            && !suppressServiceTopicsForShopOverlay && !view.activeEventDialog().actions.empty()
+            && shouldRenderInCurrentPass(renderAboveHud, hudZThreshold, pTopicRowLayout->zIndex))
+        {
+            const std::optional<DialogueTopicLayout> topics = resolveDialogueTopicLayout(view, width, height);
+            if (!topics)
+            {
+                return;
+            }
+            const auto renderText = [&view](const DialogueTopicRow &row, uint32_t color)
+            {
+                bgfx::TextureHandle colored = view.ensureHudFontMainTextureColor(row.text.font, color);
+                if (!bgfx::isValid(colored))
+                {
+                    colored = row.text.font.mainTextureHandle;
+                }
+                float lineY = row.textRect.y;
+                for (const std::string &line : row.text.lines)
+                {
+                    float lineWidth = view.measureHudTextWidth(row.text.font, line) * row.text.fontScale;
+#if defined(__APPLE__)
+                    if (hasUtf8MultibyteText(line))
+                    {
+                        const std::optional<Engine::AppleTextImageSize> imageSize = Engine::measureAppleTextImageSize(
+                            line, row.text.font.fontHeight * row.text.fontScale);
+                        if (imageSize)
+                        {
+                            lineWidth = imageSize->width + std::max(1.0f, row.text.fontScale);
+                        }
+                    }
+#endif
+                    const float lineX = std::round(row.textRect.x + (row.textRect.width - lineWidth) * 0.5f);
+                    view.renderHudFontLayer(row.text.font, row.text.font.shadowTextureHandle,
+                        line, lineX, std::round(lineY), row.text.fontScale);
+                    view.renderHudFontLayer(row.text.font, colored,
+                        line, lineX, std::round(lineY), row.text.fontScale);
+                    lineY += row.text.lineAdvance;
+                }
+            };
+            for (const DialogueTopicRow &row : topics->pages[topics->pageIndex].rows)
+            {
+                const bool hovered = view.isPointerInsideResolvedElement(row.rect, dialogMouseX, dialogMouseY);
+                renderText(row, hovered ? HoveredDialogueTopicTextColorAbgr : pTopicRowLayout->textColorAbgr);
+            }
+            if (topics->pages.size() > 1)
+            {
+                const auto renderPageButton = [&view, pTopicRowLayout, dialogMouseX, dialogMouseY](
+                                                  const GameplayResolvedHudLayoutElement &rect,
+                                                  const std::string &label, bool enabled)
+                {
+                    const bool hovered = enabled
+                        && view.isPointerInsideResolvedElement(rect, dialogMouseX, dialogMouseY);
+                    const uint32_t color = hovered ? 0xff395d7au : 0xff203346u;
+                    const std::optional<GameplayHudTextureHandle> texture =
+                        view.gameplayUiRuntime().ensureSolidHudTextureLoaded(
+                            "__dialogue_topic_page_button_" + std::to_string(color), color);
+                    if (texture)
+                    {
+                        view.submitHudTexturedQuad(*texture, rect.x, rect.y, rect.width, rect.height);
+                    }
+                    UiLayoutManager::LayoutElement labelStyle = *pTopicRowLayout;
+                    labelStyle.textPadX = 0.0f;
+                    labelStyle.textPadY = 0.0f;
+                    labelStyle.textColorAbgr = enabled ? 0xff9bffffu : 0xff6a899cu;
+                    view.renderLayoutLabel(labelStyle, rect, label);
+                };
+                renderPageButton(topics->previousButton, "<", topics->pageIndex > 0);
+                renderPageButton(topics->nextButton, ">", topics->pageIndex + 1 < topics->pages.size());
+                UiLayoutManager::LayoutElement pageStyle = *pTopicRowLayout;
+                pageStyle.textPadX = 0.0f;
+                pageStyle.textPadY = 0.0f;
+                view.renderLayoutLabel(pageStyle, topics->pageLabel,
+                    std::to_string(topics->pageIndex + 1) + "/" + std::to_string(topics->pages.size()));
             }
         }
     }

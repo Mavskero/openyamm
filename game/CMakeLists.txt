@@ -228,6 +228,7 @@ add_library(openyamm_game STATIC
     tables/TextureFrameTable.cpp
     outdoor/OutdoorGameView.cpp
     ui/GameplayDialogueRenderer.cpp
+    ui/DialogueTopicLayout.cpp
     ui/GameplayHudRenderer.cpp
     ui/GameplayHudCommon.cpp
     ui/GameplayHudOverlaySupport.cpp
@@ -238,6 +239,7 @@ add_library(openyamm_game STATIC
     gameplay/GameplaySpeechRules.cpp
     gameplay/GameplayScreenRuntime.cpp
     ui/GameplayPartyOverlayRenderer.cpp
+    ui/ReadableScrollLayout.cpp
     ui/GameplayUiOverlayOrchestrator.cpp
     ui/GameplayUiRuntime.cpp
     ui/KeyboardScreenLayout.cpp

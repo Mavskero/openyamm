@@ -1,0 +1,60 @@
+{
+  "reviewed_at": "2026-10-29T04:11:40.082332+00:00",
+  "method": "Main agent inspected all9 actual Metal PNGs through view_image; PNGs converted losslessly from BMP via sips",
+  "images": [
+    {
+      "file": "local-data/validation/ui-function-completion-191/actual-007/scroll-first-page.png",
+      "sha256": "c49272ecb4c678abdf11c0299ec12317e7b253c9618fa8f2a428377db9b6f598",
+      "accepted": true,
+      "observation": "Two-page reader has symmetric margins; title and all first-page lines are readable, controls inside panel."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/actual-007/scroll-last-page.png",
+      "sha256": "021e1fb159c8db690d8c607dcb1b59aaeb83ef30502849c8dbf03584f01cb7ee",
+      "accepted": true,
+      "observation": "Page2 continues the prior sentence and includes the original final signature; no text clipping."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/actual-007/scroll-closed-gameplay.png",
+      "sha256": "7685e8f10f7678f15dd8ee0b159e8967f3c776c5db7b8edb275d207d17303ea5",
+      "accepted": true,
+      "observation": "Reader closed; gameplay HUD visible, no unintended character/menu overlay."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/actual-007/dialogue-long-chinese-topic.png",
+      "sha256": "088391d8ffce963c1a96e101e768f0549236378120173930e39bae6eae0fc6bd",
+      "accepted": true,
+      "observation": "Original heart-of-Jadame option spans three complete separated lines; next option remains readable."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/actual-007/load-directory-error.png",
+      "sha256": "94bca657f1f72b905c6e0ce0d3eea37a3945f46842f27c605181380f5e318230",
+      "accepted": true,
+      "observation": "Cannot-access-save-directory error visible in red; cancellation button remains available."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/actual-007/save-write-error.png",
+      "sha256": "324c09a6ff5196f79514c7b2e54a02e66940911875781505eade028e676eeae2",
+      "accepted": true,
+      "observation": "Actual asynchronous write error visible in red with original-save preservation message; cancel available."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/actual-007/credits-first-page.png",
+      "sha256": "d2c9a33af096b159f12d8110d60d198a1957f92e3baf5450a7a50cc77fb74d37",
+      "accepted": true,
+      "observation": "Imported original names/headings, page1/12, disabled Previous and active Next/Return visible."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/actual-007/credits-next-page.png",
+      "sha256": "bad2b159a5f6c1910e0d10aaadc6d8af902997ddbc0d7f3be76df4aa1cfccec9",
+      "accepted": true,
+      "observation": "Page2/12 shows next original names with no bottom overlap; Previous/Next/Return visible."
+    },
+    {
+      "file": "local-data/validation/ui-function-completion-191/actual-007/credits-returned-menu.png",
+      "sha256": "f173fc664261ef1b0e9cdc3cbd69fad8233eca1fe4962e3c897fc8e965791189",
+      "accepted": true,
+      "observation": "Credits closed; original menu restored without activating a lower button."
+    }
+  ]
+}

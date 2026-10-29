@@ -49,6 +49,23 @@ constexpr std::array<SDL_Scancode, 9> KeypadNumberHotkeyScancodes = {{
     SDL_SCANCODE_KP_9
 }};
 
+GameplayInputFrame fallbackStandardUiInput(const GameplayStandardUiInputConfig &config)
+{
+    GameplayInputFrame input = {};
+    input.screenWidth = config.width;
+    input.screenHeight = config.height;
+    input.pointerX = config.pointerX;
+    input.pointerY = config.pointerY;
+    input.mouseWheelDelta = config.mouseWheelDelta;
+    input.leftMouseButton.held = config.leftButtonPressed;
+    input.rightMouseButton.held = config.rightButtonPressed;
+    if (config.pKeyboardState != nullptr)
+    {
+        std::copy_n(config.pKeyboardState, SDL_SCANCODE_COUNT, input.keyboardHeld.begin());
+    }
+    return input;
+}
+
 bool isScancodeNewlyPressed(
     const GameplayInputFrame &input,
     const std::array<uint8_t, SDL_SCANCODE_COUNT> &previousKeyboardState,
@@ -635,6 +652,10 @@ GameplayUiOverlayInputResult GameplayScreenController::handleSharedOverlayInput(
         input,
         config);
 
+    // Character item use can open a persistent reader late in this dispatch.
+    const GameplayUiController::ReadableScrollOverlayState &reader = context.readableScrollOverlayReadOnly();
+    result.journalInputConsumed = result.journalInputConsumed || (reader.active && reader.persistent);
+
     if (result.journalInputConsumed && !config.activeEventDialog)
     {
         context.resetDialogueOverlayInteractionState();
@@ -647,29 +668,14 @@ GameplayUiOverlayInputResult GameplayScreenController::handleStandardUiInput(
     GameplayScreenRuntime &context,
     const GameplayStandardUiInputConfig &config)
 {
-    GameplayInputFrame fallbackInput = {};
-
-    if (config.pInputFrame == nullptr)
-    {
-        fallbackInput.screenWidth = config.width;
-        fallbackInput.screenHeight = config.height;
-        fallbackInput.pointerX = config.pointerX;
-        fallbackInput.pointerY = config.pointerY;
-        fallbackInput.mouseWheelDelta = config.mouseWheelDelta;
-        fallbackInput.leftMouseButton.held = config.leftButtonPressed;
-        fallbackInput.rightMouseButton.held = config.rightButtonPressed;
-
-        if (config.pKeyboardState != nullptr)
-        {
-            for (int scancode = 0; scancode < SDL_SCANCODE_COUNT; ++scancode)
-            {
-                fallbackInput.keyboardHeld[scancode] = config.pKeyboardState[scancode];
-            }
-        }
-    }
-
+    const GameplayInputFrame fallbackInput = config.pInputFrame == nullptr ? fallbackStandardUiInput(config)
+        : GameplayInputFrame{};
     const GameplayInputFrame &input =
         config.pInputFrame != nullptr ? *config.pInputFrame : fallbackInput;
+    if (GameplayPartyOverlayInputController::handleReadableScrollOverlayInput(context, input))
+    {
+        return {.journalInputConsumed = true};
+    }
     const bool *pKeyboardState = input.keyboardState();
     IGameplayWorldRuntime *pWorldRuntime = context.worldRuntime();
     const bool hasActiveLootView =
@@ -743,6 +749,11 @@ GameplayUiOverlayInputResult GameplayScreenController::handleStandardUiInput(
     else
     {
         handlePartyPortraitInput(context, GameplayPartyPortraitInputConfig{});
+    }
+
+    if (GameplayPartyOverlayInputController::handleReadableScrollOverlayInput(context, input))
+    {
+        return {.journalInputConsumed = true};
     }
 
     const bool canUsePartyNumberHotkeys =
@@ -914,6 +925,12 @@ GameplayStandardWorldInputGateResult GameplayScreenController::gateStandardWorld
     GameplayScreenRuntime &context,
     const GameplayStandardWorldInputGateConfig &config)
 {
+    const GameplayUiController::ReadableScrollOverlayState &reader = context.readableScrollOverlayReadOnly();
+    if ((reader.active && reader.persistent) || reader.blockInputUntilRelease)
+    {
+        return {.blocked = true};
+    }
+
     // The character overlay owns its doll/portrait reader. Outside that overlay,
     // dismiss on right-button release even when a house or other modal blocks world input.
     if (config.closeReadableScrollOverlay && !context.characterScreenReadOnly().open)
@@ -1120,6 +1137,16 @@ void GameplayScreenController::processStandardUiFrame(
     const GameplayStandardUiFrameConfig &config)
 {
     updateSharedFrameState(context, width, height, deltaSeconds, config.frame);
+    const GameplayInputFrame fallbackInput = config.input.pInputFrame == nullptr
+        ? fallbackStandardUiInput(config.input) : GameplayInputFrame{};
+    const GameplayInputFrame &input = config.input.pInputFrame != nullptr ? *config.input.pInputFrame : fallbackInput;
+    if (GameplayPartyOverlayInputController::handleReadableScrollOverlayInput(context, input))
+    {
+        renderStandardUi(context, width, height, config.render);
+        context.updatePreviousKeyboardStateSnapshot(input.keyboardState());
+        return;
+    }
+
     const bool updateHudItemInspectOverlay =
         config.updateHudItemInspectOverlayFromMouse
         && canUpdateStandardHudItemInspectOverlayFromMouse(
@@ -1148,6 +1175,15 @@ GameplayUiOverlayInputResult GameplayScreenController::processStandardUiInputFra
     GameplayScreenRuntime &context,
     const GameplayStandardUiInputFrameConfig &config)
 {
+    const GameplayInputFrame fallbackInput = config.input.pInputFrame == nullptr
+        ? fallbackStandardUiInput(config.input) : GameplayInputFrame{};
+    const GameplayInputFrame &input = config.input.pInputFrame != nullptr ? *config.input.pInputFrame : fallbackInput;
+    if (GameplayPartyOverlayInputController::handleReadableScrollOverlayInput(context, input))
+    {
+        context.updatePreviousKeyboardStateSnapshot(input.keyboardState());
+        return {.journalInputConsumed = true};
+    }
+
     GameplayInputController::handleStandardUiHotkeys(context, config.hotkeys);
     const GameplayUiOverlayInputResult result = handleStandardUiInput(context, config.input);
     const bool *pKeyboardState = config.hotkeys.pKeyboardState != nullptr

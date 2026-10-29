@@ -231,7 +231,8 @@ private:
     bool quickSaveToPath(
         const std::filesystem::path &path,
         const std::string &saveName = "",
-        const std::vector<uint8_t> &previewBmp = {});
+        const std::vector<uint8_t> &previewBmp = {},
+        std::string *pError = nullptr);
     bool quickLoadFromPath(const std::filesystem::path &path, bool initializeView);
     void openMainMenuScreen();
     void openLoadGameScreen(bool returnToGameplayMenu = false, const std::string &source = "main_menu");

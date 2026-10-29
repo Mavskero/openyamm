@@ -13,16 +13,26 @@
 
 #include <algorithm>
 #include <bitset>
+#include <cerrno>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <limits>
+#include <system_error>
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#if defined(_WIN32)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace OpenYAMM::Game
 {
@@ -6069,6 +6079,112 @@ bool validateSavedBreachMercenaries(const GameSaveData &data, std::string &error
     return true;
 }
 
+namespace
+{
+struct PendingSaveFile
+{
+    std::filesystem::path path;
+    std::FILE *pFile = nullptr;
+
+    PendingSaveFile() = default;
+    PendingSaveFile(const PendingSaveFile &) = delete;
+    PendingSaveFile &operator=(const PendingSaveFile &) = delete;
+
+    ~PendingSaveFile()
+    {
+        if (pFile != nullptr)
+        {
+            std::fclose(pFile);
+        }
+        if (!path.empty())
+        {
+            std::error_code ignored;
+            std::filesystem::remove(path, ignored);
+        }
+    }
+};
+
+bool writeSaveBytesAtomically(
+    const std::filesystem::path &path, const std::vector<uint8_t> &bytes, std::string &error)
+{
+    PendingSaveFile pending;
+    const auto fail = [&error](const char *pMessage)
+    {
+        const int failure = errno;
+        error = pMessage;
+        if (failure != 0)
+        {
+            error += ": " + std::error_code(failure, std::generic_category()).message();
+        }
+        return false;
+    };
+    const int64_t stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    for (unsigned attempt = 0; attempt < 128; ++attempt)
+    {
+        std::filesystem::path candidate = path;
+        candidate += ".pending-" + std::to_string(stamp) + "-" + std::to_string(attempt);
+        errno = 0;
+        // Exclusive creation is authoritative. A stale file or another process never gets truncated.
+#if defined(_WIN32)
+        std::FILE *pFile = _wfopen(candidate.c_str(), L"wbx");
+#else
+        std::FILE *pFile = std::fopen(candidate.c_str(), "wbx");
+#endif
+        if (pFile != nullptr)
+        {
+            pending.path = std::move(candidate);
+            pending.pFile = pFile;
+            break;
+        }
+        if (errno != EEXIST)
+        {
+            return fail("could not create temporary save file");
+        }
+    }
+    if (pending.pFile == nullptr)
+    {
+        error = "could not create a unique temporary save file";
+        return false;
+    }
+
+    errno = 0;
+    if (std::fwrite(bytes.data(), 1, bytes.size(), pending.pFile) != bytes.size())
+    {
+        return fail("could not write temporary save file");
+    }
+    if (std::fflush(pending.pFile) != 0)
+    {
+        return fail("could not flush temporary save file");
+    }
+#if defined(_WIN32)
+    const int syncResult = _commit(_fileno(pending.pFile));
+#else
+    const int syncResult = fsync(fileno(pending.pFile));
+#endif
+    if (syncResult != 0)
+    {
+        return fail("could not synchronize temporary save file");
+    }
+    const int closeResult = std::fclose(pending.pFile);
+    pending.pFile = nullptr;
+    if (closeResult != 0)
+    {
+        return fail("could not close temporary save file");
+    }
+
+    // Same-directory rename atomically replaces a regular destination; never remove the original first.
+    std::error_code renameError;
+    std::filesystem::rename(pending.path, path, renameError);
+    if (renameError)
+    {
+        error = "could not replace save file: " + renameError.message();
+        return false;
+    }
+    pending.path.clear();
+    return true;
+}
+}
+
 bool saveGameDataToPath(const std::filesystem::path &path, const GameSaveData &data, std::string &error,
     const BreachAlvarFriendActorRules *pCompanionRules, const BreachMercenaryProfile *pMercenaryProfile)
 {
@@ -6143,25 +6259,48 @@ bool saveGameDataToPath(const std::filesystem::path &path, const GameSaveData &d
         return false;
     }
 
-    std::filesystem::create_directories(path.parent_path());
-    std::ofstream output(path, std::ios::binary);
-
-    if (!output)
+    std::error_code pathError;
+    if (path.has_parent_path())
     {
-        error = "could not open save file for writing";
+        std::filesystem::create_directories(path.parent_path(), pathError);
+        if (pathError)
+        {
+            error = "could not access save directory: " + pathError.message();
+            return false;
+        }
+    }
+    const std::filesystem::file_status targetStatus = std::filesystem::symlink_status(path, pathError);
+    if (pathError && pathError != std::errc::no_such_file_or_directory)
+    {
+        error = "could not inspect save file: " + pathError.message();
         return false;
     }
-
-    const std::vector<uint8_t> &bytes = writer.bytes();
-    output.write(reinterpret_cast<const char *>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
-
-    if (!output.good())
+    if (std::filesystem::exists(targetStatus))
     {
-        error = "could not write save file";
-        return false;
+        pathError.clear();
+        if (!std::filesystem::is_regular_file(path, pathError) || pathError)
+        {
+            error = "existing save target is not a readable regular file; original left unchanged";
+            return false;
+        }
+        std::string existingError;
+        if (!loadGameDataFromPath(path, existingError))
+        {
+            error = "existing save could not be read; original left unchanged: " + existingError;
+            return false;
+        }
     }
-
-    return true;
+    std::filesystem::path destination = path;
+    if (std::filesystem::is_symlink(targetStatus))
+    {
+        destination = std::filesystem::canonical(path, pathError);
+        if (pathError)
+        {
+            error = "could not resolve save target: " + pathError.message();
+            return false;
+        }
+    }
+    return writeSaveBytesAtomically(destination, writer.bytes(), error);
 }
 
 namespace

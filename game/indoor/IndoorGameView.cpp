@@ -1101,14 +1101,32 @@ void IndoorGameView::render(int width, int height, const GameplayInputFrame &inp
 
     GameplayScreenRuntime &overlayContext = m_gameSession.gameplayScreenRuntime();
 
-    if (m_pendingSavePreviewCapture.active
-        && m_pendingSavePreviewCapture.screenshotRequested
-        && m_gameSession.canSaveGameToPath())
+    if (m_pendingSavePreviewCapture.active)
     {
+        const auto reportSaveFailure = [this, &overlayContext](const std::string &reason)
+        {
+            const std::string message = "保存失败：" + (reason.empty() ? "无法写入存档" : reason);
+            GameplayUiController::SaveGameScreenState &saveScreen = overlayContext.saveGameScreenState();
+            if (m_pendingSavePreviewCapture.closeUiOnSuccess && saveScreen.active)
+            {
+                saveScreen.errorText = message;
+            }
+            else
+            {
+                overlayContext.setStatusBarEvent(message, 5.0f, GameplayUiController::StatusBarEventPriority::High);
+            }
+        };
         const std::optional<Engine::BgfxContext::ScreenshotCapture> screenshot =
-            Engine::BgfxContext::consumeScreenshot(m_pendingSavePreviewCapture.requestId);
+            m_pendingSavePreviewCapture.screenshotRequested
+                ? Engine::BgfxContext::consumeScreenshot(m_pendingSavePreviewCapture.requestId)
+                : std::nullopt;
 
-        if (screenshot)
+        if (!m_gameSession.canSaveGameToPath())
+        {
+            reportSaveFailure("当前无法保存游戏");
+            m_pendingSavePreviewCapture = {};
+        }
+        else if (screenshot)
         {
             const std::vector<uint8_t> previewPixels =
                 SavePreviewImage::cropAndScaleBgraPreview(
@@ -1136,11 +1154,16 @@ void IndoorGameView::render(int width, int height, const GameplayInputFrame &inp
                     screenRuntime.closeMenuOverlay();
                 }
             }
+            else
+            {
+                reportSaveFailure(previewBmp.empty() ? "无法生成存档预览" : "无法写入，原档未改动");
+            }
 
             m_pendingSavePreviewCapture = {};
         }
         else if (SDL_GetTicks() - m_pendingSavePreviewCapture.startedTicks > 3000u)
         {
+            reportSaveFailure("生成存档预览超时，请重试");
             m_pendingSavePreviewCapture = {};
         }
     }
@@ -2025,12 +2048,28 @@ bool IndoorGameView::beginSaveWithPreview(
     const std::string &saveName,
     bool closeUiOnSuccess)
 {
+    GameplayScreenRuntime &screenRuntime = m_gameSession.gameplayScreenRuntime();
     if (!m_gameSession.canSaveGameToPath()
         || (m_map && !m_map->runtimeRestrictions.allowSaveGame && !isAutosavePath(path)))
     {
+        const std::string message = !m_gameSession.canSaveGameToPath()
+            ? "保存失败：当前无法保存游戏"
+            : "保存失败：此处不能保存游戏";
+        if (closeUiOnSuccess && screenRuntime.saveGameScreenState().active)
+        {
+            screenRuntime.saveGameScreenState().errorText = message;
+        }
+        else
+        {
+            screenRuntime.setStatusBarEvent(message, 5.0f, GameplayUiController::StatusBarEventPriority::High);
+        }
         return false;
     }
 
+    if (closeUiOnSuccess && screenRuntime.saveGameScreenState().active)
+    {
+        screenRuntime.saveGameScreenState().errorText.clear();
+    }
     m_pendingSavePreviewCapture = {};
     m_pendingSavePreviewCapture.active = true;
     m_pendingSavePreviewCapture.screenshotRequested = false;

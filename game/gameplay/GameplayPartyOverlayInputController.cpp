@@ -19,6 +19,7 @@
 #include "game/ui/GameplayHudCommon.h"
 #include "game/ui/CharacterSkillsLayout.h"
 #include "game/ui/CharacterSkillRows.h"
+#include "game/ui/ReadableScrollLayout.h"
 #include "game/ui/SpellbookUiLayout.h"
 #include "game/StringUtils.h"
 
@@ -419,11 +420,177 @@ void handlePointerClickRelease(
 
 } // namespace
 
+bool GameplayPartyOverlayInputController::handleReadableScrollOverlayInput(
+    GameplayScreenRuntime &context,
+    const GameplayInputFrame &input)
+{
+    GameplayUiController::ReadableScrollOverlayState &overlay = context.readableScrollOverlay();
+    const bool pointerHeld = input.leftMouseButton.held || input.rightMouseButton.held
+        || input.middleMouseButton.held || input.mobileTouchDragActive;
+    const bool anyInputHeld = pointerHeld
+        || std::any_of(input.keyboardHeld.begin(), input.keyboardHeld.end(), [](bool held) { return held; });
+    const auto cancelUnderlyingPointerGestures = [&context, &input]()
+    {
+        GameplayOverlayInteractionState &state = context.interactionState();
+        state.characterClickLatch = false;
+        state.characterPressedTarget = {};
+        state.characterTouchItemDragActive = false;
+        state.partyPortraitClickLatch = false;
+        state.partyPortraitRightClickItemUseLatch = false;
+        state.partyPortraitPressedIndex.reset();
+        state.lastPartyPortraitClickedIndex.reset();
+        state.gameplayHudClickLatch = false;
+        state.gameplayHudPressedTarget = {};
+        state.gameplayHudPressedContextActionActive = false;
+        state.gameplayHudPressedContextActionHit = {};
+        state.gameplayHudAttackRequested = false;
+        state.gameplayHudQuickCastRequested = false;
+        state.gameplayHudTriggerRequested = false;
+        state.gameplayHudDropHeldItemRequested = false;
+        state.gameplayHudSpellTargetConfirmRequested = false;
+        state.gameplayHudSpellTargetCancelRequested = false;
+        state.inventoryNestedOverlayClickLatch = false;
+        state.inventoryNestedOverlayPressedTarget = {};
+        state.inventoryNestedOverlayItemClickLatch = false;
+        state.chestClickLatch = false;
+        state.chestItemClickLatch = false;
+        state.chestPressedTarget = {};
+        state.dialogueClickLatch = false;
+        state.dialoguePressedTarget = {};
+        state.houseShopClickLatch = false;
+        state.houseShopPressedSlotIndex = static_cast<size_t>(-1);
+        state.alwaysRunToggleLatch = false;
+        state.turnBasedToggleLatch = false;
+        state.adventurersInnToggleLatch = false;
+        state.restToggleLatch = false;
+        context.characterScreen().skillDragActive = false;
+        state.menuToggleLatch = input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
+        state.closeOverlayLatch = input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
+    };
+
+    if (!overlay.active)
+    {
+        if (!overlay.blockInputUntilRelease)
+        {
+            return false;
+        }
+
+        // The close key or touch can outlive the reader. Consume its release frame too.
+        overlay.blockInputUntilRelease = anyInputHeld;
+        cancelUnderlyingPointerGestures();
+        return true;
+    }
+
+    const std::optional<ReadableScrollLayout> layout =
+        resolveReadableScrollLayout(context, input.screenWidth, input.screenHeight);
+    if (layout && layout->pageCount > 1)
+    {
+        overlay.persistent = true;
+    }
+    if (!overlay.persistent)
+    {
+        return false;
+    }
+
+    cancelUnderlyingPointerGestures();
+    if (!overlay.inputInitialized)
+    {
+        // Opening on a held portrait/doll must not click a reader button on release.
+        overlay.inputInitialized = true;
+        overlay.openingGestureActive = pointerHeld;
+        overlay.pointerDown = false;
+        overlay.pressedTarget = GameplayUiController::ReadableScrollOverlayState::PointerTarget::None;
+        return true;
+    }
+    if (overlay.openingGestureActive)
+    {
+        overlay.openingGestureActive = pointerHeld;
+        return true;
+    }
+
+    const auto closeReader = [&context, &anyInputHeld]()
+    {
+        context.itemService().closeReadableScrollOverlay();
+        context.readableScrollOverlay().blockInputUntilRelease = anyInputHeld;
+    };
+    if (isScancodeNewlyPressed(context, input, SDL_SCANCODE_ESCAPE))
+    {
+        closeReader();
+        return true;
+    }
+    if (!layout)
+    {
+        return true;
+    }
+
+    overlay.pageIndex = std::min(overlay.pageIndex, layout->pageCount - 1);
+    const auto previousPage = [&overlay]()
+    {
+        if (overlay.pageIndex > 0)
+        {
+            --overlay.pageIndex;
+        }
+    };
+    const auto nextPage = [&overlay, &layout]()
+    {
+        if (overlay.pageIndex + 1 < layout->pageCount)
+        {
+            ++overlay.pageIndex;
+        }
+    };
+
+    if (input.mouseWheelDelta > 0.0f
+        || isScancodeNewlyPressed(context, input, SDL_SCANCODE_PAGEUP)
+        || isScancodeNewlyPressed(context, input, SDL_SCANCODE_LEFT))
+    {
+        previousPage();
+    }
+    else if (input.mouseWheelDelta < 0.0f
+        || isScancodeNewlyPressed(context, input, SDL_SCANCODE_PAGEDOWN)
+        || isScancodeNewlyPressed(context, input, SDL_SCANCODE_RIGHT))
+    {
+        nextPage();
+    }
+
+    using PointerTarget = GameplayUiController::ReadableScrollOverlayState::PointerTarget;
+    const auto pointerTarget = [&context, &input, &layout]()
+    {
+        const auto containsPointer = [&context, &input](const GameplayResolvedHudLayoutElement &rect)
+        {
+            return rect.width > 0.0f && rect.height > 0.0f
+                && context.isPointerInsideResolvedElement(rect, input.pointerX, input.pointerY);
+        };
+        if (containsPointer(layout->previousButton)) return PointerTarget::PreviousPage;
+        if (containsPointer(layout->nextButton)) return PointerTarget::NextPage;
+        if (containsPointer(layout->closeButton)) return PointerTarget::Close;
+        return PointerTarget::None;
+    };
+
+    if (input.leftMouseButton.pressed || (input.leftMouseButton.held && !overlay.pointerDown))
+    {
+        overlay.pressedTarget = pointerTarget();
+        overlay.pointerDown = true;
+    }
+    if (input.leftMouseButton.released || (!input.leftMouseButton.held && overlay.pointerDown))
+    {
+        const PointerTarget releasedTarget = pointerTarget();
+        const PointerTarget pressedTarget = overlay.pressedTarget;
+        overlay.pointerDown = false;
+        overlay.pressedTarget = PointerTarget::None;
+        if (releasedTarget == pressedTarget)
+        {
+            if (releasedTarget == PointerTarget::PreviousPage) previousPage();
+            else if (releasedTarget == PointerTarget::NextPage) nextPage();
+            else if (releasedTarget == PointerTarget::Close) closeReader();
+        }
+    }
+    return true;
+}
+
 void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
     GameplayScreenRuntime &context,
     const GameplayInputFrame &input)
 {
-    const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
 
@@ -437,7 +604,8 @@ void GameplayPartyOverlayInputController::handleUtilitySpellOverlayInput(
         return;
     }
 
-    const bool closePressed = pKeyboardState[SDL_SCANCODE_ESCAPE];
+    const bool closePressed = input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0
+        || input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
 
     if (closePressed)
     {
@@ -955,20 +1123,28 @@ void GameplayPartyOverlayInputController::handleSpellbookOverlayInput(
     GameplayScreenRuntime &context,
     const GameplayInputFrame &input)
 {
+    const bool closePressed = input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0
+        || input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
     if (context.spellbook().inspectSelected && (input.leftMouseButton.pressed
-        || input.keyboardHeld[SDL_SCANCODE_ESCAPE]))
+        || closePressed))
     {
+        if (closePressed && context.interactionState().closeOverlayLatch)
+        {
+            return;
+        }
         context.spellbook().inspectSelected = false;
         context.spellInspectOverlay() = {};
         context.interactionState().spellbookPressedTarget = {};
         context.interactionState().spellbookClickLatch = input.leftMouseButton.held;
-        context.interactionState().closeOverlayLatch = input.keyboardHeld[SDL_SCANCODE_ESCAPE];
+        context.interactionState().closeOverlayLatch = closePressed;
+        if (closePressed)
+        {
+            latchGameplayMenuEscape(context);
+        }
         return;
     }
-    const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
-    const bool closePressed = pKeyboardState[SDL_SCANCODE_ESCAPE];
 
     if (closePressed)
     {
@@ -1381,6 +1557,11 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
     GameplayScreenRuntime &context,
     const GameplayInputFrame &input)
 {
+    if (handleReadableScrollOverlayInput(context, input))
+    {
+        return;
+    }
+
     const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
@@ -2233,12 +2414,18 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
     {
         // A portrait right-click may have opened a scroll earlier in this frame.
         // The doll's left-button reader must not clear that still-held popup.
-        if (!input.rightMouseButton.held || !context.readableScrollOverlayReadOnly().active)
+        if (!context.readableScrollOverlayReadOnly().persistent
+            && (!input.rightMouseButton.held || !context.readableScrollOverlayReadOnly().active))
         {
             context.itemService().updateReadableScrollOverlayForHeldItem(
                 selectedPartyMemberIndex,
                 hoveredCharacterTarget,
                 isLeftMousePressed);
+        }
+
+        if (handleReadableScrollOverlayInput(context, input))
+        {
+            return;
         }
 
         if (rightMousePressed
@@ -2266,7 +2453,10 @@ void GameplayPartyOverlayInputController::handleCharacterOverlayInput(
     }
     else
     {
-        context.itemService().closeReadableScrollOverlay();
+        if (!context.readableScrollOverlayReadOnly().persistent)
+        {
+            context.itemService().closeReadableScrollOverlay();
+        }
     }
 
     const auto activateCharacterTarget =

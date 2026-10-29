@@ -248,9 +248,24 @@ public:
 
     struct ReadableScrollOverlayState
     {
+        enum class PointerTarget
+        {
+            None,
+            PreviousPage,
+            NextPage,
+            Close,
+        };
+
         bool active = false;
         std::string title;
         std::string body;
+        size_t pageIndex = 0;
+        bool persistent = false;
+        bool inputInitialized = false;
+        bool openingGestureActive = false;
+        bool pointerDown = false;
+        PointerTarget pressedTarget = PointerTarget::None;
+        bool blockInputUntilRelease = false;
     };
 
     struct SpellbookState

@@ -9,6 +9,7 @@
 #include <cctype>
 #include <cmath>
 #include <filesystem>
+#include <system_error>
 #include <vector>
 
 namespace OpenYAMM::Game
@@ -154,17 +155,33 @@ void refreshSaveGameSlots(
     const std::vector<MapStatsEntry> &mapEntries)
 {
     saveGameScreen.slots.clear();
-    std::filesystem::create_directories("saves");
+    saveGameScreen.errorText.clear();
+    std::error_code directoryError;
+    std::filesystem::create_directories("saves", directoryError);
+    if (directoryError)
+    {
+        saveGameScreen.errorText = "无法访问存档目录";
+    }
 
     for (size_t index = 0; index < GameplaySaveLoadVisibleSlotCount; ++index)
     {
         GameplayUiController::SaveSlotSummary slot = {};
         slot.path = std::filesystem::path("saves") / ("save" + std::to_string(index + 1) + ".oysav");
 
-        if (std::filesystem::exists(slot.path))
+        std::error_code slotError;
+        const bool exists = !directoryError && std::filesystem::exists(slot.path, slotError);
+        if (directoryError || slotError)
+        {
+            slot.fileLabel = "不可用";
+            slot.locationName = "无法访问存档目录";
+            saveGameScreen.errorText = slot.locationName;
+        }
+        else if (exists)
         {
             std::string error;
-            const std::optional<GameSaveData> saveData = loadGameDataFromPath(slot.path, error);
+            const bool regularFile = std::filesystem::is_regular_file(slot.path, slotError);
+            const std::optional<GameSaveData> saveData = regularFile && !slotError
+                ? loadGameDataFromPath(slot.path, error) : std::nullopt;
 
             if (saveData)
             {
@@ -183,6 +200,13 @@ void refreshSaveGameSlots(
                         slot.previewHeight,
                         slot.previewPixelsBgra);
                 }
+            }
+            else
+            {
+                // An unreadable/corrupt slot is not empty and must never be replaced implicitly.
+                slot.fileLabel = "不可用";
+                slot.locationName = "存档无法读取，原文件已保留";
+                saveGameScreen.errorText = slot.locationName;
             }
         }
 
@@ -203,7 +227,6 @@ void refreshSaveGameSlots(
     saveGameScreen.editActive = false;
     saveGameScreen.editSlotIndex = 0;
     saveGameScreen.editBuffer.clear();
-    saveGameScreen.errorText.clear();
 }
 
 void refreshLoadGameSlots(
@@ -211,11 +234,29 @@ void refreshLoadGameSlots(
     const std::vector<MapStatsEntry> &mapEntries)
 {
     loadGameScreen.slots.clear();
-    std::filesystem::create_directories("saves");
-
-    for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator("saves"))
+    loadGameScreen.scrollOffset = 0;
+    std::error_code directoryError;
+    std::filesystem::create_directories("saves", directoryError);
+    if (directoryError)
     {
-        if (!entry.is_regular_file() || toLowerCopy(entry.path().extension().string()) != ".oysav")
+        loadGameScreen.selectedIndex = 0;
+        return;
+    }
+
+    const std::filesystem::directory_iterator end;
+    std::filesystem::directory_iterator entries("saves", directoryError);
+    while (!directoryError && entries != end)
+    {
+        const std::filesystem::directory_entry entry = *entries;
+        std::error_code entryError;
+        const bool regularFile = entry.is_regular_file(entryError);
+        entries.increment(directoryError);
+        if (entryError)
+        {
+            directoryError = entryError;
+            break;
+        }
+        if (!regularFile || toLowerCopy(entry.path().extension().string()) != ".oysav")
         {
             continue;
         }
@@ -247,6 +288,12 @@ void refreshLoadGameSlots(
         }
 
         loadGameScreen.slots.push_back(std::move(slot));
+    }
+    if (directoryError)
+    {
+        loadGameScreen.slots.clear();
+        loadGameScreen.selectedIndex = 0;
+        return;
     }
 
     std::sort(

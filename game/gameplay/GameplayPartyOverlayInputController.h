@@ -8,6 +8,9 @@ class GameplayScreenRuntime;
 class GameplayPartyOverlayInputController
 {
 public:
+    static bool handleReadableScrollOverlayInput(
+        GameplayScreenRuntime &context,
+        const GameplayInputFrame &input);
     static void handleUtilitySpellOverlayInput(
         GameplayScreenRuntime &context,
         const GameplayInputFrame &input);
