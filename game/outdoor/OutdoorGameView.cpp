@@ -3478,7 +3478,8 @@ void OutdoorGameView::render(int width, int height, const GameplayInputFrame &in
     updateActorInspectOverlayState(width, height, input);
     captureFrameTimingStage(overlayStageNanoseconds);
 
-    const bool worldCaptureRequired = captureSavePreviewThisFrame || captureLloydsBeaconPreviewThisFrame;
+    const bool worldCaptureRequired = captureSavePreviewThisFrame || captureLloydsBeaconPreviewThisFrame
+        || overlayContext.gameplayUiRuntime().worldPreviewCaptureRequested();
 
     if (!worldCaptureRequired
         && gameplayHudScreenFullyOccludesWorld(

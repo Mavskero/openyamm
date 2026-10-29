@@ -6,6 +6,7 @@ FetchContent_GetProperties(imgui SOURCE_DIR OPENYAMM_IMGUI_SOURCE_DIR)
 FetchContent_GetProperties(bgfx SOURCE_DIR OPENYAMM_BGFX_FETCH_SOURCE_DIR)
 
 add_library(openyamm_game STATIC
+    render/FramePresentation.cpp
     ui/AppleTextTextureCache.cpp
     ui/JournalTextLayout.cpp
     app/ScreenManager.cpp

@@ -135,6 +135,10 @@ public:
     bool ensureGameplayLayoutsLoaded(const GameplayUiController &uiController);
     bool ensureUiTextTableLoaded();
     const UiTextTable &uiTextTable() const;
+    void setVideoOptionsPreviewTexture(std::optional<GameplayHudTextureHandle> texture);
+    std::optional<GameplayHudTextureHandle> videoOptionsPreviewTexture() const;
+    void setWorldPreviewCaptureRequested(bool requested) { m_worldPreviewCaptureRequested = requested; }
+    bool worldPreviewCaptureRequested() const { return m_worldPreviewCaptureRequested; }
     void preloadReferencedAssets();
 
     GameplayAssetLoadCache &assetLoadCache();
@@ -398,6 +402,9 @@ private:
     std::vector<GameplayTownPortalDestination> m_townPortalDestinations;
     bool m_townPortalDestinationsLoaded = false;
     GameplayHudRenderBackend m_hudRenderBackend;
+    // Borrowed from the application's presentation renderer; this runtime never destroys it.
+    std::optional<GameplayHudTextureHandle> m_videoOptionsPreviewTexture;
+    bool m_worldPreviewCaptureRequested = false;
     std::vector<GameplayPortraitFxState> m_portraitFxStates;
     GameplayPortraitPresentationState m_portraitPresentationState;
     GameplayHudLoopingAnimationState m_flyBuffIconAnimationState;

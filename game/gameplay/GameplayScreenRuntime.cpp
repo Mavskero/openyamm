@@ -1909,6 +1909,7 @@ void GameplayScreenRuntime::closeKeyboardOverlayToMenu()
 
 void GameplayScreenRuntime::openVideoOptionsOverlay()
 {
+    gameplayUiRuntime().setWorldPreviewCaptureRequested(true);
     uiController().controlsScreen().active = false;
     interactionState().controlsToggleLatch = false;
     interactionState().controlsClickLatch = false;
@@ -1929,6 +1930,12 @@ void GameplayScreenRuntime::openVideoOptionsOverlay()
 
 void GameplayScreenRuntime::closeVideoOptionsOverlay()
 {
+    gameplayUiRuntime().setWorldPreviewCaptureRequested(false);
+    if (uiController().videoOptionsScreen().brightnessDirty)
+    {
+        uiController().videoOptionsScreen().brightnessDirty = false;
+        commitSettingsChange();
+    }
     uiController().videoOptionsScreen() = {};
     interactionState().videoOptionsToggleLatch = false;
     interactionState().videoOptionsClickLatch = false;

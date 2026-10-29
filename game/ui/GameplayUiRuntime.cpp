@@ -397,6 +397,8 @@ void GameplayUiRuntime::clearHudLayoutLookupCaches() const
 
 void GameplayUiRuntime::clear()
 {
+    m_videoOptionsPreviewTexture.reset();
+    m_worldPreviewCaptureRequested = false;
     shutdownHouseVideoPlayer();
     clearPortraitRuntime();
     clearHudResources();
@@ -560,6 +562,16 @@ bool GameplayUiRuntime::ensureGameplayLayoutsLoaded(const GameplayUiController &
     clearHudLayoutLookupCaches();
     m_layoutsLoaded = true;
     return true;
+}
+
+void GameplayUiRuntime::setVideoOptionsPreviewTexture(std::optional<GameplayHudTextureHandle> texture)
+{
+    m_videoOptionsPreviewTexture = std::move(texture);
+}
+
+std::optional<GameplayHudTextureHandle> GameplayUiRuntime::videoOptionsPreviewTexture() const
+{
+    return m_videoOptionsPreviewTexture;
 }
 
 const UiTextTable &GameplayUiRuntime::uiTextTable() const

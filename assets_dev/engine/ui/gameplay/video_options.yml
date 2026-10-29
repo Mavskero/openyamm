@@ -41,6 +41,115 @@ elements:
         asset:
           default: bl_prevu
 
+      - id: VideoOptionsBrightnessLeftButton
+        anchor: top_left
+        offset_x: 70
+        offset_y: 224
+        width: 17
+        height: 18
+        z_index: 20
+        interactive: true
+        asset:
+          default: ar_lt_up
+          highlighted: ar_lt_ht
+          pressed: ar_lt_dn
+
+      - id: VideoOptionsBrightnessTrack
+        anchor: top_left
+        offset_x: 91
+        offset_y: 224
+        width: 185
+        height: 18
+        z_index: 20
+        interactive: true
+
+      - id: VideoOptionsBrightnessThumb
+        anchor: top_left
+        offset_x: 91
+        offset_y: 224
+        width: 17
+        height: 18
+        z_index: 21
+        asset:
+          default: convol50
+
+      - id: VideoOptionsBrightnessRightButton
+        anchor: top_left
+        offset_x: 280
+        offset_y: 224
+        width: 17
+        height: 18
+        z_index: 20
+        interactive: true
+        asset:
+          default: ar_rt_up
+          highlighted: ar_rt_ht
+          pressed: ar_rt_dn
+
+      - id: VideoOptionsBrightnessMinimumLabel
+        anchor: top_left
+        offset_x: 70
+        offset_y: 202
+        width: 44
+        height: 18
+        z_index: 20
+        text:
+          value: "50%"
+          font: Lucida
+          color: white
+          align_x: left
+          align_y: middle
+
+      - id: VideoOptionsBrightnessDefaultLabel
+        anchor: top_left
+        offset_x: 149
+        offset_y: 202
+        width: 69
+        height: 18
+        z_index: 20
+        text:
+          value: "100%"
+          font: Lucida
+          color: white
+          align_x: center
+          align_y: middle
+
+      - id: VideoOptionsBrightnessMaximumLabel
+        anchor: top_left
+        offset_x: 253
+        offset_y: 202
+        width: 44
+        height: 18
+        z_index: 20
+        text:
+          value: "200%"
+          font: Lucida
+          color: white
+          align_x: right
+          align_y: middle
+
+      - id: VideoOptionsBrightnessValueLabel
+        anchor: top_left
+        offset_x: 70
+        offset_y: 254
+        width: 227
+        height: 26
+        z_index: 20
+        text:
+          value: "{display_gamma}"
+          font: Create
+          color: white
+          align_x: center
+          align_y: middle
+
+      - id: VideoOptionsPreviewFrame
+        anchor: top_left
+        offset_x: 327
+        offset_y: 196
+        width: 273
+        height: 167
+        z_index: 20
+
       - id: VideoOptionsBloodSplatsButton
         anchor: top_left
         offset_x: 66

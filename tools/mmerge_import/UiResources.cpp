@@ -268,6 +268,14 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
 
     // Menu overlays and WinGameScreen select these original images outside the YAML layouts.
     std::set<std::string> requiredDynamicImageReferences = {"ui-parch", "winbg"};
+    // Controls and brightness sliders select these original knob frames dynamically.
+    // The last frame is named convol00, not convol100.
+    if (layouts.contains("controls.yml") || layouts.contains("video_options.yml"))
+    {
+        requiredDynamicImageReferences.insert({
+            "convol10", "convol20", "convol30", "convol40", "convol50",
+            "convol60", "convol70", "convol80", "convol90", "convol00"});
+    }
     // Rest picks its sky frame from game time and its hourglass frame from elapsed UI time.
     // The YAML only names one frame of each original family.
     std::set<std::string> restAnimationImageReferences;

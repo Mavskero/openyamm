@@ -22,6 +22,7 @@
 #include "game/debug/DebugConsole.h"
 #include "game/debug/GameImGuiBgfxRenderer.h"
 #include "game/maps/SaveGame.h"
+#include "game/render/FramePresentation.h"
 #include "game/scene/IMapSceneRuntime.h"
 #include "game/ui/screens/LoadingOverlayScreen.h"
 
@@ -295,6 +296,7 @@ private:
     WorldManifest m_activeWorldManifest;
     GameAudioSystem m_gameAudioSystem;
     GameSession m_gameSession;
+    FramePresentation m_framePresentation;
     GameInputSystem m_gameInputSystem;
     IndoorRenderer m_indoorRenderer;
     IndoorGameView m_indoorGameView;

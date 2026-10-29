@@ -56,6 +56,7 @@
 #include <random>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
@@ -96,6 +97,31 @@ public:
 private:
     bool &m_value;
     bool m_previousValue;
+};
+
+class ScopedFramePresentation
+{
+public:
+    ScopedFramePresentation(FramePresentation &presentation, GameSession &session, const GameSettings &settings)
+        : m_presentation(presentation), m_session(session), m_settings(settings)
+    {
+    }
+
+    ~ScopedFramePresentation()
+    {
+        const float gamma = m_session.activeWorldRuntime() != nullptr
+            ? m_session.gameplayScreenRuntime().settingsSnapshot().displayGamma
+            : m_settings.displayGamma;
+        m_presentation.submit(gamma);
+    }
+
+    ScopedFramePresentation(const ScopedFramePresentation &) = delete;
+    ScopedFramePresentation &operator=(const ScopedFramePresentation &) = delete;
+
+private:
+    FramePresentation &m_presentation;
+    GameSession &m_session;
+    const GameSettings &m_settings;
 };
 
 constexpr float DefaultOutdoorPartyEyeHeight = 176.0f;
@@ -5930,6 +5956,7 @@ void GameApplication::shutdownApplication()
     m_gameSession.gameplayScreenRuntime().clearSharedUiRuntime();
     shutdownRenderer();
     shutdownDebugConsoleRenderer();
+    m_framePresentation.shutdown();
     m_gameAudioSystem.shutdown();
 }
 
@@ -6182,6 +6209,12 @@ bool GameApplication::activateWorldForMapFileName(const std::string &mapFileName
 bool GameApplication::initializeRenderer()
 {
     shutdownRenderer();
+
+    if (!m_framePresentation.initialize())
+    {
+        std::cerr << "GameApplication: frame presentation initialization failed\n";
+        return false;
+    }
 
     if (!initializeDebugConsoleRenderer())
     {
@@ -7127,6 +7160,11 @@ void GameApplication::renderLoadingOverlayProgress(int progressPercent)
         return;
     }
 
+    if (!m_framePresentation.beginFrame(std::max(1, m_lastFrameWidth), std::max(1, m_lastFrameHeight)))
+    {
+        throw std::runtime_error("GameApplication: loading frame presentation allocation failed");
+    }
+
     m_loadingOverlayCurrentProgressPercent = std::clamp(progressPercent, 0, 100);
     m_pLoadingOverlayScreen->setBackgroundTextureName(m_loadingOverlayBackgroundTextureName);
     m_pLoadingOverlayScreen->setProgressPercent(progressPercent);
@@ -7136,7 +7174,14 @@ void GameApplication::renderLoadingOverlayProgress(int progressPercent)
         std::max(1, m_lastFrameHeight),
         m_gameInputSystem.frame(),
         1.0f / 60.0f);
+    m_framePresentation.submit(m_settings.displayGamma);
     bgfx::frame();
+    // Loading can present several frames inside the normal render callback. Restore
+    // the pending frame so its remaining menu/world drawing is presented as well.
+    if (!m_framePresentation.beginFrame(std::max(1, m_lastFrameWidth), std::max(1, m_lastFrameHeight)))
+    {
+        throw std::runtime_error("GameApplication: resumed frame presentation allocation failed");
+    }
 }
 
 bool GameApplication::logFramePerformanceDiagnostics(uint32_t currentTick)
@@ -9123,6 +9168,25 @@ void GameApplication::reportQuickSaveStatus(const std::string &status)
 
 void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, float deltaSeconds)
 {
+    // A hidden/minimized native surface can temporarily have no drawable pixels.
+    if (width <= 0 || height <= 0)
+    {
+        return;
+    }
+    if (!m_framePresentation.beginFrame(width, height))
+    {
+        throw std::runtime_error("GameApplication: frame presentation allocation failed");
+    }
+    const ScopedFramePresentation presentation(m_framePresentation, m_gameSession, m_settings);
+    const auto publishWorldPreview = [this]()
+    {
+        const std::optional<PreviewTexture> preview = m_framePresentation.worldPreviewTexture();
+        m_gameSession.gameplayUiRuntime().setVideoOptionsPreviewTexture(preview
+            ? std::optional<GameplayHudTextureHandle>(
+                GameplayHudTextureHandle{"world-preview", preview->width, preview->height, preview->handle})
+            : std::nullopt);
+    };
+    publishWorldPreview();
     const bool gameplayLoaded =
         !m_loadingOverlayActive
         && m_screenManager.activeScreen() == nullptr
@@ -9499,7 +9563,19 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
         recordFrameDiagnostics(m_framePerformanceDiagnostics.postWorldNanoseconds, postWorldBeginTickCount);
         const uint64_t renderWorldBeginTickCount = collectFrameDiagnostics ? SDL_GetTicksNS() : 0;
         const float worldRenderDeltaSeconds = gameplayWorldPaused ? deltaSeconds : scaledGameplayDeltaSeconds;
+        GameplayUiRuntime &uiRuntime = m_gameSession.gameplayUiRuntime();
+        if (m_gameSession.gameplayScreenRuntime().videoOptionsScreenState().active
+            && !m_framePresentation.worldPreviewTexture())
+        {
+            uiRuntime.setWorldPreviewCaptureRequested(true);
+        }
         pWorldRuntime->renderWorld(width, height, m_gameInputSystem.frame(), worldRenderDeltaSeconds);
+        if (uiRuntime.worldPreviewCaptureRequested())
+        {
+            m_framePresentation.captureWorldPreview();
+            publishWorldPreview();
+            uiRuntime.setWorldPreviewCaptureRequested(false);
+        }
         recordFrameDiagnostics(m_framePerformanceDiagnostics.renderWorldNanoseconds, renderWorldBeginTickCount);
         const uint64_t renderGameplayUiBeginTickCount = collectFrameDiagnostics ? SDL_GetTicksNS() : 0;
         m_gameSession.renderGameplayUi(width, height);

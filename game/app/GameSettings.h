@@ -45,6 +45,12 @@ enum class MonsterProjectileVisuals
     Sprites
 };
 
+constexpr float DisplayGammaMinimum = 0.5f;
+constexpr float DisplayGammaDefault = 1.0f;
+constexpr float DisplayGammaMaximum = 2.0f;
+
+float sanitizedDisplayGamma(float value);
+
 struct GameSettings
 {
     struct KeyboardSettings
@@ -120,6 +126,7 @@ struct GameSettings
     bool bloodSplats = true;
     bool coloredLights = true;
     bool tinting = true;
+    float displayGamma = DisplayGammaDefault;
     bool shadows = false;
     bool spriteOutline = false;
     bool textureFiltering = true;

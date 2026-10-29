@@ -1,0 +1,405 @@
+{
+  "checkpoint": 198,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-29T11:51:31.536685+00:00",
+  "production_base": "c2612c53681b587599bfd9c5790b10673dabf1e8",
+  "fixes": [
+    "Real display_gamma setting0.5..2 with finite sanitation, default1 and logarithmic slider",
+    "App-owned neutral framebuffer and one final gamma pass, including loading/menu/early returns",
+    "Video preview captures neutral world once on opening/resize or affected checkbox change, before HUD; no gameplay-frame blits",
+    "Borrowed preview texture lifecycle and origin handling; preserve loading frame during nested presentation; skip absent drawable",
+    "Commit brightness on release/close; original10 dynamic volume/brightness images now required by importer and complete runtime"
+  ],
+  "actual": {
+    "passed": true,
+    "checkpoint": 198,
+    "frames": 53,
+    "captures": 3,
+    "normal_frames": 30,
+    "new_unit_cases": 0,
+    "device": false,
+    "natural_campaign": false
+  },
+  "images": [
+    {
+      "file": "actual-003/video-neutral-preview.png",
+      "sha256": "f31beef3bd06445efbc8d779a41ec4168d1ab384a8981d8523d448f9c90c407b",
+      "pixels_reviewed": true,
+      "observation": "Original scene visible upright at100%; preview fits source frame, percentage and thumb clear."
+    },
+    {
+      "file": "actual-003/video-bright-preview.png",
+      "sha256": "dc3ccdb7eae39520555068853bc3deb88c493a1e657f0b160338a1ec4e7a05c4",
+      "pixels_reviewed": true,
+      "observation": "Same retained scene visibly brighter at200%, without recursive UI or duplicate gamma."
+    },
+    {
+      "file": "actual-003/continued-neutral-world.png",
+      "sha256": "3caa1de2520d8468049abcee029581841d78478c3ea481c672d876b6239749b8",
+      "pixels_reviewed": true,
+      "observation": "After Escape returns, original scene and HUD render at100%;30normalframes and save/decode pass."
+    }
+  ],
+  "additional_reviewed_images": [
+    "actual-001/video-neutral-preview.png",
+    "actual-001/video-bright-preview.png"
+  ],
+  "gamma_pixel_observation": {
+    "source_run": "actual-001",
+    "crop": [
+      1400,
+      720,
+      1950,
+      1100
+    ],
+    "neutral_mean_rgb": 27.654516746411485,
+    "bright_mean_rgb": 79.40900637958532,
+    "single_gamma2_mean_absolute_error": 0.2484615746257722,
+    "double_gamma2_mean_absolute_error": 60.852168370968606,
+    "scope": "Same retained world-preview pixels before/after slider; pixel comparison only."
+  },
+  "source_files": {
+    "assets_dev/engine/ui/gameplay/video_options.yml": "e494291e6da63e09d401324e4a31be86ca636c2a5f5350e17c7c6c38a0207231",
+    "cmake/BgfxRuntime.cmake": "bc92ea453ea30dc1ec179c0cf4efc6fc6459ef9d239ba446b8de0a92b1a1c332",
+    "game/CMakeLists.txt": "0e477d5dd8dd5f21f6194fa4b2966d3027b2c54cebcc50d9b1db4119d8e0265a",
+    "game/app/GameApplication.cpp": "4da3e4bc0fabe37d5ea5f839236462807f05a37c6ac700e6022fb625386f0898",
+    "game/app/GameApplication.h": "76c4deed4d240463b0a306e4e17ceafdf91ee635032ae12e5a9c3ccf51d6979a",
+    "game/app/GameSettings.cpp": "ffc935a2efbace680291f8023195eccc73309ed025c588aaba02bbc905fe6374",
+    "game/app/GameSettings.h": "7377b4b39b4b39e80712a145e6744d46bb86bf0806c8250a449482c7ed798193",
+    "game/gameplay/GameplayOverlayInputController.cpp": "5fb915e6e2ab4714e96b77073f12422118a6d840a2d50c0b930017e49918eb01",
+    "game/gameplay/GameplayScreenRuntime.cpp": "f80b60b3be4b6c764c3574f59c2045aa493f29fbd6dfeafee718825635444a23",
+    "game/indoor/IndoorGameView.cpp": "653eae62a5fe14bf4c8f39be5cf4f805df95f3fea23cee37554253c47b85c3b3",
+    "game/outdoor/OutdoorGameView.cpp": "bab6fdc41d07ac1fa26b8fb961c1d78b1a3f720557cdff7a577f3c789a05f994",
+    "game/ui/GameplayOverlayTypes.h": "dd34173f8257f07cf4f889d5f074f1963f028064dbd3c8f62805198aca24330d",
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "6b0c532c308f2537bf68e1a87f530204f10ca26f9143473d01e9c3f8fc4f4e6b",
+    "game/ui/GameplayUiController.h": "e580b15639378c56334d28a7bf0a926f8dfc22066d19d765193b6eec8bb48244",
+    "game/ui/GameplayUiRuntime.cpp": "db3692445e8043da9683951e85e08393a539d43446f2f817c2e5272834d52298",
+    "game/ui/GameplayUiRuntime.h": "a915a774bf486120a36a27c9181dee27a5899b1c1946b44f0ecfed100a3f410e",
+    "tools/UiPlayabilityCapture.cpp": "537be9772dc5c4554f3563e91ec78961c02c2db5c5ce73d7753a79e155bb2d94",
+    "tools/mmerge_import/UiResources.cpp": "1813b29a8d4c1889e6fe4aad11a16caa7e9f5cefb34e7211d0be5f34f8a62e89",
+    "game/render/FramePresentation.cpp": "f8a032beca6295cdfc02d9a06eda74cbdf5615205d07f4f8e640b3eebfdcf384",
+    "game/render/FramePresentation.h": "683fbb2266fb5bf7134576a2aab1890ff164db8701d9d240165a05a4279a05be",
+    "game/shaders/fs_presentation_gamma.sc": "b1cf9eb37c33ed9dd17752619540744a6670ba3eba99506b77afd33a4ff1b990"
+  },
+  "runtime": "local-data/validation/ui-function-completion-198/runtime-003",
+  "save_schema": 104,
+  "save_schema_changed": false,
+  "preserved_failures": [
+    {
+      "record": "assemble-runtime-001.command.json",
+      "reason": "Missing original convol10..00 assets detected before App. Incomplete runtime001 preserved, never default; importer and runtime002/003 repaired."
+    },
+    {
+      "record": "actual-001.command.json",
+      "reason": "Capture asserted arrow result on delivered mouse-down, before queued mouse-up. Not a product click failure."
+    },
+    {
+      "record": "actual-002.command.json",
+      "reason": "Same premature capture assertion; unnecessary local input patch was removed after reading production edge queue. Final capture waits for real release; no input-policy change remains."
+    }
+  ],
+  "validation_scope": {
+    "new_unit_cases": 0,
+    "campaign_replays": 0,
+    "cold_replays": 0,
+    "device_or_simulator_operations": 0,
+    "mac_app_attempts": 3,
+    "final_actual_seconds": 13.34,
+    "final_actual_frames": 53,
+    "normal_frames": 30,
+    "reviewed_images": 5
+  },
+  "limitations": [
+    "Synthetic SDL held input, direct VideoOptions opening and UI delta0 are declared; not physical touch or natural campaign.",
+    "Only Metal indoor actual rendering was exercised; outdoor, other backends, resize/background and general menu/movie variants are source/build based.",
+    "Full target-iPad UI and natural campaign remain unproved; remote195 stays fixed.",
+    "ColoredLights has confirmed remaining dynamic-indoor/outdoor consumer omissions, next199. Tinting semantics remain unknown and unchanged."
+  ],
+  "goal_status": "active",
+  "full_game_complete": false,
+  "owned_jobs_remaining": [],
+  "next": "199 implement source-confirmed coloredLights consumers/cache invalidation, reuse198 preview refresh; no broad replay or new remote checkpoint.",
+  "command_summary": {
+    "actual-001": {
+      "argv": [
+        "openyamm/build-apple/ui_playability_capture",
+        "local-data/validation/ui-function-completion-198/runtime-002",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-198/actual-001",
+        "--video-brightness"
+      ],
+      "exit_code": 1,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:44:13.710926+00:00",
+      "finished_at": "2026-10-29T11:44:27.001209+00:00"
+    },
+    "actual-002": {
+      "argv": [
+        "openyamm/build-apple/ui_playability_capture",
+        "local-data/validation/ui-function-completion-198/runtime-003",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-198/actual-002",
+        "--video-brightness"
+      ],
+      "exit_code": 1,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:47:51.302590+00:00",
+      "finished_at": "2026-10-29T11:48:03.824415+00:00"
+    },
+    "actual-003": {
+      "argv": [
+        "openyamm/build-apple/ui_playability_capture",
+        "local-data/validation/ui-function-completion-198/runtime-003",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-198/actual-003",
+        "--video-brightness"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:49:38.143716+00:00",
+      "finished_at": "2026-10-29T11:49:51.483240+00:00"
+    },
+    "assemble-runtime-001": {
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-198/assemble_runtime.py"
+      ],
+      "exit_code": 1,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:37:59.756621+00:00",
+      "finished_at": "2026-10-29T11:38:01.968436+00:00"
+    },
+    "assemble-runtime-002": {
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-198/assemble_runtime.py"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:43:40.391462+00:00",
+      "finished_at": "2026-10-29T11:43:42.802474+00:00"
+    },
+    "assemble-runtime-003": {
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-198/assemble_runtime.py"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:47:27.773712+00:00",
+      "finished_at": "2026-10-29T11:47:30.201771+00:00"
+    },
+    "build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:41:25.718005+00:00",
+      "finished_at": "2026-10-29T11:42:49.355321+00:00"
+    },
+    "build-ios-002": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:44:05.607256+00:00",
+      "finished_at": "2026-10-29T11:44:17.436742+00:00"
+    },
+    "build-ios-003": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:48:05.492094+00:00",
+      "finished_at": "2026-10-29T11:48:14.671214+00:00"
+    },
+    "build-ios-004": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:49:47.260745+00:00",
+      "finished_at": "2026-10-29T11:49:55.667583+00:00"
+    },
+    "build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "ui_playability_capture",
+        "-j3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:39:34.875350+00:00",
+      "finished_at": "2026-10-29T11:41:09.577542+00:00"
+    },
+    "build-native-002": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "ui_playability_capture",
+        "ui_import",
+        "-j3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:43:07.533246+00:00",
+      "finished_at": "2026-10-29T11:43:20.390874+00:00"
+    },
+    "build-native-003": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "ui_playability_capture",
+        "-j3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:47:11.693340+00:00",
+      "finished_at": "2026-10-29T11:47:16.950259+00:00"
+    },
+    "build-native-004": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "ui_playability_capture",
+        "-j3"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:48:47.233871+00:00",
+      "finished_at": "2026-10-29T11:48:53.394911+00:00"
+    },
+    "configure-ios-001": {
+      "argv": [
+        "cmake",
+        "-S",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm",
+        "-B",
+        "/Users/yukarii/Documents/ChatGPT/openyamm-Ⅰpados/openyamm/build-ios-xcode"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:41:19.273860+00:00",
+      "finished_at": "2026-10-29T11:41:20.097524+00:00"
+    },
+    "ui-import-001": {
+      "argv": [
+        "openyamm/build-apple/ui_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "openyamm/assets_dev/engine/ui/gameplay",
+        "3",
+        "local-data/validation/ui-function-completion-198/ui-brightness-001"
+      ],
+      "exit_code": 0,
+      "timed_out": false,
+      "started_at": "2026-10-29T11:43:35.751370+00:00",
+      "finished_at": "2026-10-29T11:43:36.665072+00:00"
+    }
+  },
+  "runtime_diff": {
+    "added_members": [
+      "icons/convol00.bmp",
+      "icons/convol10.bmp",
+      "icons/convol20.bmp",
+      "icons/convol30.bmp",
+      "icons/convol40.bmp",
+      "icons/convol50.bmp",
+      "icons/convol60.bmp",
+      "icons/convol70.bmp",
+      "icons/convol80.bmp",
+      "icons/convol90.bmp"
+    ],
+    "changed_members": [
+      "ui/gameplay/video_options.yml"
+    ],
+    "layout_sha256": "e494291e6da63e09d401324e4a31be86ca636c2a5f5350e17c7c6c38a0207231",
+    "all_other_archive_members_retained": true,
+    "new_image_assets": [
+      "convol00",
+      "convol10",
+      "convol20",
+      "convol30",
+      "convol40",
+      "convol50",
+      "convol60",
+      "convol70",
+      "convol80",
+      "convol90"
+    ],
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  }
+}

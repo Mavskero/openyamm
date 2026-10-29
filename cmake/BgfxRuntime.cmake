@@ -401,6 +401,10 @@ function(openyamm_configure_runtime_shaders)
         "fragment"
         "fs_shadowmaps_texture.bin")
     openyamm_compile_bgfx_shader(
+        "${CMAKE_SOURCE_DIR}/game/shaders/fs_presentation_gamma.sc"
+        "fragment"
+        "fs_presentation_gamma.bin")
+    openyamm_compile_bgfx_shader(
         "${CMAKE_SOURCE_DIR}/game/shaders/vs_outdoor_textured_fog.sc"
         "vertex"
         "vs_outdoor_textured_fog.bin")
@@ -472,6 +476,7 @@ function(openyamm_configure_runtime_shaders)
         fs_cubes.bin
         vs_shadowmaps_texture.bin
         fs_shadowmaps_texture.bin
+        fs_presentation_gamma.bin
         vs_outdoor_textured_fog.bin
         vs_outdoor_billboard_lit.bin
         fs_outdoor_textured_fog.bin

@@ -1,0 +1,1 @@
+198 affected video flow: original normal132 MM7 indoor input copied. Direct VideoOptions opening is a UI fixture; actual SDL slider down/held/up, arrow and Escape. Repeated down maintains synthetic held state; not physical mouse/touch acceptance. UI delta0, then30normalframes and save/decode.3screenshots/<90seconds; no campaign/device/newunitcases.

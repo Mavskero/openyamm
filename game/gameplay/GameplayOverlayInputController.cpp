@@ -1815,6 +1815,7 @@ bool GameplayOverlayInputController::handleVideoOptionsOverlayInput(
         view.interactionState().videoOptionsToggleLatch = false;
         view.interactionState().videoOptionsClickLatch = false;
         view.interactionState().videoOptionsPressedTarget = {};
+        videoOptionsScreen.brightnessDragActive = false;
         return false;
     }
 
@@ -1833,23 +1834,19 @@ bool GameplayOverlayInputController::handleVideoOptionsOverlayInput(
 
     const HudPointerState pointerState = pointerStateFromInput(input);
     const GameplayVideoOptionsPointerTarget noneTarget = {};
+    const auto resolveLayout = [&view, screenWidth, screenHeight](const char *pLayoutId)
+        -> std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement>
+    {
+        const GameplayScreenRuntime::HudLayoutElement *pLayout = view.findHudLayoutElement(pLayoutId);
+        return pLayout != nullptr
+            ? view.resolveHudLayoutElement(pLayoutId, screenWidth, screenHeight, pLayout->width, pLayout->height)
+            : std::nullopt;
+    };
     const auto resolveTarget =
-        [&view, screenWidth, screenHeight](
-            const char *pLayoutId,
-            GameplayVideoOptionsPointerTargetType type,
-            float pointerX,
-            float pointerY) -> GameplayVideoOptionsPointerTarget
+        [&view, &resolveLayout](const char *pLayoutId, GameplayVideoOptionsPointerTargetType type,
+            float pointerX, float pointerY) -> GameplayVideoOptionsPointerTarget
         {
-            const GameplayScreenRuntime::HudLayoutElement *pLayout = view.findHudLayoutElement(pLayoutId);
-
-            if (pLayout == nullptr)
-            {
-                return {};
-            }
-
-            const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolved =
-                view.resolveHudLayoutElement(pLayoutId, screenWidth, screenHeight, pLayout->width, pLayout->height);
-
+            const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> resolved = resolveLayout(pLayoutId);
             if (!resolved || !view.isPointerInsideResolvedElement(*resolved, pointerX, pointerY))
             {
                 return {};
@@ -1867,20 +1864,103 @@ bool GameplayOverlayInputController::handleVideoOptionsOverlayInput(
                 {"VideoOptionsColoredLightsButton", GameplayVideoOptionsPointerTargetType::ColoredLightsButton},
                 {"VideoOptionsTintingButton", GameplayVideoOptionsPointerTargetType::TintingButton},
                 {"VideoOptionsReturnButton", GameplayVideoOptionsPointerTargetType::ReturnButton},
+                {"VideoOptionsBrightnessLeftButton", GameplayVideoOptionsPointerTargetType::BrightnessLeftButton},
+                {"VideoOptionsBrightnessRightButton", GameplayVideoOptionsPointerTargetType::BrightnessRightButton},
+                {"VideoOptionsBrightnessTrack", GameplayVideoOptionsPointerTargetType::BrightnessTrack},
             };
 
             for (const auto &[layoutId, targetType] : Targets)
             {
-                const GameplayVideoOptionsPointerTarget target = resolveTarget(layoutId, targetType, pointerX, pointerY);
-
+                const GameplayVideoOptionsPointerTarget target =
+                    resolveTarget(layoutId, targetType, pointerX, pointerY);
                 if (target.type != GameplayVideoOptionsPointerTargetType::None)
                 {
                     return target;
                 }
             }
-
             return {};
         };
+    const auto setGamma = [&view, &videoOptionsScreen](float value)
+    {
+        const float gamma = sanitizedDisplayGamma(value);
+        if (view.mutableSettings().displayGamma != gamma)
+        {
+            view.mutableSettings().displayGamma = gamma;
+            videoOptionsScreen.brightnessDirty = true;
+        }
+    };
+    const auto commitBrightness = [&view, &videoOptionsScreen]()
+    {
+        if (videoOptionsScreen.brightnessDirty)
+        {
+            videoOptionsScreen.brightnessDirty = false;
+            view.commitSettingsChange();
+        }
+    };
+    const auto updateBrightnessDrag = [&resolveLayout, &videoOptionsScreen, &setGamma](float pointerX)
+    {
+        const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> track =
+            resolveLayout("VideoOptionsBrightnessTrack");
+        const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> thumb =
+            resolveLayout("VideoOptionsBrightnessThumb");
+        if (!track || !thumb || track->width <= thumb->width)
+        {
+            return;
+        }
+
+        const float fraction = std::clamp(
+            (pointerX - track->x - videoOptionsScreen.brightnessThumbGrabOffset) / (track->width - thumb->width),
+            0.0f, 1.0f);
+        const float minimum = std::log2(DisplayGammaMinimum);
+        const float maximum = std::log2(DisplayGammaMaximum);
+        setGamma(std::exp2(minimum + fraction * (maximum - minimum)));
+    };
+
+    if (videoOptionsScreen.brightnessDragActive)
+    {
+        updateBrightnessDrag(pointerState.x);
+        videoOptionsScreen.brightnessDragActive = pointerState.leftButtonPressed && !input.mobileTouchDragReleased;
+        view.interactionState().videoOptionsClickLatch = pointerState.leftButtonPressed;
+        view.interactionState().videoOptionsPressedTarget = {};
+        if (!videoOptionsScreen.brightnessDragActive)
+        {
+            commitBrightness();
+        }
+        return true;
+    }
+
+    if (input.leftMouseButton.pressed || input.mobileTouchDragStarted
+        || (pointerState.leftButtonPressed && !view.interactionState().videoOptionsClickLatch))
+    {
+        const float startX = input.mobileTouchDragStarted ? input.mobileTouchDragStartX : pointerState.x;
+        const float startY = input.mobileTouchDragStarted ? input.mobileTouchDragStartY : pointerState.y;
+        if (findPointerTarget(startX, startY).type == GameplayVideoOptionsPointerTargetType::BrightnessTrack)
+        {
+            const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> track =
+                resolveLayout("VideoOptionsBrightnessTrack");
+            const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> thumb =
+                resolveLayout("VideoOptionsBrightnessThumb");
+            if (track && thumb)
+            {
+                const float fraction = (std::log2(sanitizedDisplayGamma(view.settingsSnapshot().displayGamma))
+                    - std::log2(DisplayGammaMinimum))
+                    / (std::log2(DisplayGammaMaximum) - std::log2(DisplayGammaMinimum));
+                const float thumbX = track->x + (track->width - thumb->width) * fraction;
+                videoOptionsScreen.brightnessThumbGrabOffset = startX >= thumbX && startX < thumbX + thumb->width
+                    ? startX - thumbX : thumb->width * 0.5f;
+                videoOptionsScreen.brightnessDragActive =
+                    pointerState.leftButtonPressed && !input.mobileTouchDragReleased;
+                view.interactionState().videoOptionsClickLatch = pointerState.leftButtonPressed;
+                view.interactionState().videoOptionsPressedTarget = {};
+                updateBrightnessDrag(pointerState.x);
+                if (!videoOptionsScreen.brightnessDragActive)
+                {
+                    commitBrightness();
+                }
+                return true;
+            }
+        }
+    }
 
     handlePointerClickRelease(
         pointerState,
@@ -1888,24 +1968,28 @@ bool GameplayOverlayInputController::handleVideoOptionsOverlayInput(
         view.interactionState().videoOptionsPressedTarget,
         noneTarget,
         findPointerTarget,
-        [&view](const GameplayVideoOptionsPointerTarget &target)
+        [&view, &videoOptionsScreen, &setGamma, &commitBrightness](const GameplayVideoOptionsPointerTarget &target)
         {
             GameSettings &settings = view.mutableSettings();
-
             switch (target.type)
             {
             case GameplayVideoOptionsPointerTargetType::BloodSplatsButton:
                 settings.bloodSplats = !settings.bloodSplats;
+                view.gameplayUiRuntime().setWorldPreviewCaptureRequested(true);
+                videoOptionsScreen.brightnessDirty = false;
                 view.commitSettingsChange();
                 break;
 
             case GameplayVideoOptionsPointerTargetType::ColoredLightsButton:
                 settings.coloredLights = !settings.coloredLights;
+                view.gameplayUiRuntime().setWorldPreviewCaptureRequested(true);
+                videoOptionsScreen.brightnessDirty = false;
                 view.commitSettingsChange();
                 break;
 
             case GameplayVideoOptionsPointerTargetType::TintingButton:
                 settings.tinting = !settings.tinting;
+                videoOptionsScreen.brightnessDirty = false;
                 view.commitSettingsChange();
                 break;
 
@@ -1913,6 +1997,17 @@ bool GameplayOverlayInputController::handleVideoOptionsOverlayInput(
                 view.closeVideoOptionsOverlay();
                 break;
 
+            case GameplayVideoOptionsPointerTargetType::BrightnessLeftButton:
+            case GameplayVideoOptionsPointerTargetType::BrightnessRightButton:
+            {
+                const float step = target.type == GameplayVideoOptionsPointerTargetType::BrightnessRightButton
+                    ? 0.05f : -0.05f;
+                setGamma(std::exp2(std::log2(sanitizedDisplayGamma(settings.displayGamma)) + step));
+                commitBrightness();
+                break;
+            }
+
+            case GameplayVideoOptionsPointerTargetType::BrightnessTrack:
             case GameplayVideoOptionsPointerTargetType::None:
                 break;
             }

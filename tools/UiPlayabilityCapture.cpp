@@ -20,6 +20,7 @@
 #include <bgfx/bgfx.h>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -97,6 +98,204 @@ struct NewGameScreenTestAccess
 };
 struct ApplicationCaptureTestAccess
 {
+    static int runVideoBrightness(
+        std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
+    {
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "Video output must be new");
+        std::string error;
+        const auto source = loadGameDataFromPath(input, error);
+        require(source && source->currentSceneKind == SceneKind::Indoor, "Expected normal132 indoor seed");
+        std::filesystem::create_directories(output / "saves");
+        std::filesystem::copy_file(input, output / "input.oysav");
+        std::filesystem::current_path(output);
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string();
+        settings.startInMainMenu = true;
+        settings.preseedParty = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings("settings.ini", settings, error), "Cannot write isolated video settings");
+        std::ofstream("fixture.txt") << "198 affected video flow: original normal132 MM7 indoor input copied. "
+            "Direct VideoOptions opening is a UI fixture; actual SDL slider down/held/up, arrow and Escape. "
+            "Repeated down maintains synthetic held state; not physical mouse/touch acceptance. UI delta0, "
+            "then30normalframes and save/decode.3screenshots/<90seconds; no campaign/device/newunitcases.\n";
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM Video Brightness198";
+        config.assetRoot = runtime.string();
+        config.activeWorldId = "mm7";
+        config.startupMapFileOverride = source->mapFileName;
+        config.windowWidth = 1210;
+        config.windowHeight = 834;
+        config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        unsigned phase = 0, frames = 0, captures = 0, normalFrames = 0;
+        bool complete = false;
+        std::string pending;
+        std::ofstream trace("observations.jsonl");
+        const auto started = std::chrono::steady_clock::now();
+        const auto screen = [&]() -> GameplayScreenRuntime & { return game.m_gameSession.gameplayScreenRuntime(); };
+        const auto rect = [&](const char *id, int width, int height)
+        {
+            const auto *layout = screen().findHudLayoutElement(id);
+            require(layout != nullptr, "Missing video layout");
+            const auto resolved = screen().resolveHudLayoutElement(id, width, height, layout->width, layout->height);
+            require(resolved.has_value(), "Video layout did not resolve");
+            return *resolved;
+        };
+        const auto diskGamma = [&]()
+        {
+            const auto saved = loadGameSettings("settings.ini", error);
+            require(saved.has_value(), "Cannot read committed settings");
+            return saved->displayGamma;
+        };
+        const auto capture = [&](const char *name)
+        {
+            require(pending.empty() && captures < 3, "Video capture budget exceeded");
+            pending = name;
+            bgfx::requestScreenShot(BGFX_INVALID_HANDLE, name);
+        };
+        const auto at = [](float actual, float expected) { return std::abs(actual - expected) < 0.001f; };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(game.initializeRenderer() && game.loadSessionFromPath(output / "input.oysav"),
+                        "Video initial load failed");
+                    require(bgfx::getRendererType() == bgfx::RendererType::Metal, "Metal required");
+                    require(screen().ensureGameplayLayoutsLoaded(), "Video layouts unavailable");
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames < 1200 && std::chrono::steady_clock::now() - started < std::chrono::seconds(90),
+                        "Video capture exceeded bound");
+                    game.renderFrame(width, height, wheel, phase == 12 ? 1.0f / 60.0f : 0.0f);
+                    trace << "{\"frame\":" << frames << ",\"phase\":" << phase
+                        << ",\"gamma\":" << screen().settingsSnapshot().displayGamma
+                        << ",\"drag\":" << screen().videoOptionsScreenState().brightnessDragActive
+                        << ",\"dirty\":" << screen().videoOptionsScreenState().brightnessDirty << "}\n";
+                    trace.flush();
+                    if (!pending.empty())
+                    {
+                        if (const auto image = Engine::BgfxContext::consumeScreenshot(pending))
+                        {
+                            SDL_Surface *surface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()), int(image->width * 4));
+                            require(surface && SDL_SaveBMP(surface, (pending + ".bmp").c_str()), "Video screenshot failed");
+                            SDL_DestroySurface(surface);
+                            pending.clear();
+                            ++captures;
+                        }
+                    }
+                    if (frames < 6 || !pending.empty()) return;
+                    const auto track = rect("VideoOptionsBrightnessTrack", width, height);
+                    const float y = track.y + track.height * 0.5f;
+                    switch (phase)
+                    {
+                    case 0:
+                        screen().openVideoOptionsOverlay();
+                        phase = 1;
+                        break;
+                    case 1:
+                        require(game.m_framePresentation.worldPreviewTexture().has_value(), "World preview unavailable");
+                        require(at(screen().settingsSnapshot().displayGamma, 1), "Initial gamma is not neutral");
+                        capture("video-neutral-preview");
+                        phase = 2;
+                        break;
+                    case 2:
+                        pointer(track.x + track.width * 0.5f, y, width, height, SDL_BUTTON_LEFT, true);
+                        phase = 3;
+                        break;
+                    case 3:
+                        require(screen().videoOptionsScreenState().brightnessDragActive, "Slider did not begin drag");
+                        require(at(screen().settingsSnapshot().displayGamma, 1), "Thumb grab changed neutral gamma");
+                        pointer(track.x + track.width, y, width, height, SDL_BUTTON_LEFT, true);
+                        phase = 4;
+                        break;
+                    case 4:
+                        require(game.m_gameInputSystem.frame().leftMouseButton.held
+                            && !game.m_gameInputSystem.frame().leftMouseButton.pressed, "Held drag edge changed");
+                        require(at(screen().settingsSnapshot().displayGamma, 2)
+                            && screen().videoOptionsScreenState().brightnessDirty && at(diskGamma(), 1),
+                            "Held brightness was not immediate or wrote settings prematurely");
+                        pointer(track.x + track.width, y, width, height, SDL_BUTTON_LEFT, false);
+                        phase = 5;
+                        break;
+                    case 5:
+                        require(!screen().videoOptionsScreenState().brightnessDragActive
+                            && !screen().videoOptionsScreenState().brightnessDirty && at(diskGamma(), 2),
+                            "Release did not commit brightness");
+                        capture("video-bright-preview");
+                        phase = 6;
+                        break;
+                    case 6:
+                        click(rect("VideoOptionsBrightnessLeftButton", width, height), width, height);
+                        phase = 7;
+                        break;
+                    case 7:
+                        // The production input queue delivers each mouse edge on its own frame.
+                        if (game.m_gameInputSystem.frame().leftMouseButton.held) break;
+                        require(game.m_gameInputSystem.frame().leftMouseButton.released, "Arrow release not delivered");
+                        require(at(screen().settingsSnapshot().displayGamma, std::exp2(0.95f))
+                            && at(diskGamma(), std::exp2(0.95f)), "Brightness arrow did not commit one step");
+                        pointer(track.x + track.width * 0.5f, y, width, height, SDL_BUTTON_LEFT, true);
+                        phase = 8;
+                        break;
+                    case 8:
+                        require(at(screen().settingsSnapshot().displayGamma, 1)
+                            && screen().videoOptionsScreenState().brightnessDirty, "Neutral track selection failed");
+                        key(SDL_SCANCODE_ESCAPE);
+                        pointer(track.x + track.width * 0.5f, y, width, height, SDL_BUTTON_LEFT, false);
+                        phase = 9;
+                        break;
+                    case 9:
+                        require(!screen().videoOptionsScreenState().active && at(diskGamma(), 1),
+                            "Closing video options lost uncommitted brightness");
+                        key(SDL_SCANCODE_ESCAPE);
+                        phase = 10;
+                        break;
+                    case 10:
+                        key(SDL_SCANCODE_ESCAPE);
+                        phase = 11;
+                        break;
+                    case 11:
+                        require(screen().currentHudScreenState() == GameplayHudScreenState::Gameplay,
+                            "Video return did not restore gameplay");
+                        phase = 12;
+                        break;
+                    case 12:
+                        if (++normalFrames < 30) break;
+                        capture("continued-neutral-world");
+                        phase = 13;
+                        break;
+                    case 13:
+                        require(game.quickSaveToPath(output / "continued.oysav"), "Video continued save failed");
+                        require(loadGameDataFromPath(output / "continued.oysav", error).has_value(), "Save decode failed");
+                        complete = true;
+                        phase = 14;
+                        { SDL_Event quit{}; quit.type = SDL_EVENT_QUIT; SDL_PushEvent(&quit); }
+                        break;
+                    default: break;
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete, "Video capture ended early");
+            std::ofstream("result.json") << "{\"passed\":true,\"checkpoint\":198,\"frames\":" << frames
+                << ",\"captures\":" << captures << ",\"normal_frames\":" << normalFrames
+                << ",\"new_unit_cases\":0,\"device\":false,\"natural_campaign\":false}\n";
+            return 0;
+        }
+        catch (const std::exception &exception)
+        {
+            std::ofstream("failure.txt") << "phase=" << phase << " frame=" << frames << " " << exception.what() << '\n';
+            throw;
+        }
+    }
     static int runJournalPartySave(
         std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
     {
@@ -1170,7 +1369,9 @@ int main(int argc, char **argv)
 {
     try
     {
-        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only|--journal-party-save]");
+        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only|--creation-only|--journal-party-save|--video-brightness]");
+        if (argc == 5 && std::string(argv[4]) == "--video-brightness")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::runVideoBrightness(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--journal-party-save")
             return OpenYAMM::Game::ApplicationCaptureTestAccess::runJournalPartySave(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--creation-only")

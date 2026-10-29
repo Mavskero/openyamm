@@ -313,6 +313,9 @@ public:
     struct VideoOptionsScreenState
     {
         bool active = false;
+        bool brightnessDragActive = false;
+        bool brightnessDirty = false;
+        float brightnessThumbGrabOffset = 0.0f;
     };
 
     struct SaveSlotSummary

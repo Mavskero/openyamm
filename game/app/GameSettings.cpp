@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
@@ -9,6 +10,13 @@
 
 namespace OpenYAMM::Game
 {
+float sanitizedDisplayGamma(float value)
+{
+    return std::isfinite(value)
+        ? std::clamp(value, DisplayGammaMinimum, DisplayGammaMaximum)
+        : DisplayGammaDefault;
+}
+
 namespace
 {
 constexpr float MinimumViewDistance = 1024.0f;
@@ -797,6 +805,13 @@ std::optional<GameSettings> loadGameSettings(const std::filesystem::path &path, 
         }
     }
 
+    if (const std::optional<std::string> value = getIniValue(document, "video", "display_gamma"))
+    {
+        float parsed = DisplayGammaDefault;
+        settings.displayGamma = parseFloatValue(*value, parsed)
+            ? sanitizedDisplayGamma(parsed) : DisplayGammaDefault;
+    }
+
     if (const std::optional<std::string> value = getIniValue(document, "video", "shadows"))
     {
         bool parsed = settings.shadows;
@@ -1434,6 +1449,7 @@ bool saveGameSettings(const std::filesystem::path &path, const GameSettings &set
         << "blood_splats=" << (settings.bloodSplats ? "true" : "false") << '\n'
         << "colored_lights=" << (settings.coloredLights ? "true" : "false") << '\n'
         << "tinting=" << (settings.tinting ? "true" : "false") << '\n'
+        << "display_gamma=" << sanitizedDisplayGamma(settings.displayGamma) << '\n'
         << "shadows=" << (settings.shadows ? "true" : "false") << '\n'
         << "sprite_outline=" << (settings.spriteOutline ? "true" : "false") << '\n'
         << "texture_filtering=" << (settings.textureFiltering ? "true" : "false") << '\n'

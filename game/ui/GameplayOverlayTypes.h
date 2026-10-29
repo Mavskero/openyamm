@@ -543,7 +543,10 @@ enum class GameplayVideoOptionsPointerTargetType
     BloodSplatsButton,
     ColoredLightsButton,
     TintingButton,
-    ReturnButton
+    ReturnButton,
+    BrightnessLeftButton,
+    BrightnessRightButton,
+    BrightnessTrack
 };
 
 struct GameplayVideoOptionsPointerTarget

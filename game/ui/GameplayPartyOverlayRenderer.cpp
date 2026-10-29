@@ -3251,6 +3251,13 @@ void GameplayPartyOverlayRenderer::renderVideoOptionsOverlay(GameplayScreenRunti
     const bool isLeftMousePressed = pointerInput.isLeftMousePressed;
     const std::vector<std::string> orderedLayoutIds = context.sortedHudLayoutIdsForScreen("VideoOptions");
     const GameSettings &settings = context.settingsSnapshot();
+    const float gamma = sanitizedDisplayGamma(settings.displayGamma);
+    const float gammaFraction = (std::log2(gamma) - std::log2(DisplayGammaMinimum))
+        / (std::log2(DisplayGammaMaximum) - std::log2(DisplayGammaMinimum));
+    static const std::array<const char *, 10> BrightnessThumbAssets = {
+        "convol10", "convol20", "convol30", "convol40", "convol50",
+        "convol60", "convol70", "convol80", "convol90", "convol00"
+    };
 
     const auto isStateButtonLayoutId =
         [](const std::string &layoutId) -> bool
@@ -3261,7 +3268,8 @@ void GameplayPartyOverlayRenderer::renderVideoOptionsOverlay(GameplayScreenRunti
         };
 
     const auto resolveLayout =
-        [&context, width, height](const std::string &layoutId) -> std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement>
+        [&context, width, height](const std::string &layoutId)
+            -> std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement>
         {
             const GameplayScreenRuntime::HudLayoutElement *pLayout = context.findHudLayoutElement(layoutId);
 
@@ -3280,13 +3288,25 @@ void GameplayPartyOverlayRenderer::renderVideoOptionsOverlay(GameplayScreenRunti
         if (pLayout == nullptr
             || !pLayout->visible
             || toLowerCopy(pLayout->id) == "videooptionsroot"
-            || isStateButtonLayoutId(layoutId))
+            || isStateButtonLayoutId(layoutId)
+            || layoutId == "VideoOptionsBrightnessThumb")
         {
             continue;
         }
 
         if (pLayout->primaryAsset.empty())
         {
+            if (!pLayout->labelText.empty())
+            {
+                const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> labelRect =
+                    resolveLayout(layoutId);
+                if (labelRect)
+                {
+                    const std::string label = replaceAllText(pLayout->labelText, "{display_gamma}",
+                        std::to_string(static_cast<int>(std::lround(gamma * 100.0f))) + "%");
+                    context.renderLayoutLabel(*pLayout, *labelRect, label);
+                }
+            }
             continue;
         }
 
@@ -3334,13 +3354,74 @@ void GameplayPartyOverlayRenderer::renderVideoOptionsOverlay(GameplayScreenRunti
         }
     }
 
+    const auto drawSolid = [&context](float x, float y, float rectWidth, float rectHeight, uint32_t color)
+    {
+        if (rectWidth <= 0.0f || rectHeight <= 0.0f)
+        {
+            return;
+        }
+        const std::optional<GameplayHudTextureHandle> texture = context.gameplayUiRuntime().ensureSolidHudTextureLoaded(
+            "__video_options_solid_" + std::to_string(color), color);
+        if (texture)
+        {
+            context.submitHudTexturedQuad(*texture, x, y, rectWidth, rectHeight);
+        }
+    };
+    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> track =
+        resolveLayout("VideoOptionsBrightnessTrack");
+    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> thumb =
+        resolveLayout("VideoOptionsBrightnessThumb");
+    if (track && thumb)
+    {
+        const float travel = std::max(0.0f, track->width - thumb->width);
+        const float railHeight = std::max(1.0f, 2.0f * track->scale);
+        drawSolid(track->x + thumb->width * 0.5f, track->y + (track->height - railHeight) * 0.5f,
+            travel, railHeight, 0xff808080u);
+        drawSolid(track->x + track->width * 0.5f - track->scale * 0.5f,
+            track->y - 4.0f * track->scale, track->scale, 4.0f * track->scale, 0xffb0b0b0u);
+        const size_t assetIndex = static_cast<size_t>(std::clamp(std::lround(gammaFraction * 9.0f), 0L, 9L));
+        const std::optional<GameplayHudTextureHandle> texture =
+            context.gameplayUiRuntime().ensureHudTextureLoaded(BrightnessThumbAssets[assetIndex]);
+        if (texture)
+        {
+            context.submitHudTexturedQuad(*texture, track->x + travel * gammaFraction,
+                track->y + (track->height - thumb->height) * 0.5f, thumb->width, thumb->height);
+        }
+    }
+
+    const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> previewFrame =
+        resolveLayout("VideoOptionsPreviewFrame");
+    if (previewFrame)
+    {
+        const float border = 3.0f * previewFrame->scale;
+        const float innerWidth = std::max(0.0f, previewFrame->width - border * 2.0f);
+        const float innerHeight = std::max(0.0f, previewFrame->height - border * 2.0f);
+        drawSolid(previewFrame->x, previewFrame->y, previewFrame->width, previewFrame->height, 0xff000000u);
+        const std::optional<GameplayHudTextureHandle> preview =
+            context.gameplayUiRuntime().videoOptionsPreviewTexture();
+        if (preview && preview->width > 0 && preview->height > 0 && bgfx::isValid(preview->textureHandle))
+        {
+            const float scale = std::min(innerWidth / static_cast<float>(preview->width),
+                innerHeight / static_cast<float>(preview->height));
+            const float previewWidth = static_cast<float>(preview->width) * scale;
+            const float previewHeight = static_cast<float>(preview->height) * scale;
+            const bgfx::Caps *pCaps = bgfx::getCaps();
+            const float v0 = pCaps != nullptr && pCaps->originBottomLeft ? 1.0f : 0.0f;
+            context.gameplayUiRuntime().submitHudTexturedQuad(preview->textureHandle,
+                previewFrame->x + border + (innerWidth - previewWidth) * 0.5f,
+                previewFrame->y + border + (innerHeight - previewHeight) * 0.5f,
+                previewWidth, previewHeight, 0.0f, v0, 1.0f, 1.0f - v0, TextureFilterProfile::Ui);
+        }
+    }
+
     const auto drawStateButton =
         [&context, &resolveLayout, mouseX, mouseY, isLeftMousePressed](
             const char *pButtonLayoutId,
             GameplayVideoOptionsRenderButton button,
             bool active)
         {
-            const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> hitRect = resolveLayout(pButtonLayoutId);
+            const std::optional<GameplayScreenRuntime::ResolvedHudLayoutElement> hitRect =
+                resolveLayout(pButtonLayoutId);
 
             if (!hitRect)
             {

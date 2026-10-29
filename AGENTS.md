@@ -4,6 +4,11 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 198 adds real video brightness/neutral world preview and10 missing original slider images.
+  See `handoff/ui-function-completion-198/README.md`; native/iOS/import and13.340s affected Mac flow pass.
+  Runtime198/runtime-003,Save104 unchanged; remote195 stays fixed. Next confirmed coloredLights consumers.
+  No device/simulator, broad replay or new unit cases; fullgoal remainsactive.
+
 - 197 fixes journal/party/save UI continuity; see `handoff/ui-function-completion-197/README.md`.
   Native and unsigned generic iOS build passed; one14.095second controlled Mac flow/3reviewedimages passed.
   Runtime195 andSave104 unchanged; fixed remote195 acceptance continues separately. Fullgoal remains active.

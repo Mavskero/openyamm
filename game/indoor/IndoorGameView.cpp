@@ -1228,7 +1228,8 @@ void IndoorGameView::render(int width, int height, const GameplayInputFrame &inp
             sharedInputFrameResult.mouseLookPolicy.cursorModeActive);
     }
 
-    const bool worldCaptureRequired = captureSavePreviewThisFrame || captureLloydsBeaconPreviewThisFrame;
+    const bool worldCaptureRequired = captureSavePreviewThisFrame || captureLloydsBeaconPreviewThisFrame
+        || overlayContext.gameplayUiRuntime().worldPreviewCaptureRequested();
     const bool renderWorldThisFrame =
         worldCaptureRequired
         || !gameplayHudScreenFullyOccludesWorld(
