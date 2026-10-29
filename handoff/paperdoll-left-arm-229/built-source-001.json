@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-30T03:38:50.712769+08:00",
+  "source_base": "70b961a21efc91e970fb9f81bb902dc2665ca303",
+  "files": {
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "c0fe1132706d924457fc593768ed848637d41d5a9edb245d482d2f86cb7caec8",
+    "tools/HouseDialogueLayoutCapture.cpp": "4b3d701b12fea355b6f5775d7eff816f4224b35b35d08e8bc974e291fac482c1"
+  },
+  "agents_frozen": true,
+  "main_only_build_app": true,
+  "capture_ui_transition": "Normal close after first image before opening second portrait"
+}

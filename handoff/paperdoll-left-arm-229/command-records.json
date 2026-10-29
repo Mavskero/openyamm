@@ -1,0 +1,88 @@
+{
+  "build-native-001": {
+    "argv": [
+      "cmake",
+      "--build",
+      "openyamm/build-apple",
+      "--target",
+      "openyamm",
+      "house_dialogue_layout_capture",
+      "-j3"
+    ],
+    "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+    "pid": 22331,
+    "started_at": "2026-10-29T19:38:50.887988+00:00",
+    "finished_at": "2026-10-29T19:38:56.518586+00:00",
+    "exit_code": 0,
+    "timed_out": false,
+    "timeout_seconds": 180.0,
+    "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/paperdoll-left-arm-229/build-native-001.log",
+    "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+    "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+    "environment": {
+      "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+      "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+    },
+    "elapsed_seconds": 5.630598
+  },
+  "actual-001": {
+    "argv": [
+      "openyamm/build-apple/house_dialogue_layout_capture",
+      "local-data/validation/equipment-feedback-227/runtime-001",
+      "local-data/validation/paperdoll-left-arm-229/source-input.oysav",
+      "local-data/validation/paperdoll-left-arm-229/actual-001",
+      "--left-arm-poses",
+      "1210",
+      "834"
+    ],
+    "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+    "pid": 23011,
+    "started_at": "2026-10-29T19:39:35.770242+00:00",
+    "finished_at": "2026-10-29T19:39:49.933997+00:00",
+    "exit_code": 0,
+    "timed_out": false,
+    "timeout_seconds": 90.0,
+    "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/paperdoll-left-arm-229/actual-001.log",
+    "executed_binary": "openyamm/build-apple/house_dialogue_layout_capture",
+    "executed_binary_sha256": "2c02d833643e6a8fd533e228f0694f5a94469ff96ecedbddb0c834872f7ec6bf",
+    "environment": {
+      "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+      "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+    },
+    "elapsed_seconds": 14.163755
+  },
+  "build-ios-001": {
+    "argv": [
+      "xcodebuild",
+      "-project",
+      "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+      "-scheme",
+      "openyamm_ipados",
+      "-configuration",
+      "Release",
+      "-destination",
+      "generic/platform=iOS",
+      "-derivedDataPath",
+      "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+      "-jobs",
+      "3",
+      "CODE_SIGNING_ALLOWED=NO",
+      "build"
+    ],
+    "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+    "pid": 23009,
+    "started_at": "2026-10-29T19:39:35.690113+00:00",
+    "finished_at": "2026-10-29T19:39:45.796520+00:00",
+    "exit_code": 0,
+    "timed_out": false,
+    "timeout_seconds": 180.0,
+    "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/paperdoll-left-arm-229/build-ios-001.log",
+    "executed_binary": "/usr/bin/xcodebuild",
+    "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+    "environment": {
+      "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+      "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+    },
+    "elapsed_seconds": 10.106407
+  }
+}

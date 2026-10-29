@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-30T03:41:50.708338+08:00",
+  "images": {
+    "paperdoll-left-arm-default": {
+      "file": "actual-001/paperdoll-left-arm-default.png",
+      "sha256": "d0b47e66543c30e6cb15051515ad1f9583bc960b94ba18c09b9f5097803fa771",
+      "bytes": 4064715,
+      "reviewed": true,
+      "observation": "Original empty character1 has down-pose arms connected to body, without raised-grip substitution."
+    },
+    "paperdoll-left-arm-shield": {
+      "file": "actual-001/paperdoll-left-arm-shield.png",
+      "sha256": "805ce3e1704fc9712100ee321e4f2bac312c352a3f9774972ded962c4412be34",
+      "bytes": 4075409,
+      "reviewed": true,
+      "observation": "Original character5 shield arm meets sleeve and shield; correct early down-pose visible, no late grip painted over shield."
+    }
+  },
+  "format": "PNG is format-only BMP conversion, no image edits",
+  "scope": "Two original Save85 subjects; native composite only, not dual-wield/fallback/all-type pixels"
+}

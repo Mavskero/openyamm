@@ -44,6 +44,7 @@ enum class Page
     Character,
     Portal,
     StaffArm,
+    LeftArmPoses,
 };
 
 struct State
@@ -88,6 +89,7 @@ std::string pageName(Page page)
     case Page::Character: return "character";
     case Page::Portal: return "portal";
     case Page::StaffArm: return "staff-arm";
+    case Page::LeftArmPoses: return "left-arm-poses";
     }
     return "unknown";
 }
@@ -105,6 +107,7 @@ std::set<std::string> expectedCaptures(Page page)
     case Page::Character: return {"character-skills"};
     case Page::Portal: return {"dimension-door-preview"};
     case Page::StaffArm: return {"paperdoll-staff-arm"};
+    case Page::LeftArmPoses: return {"paperdoll-left-arm-default", "paperdoll-left-arm-shield"};
     }
     return {};
 }
@@ -906,6 +909,58 @@ struct ApplicationCaptureTestAccess
             }
             break;
 
+        case Page::LeftArmPoses:
+            if (state.phase == 0
+                || (state.phase == 2 && captured.contains("paperdoll-left-arm-default")))
+            {
+                if (state.phase == 2)
+                {
+                    clickLayout(session, width, height, "CharacterExitButton");
+                    require(!runtime.characterScreen().open, "Default-arm view did not close before shield view");
+                }
+                const size_t memberIndex = state.phase == 0 ? 0 : 1;
+                const bool defaultPose = memberIndex == 0;
+                const Party *pParty = runtime.partyReadOnly();
+                const Character *pMember = pParty != nullptr ? pParty->member(memberIndex) : nullptr;
+                require(pMember != nullptr && pMember->characterDataId == (defaultPose ? 1u : 5u),
+                    "Left-arm capture needs original member0 character1 and member1 character5");
+                const CharacterEquipment &equipment = pMember->equipment;
+                require(equipment.offHand == (defaultPose ? 0u : 99u)
+                        && equipment.mainHand == (defaultPose ? 0u : 66u)
+                        && equipment.armor == (defaultPose ? 0u : 89u)
+                        && equipment.cloak == (defaultPose ? 0u : 123u)
+                        && equipment.boots == (defaultPose ? 0u : 132u)
+                        && equipment.ring1 == (defaultPose ? 0u : 139u)
+                        && equipment.bow == 0 && equipment.helm == 0 && equipment.belt == 0
+                        && equipment.gauntlets == 0 && equipment.amulet == 0
+                        && equipment.ring2 == 0 && equipment.ring3 == 0 && equipment.ring4 == 0
+                        && equipment.ring5 == 0 && equipment.ring6 == 0,
+                    "Left-arm capture equipment differs from the original Save85 party");
+                const std::string captureName = defaultPose
+                    ? "paperdoll-left-arm-default" : "paperdoll-left-arm-shield";
+                checks << "left-arm-pose-input\tpass\timage=" << captureName << " member=" << memberIndex
+                       << " character_data_id=" << pMember->characterDataId << " name=" << pMember->name
+                       << " main_hand=" << equipment.mainHand << " off_hand=" << equipment.offHand
+                       << " armor=" << equipment.armor << " cloak=" << equipment.cloak
+                       << " boots=" << equipment.boots << " ring1=" << equipment.ring1
+                       << " remaining_slots=0\n";
+                clickPortraitToOpenCharacter(session, width, height, memberIndex);
+                require(runtime.characterScreen().page == GameplayUiController::CharacterPage::Inventory,
+                    "Normal left-arm comparison portrait clicks did not open Inventory");
+                advance(state, state.phase + 1);
+            }
+            else if (state.phase == 1 || state.phase == 3)
+            {
+                captureRequest = state.phase == 1
+                    ? "paperdoll-left-arm-default" : "paperdoll-left-arm-shield";
+                advance(state, state.phase + 1);
+            }
+            else if (state.phase == 4 && captured.contains("paperdoll-left-arm-shield"))
+            {
+                state.complete = true;
+            }
+            break;
+
         case Page::Portal:
             if (state.phase == 0)
             {
@@ -1006,6 +1061,11 @@ struct ApplicationCaptureTestAccess
             checks << "staff-arm-scope\tdeclared\tgameplay_delta=0; original input only; "
                       "no Party/equipment/map/pose/gold/time state edits; no save writes\n";
         }
+        else if (page == Page::LeftArmPoses)
+        {
+            checks << "left-arm-poses-scope\tdeclared\tgameplay_delta=0; original Save85 input only; "
+                      "no Party/equipment/skill/map/pose/gold/time state edits; no save writes\n";
+        }
 
         SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
         Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
@@ -1054,7 +1114,8 @@ struct ApplicationCaptureTestAccess
                 }
                 std::optional<std::string> captureRequest;
                 updatePage(game, page, state, width, height, captured, captureRequest, checks);
-                game.renderFrame(width, height, wheel, page == Page::StaffArm ? 0.0f : delta);
+                const float gameplayDelta = page == Page::StaffArm || page == Page::LeftArmPoses ? 0.0f : delta;
+                game.renderFrame(width, height, wheel, gameplayDelta);
 
                 if (captureRequest)
                 {
@@ -1091,6 +1152,13 @@ struct ApplicationCaptureTestAccess
                     if (page == Page::StaffArm)
                     {
                         checks << "staff-arm-frame\tpass\trequested_frame=" << iterator->second.requestedFrame
+                               << " readback_frame=" << frames << " drawable="
+                               << capture->width << 'x' << capture->height << '\n';
+                    }
+                    else if (page == Page::LeftArmPoses)
+                    {
+                        checks << "left-arm-pose-frame\tpass\timage=" << iterator->first
+                               << " requested_frame=" << iterator->second.requestedFrame
                                << " readback_frame=" << frames << " drawable="
                                << capture->width << 'x' << capture->height << '\n';
                     }
@@ -1134,8 +1202,8 @@ int main(int argc, char **argv)
         {
             throw std::runtime_error(
                 "Usage: house_dialogue_layout_capture RUNTIME INPUT_SAVE NEW_OUTPUT "
-                "--temple|--npc|--shop|--tavern|--training|--transport|--character|--portal|--staff-arm "
-                "WINDOW_WIDTH WINDOW_HEIGHT");
+                "--temple|--npc|--shop|--tavern|--training|--transport|--character|--portal|--staff-arm|"
+                "--left-arm-poses WINDOW_WIDTH WINDOW_HEIGHT");
         }
         const std::string option = argv[4];
         OpenYAMM::Game::Page page;
@@ -1148,6 +1216,7 @@ int main(int argc, char **argv)
         else if (option == "--character") page = OpenYAMM::Game::Page::Character;
         else if (option == "--portal") page = OpenYAMM::Game::Page::Portal;
         else if (option == "--staff-arm") page = OpenYAMM::Game::Page::StaffArm;
+        else if (option == "--left-arm-poses") page = OpenYAMM::Game::Page::LeftArmPoses;
         else throw std::runtime_error("Unsupported house dialogue page: " + option);
         return OpenYAMM::Game::ApplicationCaptureTestAccess::run(
             std::filesystem::canonical(argv[1]),

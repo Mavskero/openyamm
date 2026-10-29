@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-30T03:41:50.708338+08:00",
+  "files_match": true,
+  "file_count": 2,
+  "files": {
+    "game/ui/GameplayPartyOverlayRenderer.cpp": "c0fe1132706d924457fc593768ed848637d41d5a9edb245d482d2f86cb7caec8",
+    "tools/HouseDialogueLayoutCapture.cpp": "4b3d701b12fea355b6f5775d7eff816f4224b35b35d08e8bc974e291fac482c1"
+  },
+  "no_post_build_source_edits": true
+}

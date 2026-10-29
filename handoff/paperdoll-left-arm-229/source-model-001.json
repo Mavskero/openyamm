@@ -1,0 +1,45 @@
+{
+  "original_source_root": "local-data/validation/mm8-runtime-076/source-001",
+  "coordinates_type0": {
+    "LHo X": "132",
+    "LHo Y": "150",
+    "LHc X": "138",
+    "LHc Y": "150",
+    "LHf X": "138",
+    "LHf Y": "150"
+  },
+  "item_parse": "weapon1or2 ->EquipStat0 at454b3f; weapon2 ->1 at454b1e",
+  "field_alignment": "ItemsTxt5EFBCC +EquipStat1c =5EFBE8",
+  "early_model": "Out:LHo/LHf when EquipStat1 and(Spear4 or empty offhand); else Up:LHu/LHc for nonshield offhand; else Down:LHd/LHo",
+  "late_model": "Sword1/Dagger2 offhand only: Out:LHo/LHf for mainEquipStat1+Spear4, otherwise Up:LHu/LHc",
+  "expected_unchanged": "228 no-offhand Weapon2 Out branch; equipment permissions, right-hand layers, data and images",
+  "full_guard_confirmation_owner": "sol_teacher_ui_216",
+  "original_exe_sha256": "97be86a7597fbd9763f9b4b0ed1f4a7e47c960703fa30857c32daa056b7d403b",
+  "static_ranges": [
+    [
+      "0x43a8e5",
+      "0x43a9d1"
+    ],
+    [
+      "0x43b7a0",
+      "0x43b7e6"
+    ],
+    [
+      "0x43b9f1",
+      "0x43bad8"
+    ],
+    [
+      "0x454b0c",
+      "0x454b46"
+    ]
+  ],
+  "windows_executable_executed": false,
+  "all_three_models_confirmed": true,
+  "source_reference_sha256": {
+    "Scripts/Structs/CharacterOutfits.lua": "b9287e2750eb18ea351afd600baca7af99ae364a1df5699d5645cee63671cb0b",
+    "Scripts/Core/ConstAndBits.lua": "466b2f8b3ccceb3a2ab2d95795493dfabc523ddf3c3cb57d4c6dc33609f12893",
+    "Scripts/Structs/00 structs.lua": "a9634dd16f0c45c15034ef424674937b577bfb7cbfb989dfe263abf11928aee7",
+    "Scripts/Structs/01 common structs.lua": "3e423cf235b8bd99e83aec621b4c38636e7f394b85c693a1342f50dd970d3981",
+    "Scripts/Structs/RemoveItemsLimits.lua": "3f8d6f2f9d4e1687580aee749a596f5f69a167491c2bfd6c64c7cb0a73c8d8f2"
+  }
+}

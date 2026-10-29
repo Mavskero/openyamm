@@ -1,0 +1,79 @@
+{
+  "checkpoint": 229,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-30T03:41:50.708338+08:00",
+  "source_base": "70b961a21efc91e970fb9f81bb902dc2665ca303",
+  "runtime": "local-data/validation/equipment-feedback-227/runtime-001",
+  "runtime_changed": false,
+  "save_version": 105,
+  "scope": [
+    "Source-proven early/late left-arm asset and anchor model shared by composite/fallback",
+    "Down LHd/LHo, Up LHu/LHc, Out LHo/LHf selected by actual original item-type and skill guards",
+    "Late grip only for Sword/Dagger offhand;228 no-offhand Weapon2 output retained"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 5.630598,
+      "started_at": "2026-10-29T19:38:50.887988+00:00",
+      "finished_at": "2026-10-29T19:38:56.518586+00:00"
+    },
+    "actual-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 14.163755,
+      "started_at": "2026-10-29T19:39:35.770242+00:00",
+      "finished_at": "2026-10-29T19:39:49.933997+00:00"
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 10.106407,
+      "started_at": "2026-10-29T19:39:35.690113+00:00",
+      "finished_at": "2026-10-29T19:39:45.796520+00:00"
+    }
+  },
+  "source_files_verified": 2,
+  "tables_assets_equipment_rules_class_skill_inventory_changed": false,
+  "new_test_cases": 0,
+  "existing_cases_executed": 0,
+  "app_gui_runs": 1,
+  "app_frames": 31,
+  "captures": 2,
+  "images_reviewed": 2,
+  "capture_frames": {
+    "default": [
+      12,
+      14
+    ],
+    "shield": [
+      24,
+      26
+    ]
+  },
+  "actual_window_points": [
+    1210,
+    834
+  ],
+  "drawable_pixels": [
+    2420,
+    1668
+  ],
+  "original_save_version": 85,
+  "original_and_copy_hashes_unchanged": true,
+  "gameplay_delta": 0,
+  "ui_fixture": "Normal portrait inputs show member0, close, then member1; no Party/equipment/skill/map/pose/gold/time state edits",
+  "save_writes": 0,
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "device_operations": 0,
+  "replay228_staff": false,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "limitations": [
+    "Only original empty and shield subjects were rendered; dual wield/other types/fallback remain source/build scope",
+    "Paused UI capture is not ordinary gameplay continuation or equipment-transaction acceptance",
+    "Full natural campaign and target-iPad affected UI remain unproved"
+  ]
+}

@@ -8378,27 +8378,53 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
         pCharacter != nullptr && pCharacter->equipment.offHand != 0 && context.itemTable() != nullptr
             ? context.itemTable()->get(pCharacter->equipment.offHand)
             : nullptr;
-    SkillMastery spearMastery = SkillMastery::None;
-
-    if (pCharacter != nullptr)
+    struct LeftHandLayer
     {
-        const CharacterSkill *pSpearSkill = pCharacter->findSkill("Spear");
-
-        if (pSpearSkill != nullptr)
+        const std::string *pAsset = nullptr;
+        int x = 0;
+        int y = 0;
+    };
+    struct LeftHandLayers
+    {
+        std::optional<LeftHandLayer> early;
+        std::optional<LeftHandLayer> late;
+    };
+    LeftHandLayers leftHandLayers;
+    if (pCharacterDollEntry != nullptr && pCharacterDollType != nullptr)
+    {
+        const LeftHandLayer down{
+            &pCharacterDollEntry->leftHandClosedAsset,
+            pCharacterDollType->leftHandOpenX, pCharacterDollType->leftHandOpenY};
+        const LeftHandLayer up{
+            &pCharacterDollEntry->leftHandHoldAsset,
+            pCharacterDollType->leftHandClosedX, pCharacterDollType->leftHandClosedY};
+        const LeftHandLayer out{
+            &pCharacterDollEntry->leftHandOpenAsset,
+            pCharacterDollType->leftHandFingersX, pCharacterDollType->leftHandFingersY};
+        // Native MM8 EquipStat 1 is Weapon2; Weapon1or2 is EquipStat 0.
+        const bool nativeTwoHandedMain = pMainHandItem != nullptr && pMainHandItem->equipStat == "Weapon2";
+        const bool mainHandSpear =
+            pMainHandItem != nullptr && canonicalSkillName(pMainHandItem->skillGroup) == "Spear";
+        const bool offHandEmpty = pCharacter == nullptr || pCharacter->equipment.offHand == 0;
+        const std::string offHandSkill =
+            pOffHandItem != nullptr ? canonicalSkillName(pOffHandItem->skillGroup) : std::string{};
+        if (nativeTwoHandedMain && (mainHandSpear || offHandEmpty))
         {
-            spearMastery = pSpearSkill->mastery;
+            leftHandLayers.early = out;
+        }
+        else if (pOffHandItem != nullptr && offHandSkill != "Shield")
+        {
+            leftHandLayers.early = up;
+        }
+        else
+        {
+            leftHandLayers.early = down;
+        }
+        if (offHandSkill == "Sword" || offHandSkill == "Dagger")
+        {
+            leftHandLayers.late = nativeTwoHandedMain && mainHandSpear ? out : up;
         }
     }
-
-    const bool leftHandDisabled =
-        pMainHandItem != nullptr
-        && (pMainHandItem->equipStat == "Weapon2"
-            || (canonicalSkillName(pMainHandItem->skillGroup) == "Spear" && spearMastery < SkillMastery::Master));
-    const bool useNativeTwoHandedWeaponPose =
-        pMainHandItem != nullptr && pCharacter != nullptr
-        && pCharacter->equipment.offHand == 0 && pMainHandItem->equipStat == "Weapon2";
-    const bool offHandWeaponGripAbove =
-        pOffHandItem != nullptr && pOffHandItem->equipStat != "Shield";
     std::optional<NativePaperdollComposite> nativePaperdollComposite;
     std::optional<GameplayResolvedHudLayoutElement> nativePaperdollResolved;
     std::optional<GameplayHudTextureHandle> cachedPaperdollTexture;
@@ -8437,7 +8463,6 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             appendSignatureNumber(static_cast<uint64_t>(height));
             appendSignatureNumber(pCharacterDollEntry->id);
             appendSignatureNumber(pCharacterDollEntry->dollTypeId);
-            appendSignatureNumber(static_cast<uint64_t>(spearMastery));
             appendSignatureText(pCharacterDollEntry->backgroundAsset);
             appendSignatureText(pCharacterDollEntry->bodyAsset);
             appendSignatureText(pCharacterDollEntry->leftHandClosedAsset);
@@ -8609,23 +8634,12 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
 
                     if (normalizedLayoutId == "characterdolllefthand")
                     {
-                        if (pOffHandItem != nullptr)
+                        if (leftHandLayers.early.has_value())
                         {
-                            if (pOffHandItem->equipStat == "Shield")
-                            {
-                                compositeHudLayer(
-                                    pCharacterDollEntry->leftHandClosedAsset,
-                                    pCharacterDollType->leftHandClosedX,
-                                    pCharacterDollType->leftHandClosedY);
-                            }
-                        }
-                        else if (!leftHandDisabled || useNativeTwoHandedWeaponPose)
-                        {
-                            // Native MM8 draws a two-handed weapon's LHo pose at LHf before armor.
                             compositeHudLayer(
-                                pCharacterDollEntry->leftHandOpenAsset,
-                                pCharacterDollType->leftHandFingersX,
-                                pCharacterDollType->leftHandFingersY);
+                                *leftHandLayers.early->pAsset,
+                                leftHandLayers.early->x,
+                                leftHandLayers.early->y);
                         }
 
                         continue;
@@ -8641,12 +8655,12 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                                 pCharacterDollType->rightHandFingersY);
                         }
 
-                        if ((leftHandDisabled && !useNativeTwoHandedWeaponPose) || offHandWeaponGripAbove)
+                        if (leftHandLayers.late.has_value())
                         {
                             compositeHudLayer(
-                                pCharacterDollEntry->leftHandHoldAsset,
-                                pCharacterDollType->leftHandOpenX,
-                                pCharacterDollType->leftHandOpenY);
+                                *leftHandLayers.late->pAsset,
+                                leftHandLayers.late->x,
+                                leftHandLayers.late->y);
                         }
 
                         continue;
@@ -9196,31 +9210,14 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                 continue;
             }
 
-            if (pOffHandItem != nullptr)
+            if (leftHandLayers.early.has_value())
             {
-                if (pOffHandItem->equipStat == "Shield")
-                {
-                    submitCharacterDollLayer(
-                        *pLayout,
-                        *resolved,
-                        pCharacterDollEntry->leftHandClosedAsset,
-                        pCharacterDollType->leftHandClosedX,
-                        pCharacterDollType->leftHandClosedY);
-                }
-            }
-            else if (leftHandDisabled && !useNativeTwoHandedWeaponPose)
-            {
-                continue;
-            }
-            else
-            {
-                // Keep the two-handed LHo/LHf pose before armor, matching the native composite.
                 submitCharacterDollLayer(
                     *pLayout,
                     *resolved,
-                    pCharacterDollEntry->leftHandOpenAsset,
-                    pCharacterDollType->leftHandFingersX,
-                    pCharacterDollType->leftHandFingersY);
+                    *leftHandLayers.early->pAsset,
+                    leftHandLayers.early->x,
+                    leftHandLayers.early->y);
             }
 
             continue;
@@ -9230,7 +9227,7 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
             && !characterScreen.dollJewelryOverlayOpen
             && pCharacterDollEntry != nullptr
             && pCharacterDollType != nullptr
-            && (pMainHandItem != nullptr || offHandWeaponGripAbove))
+            && (pMainHandItem != nullptr || leftHandLayers.late.has_value()))
         {
             if (paperdollCompositeSubmitted)
             {
@@ -9247,14 +9244,14 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
                     pCharacterDollType->rightHandFingersY);
             }
 
-            if ((leftHandDisabled && !useNativeTwoHandedWeaponPose) || offHandWeaponGripAbove)
+            if (leftHandLayers.late.has_value())
             {
                 submitCharacterDollLayer(
                     *pLayout,
                     *resolved,
-                    pCharacterDollEntry->leftHandHoldAsset,
-                    pCharacterDollType->leftHandOpenX,
-                    pCharacterDollType->leftHandOpenY);
+                    *leftHandLayers.late->pAsset,
+                    leftHandLayers.late->x,
+                    leftHandLayers.late->y);
             }
 
             continue;

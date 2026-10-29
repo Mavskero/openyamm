@@ -4,6 +4,14 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 229 ACCEPTED_SCOPED: `handoff/paperdoll-left-arm-229/scoped-result.json`.
+  Original early/late left-arm model nowshared bycomposite/fallback:Down LHd/LHo,Up LHu/LHc,Out LHo/LHf;
+  Sword/Dagger lategrip only,228 no-offhandWeapon2 retained. No art/table/gear/skill/rule changes.
+  One14.164s/31frame Mac originalSave85 empty+shield view,2reviewedimages;original/copy hashes unchanged,
+  delta0,nosavewrites. Native5.631s/unsignediOS10.106s pass,2sourcehashmatch;0cases/campaign/device/release.
+  Runtime227/UI214/Save105 retained. Dualwield/otherdolls/fallback source/build only;fullnaturalcampaign
+  unproved,goalACTIVE/~85%lowconfidence. No replay228 or new device checkpoint.
+
 - 228 ACCEPTED_SCOPED: `handoff/paperdoll-staff-arm-228/scoped-result.json`.
   Original no-offhand Weapon2 LHo/LHf arm restored before armor in native composite andfallback; no art/table/rules
   change. One13.725s/19frame Mac originalSave85 character9/staff79/armor84 view,1reviewedimage shows old83gap gone;
