@@ -1,6 +1,7 @@
 #pragma once
 
 #include "game/data/GameDataRepository.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/MenuScreenBase.h"
 #include "game/ui/UiLayoutManager.h"
 
@@ -12,7 +13,6 @@
 
 namespace OpenYAMM::Game
 {
-class UiTextTable;
 class LoadGameScreen : public MenuScreenBase
 {
 public:
@@ -39,6 +39,8 @@ private:
         std::string locationName;
         std::string weekdayClockText;
         std::string dateText;
+        double savedGameMinutes = 0.0;
+        bool hasCustomName = false;
         bool populated = false;
         int previewWidth = 0;
         int previewHeight = 0;
@@ -77,6 +79,7 @@ private:
     size_t m_lastClickedSlotIndex = static_cast<size_t>(-1);
     std::vector<SaveSlotSummary> m_slots;
     std::string m_errorText;
+    std::optional<UiTextTable> m_uiText;
     std::string m_emptySlotText;
     bool m_slotsLoaded = false;
 

@@ -1975,7 +1975,10 @@ void GameplayScreenRuntime::openSaveGameOverlay()
 
 void GameplayScreenRuntime::refreshSaveGameOverlaySlots()
 {
-    refreshSaveGameSlots(uiController().saveGameScreen(), m_session.data().mapEntries());
+    refreshSaveGameSlots(
+        uiController().saveGameScreen(),
+        m_session.data().mapEntries(),
+        &gameplayUiRuntime().uiTextTable());
 }
 
 void GameplayScreenRuntime::closeSaveGameOverlay()

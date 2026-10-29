@@ -67,7 +67,8 @@ std::string resolveSaveLocationName(const std::vector<MapStatsEntry> &mapEntries
 
 void refreshSaveGameSlots(
     GameplayUiController::SaveGameScreenState &saveGameScreen,
-    const std::vector<MapStatsEntry> &mapEntries)
+    const std::vector<MapStatsEntry> &mapEntries,
+    const UiTextTable *pUiText)
 {
     saveGameScreen.slots.clear();
     saveGameScreen.errorText.clear();
@@ -101,9 +102,10 @@ void refreshSaveGameSlots(
             if (saveData)
             {
                 slot.populated = true;
-                slot.fileLabel = !saveData->saveName.empty() ? saveData->saveName : friendlySaveFileLabel(slot.path);
+                slot.fileLabel = !saveData->saveName.empty()
+                    ? saveData->saveName : friendlySaveFileLabel(slot.path, pUiText);
                 slot.locationName = resolveSaveLocationName(mapEntries, saveData->mapFileName);
-                const SaveSlotTimeText timeText = formatSaveSlotTime(saveData->savedGameMinutes);
+                const SaveSlotTimeText timeText = formatSaveSlotTime(saveData->savedGameMinutes, pUiText);
                 slot.weekdayClockText = timeText.clock;
                 slot.dateText = timeText.date;
 
@@ -127,7 +129,7 @@ void refreshSaveGameSlots(
 
         if (slot.fileLabel.empty())
         {
-            slot.fileLabel = "Empty";
+            slot.fileLabel = pUiText != nullptr ? pUiText->text(UiTextTable::Message::EmptySlot) : "Empty";
         }
 
         saveGameScreen.slots.push_back(std::move(slot));
@@ -146,7 +148,8 @@ void refreshSaveGameSlots(
 
 void refreshLoadGameSlots(
     GameplayUiController::LoadGameScreenState &loadGameScreen,
-    const std::vector<MapStatsEntry> &mapEntries)
+    const std::vector<MapStatsEntry> &mapEntries,
+    const UiTextTable *pUiText)
 {
     loadGameScreen.slots.clear();
     loadGameScreen.scrollOffset = 0;
@@ -186,10 +189,11 @@ void refreshLoadGameSlots(
 
         GameplayUiController::SaveSlotSummary slot = {};
         slot.path = entry.path();
-        slot.fileLabel = !saveData->saveName.empty() ? saveData->saveName : friendlySaveFileLabel(entry.path());
+        slot.fileLabel = !saveData->saveName.empty()
+            ? saveData->saveName : friendlySaveFileLabel(entry.path(), pUiText);
         slot.locationName = resolveSaveLocationName(mapEntries, saveData->mapFileName);
         slot.populated = true;
-        const SaveSlotTimeText timeText = formatSaveSlotTime(saveData->savedGameMinutes);
+        const SaveSlotTimeText timeText = formatSaveSlotTime(saveData->savedGameMinutes, pUiText);
         slot.weekdayClockText = timeText.clock;
         slot.dateText = timeText.date;
 

@@ -481,7 +481,7 @@ const Engine::AssetFileSystem *GameplayUiRuntime::assetFileSystem() const
     return m_pAssetFileSystem;
 }
 
-bool GameplayUiRuntime::ensureGameplayLayoutsLoaded(const GameplayUiController &uiController)
+bool GameplayUiRuntime::ensureUiTextTableLoaded()
 {
     if (m_pAssetFileSystem == nullptr)
     {
@@ -524,6 +524,15 @@ bool GameplayUiRuntime::ensureGameplayLayoutsLoaded(const GameplayUiController &
         }
     }
     if (!m_uiTextTableValid)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool GameplayUiRuntime::ensureGameplayLayoutsLoaded(const GameplayUiController &uiController)
+{
+    if (!ensureUiTextTableLoaded())
     {
         return false;
     }

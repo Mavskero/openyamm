@@ -1,0 +1,213 @@
+{
+  "checkpoint": 195,
+  "status": "ACCEPTED_SCOPED",
+  "date": "2026-10-29T10:45:10.042166+00:00",
+  "source": {
+    "source_base": "47776561d6bf33bc5129282b7f82c07ab701957d",
+    "files": {
+      "game/app/GameApplication.cpp": "6dab409c6107e9fab1f27e7951520410f19cd5b7aaea53d2a5fb748bd72121c6",
+      "game/gameplay/GameplaySaveLoadUiSupport.cpp": "1513d7afdf8f9f02830dde8ad8363d55ccbeb6f0718d6ccb8778fd8540a71f52",
+      "game/gameplay/GameplaySaveLoadUiSupport.h": "1082b8521873678c91fe5f38528153f7a714a8863320b8d5fd544ecca94ef91d",
+      "game/gameplay/GameplayScreenRuntime.cpp": "5979b25c2d1d7a8b2c60a579260c134c644f19e33851c7431fedfff2455467e8",
+      "game/tables/UiTextTable.cpp": "8c7c89ef10e10059e65361dc11a4eaf37eaa8bcfb23dbd85445e5f6aac131fbf",
+      "game/tables/UiTextTable.h": "a935c1a938a1a0a3665647c62c296fb32406c94af822dd64ca2948de72d383f9",
+      "game/ui/GameplayHudOverlaySupport.cpp": "3971444fc136f95085329f13afe0a0448ce284d59740affe5e4816c24216f14e",
+      "game/ui/GameplayUiRuntime.cpp": "cd89aaba86981e86c753090aef3e8742399ae3b4c491b22d0403320e1bd86699",
+      "game/ui/GameplayUiRuntime.h": "41ae76d38efa577f5c6a9e1a33bc59e5123eff1f0335ba11a54f9907c1e8df4e",
+      "game/ui/SaveSlotText.h": "205404731b82ba29b7cf70d6fc8aad26cd9e08a215d61f8445a61da9b62d2ef1",
+      "game/ui/screens/LoadGameScreen.cpp": "3a44a3b32e205a881836a5644187b9c299467d71e11c84069750cd6e23d60c68",
+      "game/ui/screens/LoadGameScreen.h": "7c76ac8a985ca85e86d7193c52f93f7d25143ab37317adaa01b68644d7d6af75",
+      "game/ui/screens/NewGameScreen.cpp": "bb20b28326676aabab48ccd35092b190cfa9c9999c1c76a45d5c7d2dcb9379bd",
+      "game/ui/screens/NewGameScreen.h": "2337d7362f41c1e5aff16defd271d3d3709ab962e466f2dfbccbce11ee2aa127",
+      "tools/UiPlayabilityCapture.cpp": "efb09e62673c1eac333e24c107c4e305bb3db74955ec5917d6c938f0b365b4af",
+      "tools/mmerge_import/CoreResources.cpp": "930d9e6e7c09cb03ba0d837eb8362363e6d5dd0f77fb0061c0477a6905395b8a"
+    },
+    "build": "build-native-001"
+  },
+  "scope": [
+    "Shared source-backed mastery/None/calendar/default save labels; 72-key UI table with strict complete legacy compatibility.",
+    "Cold main-menu Load/New Game and warmup now bind asset filesystem and load UI text before opening.",
+    "Save listing caches reformat source metadata with current text table while preserving custom save names."
+  ],
+  "runtime": "local-data/validation/ui-function-completion-195/runtime-001",
+  "save_version": 104,
+  "commands": {
+    "build-native-001": {
+      "argv": [
+        "cmake",
+        "--build",
+        "openyamm/build-apple",
+        "--target",
+        "openyamm",
+        "ui_playability_capture",
+        "core_import",
+        "-j3"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 80910,
+      "started_at": "2026-10-29T10:38:21.314484+00:00",
+      "finished_at": "2026-10-29T10:39:33.372316+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 900.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/build-native-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/cmake",
+      "executed_binary_sha256": "049f07ea648e3be71c54ef010110f359124b0bac64bd3ca873cd56976c76ce0e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "core-import-001": {
+      "argv": [
+        "openyamm/build-apple/core_import",
+        "local-data/validation/mm8-runtime-076/source-001",
+        "local-data/validation/ui-function-completion-195/core-ui-text-001"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 82364,
+      "started_at": "2026-10-29T10:39:45.198384+00:00",
+      "finished_at": "2026-10-29T10:39:45.323310+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 180.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/core-import-001.log",
+      "executed_binary": "openyamm/build-apple/core_import",
+      "executed_binary_sha256": "c375ab50fcf95819754d7f0ff30a2fa7779011615b59f7af54910d9cac016258",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "assemble-runtime-001": {
+      "argv": [
+        "python3",
+        "local-data/validation/ui-function-completion-195/assemble_runtime.py"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 82380,
+      "started_at": "2026-10-29T10:39:45.410373+00:00",
+      "finished_at": "2026-10-29T10:39:47.387940+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 180.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/assemble-runtime-001.log",
+      "executed_binary": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/.tools-venv/bin/python3",
+      "executed_binary_sha256": "30b2a6bf9706029b609327ca5db722cd458239df96efc87e1f8e37beed49db2e",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "actual-001": {
+      "argv": [
+        "openyamm/build-apple/ui_playability_capture",
+        "local-data/validation/ui-function-completion-195/runtime-001",
+        "local-data/validation/batch-integration-132/mm7-smoke-001/mm7-castle-clear-reload-complete.oysav",
+        "local-data/validation/ui-function-completion-195/actual-001",
+        "--labels-only"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 82758,
+      "started_at": "2026-10-29T10:40:12.118273+00:00",
+      "finished_at": "2026-10-29T10:40:16.000122+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 60.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/actual-001.log",
+      "executed_binary": "openyamm/build-apple/ui_playability_capture",
+      "executed_binary_sha256": "504b621d5c96c72a718fdceb044863f49cbb0421023f05be6336dccbe0f4c58b",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    },
+    "build-ios-001": {
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "openyamm/build-ios-xcode/OpenYAMM.xcodeproj",
+        "-scheme",
+        "openyamm_ipados",
+        "-configuration",
+        "Release",
+        "-destination",
+        "generic/platform=iOS",
+        "-derivedDataPath",
+        "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current",
+        "-jobs",
+        "3",
+        "CODE_SIGNING_ALLOWED=NO",
+        "build"
+      ],
+      "cwd": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados",
+      "pid": 83620,
+      "started_at": "2026-10-29T10:41:17.381440+00:00",
+      "finished_at": "2026-10-29T10:42:12.363304+00:00",
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_seconds": 900.0,
+      "log": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/build-ios-001.log",
+      "executed_binary": "/usr/bin/xcodebuild",
+      "executed_binary_sha256": "cdd556d44e6ecae330e9549b2243a6ed5873a050864272d28e9a81f2bde56556",
+      "environment": {
+        "TMPDIR": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/tmp/",
+        "OPENYAMM_DERIVED_DATA_PATH": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/external-storage/xcode-deriveddata/current"
+      }
+    }
+  },
+  "actual": {
+    "passed": true,
+    "checkpoint": 195,
+    "frames": 15,
+    "captures": 2,
+    "gameplay_session_loaded": false,
+    "new_unit_cases": 0,
+    "device": false
+  },
+  "visual_review": {
+    "images": [
+      {
+        "file": "actual-001/cold-load-localized-calendar.png",
+        "sha256": "04a8a2ff83db0c213f35e76fbf3f8d4049084a069cf311cdec5e7f09cc02a2b9",
+        "review": "自动存档、快速保存、存档99、星期一、一月均可读；无预览图来自原输入。",
+        "accepted": true
+      },
+      {
+        "file": "actual-001/creation-localized-mastery.png",
+        "sha256": "4ddc5e89dce6700cd1a4b0ff313d0879b9c4d137e847a723282135b37f5b36aa",
+        "review": "长剑详情普通/专家/大师/宗师均显示中文，说明完整可见。",
+        "accepted": true
+      }
+    ],
+    "scope": "Cold main-menu load preview and New Game mastery popup; no gameplay session loaded or new party created."
+  },
+  "runtime_diff": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-194/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/runtime-001",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "bc4d6a8e1f0a84094db2695bb304c7ed5ede825979ae5fd8c32c409e7ffd8733",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "fixtures": [
+    "Normal132 MM7 source save decoded only to create three independent preview files; empty custom names and year1169 set.",
+    "New Game Jadame selection and actual right button skill popup; UI time held at zero. No session loaded/new party."
+  ],
+  "limitations": [
+    "No target iPad keyboard/IME/touch acceptance.",
+    "No natural campaign, live save load, new party creation or full UI acceptance.",
+    "One existing punctuation wrap starts a line with a Chinese full stop; tracked for subsequent device-independent typography work."
+  ],
+  "new_unit_cases": 0,
+  "campaign_replays": 0,
+  "cold_gameplay_replays": 0,
+  "device_or_simulator": false,
+  "owned_jobs": [],
+  "next": "Publish the user-requested remote physical-iPad test package and handoff; continue device-independent development."
+}

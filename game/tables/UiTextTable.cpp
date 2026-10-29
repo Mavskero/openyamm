@@ -64,6 +64,33 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.rest_wait_five_minutes", "Wait 5 Minutes"},
     {"ui.rest_wait_one_hour", "Wait 1 Hour"},
     {"ui.rest_exit", "Exit Rest"},
+    {"ui.skill_normal", "Normal"},
+    {"ui.skill_expert", "Expert"},
+    {"ui.skill_master", "Master"},
+    {"ui.skill_grandmaster", "Grandmaster"},
+    {"ui.none", "None"},
+    {"ui.weekday_monday", "Monday"},
+    {"ui.weekday_tuesday", "Tuesday"},
+    {"ui.weekday_wednesday", "Wednesday"},
+    {"ui.weekday_thursday", "Thursday"},
+    {"ui.weekday_friday", "Friday"},
+    {"ui.weekday_saturday", "Saturday"},
+    {"ui.weekday_sunday", "Sunday"},
+    {"ui.month_january", "January"},
+    {"ui.month_february", "February"},
+    {"ui.month_march", "March"},
+    {"ui.month_april", "April"},
+    {"ui.month_may", "May"},
+    {"ui.month_june", "June"},
+    {"ui.month_july", "July"},
+    {"ui.month_august", "August"},
+    {"ui.month_september", "September"},
+    {"ui.month_october", "October"},
+    {"ui.month_november", "November"},
+    {"ui.month_december", "December"},
+    {"ui.save_autosave", "Autosave"},
+    {"ui.save_quicksave", "Quicksave"},
+    {"ui.save_slot", "Save"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -103,7 +130,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
 {
     // Migrate only complete older prefixes: the original 13 captions, the 16 with
     // Arcomage, the 19 with initial inspect labels, the 26 with item details,
-    // the 35 with win text and the 39 with bank captions.
+    // the 35 with win text, the 39 with bank captions and the 45 with rest captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -111,6 +138,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t ItemDetailMessageCount = size_t(Message::Congratulations);
     constexpr size_t WinMessageCount = size_t(Message::BankBalance);
     constexpr size_t BankMessageCount = size_t(Message::RestHealEightHours);
+    constexpr size_t RestMessageCount = size_t(Message::SkillNormal);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -118,7 +146,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != InspectMessageCount
         && schemaMessageCount != ItemDetailMessageCount
         && schemaMessageCount != WinMessageCount
-        && schemaMessageCount != BankMessageCount)
+        && schemaMessageCount != BankMessageCount
+        && schemaMessageCount != RestMessageCount)
     {
         return false;
     }
@@ -203,6 +232,11 @@ std::string UiTextTable::formatWinCharacter(
     result.replace(levelOffset, 2, std::to_string(level));
     result.replace(nameOffset, 2, name);
     return result;
+}
+
+std::string UiTextTable::formatMasteryDescription(Message mastery, const std::string &description) const
+{
+    return description.empty() ? std::string{} : text(mastery) + ": " + description;
 }
 
 const char *UiTextTable::key(Message message)

@@ -133,6 +133,7 @@ public:
     const Engine::AssetFileSystem *assetFileSystem() const;
 
     bool ensureGameplayLayoutsLoaded(const GameplayUiController &uiController);
+    bool ensureUiTextTableLoaded();
     const UiTextTable &uiTextTable() const;
     void preloadReferencedAssets();
 

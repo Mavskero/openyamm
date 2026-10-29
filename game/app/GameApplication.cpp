@@ -6064,6 +6064,13 @@ void GameApplication::updateDeferredMainMenuChildWarmup()
         return;
     }
 
+    GameplayUiRuntime &uiRuntime = m_gameSession.gameplayUiRuntime();
+    uiRuntime.bindAssetFileSystem(m_pAssetFileSystem);
+    if (!uiRuntime.ensureUiTextTableLoaded())
+    {
+        return;
+    }
+
     if (m_deferredMainMenuChildWarmupStage == 1)
     {
         NewGameScreen warmupScreen(
@@ -6078,7 +6085,8 @@ void GameApplication::updateDeferredMainMenuChildWarmup()
             },
             []()
             {
-            });
+            },
+            &uiRuntime.uiTextTable());
         warmupScreen.prepareForFirstFrame();
         m_deferredMainMenuChildWarmupStage = 2;
         return;
@@ -6095,7 +6103,8 @@ void GameApplication::updateDeferredMainMenuChildWarmup()
             },
             []()
             {
-            });
+            },
+            &uiRuntime.uiTextTable());
         warmupScreen.prepareForFirstFrame();
         m_mainMenuChildScreensPrepared = true;
         m_deferredMainMenuChildWarmupStage = 0;
@@ -8545,6 +8554,14 @@ void GameApplication::openLoadGameScreen(bool returnToGameplayMenu, const std::s
         return;
     }
 
+    GameplayUiRuntime &uiRuntime = m_gameSession.gameplayUiRuntime();
+    uiRuntime.bindAssetFileSystem(m_pAssetFileSystem);
+    if (!uiRuntime.ensureUiTextTableLoaded())
+    {
+        std::cerr << "GameApplication: menu UI text is unavailable\n";
+        return;
+    }
+
     GAMEPLAY_DEBUG_TRACE(
         "load_game_screen_opened source=\"" + source + "\""
         + " return_to_gameplay_menu=" + (returnToGameplayMenu ? "true" : "false"));
@@ -8567,7 +8584,7 @@ void GameApplication::openLoadGameScreen(bool returnToGameplayMenu, const std::s
                 openMainMenuScreen();
             }
         },
-        &m_gameSession.gameplayScreenRuntime().gameplayUiRuntime().uiTextTable());
+        &uiRuntime.uiTextTable());
 
     if (!m_mainMenuChildScreensPrepared)
     {
@@ -8586,6 +8603,14 @@ void GameApplication::openNewGameScreen(const std::string &source)
 
     if (!ensureCommonGameDataLoaded())
     {
+        return;
+    }
+
+    GameplayUiRuntime &uiRuntime = m_gameSession.gameplayUiRuntime();
+    uiRuntime.bindAssetFileSystem(m_pAssetFileSystem);
+    if (!uiRuntime.ensureUiTextTableLoaded())
+    {
+        std::cerr << "GameApplication: menu UI text is unavailable\n";
         return;
     }
 
@@ -8626,7 +8651,8 @@ void GameApplication::openNewGameScreen(const std::string &source)
             {
                 openMainMenuScreen();
             }
-        });
+        },
+        &uiRuntime.uiTextTable());
 
     if (!m_mainMenuChildScreensPrepared)
     {

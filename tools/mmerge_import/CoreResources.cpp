@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 38> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 64> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -274,10 +274,36 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::RestWaitFiveMinutes, 238},
         {UiMessage::RestWaitOneHour, 239},
         {UiMessage::RestExit, 81},
+        {UiMessage::SkillNormal, 431},
+        {UiMessage::SkillExpert, 433},
+        {UiMessage::SkillMaster, 432},
+        {UiMessage::SkillGrandmaster, 225},
+        {UiMessage::None, 153},
+        {UiMessage::WeekdayMonday, 145},
+        {UiMessage::WeekdayTuesday, 230},
+        {UiMessage::WeekdayWednesday, 243},
+        {UiMessage::WeekdayThursday, 227},
+        {UiMessage::WeekdayFriday, 91},
+        {UiMessage::WeekdaySaturday, 188},
+        {UiMessage::WeekdaySunday, 222},
+        {UiMessage::MonthJanuary, 415},
+        {UiMessage::MonthFebruary, 416},
+        {UiMessage::MonthMarch, 417},
+        {UiMessage::MonthApril, 418},
+        {UiMessage::MonthMay, 419},
+        {UiMessage::MonthJune, 420},
+        {UiMessage::MonthJuly, 421},
+        {UiMessage::MonthAugust, 422},
+        {UiMessage::MonthSeptember, 423},
+        {UiMessage::MonthOctober, 424},
+        {UiMessage::MonthNovember, 425},
+        {UiMessage::MonthDecember, 426},
+        {UiMessage::SaveAutosave, 16},
+        {UiMessage::SaveQuicksave, 748},
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 7> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 8> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -286,6 +312,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
             "干得好！你挫败了世界毁灭者，将你的世界从永恒毁灭的边缘拯救了回来。"
             "生命得以延续，贾达姆也迎来了新的和平。"
             "你缔结的强大联盟将确保这片土地得到重建，并最终走向繁荣。"},
+        {UiMessage::SaveSlot, "存档"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

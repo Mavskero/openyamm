@@ -92,6 +92,111 @@ struct NewGameScreenTestAccess
 };
 struct ApplicationCaptureTestAccess
 {
+    static int runLabels(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
+    {
+        runtime = std::filesystem::canonical(runtime);
+        input = std::filesystem::canonical(input);
+        output = std::filesystem::weakly_canonical(output);
+        require(!std::filesystem::exists(output), "Label output must be new");
+        std::string error;
+        auto source = loadGameDataFromPath(input, error);
+        require(source.has_value(), "Preview seed unavailable");
+        std::filesystem::create_directories(output / "saves");
+        source->saveName.clear(); source->savedGameMinutes = 336 * 1440 + 540;
+        for (const char *name : {"autosave.oysav", "quicksave.oysav", "save99.oysav"})
+            require(saveGameDataToPath(output / "saves" / name, *source, error), "Preview slot write failed");
+        std::filesystem::current_path(output);
+        GameSettings settings = GameSettings::createDefault();
+        settings.assetRoot = runtime.string(); settings.startInMainMenu = true; settings.preseedParty = false;
+        settings.windowMode = WindowMode::Windowed;
+        require(saveGameSettings("settings.ini", settings, error), "Settings write failed");
+        std::ofstream("fixture.txt") << "195 cold-menu label preview. Original seed decoded solely for3independent "
+            "preview files with empty names/year1169; no game session or new party loaded/committed. "
+            "Production mainmenu Load/NewGame calls; creation Jadame selected directly, actual SDLright skill press. "
+            "2screenshots/delta0/no gameplay/oldroute/device/newcase. Original runtime/save preserved.\n";
+        Engine::ApplicationConfig config = Engine::ApplicationConfig::createDefault();
+        config.appName = "OpenYAMM UI Labels195"; config.assetRoot = runtime.string(); config.activeWorldId = "mm7";
+        config.windowWidth = 1210; config.windowHeight = 834; config.verticalSync = true;
+        SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        GameApplication game(config);
+        unsigned frames = 0, phase = 0, ready = 6, captures = 0;
+        bool complete = false;
+        std::string pending;
+        const auto started = std::chrono::steady_clock::now();
+        const auto capture = [&](const char *name)
+        {
+            require(pending.empty() && captures < 2, "Label capture budget exceeded");
+            pending = name; bgfx::requestScreenShot(BGFX_INVALID_HANDLE, name);
+        };
+        try
+        {
+            Engine::EngineApplication app(config,
+                [&](Engine::AssetFileSystem &files) { return game.loadGameData(files); },
+                [&]()
+                {
+                    require(game.initializeRenderer(), "Menu initialization failed");
+                    require(game.m_pMapSceneRuntime == nullptr, "Cold-menu preview unexpectedly loaded gameplay");
+                    game.openLoadGameScreen(false, "main_menu");
+                    const UiTextTable &text = game.m_gameSession.gameplayUiRuntime().uiTextTable();
+                    require(text.text(UiTextTable::Message::SaveAutosave) == "自动存档", "Cold-menu text not loaded");
+                    require(formatSaveSlotTime(source->savedGameMinutes, &text).date.find("一月") != std::string::npos,
+                        "Localized month missing");
+                    require(friendlySaveFileLabel("save99.oysav", &text) == "存档 99", "Localized slot missing");
+                    return true;
+                },
+                [&](const SDL_Event &event) { game.handleSdlEvent(event); },
+                [&](int width, int height, float wheel, float)
+                {
+                    require(++frames < 300 && std::chrono::steady_clock::now() - started < std::chrono::seconds(45),
+                        "Cold-menu label preview exceeded bound");
+                    game.renderFrame(width, height, wheel, 0);
+                    if (!pending.empty())
+                    {
+                        if (const auto image = Engine::BgfxContext::consumeScreenshot(pending))
+                        {
+                            SDL_Surface *surface = SDL_CreateSurfaceFrom(int(image->width), int(image->height),
+                                SDL_PIXELFORMAT_BGRA32, const_cast<uint8_t *>(image->bgraPixels.data()), int(image->width * 4));
+                            require(surface && SDL_SaveBMP(surface, (pending + ".bmp").c_str()), "Label screenshot failed");
+                            SDL_DestroySurface(surface); pending.clear(); ++captures;
+                        }
+                    }
+                    if (frames < ready || !pending.empty()) return;
+                    switch (phase)
+                    {
+                    case 0: capture("cold-load-localized-calendar"); phase = 1; break;
+                    case 1:
+                        game.openNewGameScreen("main_menu");
+                        NewGameScreenTestAccess::choose(*dynamic_cast<NewGameScreen *>(game.m_screenManager.activeScreen()));
+                        phase = 2; ready = frames + 3; break;
+                    case 2:
+                    {
+                        auto &screen = *dynamic_cast<NewGameScreen *>(game.m_screenManager.activeScreen());
+                        const auto rect = NewGameScreenTestAccess::skillRect(screen);
+                        pointer(rect.x, rect.y + 3, width, height, SDL_BUTTON_RIGHT, true);
+                        phase = 3; ready = frames + 1; break;
+                    }
+                    case 3:
+                        capture("creation-localized-mastery");
+                        pointer(0, 0, width, height, SDL_BUTTON_RIGHT, false); phase = 4; break;
+                    case 4:
+                        require(game.m_pMapSceneRuntime == nullptr, "Label preview created a campaign");
+                        complete = true; phase = 5;
+                        { SDL_Event quit{}; quit.type = SDL_EVENT_QUIT; SDL_PushEvent(&quit); }
+                        break;
+                    default: break;
+                    }
+                }, [&]() { game.shutdownApplication(); });
+            require(app.run() == 0 && complete, "Label preview ended early");
+            std::ofstream("result.json") << "{\"passed\":true,\"checkpoint\":195,\"frames\":" << frames
+                << ",\"captures\":" << captures << ",\"gameplay_session_loaded\":false,\"new_unit_cases\":0,\"device\":false}\n";
+            return 0;
+        }
+        catch (const std::exception &exception)
+        {
+            std::ofstream("failure.txt") << "phase=" << phase << " frame=" << frames << " " << exception.what() << '\n';
+            throw;
+        }
+    }
     static int runTravel(std::filesystem::path runtime, std::filesystem::path input, std::filesystem::path output)
     {
         runtime = std::filesystem::canonical(runtime);
@@ -609,7 +714,9 @@ int main(int argc, char **argv)
 {
     try
     {
-        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest]");
+        if (argc != 4 && argc != 5) throw std::runtime_error("ui_playability_capture RUNTIME INPUT NEW_OUTPUT [--remaining-only|--travel-rest|--labels-only]");
+        if (argc == 5 && std::string(argv[4]) == "--labels-only")
+            return OpenYAMM::Game::ApplicationCaptureTestAccess::runLabels(argv[1], argv[2], argv[3]);
         if (argc == 5 && std::string(argv[4]) == "--travel-rest")
             return OpenYAMM::Game::ApplicationCaptureTestAccess::runTravel(argv[1], argv[2], argv[3]);
         return OpenYAMM::Game::ApplicationCaptureTestAccess::run(argv[1], argv[2], argv[3], argc == 5 && std::string(argv[4]) == "--remaining-only");

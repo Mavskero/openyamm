@@ -4,10 +4,11 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
-- Current development direction: finish device-independent source/runtime work before more device checkpoints.
-  See `handoff/ui-function-completion-194/README.md` and preceding190–193 batches; Save104, no new Release/device task.
-  Do not mistake unchanged RC3 attachments for its local runtime, or replay accepted campaigns as a routine gate.
-- Read `IPADOS_HANDOFF.md` for the RC3 / Save103 state and fresh-host build instructions.
+- User now requests cumulative190–195 code/runtime and instructions on GitHub for remote physical-iPad testing.
+  See `handoff/ui-function-completion-195/README.md`, `IPADOS_HANDOFF.md` and `CODEX_IPAD_DEVICE_PROMPT.md`.
+  Save104 requires backups; old RC binaries cannot read newly written104 saves.
+  Current-host device/simulator restriction remains; receiving-host authorization is described below.
+  Continue concrete device-independent UI/function work without batch-by-batch permission or broad campaign replays.
 - `handoff/ipados-rc2-20261028/` contains historical source-workspace records, not active
   instructions to recreate old host paths, restart old agents or inherit an old goal status.
 - Device authorization comes from the current user. The user-invoked task in

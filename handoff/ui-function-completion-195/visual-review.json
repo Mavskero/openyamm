@@ -1,0 +1,17 @@
+{
+  "images": [
+    {
+      "file": "actual-001/cold-load-localized-calendar.png",
+      "sha256": "04a8a2ff83db0c213f35e76fbf3f8d4049084a069cf311cdec5e7f09cc02a2b9",
+      "review": "自动存档、快速保存、存档99、星期一、一月均可读；无预览图来自原输入。",
+      "accepted": true
+    },
+    {
+      "file": "actual-001/creation-localized-mastery.png",
+      "sha256": "4ddc5e89dce6700cd1a4b0ff313d0879b9c4d137e847a723282135b37f5b36aa",
+      "review": "长剑详情普通/专家/大师/宗师均显示中文，说明完整可见。",
+      "accepted": true
+    }
+  ],
+  "scope": "Cold main-menu load preview and New Game mastery popup; no gameplay session loaded or new party created."
+}

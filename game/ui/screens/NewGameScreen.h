@@ -17,6 +17,7 @@
 namespace OpenYAMM::Game
 {
 class GameAudioSystem;
+class UiTextTable;
 
 class NewGameScreen : public MenuScreenBase
 {
@@ -58,7 +59,8 @@ public:
         bool includeGodLichCandidate,
         bool allowIncompleteCharacterCreation,
         ContinueAction continueAction,
-        BackAction backAction);
+        BackAction backAction,
+        const UiTextTable *pUiText = nullptr);
 
     AppMode mode() const override;
     void prepareForFirstFrame();
@@ -194,6 +196,7 @@ private:
 
     GameAudioSystem *m_pGameAudioSystem = nullptr;
     const GameDataRepository *m_pGameData = nullptr;
+    const UiTextTable *m_pUiText = nullptr;
     bool m_debugGodLichRoster = false;
     bool m_includeGodLichCandidate = false;
     bool m_allowIncompleteCharacterCreation = false;

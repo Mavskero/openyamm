@@ -5,6 +5,7 @@
 #include "game/party/SkillData.h"
 #include "game/party/SpellSchool.h"
 #include "game/tables/ItemTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/GameplayHudCommon.h"
 #include "game/ui/CharacterSkillsLayout.h"
 #include "game/ui/CharacterSkillRows.h"
@@ -584,28 +585,30 @@ void GameplayHudOverlaySupport::updateCharacterInspectOverlay(
                         "Skill added to Attack Bonus (quintuple effect); +1 damage per skill point";
                 }
 
-                overlay.normal.text = "Normal: " + normalDescription;
+                const UiTextTable &uiText = context.gameplayUiRuntime().uiTextTable();
+                overlay.normal.text = uiText.formatMasteryDescription(UiTextTable::Message::SkillNormal, normalDescription);
                 overlay.normal.availability = skillMasteryAvailability(
                     context.classSkillTable(),
                     pCharacter,
                     row.canonicalName,
                     SkillMastery::Normal);
                 overlay.normal.visible = !normalDescription.empty();
-                overlay.expert.text = "Expert: " + expertDescription;
+                overlay.expert.text = uiText.formatMasteryDescription(UiTextTable::Message::SkillExpert, expertDescription);
                 overlay.expert.availability = skillMasteryAvailability(
                     context.classSkillTable(),
                     pCharacter,
                     row.canonicalName,
                     SkillMastery::Expert);
                 overlay.expert.visible = !expertDescription.empty();
-                overlay.master.text = "Master: " + masterDescription;
+                overlay.master.text = uiText.formatMasteryDescription(UiTextTable::Message::SkillMaster, masterDescription);
                 overlay.master.availability = skillMasteryAvailability(
                     context.classSkillTable(),
                     pCharacter,
                     row.canonicalName,
                     SkillMastery::Master);
                 overlay.master.visible = !masterDescription.empty();
-                overlay.grandmaster.text = "Grandmaster: " + grandmasterDescription;
+                overlay.grandmaster.text = uiText.formatMasteryDescription(
+                    UiTextTable::Message::SkillGrandmaster, grandmasterDescription);
                 overlay.grandmaster.availability = skillMasteryAvailability(
                     context.classSkillTable(),
                     pCharacter,
@@ -1112,11 +1115,12 @@ void GameplayHudOverlaySupport::updateSpellInspectOverlay(
         overlay.hasManaCost = true;
         overlay.title = pSpellEntry->name;
         overlay.body = pSpellEntry->description;
-        overlay.normal = pSpellEntry->normalText.empty() ? "" : "Normal: " + pSpellEntry->normalText;
-        overlay.expert = pSpellEntry->expertText.empty() ? "" : "Expert: " + pSpellEntry->expertText;
-        overlay.master = pSpellEntry->masterText.empty() ? "" : "Master: " + pSpellEntry->masterText;
-        overlay.grandmaster =
-            pSpellEntry->grandmasterText.empty() ? "" : "Grand Master: " + pSpellEntry->grandmasterText;
+        const UiTextTable &uiText = context.gameplayUiRuntime().uiTextTable();
+        overlay.normal = uiText.formatMasteryDescription(UiTextTable::Message::SkillNormal, pSpellEntry->normalText);
+        overlay.expert = uiText.formatMasteryDescription(UiTextTable::Message::SkillExpert, pSpellEntry->expertText);
+        overlay.master = uiText.formatMasteryDescription(UiTextTable::Message::SkillMaster, pSpellEntry->masterText);
+        overlay.grandmaster = uiText.formatMasteryDescription(
+            UiTextTable::Message::SkillGrandmaster, pSpellEntry->grandmasterText);
         overlay.sourceX = resolved->x;
         overlay.sourceY = resolved->y;
         overlay.sourceWidth = std::max(1.0f, resolved->width);

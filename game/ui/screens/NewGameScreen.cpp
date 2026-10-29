@@ -6,6 +6,7 @@
 #include "game/gameplay/GameMechanics.h"
 #include "game/party/SkillData.h"
 #include "game/party/SpeechIds.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/Utf8Text.h"
 #if defined(__APPLE__)
 #include "engine/AppleText.h"
@@ -924,6 +925,17 @@ std::string characterCreationSkillDisplayName(
     return displaySkillName(skillName);
 }
 
+const UiTextTable &creationUiText(const UiTextTable *pUiText)
+{
+    if (pUiText != nullptr)
+    {
+        return *pUiText;
+    }
+
+    static const UiTextTable EnglishUiText;
+    return EnglishUiText;
+}
+
 }
 
 NewGameScreen::NewGameScreen(
@@ -934,10 +946,12 @@ NewGameScreen::NewGameScreen(
     bool includeGodLichCandidate,
     bool allowIncompleteCharacterCreation,
     ContinueAction continueAction,
-    BackAction backAction)
+    BackAction backAction,
+    const UiTextTable *pUiText)
     : MenuScreenBase(assetFileSystem)
     , m_pGameAudioSystem(pGameAudioSystem)
     , m_pGameData(&gameData)
+    , m_pUiText(pUiText)
     , m_debugGodLichRoster(debugGodLichRoster)
     , m_includeGodLichCandidate(includeGodLichCandidate)
     , m_allowIncompleteCharacterCreation(allowIncompleteCharacterCreation)
@@ -2166,19 +2180,20 @@ void NewGameScreen::renderSkillInspectPopup(
     const float bodyX = 20.0f * popupScale;
     const float bodyWidth = std::max(1.0f, 377.0f * popupScale);
     const float bodyLineHeight = static_cast<float>(fontHeight("SMALLNUM")) * popupScale;
+    const UiTextTable &uiText = creationUiText(m_pUiText);
     const std::vector<std::string> bodyLines = wrapTextToWidth("SMALLNUM", entry.description, bodyWidth, popupScale);
-    const std::vector<std::string> normalLines = entry.normalDescription.empty()
-        ? std::vector<std::string>{}
-        : wrapTextToWidth("SMALLNUM", "Normal: " + entry.normalDescription, bodyWidth, popupScale);
-    const std::vector<std::string> expertLines = entry.expertDescription.empty()
-        ? std::vector<std::string>{}
-        : wrapTextToWidth("SMALLNUM", "Expert: " + entry.expertDescription, bodyWidth, popupScale);
-    const std::vector<std::string> masterLines = entry.masterDescription.empty()
-        ? std::vector<std::string>{}
-        : wrapTextToWidth("SMALLNUM", "Master: " + entry.masterDescription, bodyWidth, popupScale);
-    const std::vector<std::string> grandmasterLines = entry.grandmasterDescription.empty()
-        ? std::vector<std::string>{}
-        : wrapTextToWidth("SMALLNUM", "Grandmaster: " + entry.grandmasterDescription, bodyWidth, popupScale);
+    const std::vector<std::string> normalLines = wrapTextToWidth("SMALLNUM",
+        uiText.formatMasteryDescription(UiTextTable::Message::SkillNormal, entry.normalDescription),
+        bodyWidth, popupScale);
+    const std::vector<std::string> expertLines = wrapTextToWidth("SMALLNUM",
+        uiText.formatMasteryDescription(UiTextTable::Message::SkillExpert, entry.expertDescription),
+        bodyWidth, popupScale);
+    const std::vector<std::string> masterLines = wrapTextToWidth("SMALLNUM",
+        uiText.formatMasteryDescription(UiTextTable::Message::SkillMaster, entry.masterDescription),
+        bodyWidth, popupScale);
+    const std::vector<std::string> grandmasterLines = wrapTextToWidth("SMALLNUM",
+        uiText.formatMasteryDescription(UiTextTable::Message::SkillGrandmaster, entry.grandmasterDescription),
+        bodyWidth, popupScale);
     const float bodyHeight =
         bodyLines.empty() ? bodyLineHeight : bodyLineHeight * static_cast<float>(bodyLines.size());
     float masteryHeight = 0.0f;
@@ -3567,7 +3582,9 @@ void NewGameScreen::drawScreen(float deltaSeconds)
 
         if (slotIndex >= selectedSkills.size())
         {
-            drawCenteredSkillText("None", skillAnchorRect.x, skillAnchorRect.y, WhiteColor);
+            drawCenteredSkillText(
+                creationUiText(m_pUiText).text(UiTextTable::Message::None),
+                skillAnchorRect.x, skillAnchorRect.y, WhiteColor);
             continue;
         }
 

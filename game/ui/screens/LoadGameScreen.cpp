@@ -353,7 +353,8 @@ LoadGameScreen::LoadGameScreen(
     , m_pGameData(&gameData)
     , m_loadAction(std::move(loadAction))
     , m_cancelAction(std::move(cancelAction))
-    , m_emptySlotText(pUiText != nullptr ? pUiText->text(UiTextTable::Message::EmptySlot) : "Empty")
+    , m_uiText(pUiText != nullptr ? std::make_optional(*pUiText) : std::nullopt)
+    , m_emptySlotText(m_uiText ? m_uiText->text(UiTextTable::Message::EmptySlot) : "Empty")
 {
 }
 
@@ -647,6 +648,7 @@ void LoadGameScreen::refreshSaveSlots()
     m_errorText.clear();
     m_slotsLoaded = true;
     invalidateCachedSaveSlots();
+    const UiTextTable *pUiText = m_uiText ? &*m_uiText : nullptr;
     std::error_code directoryError;
     std::filesystem::create_directories("saves", directoryError);
     if (directoryError)
@@ -684,10 +686,12 @@ void LoadGameScreen::refreshSaveSlots()
 
         SaveSlotSummary slot = {};
         slot.path = entry.path();
-        slot.fileLabel = !saveData->saveName.empty() ? saveData->saveName : friendlySaveFileLabel(entry.path());
+        slot.hasCustomName = !saveData->saveName.empty();
+        slot.fileLabel = slot.hasCustomName ? saveData->saveName : friendlySaveFileLabel(entry.path(), pUiText);
         slot.locationName = saveData->mapFileName;
+        slot.savedGameMinutes = saveData->savedGameMinutes;
         slot.populated = true;
-        const SaveSlotTimeText timeText = formatSaveSlotTime(saveData->savedGameMinutes);
+        const SaveSlotTimeText timeText = formatSaveSlotTime(slot.savedGameMinutes, pUiText);
         slot.weekdayClockText = timeText.clock;
         slot.dateText = timeText.date;
 
@@ -747,6 +751,17 @@ void LoadGameScreen::refreshSaveSlots()
 void LoadGameScreen::loadCachedSaveSlots()
 {
     m_slots = s_cachedSlots;
+    const UiTextTable *pUiText = m_uiText ? &*m_uiText : nullptr;
+    for (SaveSlotSummary &slot : m_slots)
+    {
+        if (!slot.hasCustomName)
+        {
+            slot.fileLabel = friendlySaveFileLabel(slot.path, pUiText);
+        }
+        const SaveSlotTimeText timeText = formatSaveSlotTime(slot.savedGameMinutes, pUiText);
+        slot.weekdayClockText = timeText.clock;
+        slot.dateText = timeText.date;
+    }
     m_errorText.clear();
 
     if (m_selectedIndex >= m_slots.size())

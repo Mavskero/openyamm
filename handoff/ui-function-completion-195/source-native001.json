@@ -1,0 +1,22 @@
+{
+  "source_base": "47776561d6bf33bc5129282b7f82c07ab701957d",
+  "files": {
+    "game/app/GameApplication.cpp": "6dab409c6107e9fab1f27e7951520410f19cd5b7aaea53d2a5fb748bd72121c6",
+    "game/gameplay/GameplaySaveLoadUiSupport.cpp": "1513d7afdf8f9f02830dde8ad8363d55ccbeb6f0718d6ccb8778fd8540a71f52",
+    "game/gameplay/GameplaySaveLoadUiSupport.h": "1082b8521873678c91fe5f38528153f7a714a8863320b8d5fd544ecca94ef91d",
+    "game/gameplay/GameplayScreenRuntime.cpp": "5979b25c2d1d7a8b2c60a579260c134c644f19e33851c7431fedfff2455467e8",
+    "game/tables/UiTextTable.cpp": "8c7c89ef10e10059e65361dc11a4eaf37eaa8bcfb23dbd85445e5f6aac131fbf",
+    "game/tables/UiTextTable.h": "a935c1a938a1a0a3665647c62c296fb32406c94af822dd64ca2948de72d383f9",
+    "game/ui/GameplayHudOverlaySupport.cpp": "3971444fc136f95085329f13afe0a0448ce284d59740affe5e4816c24216f14e",
+    "game/ui/GameplayUiRuntime.cpp": "cd89aaba86981e86c753090aef3e8742399ae3b4c491b22d0403320e1bd86699",
+    "game/ui/GameplayUiRuntime.h": "41ae76d38efa577f5c6a9e1a33bc59e5123eff1f0335ba11a54f9907c1e8df4e",
+    "game/ui/SaveSlotText.h": "205404731b82ba29b7cf70d6fc8aad26cd9e08a215d61f8445a61da9b62d2ef1",
+    "game/ui/screens/LoadGameScreen.cpp": "3a44a3b32e205a881836a5644187b9c299467d71e11c84069750cd6e23d60c68",
+    "game/ui/screens/LoadGameScreen.h": "7c76ac8a985ca85e86d7193c52f93f7d25143ab37317adaa01b68644d7d6af75",
+    "game/ui/screens/NewGameScreen.cpp": "bb20b28326676aabab48ccd35092b190cfa9c9999c1c76a45d5c7d2dcb9379bd",
+    "game/ui/screens/NewGameScreen.h": "2337d7362f41c1e5aff16defd271d3d3709ab962e466f2dfbccbce11ee2aa127",
+    "tools/UiPlayabilityCapture.cpp": "efb09e62673c1eac333e24c107c4e305bb3db74955ec5917d6c938f0b365b4af",
+    "tools/mmerge_import/CoreResources.cpp": "930d9e6e7c09cb03ba0d837eb8362363e6d5dd0f77fb0061c0477a6905395b8a"
+  },
+  "build": "build-native-001"
+}
