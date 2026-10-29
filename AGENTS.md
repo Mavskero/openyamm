@@ -4,6 +4,13 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 218 ACCEPTED_SCOPED: `local-data/validation/ui-function-completion-218/scoped-result.json`.
+  ActualEnglish8skillheaders now source242/138/143,existing11/Level131. Native/core/unsignediOS pass;
+  one11.097s character-page affectedrecheck/1reviewedimage showsall8Chinese,no missingglyph/overlap. Inherited184
+  input/originalhash unchanged,0newcases/campaign/cold/device. Defaultcomplete218/runtime-001 onlyui_text119keys.
+  Save104/214/195/RCsfixed;goalACTIVE/~85%lowconfidence. Next219 firstbounded teacheroffer/learn/skillrow actual;
+  no repeatpassedcampaign or device matrix.216/217teacher paths stillsource/build accepted only.
+
 - 217 ACCEPTED_SOURCE_SCOPED: `local-data/validation/ui-function-completion-217/scoped-result.json`.
   Three50-base-attribute teacher failures now explain localized attribute/mastery/skill in option and status;
   onlypresentationalmetadata added,existingrules/equipment/permanentbonuses/cost retained. Native/core/iOS passed.

@@ -1,0 +1,9 @@
+{
+  "input": "local-data/validation/mainline-playability-184/actual-006/varn-first-mate-complete.oysav",
+  "sha256": "f863b3622e77a4621070838747a3bec72c194ed8fc9426c9f55722d3fa282346",
+  "scope": "One affected character skill UI image only; inherited184 map/party/Disarm16/source fixtures, no new fixture/route/savewrite",
+  "original_savedata_unchanged": true,
+  "original_savedata_unchanged_after_app": true,
+  "app_scope": "One affected8-header visual recheck; same184 source unchanged; no higher-mastery or teacher-flow acceptance",
+  "actual_command": "actual-001.command.json"
+}

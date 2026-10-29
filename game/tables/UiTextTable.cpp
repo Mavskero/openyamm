@@ -136,6 +136,9 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.skill_training_offer", "Become %s in %s for %lu gold"},
     {"ui.skill_training_learned", "%s is now a %s in %s."},
     {"ui.skill_training_requirement", "Your base %s must be at least %u to learn %s %s."},
+    {"ui.skill_weapons", "Weapons"},
+    {"ui.skill_magic", "Magic"},
+    {"ui.skill_misc", "Misc"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -177,7 +180,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // Arcomage, the 19 with initial inspect labels, the 26 with item details,
     // the 35 with win text, the 39 with bank captions, the 45 with rest captions,
     // the 72 with mastery/calendar/save, the 103 with keyboard, the 112 with journal
-    // and the 115 with initial skill training captions.
+    // and the 115/116 with initial skill training captions and base-attribute requirements.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -190,6 +193,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t KeyboardMessageCount = size_t(Message::JournalPotionNotes);
     constexpr size_t JournalMessageCount = size_t(Message::InventoryTargetHint);
     constexpr size_t TrainingMessageCount = size_t(Message::SkillTrainingRequirement);
+    constexpr size_t TrainingRequirementMessageCount = size_t(Message::SkillWeapons);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -202,7 +206,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != SaveMessageCount
         && schemaMessageCount != KeyboardMessageCount
         && schemaMessageCount != JournalMessageCount
-        && schemaMessageCount != TrainingMessageCount)
+        && schemaMessageCount != TrainingMessageCount
+        && schemaMessageCount != TrainingRequirementMessageCount)
     {
         return false;
     }

@@ -54,6 +54,13 @@ std::optional<std::string> characterStatDisplayLabel(
     {
         normalizedLayoutId = "characterstatsskillpointstextlabel";
     }
+    else if (normalizedLayoutId == "characterskillsweaponslevelheader"
+        || normalizedLayoutId == "characterskillsmagiclevelheader"
+        || normalizedLayoutId == "characterskillsarmorlevelheader"
+        || normalizedLayoutId == "characterskillsmisclevelheader")
+    {
+        normalizedLayoutId = "characterstatlevellabel";
+    }
     for (const CharacterStatRowDefinition &row : CharacterStatRows)
     {
         if (normalizedLayoutId != row.pLabelId)

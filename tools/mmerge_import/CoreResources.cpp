@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 100> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 103> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -337,6 +337,9 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::JournalCurrentQuests, 174},
         {UiMessage::JournalHistory, 602},
         {UiMessage::SkillTrainingOffer, 534},
+        {UiMessage::SkillWeapons, 242},
+        {UiMessage::SkillMagic, 138},
+        {UiMessage::SkillMisc, 143},
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.

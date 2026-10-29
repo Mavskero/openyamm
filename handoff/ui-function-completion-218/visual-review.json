@@ -1,0 +1,22 @@
+{
+  "image": "actual-001/character-skills.png",
+  "reviewed": true,
+  "dimensions": [
+    2420,
+    1668
+  ],
+  "all_eight_changed_headers_visible": true,
+  "labels": [
+    "兵器",
+    "魔法",
+    "防御",
+    "辅助",
+    "等级×4"
+  ],
+  "layout_font_color_retained": true,
+  "missing_glyphs_observed": false,
+  "header_overlap_or_clip_observed": false,
+  "natural_campaign": false,
+  "device": false,
+  "higher_mastery_rows_proven": false
+}

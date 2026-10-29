@@ -131,13 +131,16 @@ public:
         SkillTrainingOffer,
         SkillTrainingLearned,
         SkillTrainingRequirement,
+        SkillWeapons,
+        SkillMagic,
+        SkillMisc,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
     // Validate the current schema or migrate a complete older prefix with
-    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112 or 115 keys.
+    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115 or 116 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;

@@ -9432,6 +9432,22 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
 
             std::string label = characterStatDisplayLabel(context.characterInspectTable(), normalizedLayoutId)
                 .value_or(pLayout->labelText);
+            if (normalizedLayoutId == "characterskillsweaponsheader")
+            {
+                label = context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::SkillWeapons);
+            }
+            else if (normalizedLayoutId == "characterskillsmagicheader")
+            {
+                label = context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::SkillMagic);
+            }
+            else if (normalizedLayoutId == "characterskillsarmorheader")
+            {
+                label = context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::ItemArmor);
+            }
+            else if (normalizedLayoutId == "characterskillsmischeader")
+            {
+                label = context.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::SkillMisc);
+            }
             label = replaceAllText(label, "{gold}", std::to_string(party.gold()));
             label = replaceAllText(label, "{food}", std::to_string(party.food()));
             label = replaceAllText(label, "{character_name}", pCharacter != nullptr ? pCharacter->name : "");

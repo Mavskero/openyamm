@@ -1,0 +1,60 @@
+{
+  "checkpoint": 218,
+  "status": "ACCEPTED_SCOPED",
+  "completed_at": "2026-10-29T15:54:22.659794+00:00",
+  "source_base": "7aeb5a5e",
+  "scope": "Observed four skill category and fourLevel headings localized with source labels;layout/font/input retained",
+  "ui_text_count": 119,
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:47:15.761907+00:00",
+      "finished_at": "2026-10-29T15:48:28.709803+00:00"
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:49:44.681664+00:00",
+      "finished_at": "2026-10-29T15:49:44.912565+00:00"
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:49:44.943446+00:00",
+      "finished_at": "2026-10-29T15:49:46.602678+00:00"
+    },
+    "actual-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:49:46.658550+00:00",
+      "finished_at": "2026-10-29T15:49:57.755441+00:00"
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "started_at": "2026-10-29T15:51:39.575882+00:00",
+      "finished_at": "2026-10-29T15:52:44.882005+00:00"
+    }
+  },
+  "runtime": "local-data/validation/ui-function-completion-218/runtime-001",
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "all_other_runtime_members_retained": true,
+  "save_version": 104,
+  "new_unit_cases": 0,
+  "app_runs": 1,
+  "images_reviewed": 1,
+  "app_seconds": 11.096891,
+  "original_input_unchanged": true,
+  "inherited_fixtures": "184 actual006 VARN map/party/Disarm16 input; not natural campaign",
+  "campaign_replays": 0,
+  "cold_replays": 0,
+  "device_or_simulator_operations": 0,
+  "new_release": false,
+  "goal_status": "active",
+  "engineering_estimate_percent": 85,
+  "estimate_confidence": "low",
+  "full_goal_complete": false,
+  "next": "First bounded actual teacher offer/learn/skill-row flow;no previous campaign replay",
+  "limitations": [
+    "No new higher-mastery/teacher transaction/device acceptance in this header-only run",
+    "Full natural completion/allUI/long-term stability remain unproved"
+  ]
+}
