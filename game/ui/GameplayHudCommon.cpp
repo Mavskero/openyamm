@@ -923,11 +923,15 @@ std::optional<std::vector<uint8_t>> GameplayHudCommon::loadHudBitmapPixelsBgraCa
         return std::nullopt;
     }
 
+    const std::string &sourceName = pRegion != nullptr ? pRegion->source : textureName;
+    const std::string normalizedSourceName = toLowerCopy(sourceName);
+    const bool isPortraitStatusIndicator = normalizedSourceName == "statg" || normalizedSourceName == "statr"
+        || normalizedSourceName == "staty" || normalizedSourceName == "statbl";
     Engine::ImageDecodeOptions decodeOptions = {};
-    decodeOptions.applyPaletteZeroTransparencyKey = transparencyMode == GameplayHudBitmapTransparencyMode::ItemIcon;
+    decodeOptions.applyPaletteZeroTransparencyKey = transparencyMode == GameplayHudBitmapTransparencyMode::ItemIcon
+        || (transparencyMode == GameplayHudBitmapTransparencyMode::HudColorKey && isPortraitStatusIndicator);
     decodeOptions.applyMagentaTransparencyKey = true;
     decodeOptions.applyTealTransparencyKey = true;
-    const std::string &sourceName = pRegion != nullptr ? pRegion->source : textureName;
     decodeOptions.applyBlackTransparencyKey = usesBlackTransparencyKey(sourceName);
 
     std::string directoryPath = "Data/icons";

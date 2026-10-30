@@ -268,6 +268,8 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
 
     // Menu overlays and WinGameScreen select these original images outside the YAML layouts.
     std::set<std::string> requiredDynamicImageReferences = {"ui-parch", "winbg"};
+    // The party HUD requests these original health, alert and Bless images outside the YAML layouts.
+    requiredDynamicImageReferences.insert({"manay", "manar", "statbl", "statr", "staty", "statg", "ib_spelico"});
     // Controls and brightness sliders select these original knob frames dynamically.
     // The last frame is named convol00, not convol100.
     if (layouts.contains("controls.yml") || layouts.contains("video_options.yml"))
@@ -396,8 +398,13 @@ void convertUiResources(const std::filesystem::path &source, const std::filesyst
                 missingImages.insert(name);
                 continue;
             }
+            // Original portrait status indicators draw palette index zero as transparent.
+            const bool preservePaletteIndices = name == "statg" || name == "statr"
+                || name == "staty" || name == "statbl";
+            const LodImagePixelFormat pixelFormat = preservePaletteIndices
+                ? LodImagePixelFormat::Indexed8 : LodImagePixelFormat::Rgb24;
             const ConvertedLodImage converted =
-                convertLodImages({owner->second}, {sourceName}, output / "engine/icons")[0];
+                convertLodImages({owner->second}, {sourceName}, output / "engine/icons", pixelFormat)[0];
             const std::optional<Engine::ImagePixelsBgra> decoded = Engine::decodeImagePixelsBgra(
                 read(output / "engine/icons" / converted.name), converted.name);
             require(decoded && decoded->width == converted.width && decoded->height == converted.height,

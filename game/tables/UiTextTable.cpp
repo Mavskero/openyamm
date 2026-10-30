@@ -1,5 +1,6 @@
 #include "game/tables/UiTextTable.h"
 #include "game/gameplay/PartyMovementStatus.h"
+#include "game/party/CharacterState.h"
 #include "game/party/SkillData.h"
 
 #include <algorithm>
@@ -235,6 +236,17 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.item_cannot_equip", "Can't equip that item"},
     {"ui.item_cannot_place_here", "Can't place that item here"},
     {"ui.item_equip_target_occupied", "That equipment slot is occupied"},
+    {"ui.condition_good", "Good"},
+    {"ui.condition_cursed", "Cursed"},
+    {"ui.condition_weak", "Weak"},
+    {"ui.condition_afraid", "Afraid"},
+    {"ui.condition_drunk", "Drunk"},
+    {"ui.condition_insane", "Insane"},
+    {"ui.condition_poisoned", "Poison"},
+    {"ui.condition_diseased", "Diseased"},
+    {"ui.not_applicable", "N/A"},
+    {"ui.message_scroll_read_hint",
+        "A message scroll. Pick up the scroll, then select the character's full-body portrait to read it."},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -292,7 +304,9 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 149 with spell feedback and target-selection captions,
     // the 164 with spell failure captions,
     // the 179 with item feedback and stealing captions,
-    // and the 210 with item use and movement captions.
+    // the 210 with item use and movement captions,
+    // the 214 with equipment feedback captions,
+    // and the 223 with character status captions.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -313,6 +327,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t SpellFailureMessageCount = size_t(Message::SpellArmageddonAlreadyActive);
     constexpr size_t ItemFeedbackMessageCount = size_t(Message::ItemMixedPotion);
     constexpr size_t ItemUseMessageCount = size_t(Message::ItemCannotEquipHere);
+    constexpr size_t EquipmentMessageCount = size_t(Message::ConditionGood);
+    constexpr size_t CharacterStatusMessageCount = size_t(Message::MessageScrollReadHint);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -333,7 +349,9 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != SpellMessageCount
         && schemaMessageCount != SpellFailureMessageCount
         && schemaMessageCount != ItemFeedbackMessageCount
-        && schemaMessageCount != ItemUseMessageCount)
+        && schemaMessageCount != ItemUseMessageCount
+        && schemaMessageCount != EquipmentMessageCount
+        && schemaMessageCount != CharacterStatusMessageCount)
     {
         return false;
     }
@@ -425,6 +443,49 @@ const std::string &UiTextTable::skillMasteryName(SkillMastery mastery) const
             return text(Message::SkillGrandmaster);
         default:
             return text(Message::None);
+    }
+}
+
+const std::string &UiTextTable::conditionText(std::optional<CharacterCondition> condition) const
+{
+    if (!condition)
+    {
+        return text(Message::ConditionGood);
+    }
+    switch (*condition)
+    {
+        case CharacterCondition::Cursed:
+            return text(Message::ConditionCursed);
+        case CharacterCondition::Weak:
+            return text(Message::ConditionWeak);
+        case CharacterCondition::Asleep:
+            return text(Message::ConditionAsleep);
+        case CharacterCondition::Fear:
+            return text(Message::ConditionAfraid);
+        case CharacterCondition::Drunk:
+            return text(Message::ConditionDrunk);
+        case CharacterCondition::Insane:
+            return text(Message::ConditionInsane);
+        case CharacterCondition::PoisonWeak:
+        case CharacterCondition::PoisonMedium:
+        case CharacterCondition::PoisonSevere:
+            return text(Message::ConditionPoisoned);
+        case CharacterCondition::DiseaseWeak:
+        case CharacterCondition::DiseaseMedium:
+        case CharacterCondition::DiseaseSevere:
+            return text(Message::ConditionDiseased);
+        case CharacterCondition::Paralyzed:
+            return text(Message::ConditionParalyzed);
+        case CharacterCondition::Unconscious:
+            return text(Message::ConditionUnconscious);
+        case CharacterCondition::Dead:
+            return text(Message::ConditionDead);
+        case CharacterCondition::Petrified:
+            return text(Message::ConditionPetrified);
+        case CharacterCondition::Eradicated:
+            return text(Message::ConditionEradicated);
+        default:
+            return text(Message::ConditionGood);
     }
 }
 

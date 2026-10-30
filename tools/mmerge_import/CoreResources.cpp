@@ -235,7 +235,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     std::map<std::string, Rows> tables;
     const IndexedRows globalText = indexed(archiveTable("global.txt", chinese), 2, "global.txt");
     using UiMessage = Game::UiTextTable::Message;
-    constexpr std::array<std::pair<UiMessage, uint32_t>, 146> uiTextSources{{
+    constexpr std::array<std::pair<UiMessage, uint32_t>, 154> uiTextSources{{
         {UiMessage::Cancel, 34},
         {UiMessage::BeaconSet, 375},
         {UiMessage::BeaconRecall, 523},
@@ -383,10 +383,18 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::ConditionEradicated, 76},
         {UiMessage::PartyBurning, 661},
         {UiMessage::PartyDrowning, 660},
+        {UiMessage::ConditionGood, 98},
+        {UiMessage::ConditionCursed, 52},
+        {UiMessage::ConditionWeak, 241},
+        {UiMessage::ConditionAfraid, 4},
+        {UiMessage::ConditionDrunk, 69},
+        {UiMessage::ConditionInsane, 117},
+        {UiMessage::ConditionPoisoned, 166},
+        {UiMessage::ConditionDiseased, 65},
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 68> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 70> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -456,6 +464,8 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::ItemCannotEquip, "无法装备这件物品。"},
         {UiMessage::ItemCannotPlaceHere, "物品无法放在这里。"},
         {UiMessage::ItemEquipTargetOccupied, "该装备位置已被占用。"},
+        {UiMessage::NotApplicable, "不适用"},
+        {UiMessage::MessageScrollReadHint, "一卷消息卷宗。拿起卷宗后，选择人物全身像阅读。"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

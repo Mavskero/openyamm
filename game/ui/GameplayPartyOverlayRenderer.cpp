@@ -2139,6 +2139,35 @@ std::string resolveItemInspectTypeText(const InventoryItem *pItemState, const It
     return "Misc";
 }
 
+const std::string &resolveItemInspectDescriptionText(
+    const UiTextTable &uiText,
+    const ItemDefinition &itemDefinition)
+{
+    if (itemDefinition.equipStat == "Mscroll")
+    {
+        // Complete generic descriptions from mmmerge.T.lod/items.txt and ZHCN_ItemsTxt.txt.
+        // Exact matching preserves authored item descriptions and unknown content verbatim.
+        constexpr std::array<std::string_view, 4> GenericMessageScrollDescriptions{{
+            "A message scroll.  (To read this message, pick the scroll up "
+                "and right-click over a character's portrait.)",
+            "A message scroll.  To read this message, pick the scroll up "
+                "and left-click over the character picture in the inventory screen.",
+            "一卷消息卷宗。（要阅读里面的信息，请拿起消息卷宗，"
+                "然后右键单击角色小头像，或左键单击全身像）",
+            "一卷消息卷宗。要阅读里面的信息，请拿起消息卷宗，"
+                "然后右键单击角色小头像，或左键单击全身像。",
+        }};
+        for (const std::string_view description : GenericMessageScrollDescriptions)
+        {
+            if (itemDefinition.notes == description)
+            {
+                return uiText.text(UiTextTable::Message::MessageScrollReadHint);
+            }
+        }
+    }
+    return itemDefinition.notes;
+}
+
 std::string formatItemInspectDamageText(const std::string &damageDice, int bonus)
 {
     if (damageDice.empty() || damageDice == "0")
@@ -5831,7 +5860,8 @@ void GameplayPartyOverlayRenderer::renderItemInspectOverlay(GameplayScreenRuntim
         }
     }
     const std::string itemDescription =
-        showBrokenOnly || showUnidentifiedOnly ? std::string {} : pItemDefinition->notes;
+        showBrokenOnly || showUnidentifiedOnly
+            ? std::string {} : resolveItemInspectDescriptionText(uiText, *pItemDefinition);
     const std::string itemStatusText =
         showBrokenOnly ? "Broken item" : (showUnidentifiedOnly ? "Not identified" : std::string {});
     const bool showStatusOnly = !itemStatusText.empty();
@@ -8311,16 +8341,20 @@ void GameplayPartyOverlayRenderer::renderCharacterOverlay(
         spellPointsValue =
             std::to_string(summary.spellPoints.current) + " / " + std::to_string(summary.spellPoints.maximum);
         armorClassValue = formatSheetValue(summary.armorClass);
-        conditionValue = summary.conditionText;
-        quickSpellValue = summary.quickSpellText;
+        const UiTextTable &uiText = context.gameplayUiRuntime().uiTextTable();
+        conditionValue = uiText.conditionText(GameMechanics::displayedCondition(*pCharacter));
+        quickSpellValue = pCharacter->quickSpellName.empty()
+            ? uiText.text(UiTextTable::Message::None) : summary.quickSpellText;
         ageValue = summary.ageText;
         levelValue = formatSheetValue(summary.level);
         experienceValue = summary.experienceText;
         canTrainToNextLevel = summary.canTrainToNextLevel;
         attackValue = std::to_string(summary.combat.attack);
         meleeDamageValue = summary.combat.meleeDamageText;
-        shootValue = summary.combat.shoot ? std::to_string(*summary.combat.shoot) : "N/A";
-        rangedDamageValue = summary.combat.rangedDamageText;
+        shootValue = summary.combat.shoot
+            ? std::to_string(*summary.combat.shoot) : uiText.text(UiTextTable::Message::NotApplicable);
+        rangedDamageValue = summary.combat.rangedDamageText == "N/A"
+            ? uiText.text(UiTextTable::Message::NotApplicable) : summary.combat.rangedDamageText;
         fireResistanceValue = formatSheetValue(summary.fireResistance);
         airResistanceValue = formatSheetValue(summary.airResistance);
         waterResistanceValue = formatSheetValue(summary.waterResistance);

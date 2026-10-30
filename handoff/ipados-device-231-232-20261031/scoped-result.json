@@ -1,0 +1,115 @@
+{
+  "status": "ACCEPTED_DEVICE_SCOPED",
+  "checkpoints": [
+    231,
+    232
+  ],
+  "date": "2026-10-31",
+  "device_family": "iPad Pro 11-inch (M5)",
+  "os": "iPadOS 27.0",
+  "base_source": "5d268e61c5c1a9c684c3c6d6702a3739ea31c60e",
+  "base_fixed_release": "ipados-ui-cumulative-229-20261030",
+  "save_format": 105,
+  "backward104_read_actual": true,
+  "new_save105_write_actual": true,
+  "normal_ui_equipped": {
+    "armor": 84,
+    "main_hand": 66
+  },
+  "new_save_slot": 12,
+  "independent_process_loads_actual": [
+    {
+      "before": 63899,
+      "after": 64196
+    },
+    {
+      "before": 64196,
+      "after": 64498
+    }
+  ],
+  "map": "outd3.odm",
+  "gameplay_fixtures": false,
+  "save_editing": false,
+  "actual_reviewed_pass": [
+    "old104 load",
+    "armor and mace equip",
+    "new empty slot12 Save105",
+    "independent105 load after preserved-data updates",
+    "Chinese skill headers",
+    "Stats good/none/not-applicable Chinese",
+    "real overlapping two-finger ring137 inspection and release",
+    "ordinary profession news592",
+    "message scroll2125 open/read pages1-3/close/item return",
+    "healthy green portrait indicator transparency232",
+    "input-neutral message-scroll hint232 during actual two-finger inspection and release"
+  ],
+  "unproved": [
+    "red/yellow low HP bars",
+    "red/yellow/black alert conditions",
+    "Bless active pixels",
+    "bank",
+    "shop drag-off condition",
+    "long NPC/question input",
+    "complete natural campaign"
+  ],
+  "known_source_backlog": [
+    "random NPC dynamic greeting selection missing"
+  ],
+  "runtime_import_changed_files_sha256_match": true,
+  "worlds_same_as_fixed229": true,
+  "save_preservation": {
+    "checked_at": "2026-10-30T16:40:33.121835+00:00",
+    "working_saves": 13,
+    "preserved_originals": 10,
+    "all_22_preexisting_saves_identical": true,
+    "save12_new105_identical": true,
+    "no_new_gameplay_save_after_12": true
+  },
+  "builds": {
+    "native231": {
+      "exit_code": 0,
+      "elapsed_seconds": 113.300554084,
+      "timed_out": false
+    },
+    "ios231": {
+      "exit_code": 0,
+      "elapsed_seconds": 108.619577167,
+      "timed_out": false
+    },
+    "native232": {
+      "exit_code": 0,
+      "elapsed_seconds": 124.215350542,
+      "timed_out": false
+    },
+    "ios232": {
+      "exit_code": 0,
+      "elapsed_seconds": 107.87039358300001,
+      "timed_out": false
+    },
+    "core_import232": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.48589275,
+      "timed_out": false
+    },
+    "ui_import232": {
+      "exit_code": 0,
+      "elapsed_seconds": 1.425597917,
+      "timed_out": false
+    }
+  },
+  "new_unit_test_cases": 0,
+  "old_campaign_replays": 0,
+  "simulator_operations": 0,
+  "new_release": false,
+  "full_goal_achieved": false,
+  "project_estimate": {
+    "percent": 88,
+    "confidence": "low",
+    "kind": "qualitative; not quest or acceptance coverage"
+  },
+  "current_short_flow_estimate": {
+    "percent": 85,
+    "confidence": "low",
+    "kind": "qualitative; not coverage of all device conditions"
+  }
+}

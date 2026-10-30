@@ -3,12 +3,14 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace OpenYAMM::Game
 {
 enum class SkillMastery;
+enum class CharacterCondition : uint8_t;
 enum class PartyMovementStatus : uint8_t;
 
 class UiTextTable
@@ -230,16 +232,28 @@ public:
         ItemCannotEquip,
         ItemCannotPlaceHere,
         ItemEquipTargetOccupied,
+        ConditionGood,
+        ConditionCursed,
+        ConditionWeak,
+        ConditionAfraid,
+        ConditionDrunk,
+        ConditionInsane,
+        ConditionPoisoned,
+        ConditionDiseased,
+        NotApplicable,
+        MessageScrollReadHint,
         Count,
     };
 
     // English defaults keep packages predating ui_text.txt usable.
     UiTextTable();
     // Validate the current schema or migrate a complete older prefix with
-    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122, 132, 149, 164, 179 or 210 keys.
+    // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122, 132,
+    // 149, 164, 179, 210, 214 or 223 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;
+    const std::string &conditionText(std::optional<CharacterCondition> condition) const;
     const std::string &movementStatusText(PartyMovementStatus status) const;
     std::string formatItemType(const std::string &type) const;
     std::string formatWinScore(uint64_t score) const;

@@ -4,6 +4,28 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- 231–232 ACCEPTED_DEVICE_SCOPED (2026-10-31):
+  `openyamm/handoff/ipados-device-231-232-20261031/README.md` (repo: omit openyamm/).
+  Physical iPad read old104, UI-equipped armor84/mace66, wrote only new Save12/105 and loaded it in two
+  independent updated processes. Actual Chinese Stats/skills, overlapping two-finger item inspection,
+  ordinary NPC news592 and original letter2125 three-page reading passed.232 healthy-green transparency
+  and input-neutral scroll hint passed affected pixels/touch. Final22 existing saves plus new12 unchanged.
+  Native/iOS/import builds pass;0 new unit cases/old campaign replays/simulator/new Release. Runtime232
+  retains all229 worlds;8-member engine overlay and10 reviewed game-only images in handoff. Fixed229/214/195/
+  RC1–3 retained. Goal remains active by user resume,~88% low-confidence; full natural campaign unproved.
+  Bank/shop/long-question conditions and random-NPC dynamic greeting remain open. Continue concrete work;
+  main owns actual device/build/install; source subagents Astra/xhigh. Historical blocked tool metadata
+  and historical device ban do not override current explicit authorization. No repeated passed route matrix.
+
+- USER AUTHORIZATION 2026-10-30: user explicitly says “现在可以连接真机开始测试”.
+  Current-host physical target-iPad operations are now authorized, superseding the historical device ban.
+  Simulator operations remain excluded. Main exclusively owns device,backup,signing,install,build and actual
+  interaction; agents may inspect only their assigned source/tooling. Back up all accessible App data and
+  hash original saves before update/launch; preserve org.openyamm.ipados, all originals and fixed releases.
+  Start with current229/complete227/Save105 affected normal-play checks; no broad old-route matrix or tiny release.
+  Historical goal-tool blocked metadata is not a gate on this explicit user-authorized work; full objective
+  remains unachieved. Current work: `local-data/device-validation/cumulative-229-20261030-001/`.
+
 - 230 PUBLISHED_VERIFIED: `ipados-ui-cumulative-229-20261030`, source6f2c6216471d709bdf4cb136cfc6f1fdfebd6a6b.
   See `handoff/ui-cumulative-delivery-230/README.md` and delivery/final-verification JSON. All16 remote
   attachments match SHA256/size; complete227 sixfile runtime,2455 committed-source files,unsigned229iOS,
