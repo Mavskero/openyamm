@@ -2273,6 +2273,10 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
                     saveGameScreen.clearTextComposition();
                     appendUtf8Label(saveGameScreen.editBuffer, edit.text, 30);
                 }
+                else if (edit.kind == GameplayTextEditOperation::Kind::PasteText && !saveGameScreen.compositionActive)
+                {
+                    appendUtf8Label(saveGameScreen.editBuffer, edit.text, 30);
+                }
                 else if (edit.kind == GameplayTextEditOperation::Kind::Backspace
                     || edit.kind == GameplayTextEditOperation::Kind::Delete)
                 {
@@ -3424,6 +3428,10 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                 else if (edit.kind == GameplayTextEditOperation::Kind::InsertText)
                 {
                     houseBankState.clearTextComposition();
+                    appendDigitTextInput(text, edit.text, 10);
+                }
+                else if (edit.kind == GameplayTextEditOperation::Kind::PasteText && !houseBankState.compositionActive)
+                {
                     appendDigitTextInput(text, edit.text, 10);
                 }
                 else if (edit.kind == GameplayTextEditOperation::Kind::Confirm && !houseBankState.compositionActive)

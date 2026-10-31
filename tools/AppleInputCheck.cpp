@@ -1172,6 +1172,18 @@ elements:
             && saveScreen.compositionText == "zhong" && saveScreen.editBuffer == "前"
             && saveAdapter.m_committedName.empty(),
             "IME keys changed or submitted a name before its composition was committed");
+        // Explicit source records exercise the consumer; no native clipboard or IME is invoked.
+        GameplayInputFrame pasteFrame = input.frame();
+        pasteFrame.textInput = "剪贴板";
+        pasteFrame.textEdits = std::vector<GameplayTextEditOperation>{
+            {GameplayTextEditOperation::Kind::PasteText, "剪贴板"},
+            {GameplayTextEditOperation::Kind::PasteText, ""},
+            {GameplayTextEditOperation::Kind::Confirm, ""},
+            {GameplayTextEditOperation::Kind::Cancel, ""}};
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, pasteFrame);
+        require(saveScreen.active && saveScreen.compositionActive && saveScreen.compositionText == "zhong"
+            && saveScreen.editBuffer == "前" && saveAdapter.m_committedName.empty(),
+            "Manual or empty paste was mistaken for an IME commit in the save editor");
         textEditing("");
         SDL_Event compositionCommit = {};
         compositionCommit.type = SDL_EVENT_TEXT_INPUT;
@@ -1321,6 +1333,17 @@ elements:
         GameplayOverlayInputController::handleDialogueOverlayInput(runtime, input.frame(), false);
         require(bankInput.inputActive() && bankInput.compositionActive && bankInput.inputText == "12",
             "Bank IME keys erased or submitted committed digits during composition");
+        pasteFrame = input.frame();
+        pasteFrame.textInput = "99";
+        pasteFrame.textEdits = std::vector<GameplayTextEditOperation>{
+            {GameplayTextEditOperation::Kind::PasteText, "99"},
+            {GameplayTextEditOperation::Kind::PasteText, ""},
+            {GameplayTextEditOperation::Kind::Confirm, ""},
+            {GameplayTextEditOperation::Kind::Cancel, ""}};
+        GameplayOverlayInputController::handleDialogueOverlayInput(runtime, pasteFrame, false);
+        require(bankInput.inputActive() && bankInput.compositionActive
+            && bankInput.compositionText == "3" && bankInput.inputText == "12",
+            "Manual or empty bank paste cleared preedit and enabled a premature transaction");
         textEditing("");
         compositionCommit.text.text = "3";
         input.handleSdlEvent(compositionCommit);

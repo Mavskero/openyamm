@@ -29,7 +29,8 @@ struct GameplayTextEditOperation
         FallbackKey,
         Composition,
         Confirm,
-        Cancel
+        Cancel,
+        PasteText
     };
 
     Kind kind = Kind::InsertText;

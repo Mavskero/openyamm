@@ -1,0 +1,58 @@
+{
+  "checkpoint": 239,
+  "status": "ACCEPTED_OFFLINE_SCOPED",
+  "base_commit": "2eada85075dfc3a9baa881bf1c9b7f7e4f09dc2d",
+  "physical_debugging_paused": true,
+  "subagent_model": "gpt-6.1-sol",
+  "subagent_reasoning": "max",
+  "defect": "Raw clipboard paste was indistinguishable from native TEXT_INPUT and could clear preedit/write real Save or bank text without native commit/unmark, including allocated empty clipboard",
+  "change": "Typed PasteText metadata; Save/Bank ignore it while composing, retain preedit and confirm/cancel protection; ordinary paste filters unchanged; native InsertText and legacy aggregate path retained",
+  "production_files": 3,
+  "source_count": 4,
+  "all4_built_source_hashes_match": true,
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 116.701456917
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 110.142589209
+    },
+    "input-check-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.888476333
+    }
+  },
+  "existing_input_executable_runs": 1,
+  "affected_assertions_added": 2,
+  "new_unit_cases": 0,
+  "consumer_check": "Controlled typed paste records (nonempty and empty) followed by Confirm/Cancel leave Save/bank preedit and committed buffers unchanged; subsequent existing native-event records still commit",
+  "check_limits": [
+    "No native clipboard access or actual IME callback in the check",
+    "Actual clipboard producer and noncomposing filter path verified by source/build only",
+    "No bank transaction or actual touch/pixels"
+  ],
+  "resource_changes": 0,
+  "runtime_retained": "complete235/runtime-002 (UiText227, Combat223, navigation222)",
+  "save_write_version": 106,
+  "save_format_changed": false,
+  "legacy_104_105_read_evidence": "Retained from236, not replayed",
+  "gameplay_save_writes": 0,
+  "main_game_app_runs": 0,
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "campaign_replays": 0,
+  "new_release": false,
+  "fixed_releases_retained": [
+    "229",
+    "214",
+    "195",
+    "RC1",
+    "RC2",
+    "RC3"
+  ],
+  "full_goal_achieved": false,
+  "engineering_estimate_percent": 88,
+  "estimate_confidence": "low; qualitative, not quest/campaign coverage"
+}

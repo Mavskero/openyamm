@@ -202,7 +202,7 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
             if (pClipboard != nullptr)
             {
                 m_pendingTextInput += pClipboard;
-                m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::InsertText, pClipboard});
+                m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::PasteText, pClipboard});
                 SDL_free(pClipboard);
             }
         }

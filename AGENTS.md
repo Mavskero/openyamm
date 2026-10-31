@@ -25,6 +25,15 @@ These rules apply to all AI-generated contributions in this repository.
   cannotread106;rollback uses preserved105/oldercopy. No actualflyingpixel/touch/fullcampaign claim. Current
   physicaldebugging remainsuserpaused;subagentsSol6.1/max. BoundedUIKitIME bridge source review ongoing.
 
+- 239 ACCEPTED_OFFLINE_SCOPED: `handoff/clipboard-edit-source-239/README.md`.
+  Manualclipboard isnowtypedPasteText, notnativeInsertText. Save/Bank ignoreitwhilecomposing, includingemptyclip,
+  retainingpreedit/realbuffer/ConfirmCancelprotection; normal30UTF8/10digits/nativecommit/nulloptretained.
+  No inventedunmark/dedupe/timewindow. Native116.701s/unsignediOS110.143s/existinginput0.888spass;4frozenhashmatch,
+  2affectedtyped-consumerassertions,0newunitcases/App/savewrite/device/simulator/campaign/Release. Actualclipboard
+  producer/normalfilters source+buildonly; no actualUIKit/pixels/transactionclaim. Resource235/runtime-002/Ui227/
+  Save106/fixedreleases/oldinputs retained;legacy105/104evidencefrom236notreplayed. Physicaldebuguserpaused,
+  subagentsSol6.1/max,fullobjectiveunachieved/~88%lowconfidence. No repeatedpassedroute/devicecheckpoint.
+
 - 238 ACCEPTED_OFFLINE_SCOPED: `handoff/save-escape-admission-238/README.md`.
   Save Escape nowdefersglobalhook toleaf aftercompositionownership; originalAction113/CurrentScreen11 checkedonce,
   refusalkeepsSave/selection/draft, resetsrepeat/consumesframe; heldcannotleakclose andfreshkey immediatelyretries.
