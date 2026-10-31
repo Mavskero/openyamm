@@ -244,9 +244,14 @@ int hiredNpcRestFoodReduction(const EventRuntimeState &eventRuntimeState)
 
 int hiredNpcSkillBonus(const EventRuntimeState &eventRuntimeState, const std::string &skillName)
 {
+    return hiredNpcSkillBonus(eventRuntimeState.hiredNpcFollowers, skillName);
+}
+
+int hiredNpcSkillBonus(const std::vector<HiredNpcFollower> &followers, const std::string &skillName)
+{
     int bonus = 0;
 
-    for (const EventRuntimeState::HiredNpcFollower &follower : eventRuntimeState.hiredNpcFollowers)
+    for (const HiredNpcFollower &follower : followers)
     {
         const uint32_t professionId = follower.professionId;
 

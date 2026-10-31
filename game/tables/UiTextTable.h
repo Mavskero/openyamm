@@ -246,6 +246,11 @@ public:
         ItemNotIdentified,
         InputAnswerPrefix,
         MenuQuitConfirmation,
+        FollowerUnavailable,
+        FollowerAlreadyFollowingFormat,
+        FollowerJoinedFormat,
+        FollowerLeftFormat,
+        GenericFollowerName,
         Count,
     };
 
@@ -253,7 +258,7 @@ public:
     UiTextTable();
     // Validate the current schema or migrate a complete older prefix with
     // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122, 132,
-    // 149, 164, 179, 210, 214, 223, 224, 226 or 227 keys.
+    // 149, 164, 179, 210, 214, 223, 224, 226, 227 or 228 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;
@@ -269,6 +274,7 @@ public:
     std::string formatSkillTrainingRequirement(
         const std::string &attribute, uint32_t value, const std::string &mastery, const std::string &skill) const;
     std::string formatNpcDismiss(const std::string &name) const;
+    std::string formatFollowerFeedback(Message message, const std::string &name) const;
     std::string formatTransitionLeave(const std::string &name) const;
     std::string formatTransitionEnter(const std::string &name) const;
     std::string formatSpellPrompt(Message message, const std::string &spellName) const;

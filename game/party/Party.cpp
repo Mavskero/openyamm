@@ -5,6 +5,7 @@
 #include "game/events/EventRuntime.h"
 #include "game/debug/GameplayDebugTrace.h"
 #include "game/gameplay/GameMechanics.h"
+#include "game/gameplay/NpcFollowerRuntime.h"
 #include "game/gameplay/ReputationRuntime.h"
 #include "game/items/ItemEnchantRuntime.h"
 #include "game/items/ItemEnchantTables.h"
@@ -3040,6 +3041,8 @@ void Party::applyEventRuntimeState(const EventRuntimeState &runtimeState, bool g
             m_unavailableNpcIds.insert(follower.npcId);
         }
     }
+
+    rebuildHiredNpcWeaponSkillBonuses();
 }
 
 bool Party::applyDamageToActiveMember(int damage, const std::string &status)
@@ -4086,6 +4089,7 @@ bool Party::recruitRosterMember(const RosterEntry &rosterEntry)
 
     m_characterBuffs[m_members.size() - 1] = {};
     synchronizeCharacterBuffCasters();
+    rebuildHiredNpcWeaponSkillBonuses();
     m_lastStatus = "party member recruited";
     return true;
 }
@@ -4119,6 +4123,7 @@ bool Party::recruitCharacter(const Character &character)
     initializePortraitRuntimeState(m_members.back());
     m_characterBuffs[m_members.size() - 1] = {};
     synchronizeCharacterBuffCasters();
+    rebuildHiredNpcWeaponSkillBonuses();
     m_lastStatus = "party member recruited";
     return true;
 }
@@ -4147,6 +4152,7 @@ bool Party::addAdventurersInnMember(const Character &character, uint32_t portrai
     }
     AdventurersInnMember member = {};
     member.character = character;
+    member.character.hiredNpcWeaponSkillBonuses.clear();
     if (!assignMemberIdentity(member.character))
     {
         return false;
@@ -4187,6 +4193,7 @@ bool Party::hireAdventurersInnMember(size_t innIndex)
     m_adventurersInnMembers.erase(m_adventurersInnMembers.begin() + innIndex);
     m_characterBuffs[m_members.size() - 1] = {};
     synchronizeCharacterBuffCasters();
+    rebuildHiredNpcWeaponSkillBonuses();
     m_lastStatus = "adventurer hired from inn";
     return true;
 }
@@ -4893,6 +4900,7 @@ bool Party::detachMembersWithReserves(const std::string &ownerKey,
         projection.synchronizeCharacterBuffCasters();
         projection.rebuildMagicalBonusesPreservingProgress();
         detached.character = std::move(projection.m_members.front());
+        detached.character.hiredNpcWeaponSkillBonuses.clear();
         GameMechanics::refreshCharacterBaseResources(detached.character, true, candidate.m_pClassMultiplierTable);
     }
     ++candidate.m_dialogueEligibilityRevision;
@@ -5158,6 +5166,7 @@ void Party::addHiredNpcFollower(const HiredNpcFollower &follower)
     }
 
     m_unavailableNpcIds.insert(follower.npcId);
+    rebuildHiredNpcWeaponSkillBonuses();
 }
 
 void Party::removeHiredNpcFollower(uint32_t npcId)
@@ -5181,6 +5190,7 @@ void Party::removeHiredNpcFollower(uint32_t npcId)
         }
 
         m_hiredNpcFollowers.erase(followerIt, m_hiredNpcFollowers.end());
+        rebuildHiredNpcWeaponSkillBonuses();
     }
 }
 
@@ -7840,8 +7850,39 @@ SoundId Party::resolveDamageImpactSoundForMember(size_t memberIndex) const
     return pickRandomSoundId(DullArmorSounds);
 }
 
+void Party::rebuildHiredNpcWeaponSkillBonuses()
+{
+    std::unordered_map<std::string, int> bonuses;
+    for (const char *pSkillName : {"Staff", "Sword", "Dagger", "Axe", "Spear", "Bow", "Mace"})
+    {
+        const int bonus = hiredNpcSkillBonus(m_hiredNpcFollowers, pSkillName);
+
+        if (bonus != 0)
+        {
+            bonuses.emplace(pSkillName, bonus);
+        }
+    }
+
+    for (Character &member : m_members)
+    {
+        member.hiredNpcWeaponSkillBonuses = bonuses;
+    }
+
+    for (AdventurersInnMember &member : m_adventurersInnMembers)
+    {
+        member.character.hiredNpcWeaponSkillBonuses.clear();
+    }
+
+    for (DetachedPartyMember &member : m_detachedMembers)
+    {
+        member.character.hiredNpcWeaponSkillBonuses.clear();
+    }
+}
+
 void Party::rebuildMagicalBonusesFromBuffs()
 {
+    rebuildHiredNpcWeaponSkillBonuses();
+
     for (Character &member : m_members)
     {
         member.magicalBonuses = member.temporaryEventBonuses;

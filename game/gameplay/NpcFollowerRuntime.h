@@ -43,6 +43,7 @@ int hiredNpcTransportDayReduction(const EventRuntimeState &eventRuntimeState, bo
 int hiredNpcCrossMapDayReduction(const EventRuntimeState &eventRuntimeState);
 int hiredNpcRestFoodReduction(const EventRuntimeState &eventRuntimeState);
 int hiredNpcSkillBonus(const EventRuntimeState &eventRuntimeState, const std::string &skillName);
+int hiredNpcSkillBonus(const std::vector<HiredNpcFollower> &followers, const std::string &skillName);
 int hiredNpcPrimaryStatBonus(const EventRuntimeState &eventRuntimeState, const std::string &statName);
 int hiredNpcResistanceBonus(const EventRuntimeState &eventRuntimeState, const std::string &resistanceName);
 uint32_t hiredNpcGoldFindBonusPercent(const EventRuntimeState &eventRuntimeState);

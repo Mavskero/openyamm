@@ -397,7 +397,7 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
     }};
     // These captions and the MM8 ending paragraph have no equivalents in the selected GlobalTxt.
     // Their Chinese text is a project translation, recorded separately in the manifest.
-    constexpr std::array<std::pair<UiMessage, const char *>, 71> projectUiTranslations{{
+    constexpr std::array<std::pair<UiMessage, const char *>, 76> projectUiTranslations{{
         {UiMessage::EmptySlot, "空槽"}, {UiMessage::Menu, "菜单"}, {UiMessage::Submit, "提交"},
         {UiMessage::ArcomageResign, "认输"},
         {UiMessage::ArcomageTouchHint, "轻点出牌，上划弃牌"},
@@ -470,6 +470,11 @@ void convertCoreResources(const std::filesystem::path &source, const std::filesy
         {UiMessage::NotApplicable, "不适用"},
         {UiMessage::MessageScrollReadHint, "一卷消息卷宗。拿起卷宗后，选择人物全身像阅读。"},
         {UiMessage::InputAnswerPrefix, "答案："},
+        {UiMessage::FollowerUnavailable, "该随从当前不可用。"},
+        {UiMessage::FollowerAlreadyFollowingFormat, "%s已经在跟随你。"},
+        {UiMessage::FollowerJoinedFormat, "%s加入了随从队伍。"},
+        {UiMessage::FollowerLeftFormat, "%s离开了随从队伍。"},
+        {UiMessage::GenericFollowerName, "该随从"},
     }};
     const Game::UiTextTable englishUiText;
     Rows uiText;

@@ -15,6 +15,18 @@ These rules apply to all AI-generated contributions in this repository.
   Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
   publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
 
+- 246–247 ACCEPTED_OFFLINE_SOURCE_MECHANICS_SCOPED: `openyamm/handoff/weapon-follower-bonus-247/README.md`.
+  246typed follower feedback233keys(157source/76project) retainsallold228,active success/dailylimit/food useoriginal
+  569/561/140. Native114.342s/iOS107.300s/core0.191s/runtime0026.791s pass;onlyui_text changes,17398members/4worlds
+  retained. 247actualweaponrank omission nowusesseparate transient sevenweapon map fromexistinghelper15/16/46
+  +2/+3/+2;hire/update/dismiss/restore/seed/member entry refresh/clearwithout stacking. Originalpackedrank-only
+  None→Normal isruntimeonly;storedrank/mastery/equip/Save106 unchanged. Native166.685s/iOS171.878s pass;oneexisting
+  mechanismcase2.030s verifiesMace4→7/hit+3,Bowrank3,restore/rebuild/dismiss. Initialfixture Bowclassselection
+  correctedtoMissile;productbuildsnotreplayed.0newcases/App/Save/device/simulator/campaign/Release;10source/check
+  hashes match. Resource246/002 Ui233/Combat223/nav222 retained;fixedreleases/oldSavespreserved. Physicalpaused,
+  Sol6.1/max,~88%lowconfidence;fullnaturalcampaign/allofflinecompletionunproved. Continue248confirmed9magic
+  followerbonus omission;utilityrequires checkforequivalentpost-adjustments,do notblindlydoubleapply.
+
 - 245 ACCEPTED_OFFLINE_MAC_SCOPED: `openyamm/handoff/natural-mac-generated-npc-245/README.md`.
   Firstnatural007 generatedNPC Wilfred2662/Beg2667 passed; observedprofession2336 raw%01/%17 nowformats runtime
   NPC/profession through existinghelper. Native7.232s/unsignedgeneric iOS10.340s pass,onefrozen sourceSHA matches;

@@ -167,6 +167,8 @@ struct Character
     int attackRecoveryReductionTicks = 0;
     float recoveryProgressMultiplier = 1.0f;
     std::unordered_map<std::string, int> itemSkillBonuses;
+    // Derived from the party's current hirelings; never changes learned skills or save data.
+    std::unordered_map<std::string, int> hiredNpcWeaponSkillBonuses;
     std::unordered_set<std::string> equippedItemEffectFlags;
     std::array<std::optional<LloydBeacon>, 5> lloydsBeacons = {};
 
@@ -750,6 +752,7 @@ private:
     bool hasDetachedRosterMember(uint32_t rosterId) const;
     size_t totalPendingItemDeliveries() const;
     void synchronizeCharacterBuffCasters();
+    void rebuildHiredNpcWeaponSkillBonuses();
     void rebuildMagicalBonusesPreservingProgress();
     void queueSound(SoundId soundId);
     void queueSpeech(size_t memberIndex, SpeechId speechId);

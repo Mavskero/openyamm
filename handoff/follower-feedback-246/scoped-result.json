@@ -1,0 +1,86 @@
+{
+  "checkpoint": 246,
+  "status": "ACCEPTED_OFFLINE_SOURCE_SCOPED",
+  "source_base": "a5ae5a6df3daf9730ec35f72d08eb52d13af4123",
+  "physical_debugging": "paused",
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "changed_source": [
+    {
+      "path": "game/gameplay/GameplayDialogController.cpp",
+      "bytes": 191491,
+      "sha256": "022e3fce487e181ac770204ac08486337586abdd43f7c27614c7c41e27715676"
+    },
+    {
+      "path": "game/tables/UiTextTable.h",
+      "bytes": 8637,
+      "sha256": "e5614f99219d6e544e6703622310d2f23a999f343afba19962c965f66d9301ca"
+    },
+    {
+      "path": "game/tables/UiTextTable.cpp",
+      "bytes": 32607,
+      "sha256": "da1d8b3e0fb65807160e4887b54507470bde5cbfae658706d74d8ae018c1a85d"
+    },
+    {
+      "path": "tools/mmerge_import/CoreResources.cpp",
+      "bytes": 47689,
+      "sha256": "53b18a8e237c94dddad4b1765254cfd11b35b3f9c9d5d3477caf2bb2590b7932"
+    }
+  ],
+  "repair": "Current-language typed follower unavailable/already following/joined/left/name fallback; reuse authenticated existing GlobalTxt569/561/140 for active ability success/cooldown/packs full",
+  "source_evidence": "Failure messages are wrapped directly into reopened dialogue; no downstream translation. Success join/leave message visibility not independently established. Original active NPCFollowersSkills.lua exact IDs authenticated.",
+  "no_rule_change": true,
+  "builds": {
+    "build-native-001": {
+      "passed": true,
+      "elapsed_seconds": 114.342001125
+    },
+    "build-ios-001": {
+      "passed": true,
+      "elapsed_seconds": 107.29971233399999
+    },
+    "core-import-001": {
+      "passed": true,
+      "elapsed_seconds": 0.190589292
+    },
+    "runtime-assembly-002": {
+      "passed": true,
+      "elapsed_seconds": 6.790999
+    }
+  },
+  "native_executable_sha256": "0094d6f440e1f6a927c647794c9ae84a23495d3f0d23f0e0726d1e63bef0de94",
+  "main_and_sol_review_pass": true,
+  "built_source_hashes_match": true,
+  "ui_text_keys": 233,
+  "source_rows": 157,
+  "project_rows": 76,
+  "old228_values_retained": true,
+  "complete_old228_prefix_migration": "source/build accepted; no additional legacy replay",
+  "runtime": "complete246/runtime-002",
+  "changed_engine_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "unchanged_engine_members": 17398,
+  "all4_worlds_retained": true,
+  "combat_text": 223,
+  "navigation": 222,
+  "save_version": 106,
+  "new_unit_cases": 0,
+  "unit_cases_run": 0,
+  "app_runs": 0,
+  "save_writes": 0,
+  "old_routes_replayed": 0,
+  "campaigns_replayed": 0,
+  "new_release": false,
+  "assembly_initial_failure": "Preflight incorrectly compared first228 physical rows; keyed/sorted file inserts new keys. All228 old key/value pairs identical; repaired preflight only, no repeat import/build.",
+  "not_claimed": [
+    "Actual follower feedback pixels or active ability use",
+    "Physical iPad touch/UIKit",
+    "Full natural campaign",
+    "All offline work complete"
+  ],
+  "estimate_percent": 88,
+  "estimate_confidence": "low",
+  "full_goal_achieved": false,
+  "timestamp": "2026-10-31T11:43:34.252510+00:00"
+}

@@ -20,6 +20,7 @@
 #include "game/items/PriceCalculator.h"
 #include "game/party/EventSpellBuffs.h"
 #include "game/tables/CharacterInspectTable.h"
+#include "game/tables/HouseServiceTextTable.h"
 #include "game/tables/HouseTable.h"
 #include "game/tables/MapStats.h"
 #include "game/tables/MergedBaseTables.h"
@@ -1712,7 +1713,9 @@ NpcProfessionActionExecution executeNpcFollowerProfessionAction(
             npcId,
             context.pWorldRuntime != nullptr ? context.pWorldRuntime->gameMinutes() : -1.0f))
     {
-        context.eventRuntimeState.messages.push_back("Sorry, come back another day");
+        context.eventRuntimeState.messages.push_back(context.pHouseServiceTextTable != nullptr
+            ? context.pHouseServiceTextTable->format(HouseServiceTextTable::Message::TransportNoRouteToday)
+            : "Sorry, come back another day");
         return execution;
     }
 
@@ -1751,7 +1754,9 @@ NpcProfessionActionExecution executeNpcFollowerProfessionAction(
             {
                 if (context.pParty->food() > MaxFoodForCookFollower)
                 {
-                    context.eventRuntimeState.messages.push_back("Your packs are already full!");
+                    context.eventRuntimeState.messages.push_back(context.pHouseServiceTextTable != nullptr
+                        ? context.pHouseServiceTextTable->format(HouseServiceTextTable::Message::TavernPacksFull)
+                        : "Your packs are already full!");
                     return execution;
                 }
 
@@ -1819,7 +1824,9 @@ NpcProfessionActionExecution executeNpcFollowerProfessionAction(
     }
 
     markNpcProfessionActionUsed(context.eventRuntimeState, npcId, context.pWorldRuntime, context.pParty);
-    context.eventRuntimeState.messages.push_back("Done!");
+    context.eventRuntimeState.messages.push_back(context.pHouseServiceTextTable != nullptr
+        ? context.pHouseServiceTextTable->format(HouseServiceTextTable::Message::ShopIdentifySuccess)
+        : "Done!");
     return execution;
 }
 
@@ -1973,6 +1980,13 @@ std::string formatNpcProfessionText(
     replaceAllInPlace(text, "%14", profession.displayName());
     replaceAllInPlace(text, "%17", std::to_string(profession.weeklyCost / 100u));
     return text;
+}
+
+const UiTextTable &npcFollowerUiText(const GameplayDialogController::Context &context)
+{
+    static const UiTextTable englishText;
+    return context.pScreenRuntime != nullptr
+        ? context.pScreenRuntime->gameplayUiRuntime().uiTextTable() : englishText;
 }
 
 int effectiveReputationForContext(const GameplayDialogController::Context &context)
@@ -3632,7 +3646,8 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 currentDialogueHostHouseId(context.eventRuntimeState) == 0 || pNpc->topicIds.empty())
             || !continentAllowsNpcFollowers(context.pCurrentMap, context.pContinentSettingTable))
         {
-            context.eventRuntimeState.messages.push_back("That follower is not available.");
+            context.eventRuntimeState.messages.push_back(
+                npcFollowerUiText(context).text(UiTextTable::Message::FollowerUnavailable));
             result.shouldOpenPendingEventDialog = true;
             return result;
         }
@@ -3706,11 +3721,13 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 currentDialogueHostHouseId(context.eventRuntimeState) == 0 || pNpc->topicIds.empty())
             || !continentAllowsNpcFollowers(context.pCurrentMap, context.pContinentSettingTable))
         {
-            context.eventRuntimeState.messages.push_back("That follower is not available.");
+            context.eventRuntimeState.messages.push_back(
+                npcFollowerUiText(context).text(UiTextTable::Message::FollowerUnavailable));
         }
         else if (hasHiredNpcFollower(context.eventRuntimeState, offer.npcId))
         {
-            context.eventRuntimeState.messages.push_back(pNpc->name + " is already following you.");
+            context.eventRuntimeState.messages.push_back(npcFollowerUiText(context).formatFollowerFeedback(
+                UiTextTable::Message::FollowerAlreadyFollowingFormat, pNpc->name));
         }
         else if (context.eventRuntimeState.hiredNpcFollowers.size() >= MaxNpcFollowerCount
             || hiredNpcFollowerFeePercent(context.eventRuntimeState) >= MaxNpcFollowerFeePercent)
@@ -3757,7 +3774,8 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 context.pWorldRuntime->applyEventRuntimeState();
             }
 
-            context.eventRuntimeState.messages.push_back(pNpc->name + " joined the followers.");
+            context.eventRuntimeState.messages.push_back(npcFollowerUiText(context).formatFollowerFeedback(
+                UiTextTable::Message::FollowerJoinedFormat, pNpc->name));
             playSpeechReaction(context, context.pParty->activeMemberIndex(), SpeechId::HireNpc, true);
             if (context.pScreenRuntime != nullptr)
             {
@@ -3827,8 +3845,11 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 context.pParty->setNpcUnavailable(npcId, false);
             }
 
-            context.eventRuntimeState.messages.push_back(
-                (pNpc != nullptr && !pNpc->name.empty() ? pNpc->name : "The follower") + " left the followers.");
+            const UiTextTable &text = npcFollowerUiText(context);
+            context.eventRuntimeState.messages.push_back(text.formatFollowerFeedback(
+                UiTextTable::Message::FollowerLeftFormat,
+                pNpc != nullptr && !pNpc->name.empty() ? pNpc->name
+                    : text.text(UiTextTable::Message::GenericFollowerName)));
         }
 
         result.shouldCloseActiveDialog = true;

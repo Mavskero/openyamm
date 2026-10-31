@@ -328,13 +328,28 @@ int skillLevel(const Character &character, std::string_view skillName)
     const CharacterSkill *pSkill = character.findSkill(std::string(skillName));
     const auto bonusIt = character.itemSkillBonuses.find(std::string(skillName));
     const int bonusLevel = bonusIt != character.itemSkillBonuses.end() ? bonusIt->second : 0;
-    return (pSkill != nullptr ? static_cast<int>(pSkill->level) : 0) + bonusLevel;
+    const auto followerBonusIt = character.hiredNpcWeaponSkillBonuses.find(std::string(skillName));
+    const int followerBonusLevel = followerBonusIt != character.hiredNpcWeaponSkillBonuses.end()
+        ? followerBonusIt->second : 0;
+    return (pSkill != nullptr ? static_cast<int>(pSkill->level) : 0) + bonusLevel + followerBonusLevel;
 }
 
 SkillMastery skillMastery(const Character &character, std::string_view skillName)
 {
     const CharacterSkill *pSkill = character.findSkill(std::string(skillName));
-    return pSkill != nullptr ? pSkill->mastery : SkillMastery::None;
+    const SkillMastery mastery = pSkill != nullptr ? pSkill->mastery : SkillMastery::None;
+    const auto followerBonusIt = character.hiredNpcWeaponSkillBonuses.find(std::string(skillName));
+
+    // Original GetSkill repacks a positive hireling-only rank as Normal, without learning the skill.
+    if (mastery == SkillMastery::None
+        && followerBonusIt != character.hiredNpcWeaponSkillBonuses.end()
+        && followerBonusIt->second > 0
+        && skillLevel(character, skillName) > 0)
+    {
+        return SkillMastery::Normal;
+    }
+
+    return mastery;
 }
 
 bool percentRoll(std::mt19937 &rng, int percentChance)

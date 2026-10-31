@@ -19,14 +19,15 @@
 `handoff/ipados-device-231-232-20261031/README.md` 与 `scoped-result.json`。
 仓库为 [Mavskero/openyamm](https://github.com/Mavskero/openyamm)，开发分支 `codex/ipados`；
 提交`8989cf96dcd1d5c23de2d5da2a58030c92e3291d`记录231–232源码和脱敏受限真机结果。
-233–245及后续源码身份按当前Git提交和对应handoff逐文件摘要核对；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
+233–247及后续源码身份按当前Git提交和对应handoff逐文件摘要核对；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
 243–245为`ACCEPTED_OFFLINE_MAC_SCOPED`，Mac自然银行、商店、generated NPC及受影响修复已受限通过，未扩大到目标iPad验收。
+246随从字幕、247武器随从加成按源码／构建及既有组件范围受限通过，由主代理一次累计源码提交；没有新增App或设备验收。
 恢复前先核对最新工作树和主代理后续结果，保留未提交工作，不reset／clean，不把该提交或旧Release当成更新后程序身份。
 
 固定Release229为 `ipados-ui-cumulative-229-20261030`，生产代码提交为
 `8cdae9215ef7bb52e8fe8f6e83bf16641280fd0e`；完整发布源码身份从该发布 `VERSION.json → source_head` 读取。
 按 `SOURCE-MANIFEST.json`、`ARTIFACT-SHA256SUMS`、`SHA256SUMS` 和 `delivery.json` 核对该固定发布，
-保留229、214、195和RC1–3原附件。231–245没有新Release，不能声称229附件已含后续修复。
+保留229、214、195和RC1–3原附件。231–247没有新Release，不能声称229附件已含后续修复。
 
 231–232实际通过旧Save104读取、正常UI穿戴护甲84／主手武器66、新槽Save12／105，
 以及两次保留数据更新后的独立进程读档。中文Stats／技能表头、真实重叠双指物品检查、
@@ -57,7 +58,7 @@ UiText227增加“答案：”。235原生／未签名iOS／核心导入和现�
 原生143.473秒／通用未签名iOS134.596秒／核心导入0.195秒通过，4源码摘要一致；实际正常Load副本→ESC→首次Quit中文完整无裁切。
 二次退出后的CUA AX观察可能重新拉起至冷菜单，不能计冷启动验收；随后正常菜单退出，最终该次进程不存在。
 两批只查看内联CUA画面，没有导出截图，见`handoff/offline-ui-input-240-241/`；这些Mac观察不替代实际preedit、触控或银行／商店交易验收。
-236–240沿用完整235；当前完整241/runtime-002只更新ui_text和conversion记录，其他17398个engine成员／四world沿用235，Save106不变。
+236–240沿用完整235；241/runtime-002只更新ui_text和conversion记录，其他17398个engine成员／四world沿用235，Save106不变。
 固定229及235程序不能读取新106，回退须用保留的105或更旧可读副本。
 242已受限通过：原脚本Paralyze81→Sunray87和原exe命中后伤害路径已认证，补87名称支持及接触后掷骰。
 原生136.936秒／未签名iOS132.004秒通过，5生产＋1既有测试文件共6摘要一致；一个既有组件case0.188秒、79断言，
@@ -88,6 +89,16 @@ Cocoa独立补丁只在绝对Dragged事件前跳过按钮reconcile，既有relea
 原生7.232242秒／通用未签名iOS10.339974秒通过，1冻结源码摘要一致，零单元运行／新case；零修后写档，原件／Save10副本／隔离槽1／槽2四哈希未变，隔离存档仍仅3个。
 008正常Quit两次后PID71068确认不存在，最终日志已收集。
 资源和Save106不变，没有状态夹具、传送或规则修改，详见[245交接](handoff/natural-mac-generated-npc-245/README.md)。
+246普通随从不可用／已跟随／加入／离开／名字fallback接typed当前UI，主动能力复用原GlobalTxt569／561／140；UiText233＝157原源＋76项目，旧228键值和完整表兼容保留。
+原生114.342001秒／未签名iOS107.299712秒／导入0.190589秒／组装002为6.790999秒通过，4冻结摘要一致；零单元运行／新case／App／写档。
+失败消息进入重开对话的源码链路已核对，加入／离开成功消息可见性未独立确认，不能声称HUD或实际主动能力通过，见[246交接](handoff/follower-feedback-246/README.md)。
+当前完整246/runtime-002只更新engine内ui_text，其他17398成员／四world保留；4233字节覆盖包仅含ui_text，不是完整runtime或新Release。
+247将原职业15／16／46七武器＋2／＋3／＋2接入实际战斗有效技能，独立瞬态weapon表与item bonus隔离；窄None→Normal遵原packed skill，stored技能／精通、装备资格及Save106不改。
+雇佣、更新、解雇、恢复、seed、成员加入／重入均刷新，Inn／Detached清旧不叠加；原生166.684508秒／未签名iOS171.877579秒通过，5生产＋1既有测试共6摘要一致。
+一个既有MM7Mechanics case2.029935秒、27／27断言通过，14个其他case跳过；含Mace4→7命中＋3、未学Bow有效3／Normal但storedNone、重建／内存snapshot／解雇，不称实际磁盘读档或冷启动。
+零新case／App／写档／资源变更。
+首次case仅Bow夹具筛选误把原Missile当Bow，修夹具后通过，生产构建未重跑，见[247交接](handoff/weapon-follower-bonus-247/README.md)。
+247继续完整246/runtime-002／Ui233／Combat223／导航222／Save106。248九系magic遗漏已确认、准备继续，尚不计通过，不能宣称全部离线或自然战役完成。
 
 暂停前设备最后观察为232的House64标准商品页；已有库存截图在暂停后作了离线复核，但未执行拖离、购买或交易结果检查，商店条件仍未验。
 目标iPad的商店拖离取消、银行、长问题输入仍未验；243–245限于Mac普通银行、商店、generated NPC及受影响修复，未验IME／preedit、极端容量或iPad触控。
@@ -101,12 +112,12 @@ Cocoa独立补丁只在绝对Dragged事件前跳过按钮reconcile，既有relea
 不得沿用上次摘要冒充恢复前的新核对。旧档只用副本，新保存只用未占用槽和新名称，不覆盖原件。
 合法 `save10.oysav` 是195正常新建牧师的“中文保存测试”手动档，恢复授权后可用于新索匹格镇银行自然条件；
 不能修改其物品、金钱或位姿来凑条件。243／245隔离Mac新档不扩大232设备原核对时点的结论。
-当前245仍写Save106、真实105／104读取证据沿用236；固定229及235不能读106，
+当前247仍写Save106、真实105／104读取证据沿用236；固定229及235不能读106，
 固定214／195及旧RC也不能读取105，回退须用保留的相应可读旧格式副本。
 
 固定229完整六文件为 `engine.zip`、`conversion.json`、`mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip`。
-其基线runtime227包含214项UiText、Combat223和导航222；当前源码使用固定229→231–232→234→235→241的engine覆盖顺序。
-241覆盖包只有ui_text一个成员，不是完整runtime或新Release，具体摘要见240–241交接；完整资源及conversion身份按当时handoff核对。
+其基线runtime227包含214项UiText、Combat223和导航222；当前源码使用固定229→231–232→234→235→241→246的engine覆盖顺序。
+241与246覆盖包各只有ui_text一个成员，不是完整runtime或新Release，具体摘要见对应交接；完整资源及conversion身份按当时handoff核对。
 新机器按 `IPADOS_HANDOFF.md` 组装完整assets目录，engine与conversion在根目录，四个world在 `worlds/`，
 从组装后的根目录核对保留该相对路径的 `SHA256SUMS`。五个ZIP保持压缩，旧资源目录保留。
 MM6／MM7／MM8在190已改变，不能复用RC2旧world；不能把小型覆盖包或故障资源目录当成完整运行资源。

@@ -1,0 +1,95 @@
+{
+  "checkpoint": 247,
+  "status": "ACCEPTED_OFFLINE_MECHANICS_SCOPED",
+  "source_base": "245a5ae5a6d plus frozen246 feedback sources",
+  "physical_debugging": "paused",
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "concrete_defect": "WeaponsMaster16 seven weapon +3 existed in an uncalled helper and did not affect real combat skill/profile calculations",
+  "original_evidence": [
+    "NPCFollowersSkills.lua54–57 and240–246",
+    "RemoveSkillValueLimits.lua60–89 positive rank-only packed skill decodes Normal"
+  ],
+  "repair": "Independent transient seven-weapon follower contribution, shared existing vector mapping; hire/update/dismiss/map-global merge/seed/restore/member admission and reentry refresh by replacement; inactive copies cleared",
+  "natural_mapping_scope": "Original professions15/16/46 naturally contribute2/3/2 to Staff Sword Dagger Axe Spear Bow Mace only",
+  "stored_skill_mastery_equip_eligibility_unchanged": true,
+  "save_version": 106,
+  "save_codec_changed": false,
+  "changed_source": [
+    {
+      "path": "game/party/Party.h",
+      "bytes": 34301,
+      "sha256": "7df25e5b52eabecec15eb13a57a7d888855c1a99370f418aa60aaec6b148d8ef"
+    },
+    {
+      "path": "game/party/Party.cpp",
+      "bytes": 257532,
+      "sha256": "6de681642ceed6a7b0a8d117cf3d4d1eef97991d6bfcfa7b31607705e69c77d4"
+    },
+    {
+      "path": "game/gameplay/GameMechanics.cpp",
+      "bytes": 121371,
+      "sha256": "45727977396d26b8b816e13f39f4d18993d2f056d6619ad734b5b24b7cb1455c"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.h",
+      "bytes": 2226,
+      "sha256": "1b576ded7938cdada47b271e3504defa85cdab85acf62cb96593f969cb732a77"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.cpp",
+      "bytes": 11444,
+      "sha256": "5d85b5e1a231ddcbd440f24ba036f0241d0fe6ca062bfcfcece4a42ad1492747"
+    },
+    {
+      "path": "tests/MM7MechanicsRuntimeTests.cpp",
+      "bytes": 26365,
+      "sha256": "be23881a8a78e7e62a8639718df722543532d48e1bd6c3fe61887833bb59652b"
+    }
+  ],
+  "builds": {
+    "build-native-001": {
+      "passed": true,
+      "elapsed_seconds": 166.684507792
+    },
+    "build-ios-001": {
+      "passed": true,
+      "elapsed_seconds": 171.877578584
+    },
+    "compile-focused-002": {
+      "passed": true,
+      "elapsed_seconds": 7.129128583
+    },
+    "focused-mechanics-002": {
+      "passed": true,
+      "elapsed_seconds": 2.0299347080000003
+    }
+  },
+  "main_and_sol_peer_review_pass": true,
+  "product_source_hashes_match": true,
+  "focused_check": "One existing MMerge follower bonuses case: real Mace4→7/profile hit+3; Bow effective3/Normal with storedNone; equipment bonus separate; repeated rebuild/snapshot restore/dismissal preserve or remove effect correctly",
+  "new_unit_cases": 0,
+  "existing_cases_run": "one selected case; initial fixture failure plus corrected affected rerun",
+  "initial_failure": "Test mistakenly searched Bow equipStat=Bow; actual original table uses Missile. Precondition failed before combat assertions. Only fixture filter corrected; successful product builds retained.",
+  "runtime": "complete246/runtime-002 unchanged",
+  "ui_text": 233,
+  "combat_text": 223,
+  "navigation": 222,
+  "app_runs": 0,
+  "save_writes": 0,
+  "old_routes_replayed": 0,
+  "campaigns_replayed": 0,
+  "new_release": false,
+  "not_claimed": [
+    "Every weapon/profession matrix",
+    "Full hire interaction pixels",
+    "Other passive magic/utility effects",
+    "Physical iPad touch/UIKit",
+    "Full natural campaign",
+    "All offline work complete"
+  ],
+  "estimate_percent": 88,
+  "estimate_confidence": "low",
+  "full_goal_achieved": false,
+  "timestamp": "2026-10-31T11:55:21.160297+00:00"
+}

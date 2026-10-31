@@ -251,6 +251,11 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.item_not_identified", "Not Identified"},
     {"ui.input_answer_prefix", "Answer: "},
     {"ui.menu_quit_confirmation", "Are you sure?  Click again to quit"},
+    {"ui.follower_unavailable", "That follower is not available."},
+    {"ui.follower_already_following", "%s is already following you."},
+    {"ui.follower_joined", "%s joined the followers."},
+    {"ui.follower_left", "%s left the followers."},
+    {"ui.generic_follower_name", "The follower"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -313,7 +318,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 223 with character status captions,
     // the 224 with the message-scroll reading hint,
     // the 226 with broken/unidentified item captions,
-    // and the 227 with the input answer prefix.
+    // the 227 with the input answer prefix,
+    // and the 228 with the quit confirmation.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -339,6 +345,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t ScrollHintMessageCount = size_t(Message::ItemBroken);
     constexpr size_t ItemStatusMessageCount = size_t(Message::InputAnswerPrefix);
     constexpr size_t InputPromptMessageCount = size_t(Message::MenuQuitConfirmation);
+    constexpr size_t QuitConfirmationMessageCount = size_t(Message::FollowerUnavailable);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -364,7 +371,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != CharacterStatusMessageCount
         && schemaMessageCount != ScrollHintMessageCount
         && schemaMessageCount != ItemStatusMessageCount
-        && schemaMessageCount != InputPromptMessageCount)
+        && schemaMessageCount != InputPromptMessageCount
+        && schemaMessageCount != QuitConfirmationMessageCount)
     {
         return false;
     }
@@ -401,6 +409,9 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
             || (index == size_t(Message::ItemRewardPermanentFormat)
                 && !hasExpectedParameters(row[1], {"%u", "%s", "%s"}))
             || ((index == size_t(Message::NpcDismissFormat)
+                    || index == size_t(Message::FollowerAlreadyFollowingFormat)
+                    || index == size_t(Message::FollowerJoinedFormat)
+                    || index == size_t(Message::FollowerLeftFormat)
                     || index == size_t(Message::TransitionLeaveFormat)
                     || index == size_t(Message::TransitionEnterFormat)
                     || index == size_t(Message::SpellSelectActorFormat)
@@ -617,6 +628,20 @@ std::string UiTextTable::formatSkillTrainingRequirement(
 std::string UiTextTable::formatNpcDismiss(const std::string &name) const
 {
     return formatStringParameter(text(Message::NpcDismissFormat), name);
+}
+
+std::string UiTextTable::formatFollowerFeedback(Message message, const std::string &name) const
+{
+    switch (message)
+    {
+        case Message::FollowerAlreadyFollowingFormat:
+        case Message::FollowerJoinedFormat:
+        case Message::FollowerLeftFormat:
+            return formatStringParameter(text(message), name);
+
+        default:
+            return {};
+    }
 }
 
 std::string UiTextTable::formatTransitionLeave(const std::string &name) const

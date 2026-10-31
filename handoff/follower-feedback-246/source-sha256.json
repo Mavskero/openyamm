@@ -1,0 +1,70 @@
+{
+  "changed_files": [
+    {
+      "path": "game/gameplay/GameplayDialogController.cpp",
+      "bytes": 191491,
+      "sha256": "022e3fce487e181ac770204ac08486337586abdd43f7c27614c7c41e27715676"
+    },
+    {
+      "path": "game/tables/UiTextTable.h",
+      "bytes": 8637,
+      "sha256": "e5614f99219d6e544e6703622310d2f23a999f343afba19962c965f66d9301ca"
+    },
+    {
+      "path": "game/tables/UiTextTable.cpp",
+      "bytes": 32607,
+      "sha256": "da1d8b3e0fb65807160e4887b54507470bde5cbfae658706d74d8ae018c1a85d"
+    },
+    {
+      "path": "tools/mmerge_import/CoreResources.cpp",
+      "bytes": 47689,
+      "sha256": "53b18a8e237c94dddad4b1765254cfd11b35b3f9c9d5d3477caf2bb2590b7932"
+    }
+  ],
+  "native_executable_sha256": "0094d6f440e1f6a927c647794c9ae84a23495d3f0d23f0e0726d1e63bef0de94",
+  "overlay": {
+    "path": "engine-overlay-246.zip",
+    "bytes": 4233,
+    "sha256": "bf3e92e7473de9aaa24c9decbb50cc10cec5da28706e3d650a93c592171ab5fd",
+    "members": [
+      "data_tables/ui_text.txt"
+    ],
+    "complete_runtime": false
+  },
+  "runtime_files": [
+    {
+      "path": "engine.zip",
+      "size": 713626914,
+      "sha256": "cf9d881a47fe3b9e2e64b0087676715da7560f564536458a9e8280bd928451f5"
+    },
+    {
+      "path": "conversion.json",
+      "size": 122988,
+      "sha256": "34c48cd3d9b37679647dd45b6cb78f3caf0f2aa2cd4fb52c4c8f8ea42c3ece71"
+    },
+    {
+      "path": "worlds/mm6.zip",
+      "size": 641050692,
+      "sha256": "154aa325d69eedd9c0b3cd3e96c730db4cec581e23ebe975eaaf93903ffbf676",
+      "identity_check": "Same inode as preserved241/235 world; verified SHA inherited, no reread"
+    },
+    {
+      "path": "worlds/mm7.zip",
+      "size": 1019781051,
+      "sha256": "ef24f9591ac7ee0d431a4cc943ee276d687c6a7a2e5b27a53464d8ab806d9c5d",
+      "identity_check": "Same inode as preserved241/235 world; verified SHA inherited, no reread"
+    },
+    {
+      "path": "worlds/mm8.zip",
+      "size": 978282137,
+      "sha256": "0def37a4ebb5b302462e310325f75f3fb7f339852cd9111bfbb938787fe1e126",
+      "identity_check": "Same inode as preserved241/235 world; verified SHA inherited, no reread"
+    },
+    {
+      "path": "worlds/mmmerge.zip",
+      "size": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e",
+      "identity_check": "Same inode as preserved241/235 world; verified SHA inherited, no reread"
+    }
+  ]
+}

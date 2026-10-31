@@ -1,0 +1,37 @@
+{
+  "changed_files": [
+    {
+      "path": "game/party/Party.h",
+      "bytes": 34301,
+      "sha256": "7df25e5b52eabecec15eb13a57a7d888855c1a99370f418aa60aaec6b148d8ef"
+    },
+    {
+      "path": "game/party/Party.cpp",
+      "bytes": 257532,
+      "sha256": "6de681642ceed6a7b0a8d117cf3d4d1eef97991d6bfcfa7b31607705e69c77d4"
+    },
+    {
+      "path": "game/gameplay/GameMechanics.cpp",
+      "bytes": 121371,
+      "sha256": "45727977396d26b8b816e13f39f4d18993d2f056d6619ad734b5b24b7cb1455c"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.h",
+      "bytes": 2226,
+      "sha256": "1b576ded7938cdada47b271e3504defa85cdab85acf62cb96593f969cb732a77"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.cpp",
+      "bytes": 11444,
+      "sha256": "5d85b5e1a231ddcbd440f24ba036f0241d0fe6ca062bfcfcece4a42ad1492747"
+    },
+    {
+      "path": "tests/MM7MechanicsRuntimeTests.cpp",
+      "bytes": 26365,
+      "sha256": "be23881a8a78e7e62a8639718df722543532d48e1bd6c3fe61887833bb59652b"
+    }
+  ],
+  "production_files_count": 5,
+  "existing_test_files_count": 1,
+  "product_build_inputs_unchanged": true
+}

@@ -420,6 +420,56 @@ TEST_CASE("MMerge follower bonuses expose skill, gold, food, and item-service ef
     CHECK_EQ(hiredNpcGoldAfterBonusAndFees(1000, state), 1116u);
     CHECK(hiredNpcCanIdentifyItemKind(state, "Ring"));
     CHECK_FALSE(hiredNpcCanRepairItemKind(state, "Armor"));
+
+    REQUIRE(OpenYAMM::Tests::regressionGameDataLoaded());
+    const auto &items = OpenYAMM::Tests::regressionGameData().itemTable;
+    const auto mace = std::find_if(items.entries().begin(), items.entries().end(), [](const ItemDefinition &item)
+    {
+        return item.skillGroup == "Mace" && item.equipStat == "Weapon" && item.rarity == ItemRarity::Common;
+    });
+    const auto bow = std::find_if(items.entries().begin(), items.entries().end(), [](const ItemDefinition &item)
+    {
+        return item.skillGroup == "Bow" && item.equipStat == "Missile" && item.rarity == ItemRarity::Common;
+    });
+    REQUIRE(mace != items.entries().end());
+    REQUIRE(bow != items.entries().end());
+
+    Party party = makeOneMemberParty();
+    Character *member = party.activeMember();
+    REQUIRE(member != nullptr);
+    member->skills["Mace"] = {"Mace", 4, SkillMastery::Expert};
+    member->skills["Bow"] = {"Bow", 0, SkillMastery::None};
+    member->equipment.mainHand = mace->itemId;
+    member->equipment.bow = bow->itemId;
+    party.setItemTable(&items);
+    const auto baseline = GameMechanics::buildCharacterAttackProfile(*party.activeMember(), &items, nullptr);
+    const auto itemBonuses = party.activeMember()->itemSkillBonuses;
+    REQUIRE(baseline.hasBow);
+    CHECK_EQ(baseline.meleeSkillLevel, 4u);
+
+    party.addHiredNpcFollower({1005, 16, 400});
+    const auto boosted = GameMechanics::buildCharacterAttackProfile(*party.activeMember(), &items, nullptr);
+    CHECK_EQ(boosted.meleeSkillLevel, 7u);
+    CHECK_EQ(boosted.meleeAttackBonus, baseline.meleeAttackBonus + 3);
+    CHECK_EQ(boosted.rangedSkillLevel, 3u);
+    CHECK_EQ(boosted.rangedSkillMastery, static_cast<uint32_t>(SkillMastery::Normal));
+    CHECK_EQ(boosted.rangedAttackBonus.value_or(0), baseline.rangedAttackBonus.value_or(0) + 3);
+    CHECK_EQ(party.activeMember()->findSkill("Mace")->level, 4u);
+    CHECK(party.activeMember()->findSkill("Mace")->mastery == SkillMastery::Expert);
+    CHECK(party.activeMember()->findSkill("Bow")->mastery == SkillMastery::None);
+    CHECK(party.activeMember()->itemSkillBonuses == itemBonuses);
+
+    party.setItemTable(&items);
+    CHECK_EQ(GameMechanics::buildCharacterAttackProfile(*party.activeMember(), &items, nullptr).meleeSkillLevel, 7u);
+    Party restored = {};
+    restored.setItemTable(&items);
+    restored.restoreSnapshot(party.snapshot());
+    CHECK_EQ(GameMechanics::buildCharacterAttackProfile(*restored.activeMember(), &items, nullptr).meleeSkillLevel, 7u);
+    restored.removeHiredNpcFollower(1005);
+    const auto dismissed = GameMechanics::buildCharacterAttackProfile(*restored.activeMember(), &items, nullptr);
+    CHECK_EQ(dismissed.meleeSkillLevel, baseline.meleeSkillLevel);
+    CHECK_EQ(dismissed.meleeAttackBonus, baseline.meleeAttackBonus);
+    CHECK_EQ(dismissed.rangedSkillLevel, 0u);
 }
 
 TEST_CASE("MMerge follower luck and resistance bonuses are visible in character summaries")
