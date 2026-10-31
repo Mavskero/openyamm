@@ -1,0 +1,69 @@
+{
+  "checkpoint": 238,
+  "status": "ACCEPTED_OFFLINE_SCOPED",
+  "base_commit": "5bec1d8cbc3d566615ec85f4048fe1224c4c2917",
+  "physical_debugging_paused": true,
+  "subagent_model": "gpt-6.1-sol",
+  "subagent_reasoning": "max",
+  "scope": [
+    "Save Escape ownership deferred from global hotkeys to the Save consumer",
+    "Original Action113 with CurrentScreen11 is checked once after composition ownership",
+    "Rejected Escape keeps Save, selection and draft; held input cannot bypass the rejection and a fresh key can immediately retry"
+  ],
+  "original_evidence": [
+    "ConstAndBits.lua:887 SaveGame screen11 and1397 Exit113",
+    "Core/events.lua:809-819 Handled clears Action;837-843 separate Action/MenuAction",
+    "Structs/00 structs.lua:139-144 CurrentScreen differs from MainMenuCode",
+    "Structs/After/HardcodedTopicFunctions.lua:518-528 ExitCurrentScreen uses the game Action113 for screen11"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 5.546834167
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 9.270196542
+    },
+    "input-check-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.919413875
+    }
+  },
+  "source_count": 3,
+  "production_files": 2,
+  "all3_built_source_hashes_match": true,
+  "existing_input_executable_runs": 1,
+  "affected_assertions_added": 3,
+  "new_unit_cases": 0,
+  "input_scope": [
+    "Composing Escape does not emit source action",
+    "Rejecting controlled hook is invoked once on screen11 and leaves the draft intact",
+    "Fresh permitted Escape closes immediately"
+  ],
+  "legacy_nullopt_scope": "Source and build reviewed; no additional legacy route replay",
+  "actual_campaign_refusal_trigger_proved": false,
+  "bank237_behavior_retained": true,
+  "resource_changes": 0,
+  "runtime_retained": "complete235/runtime-002 (UiText227, Combat223, navigation222)",
+  "save_write_version": 106,
+  "save_format_changed": false,
+  "legacy_104_105_read_evidence": "Retained from236, not repeated",
+  "gameplay_save_writes": 0,
+  "main_game_app_runs": 0,
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "campaign_replays": 0,
+  "new_release": false,
+  "fixed_releases_retained": [
+    "229",
+    "214",
+    "195",
+    "RC1",
+    "RC2",
+    "RC3"
+  ],
+  "full_goal_achieved": false,
+  "engineering_estimate_percent": 88,
+  "estimate_confidence": "low; qualitative, not quest/campaign coverage"
+}

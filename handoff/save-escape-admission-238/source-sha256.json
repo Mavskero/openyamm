@@ -1,0 +1,22 @@
+{
+  "checkpoint": 238,
+  "base_commit": "5bec1d8cbc3d566615ec85f4048fe1224c4c2917",
+  "scope": "Frozen at accepted native/iOS build completion",
+  "files": [
+    {
+      "path": "game/gameplay/GameplayInputController.cpp",
+      "sha256": "82736d295f72571c86a77b31e69f5a1a0744799cbd168cdcfb5d79248d21574e",
+      "bytes": 39981
+    },
+    {
+      "path": "game/gameplay/GameplayOverlayInputController.cpp",
+      "sha256": "4fe911292c9031a8262a2783a23d685cdc133644e59765e660bb5960c291e94e",
+      "bytes": 216037
+    },
+    {
+      "path": "tools/AppleInputCheck.cpp",
+      "sha256": "3b581eff8f399c5ed267eb742bc101aa039ee72fe2b8dc28b0ee85752b3c4cb0",
+      "bytes": 74094
+    }
+  ]
+}

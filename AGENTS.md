@@ -25,6 +25,17 @@ These rules apply to all AI-generated contributions in this repository.
   cannotread106;rollback uses preserved105/oldercopy. No actualflyingpixel/touch/fullcampaign claim. Current
   physicaldebugging remainsuserpaused;subagentsSol6.1/max. BoundedUIKitIME bridge source review ongoing.
 
+- 238 ACCEPTED_OFFLINE_SCOPED: `handoff/save-escape-admission-238/README.md`.
+  Save Escape nowdefersglobalhook toleaf aftercompositionownership; originalAction113/CurrentScreen11 checkedonce,
+  refusalkeepsSave/selection/draft, resetsrepeat/consumesframe; heldcannotleakclose andfreshkey immediatelyretries.
+  OriginalConst/Core/HardcodedTopic/structvariablesauthenticated;bank237/otheractions untouched. Native5.547s/
+  unsignediOS9.270s/existinginput0.919spass;3frozenhashesmatch,3affectedassertions,0newunitcases/App/savewrite/
+  device/simulator/campaign/Release. Controlledhook only; noactualcampaignrefusaltriggerclaim, nulloptsource/build.
+  Resource235/runtime-002/Ui227/Save106 entirelyretained;old104/105evidencefrom236notreplayed. Physicaldebug
+  userpaused,Sol6.1/max,fullgoalactive/~88%lowconfidence. Boundedlongnews/question andordinaryShopRepair source
+  checks foundnonewconcretedefect;do not manufacturefixes orreplaypassedcampaigns. ActualUIKit/bank/shop/
+  longinput/fullnaturalcampaign remainunproved. Preservefixedreleases/allsaves.
+
 - 237 ACCEPTED_OFFLINE_SCOPED: `handoff/marked-text-bridge-237/README.md`.
   UIKit persistent patch exposes hidden-field preedit viaTEXT_EDITING, clears before originaldiff and guardsunmark;
   originalcommit/delete/64space/scene-bounds retained. Save/name/bank transientdisplay, orderedConfirm/Cancel and

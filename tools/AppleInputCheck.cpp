@@ -1334,6 +1334,8 @@ elements:
         struct BankEscapeWorld final : OpenYAMM::Tests::PartySpellTestWorldRuntime
         {
             int escapeHookCalls = 0;
+            bool rejectEscape = true;
+            uint32_t lastScreen = 0;
             bool executeEventHooks(EventRuntimeHookKind kind) override
             {
                 auto &hook = eventRuntimeState()->activeHookContext;
@@ -1341,7 +1343,8 @@ elements:
                     && hook->gameplayActionId == SourceActionEscape)
                 {
                     ++escapeHookCalls;
-                    hook->blocked = true;
+                    lastScreen = hook->menuId;
+                    hook->blocked = rejectEscape;
                     return true;
                 }
                 return false;
@@ -1357,8 +1360,40 @@ elements:
         GameplayOverlayInputController::handleDialogueOverlayInput(runtime, input.frame(), false);
         require(bankInput.inputActive() && bankInput.inputText == "123" && bankEscapeWorld.escapeHookCalls == 1,
             "Bank ordered Escape bypassed or repeated the source action rejection");
-        session.bindActiveWorldRuntime(nullptr);
         bankInput = {};
+        saveScreen.active = true;
+        saveScreen.editActive = true;
+        saveScreen.editBuffer = "保留草稿";
+        textEditing("cao");
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        const auto dispatchSaveEscape = [&]()
+        {
+            GameplayStandardUiHotkeyConfig config = {};
+            config.pKeyboardState = input.frame().keyboardState();
+            config.pInputFrame = &input.frame();
+            GameplayInputController::handleStandardUiHotkeys(runtime, config);
+            GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        };
+        keyTap(SDL_SCANCODE_ESCAPE);
+        update();
+        dispatchSaveEscape();
+        require(saveScreen.active && saveScreen.compositionActive && bankEscapeWorld.escapeHookCalls == 1,
+            "Save composition-owned Escape reached the source close hook");
+        textEditing("");
+        keyTap(SDL_SCANCODE_ESCAPE);
+        update();
+        dispatchSaveEscape();
+        require(saveScreen.active && saveScreen.editBuffer == "保留草稿"
+            && bankEscapeWorld.escapeHookCalls == 2 && bankEscapeWorld.lastScreen == 11,
+            "Save Escape bypassed or repeated a source rejection, or discarded the draft");
+        bankEscapeWorld.rejectEscape = false;
+        keyTap(SDL_SCANCODE_ESCAPE);
+        update();
+        dispatchSaveEscape();
+        require(!saveScreen.active && bankEscapeWorld.escapeHookCalls == 3,
+            "A fresh permitted Escape could not close the save overlay immediately");
+        session.bindActiveWorldRuntime(nullptr);
         std::cout << "Touch, short movement/rest/combat input, focus, real menu clicks "
             "and Chinese save/bank editing/composition/pagination passed\n";
         SDL_Quit();

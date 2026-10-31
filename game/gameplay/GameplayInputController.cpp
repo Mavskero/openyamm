@@ -236,6 +236,11 @@ void GameplayInputController::handleStandardUiHotkeys(
 
     if (isEscapeNewlyPressed(context, config.pInputFrame, config.pKeyboardState))
     {
+        if (saveGameActive)
+        {
+            // The save overlay validates Escape after resolving text composition ownership.
+            return;
+        }
         if (houseBankInputActive && config.pInputFrame != nullptr && config.pInputFrame->textEdits)
         {
             // The bank validates Escape at its position in the ordered text events.

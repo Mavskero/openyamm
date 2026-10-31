@@ -2329,6 +2329,14 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
         if (input.textEdits || input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0
             || !view.interactionState().saveGameToggleLatch)
         {
+            if (!view.allowSourceGameplayAction(SourceActionEscape, 11))
+            {
+                latchGameplayMenuEscape(view);
+                view.interactionState().closeOverlayLatch = true;
+                view.interactionState().saveGameToggleLatch = true;
+                resetSaveGameEditInputState(view.interactionState());
+                return true;
+            }
             view.closeSaveGameOverlay();
             latchGameplayMenuEscape(view);
             view.interactionState().saveGameToggleLatch = true;
