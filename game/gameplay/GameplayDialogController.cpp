@@ -4928,7 +4928,7 @@ bool GameplayDialogController::rejectClosedHouseInteraction(
 
     context.uiController.closeHouseShopOverlay();
     context.uiController.closeInventoryNestedOverlay();
-    context.uiController.setStatusBarEvent(buildClosedStatusText(houseEntry));
+    context.uiController.setStatusBarEvent(buildClosedStatusText(houseEntry, context.pHouseServiceTextTable));
 
     if (context.pParty != nullptr)
     {

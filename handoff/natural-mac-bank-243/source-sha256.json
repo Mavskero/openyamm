@@ -1,0 +1,6 @@
+{
+  "game/gameplay/GameplayDialogController.cpp": "edfc9c6faf60b6a94c220e4a626aac92279adb7d21e8e3cf77a3d80a714454a0",
+  "game/gameplay/GameplayInteractionController.cpp": "75cc88756a7634b9d2f77481d83450c68130684ddc5dec33abee2098b00fdfc5",
+  "game/outdoor/HeadlessOutdoorDiagnostics.cpp": "8e165355cb6809bbfb5a8d654c1df7013ea145a324f9b17dddc5d9543735005a",
+  "tools/AppleInputCheck.cpp": "3ed8602e15ac7bad345bdae4d66b919b2961e9404aa1444fa65e483428662da0"
+}

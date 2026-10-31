@@ -718,6 +718,18 @@ elements:
         struct AttackWorld : OpenYAMM::Tests::PartySpellTestWorldRuntime
         {
             bool worldInspectModeActive() const override { return true; }
+            bool interactionTargetsEnabled = false;
+            GameplayWorldHit pickMouseInteractionTarget(const GameplayWorldPickRequest &) override
+            {
+                GameplayWorldHit hit = {};
+                hit.hasHit = interactionTargetsEnabled;
+                hit.kind = GameplayWorldHitKind::EventTarget;
+                return hit;
+            }
+            GameplayWorldHit pickKeyboardInteractionTarget(const GameplayWorldPickRequest &request) override
+            {
+                return pickMouseInteractionTarget(request);
+            }
         } attackWorld;
         attackWorld.bindParty(&party);
         GameSession attackSession;
@@ -756,6 +768,37 @@ elements:
         require(!worldFrame(heldAttack).attackAttempted, "Inspect pause accepted an attack");
         worldFrame({});
         std::cout << "World attack input passed: transient tap, release, modal cancellation, hold and inspect.\n";
+
+        attackWorld.interactionTargetsEnabled = true;
+        attackWorld.setWorldHitActivationResult(true);
+        for (KeyboardAction action : {KeyboardAction::Trigger, KeyboardAction::Use})
+        {
+            worldFrame({});
+            const size_t priorActivations = attackWorld.activatedWorldHitCount();
+            const auto activated = [&](const GameplayInputFrame &frame)
+            {
+                const auto result = worldFrame(frame);
+                return action == KeyboardAction::Trigger
+                    ? result.keyboardUseActivated : result.keyboardActivationActivated;
+            };
+            keyTap(settings.keyboard.keyboardBinding(action));
+            update();
+            require(input.frame().action(action).pressed && !input.frame().action(action).held
+                && activated(input.frame()) && attackWorld.activatedWorldHitCount() == priorActivations + 1,
+                "World interaction lost a completed configured Trigger/Use tap");
+            keyTap(settings.keyboard.keyboardBinding(action));
+            update();
+            require(activated(input.frame()) && attackWorld.activatedWorldHitCount() == priorActivations + 2,
+                "A consecutive fresh Trigger/Use tap was mistaken for a held repeat");
+            GameplayInputFrame heldInteraction = input.frame();
+            heldInteraction.actions[keyboardActionIndex(action)].pressed = false;
+            heldInteraction.actions[keyboardActionIndex(action)].held = true;
+            require(!activated(heldInteraction) && attackWorld.activatedWorldHitCount() == priorActivations + 2,
+                "Held Trigger/Use bypassed the existing first-repeat delay");
+        }
+        worldFrame({});
+        attackWorld.interactionTargetsEnabled = false;
+        attackWorld.setWorldHitActivationResult(false);
 
         {
             SDL_Event yellFocusGained = {};

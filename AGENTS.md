@@ -15,6 +15,17 @@ These rules apply to all AI-generated contributions in this repository.
   Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
   publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
 
+- 243 ACCEPTED_OFFLINE_MAC_SCOPED: `handoff/natural-mac-bank-243/README.md`.
+  FirstnaturalMac copiedSave10 walk→House297 bank;17deposit/7withdraw gives190carried/10bank. Onlynew
+  isolatedSlot1/106 savedthroughnormalUI;original/copySave10 andnewSlot1afterreload hashesunchanged.
+  ActualshortSpace/E dropped byheld-only consumer fixedwithpressed+freshindependentlatches;500ms/67ms
+  held/RMB/sourcegates retained. Closed-hours dialognowreceivesexistinglanguage table(originalGlobalTxt414).
+  Native21.744s/unsignedgeneric iOS15.954s/existinginput0.898spass,4frozenhashmatch;6affectedassert,0newcases/
+  oldroute/campaign/device/simulator/Release. RepairMac quickSpace entry+saved190/10 andquickE Chinese
+  closedhint actualpassed;normal8hrestfood5→3,0repairSavewrites. Resource241/Ui228/Combat223/nav222/Save106
+  retained.005exited/collected;006main-owned menu-paused forfirstnaturalshopcontinuation244. Physicaldebug
+  userpaused,Sol6.1/max,fixedreleases preserved;~88%lowconfidence,fullnaturalcampaign/touch/UIKitunproved.
+
 - 236 ACCEPTED_OFFLINE_SCOPED: `handoff/yell-flight-direction-236/README.md`.
   Authenticated originalMM8 Yell flightpitch now persists typed optionalZ throughsharedFlee andboth worlds;
   originalXY unscaled, no current-target/+512 overwrite, lifecycle clears; ordinaryFear/lowHP/Treant/RNG unchanged.

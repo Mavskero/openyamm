@@ -1,0 +1,99 @@
+{
+  "checkpoint": 243,
+  "scope": "ACCEPTED_OFFLINE_MAC_NATURAL_BANK_AND_AFFECTED_REPAIRS",
+  "base_commit": "673040d434d17207c0ac02f37763f271076c7b1f",
+  "natural_play": {
+    "world": "MM6 New Sorpigal",
+    "house": 297,
+    "game_state_fixtures": false,
+    "teleport": false,
+    "first_entry": "ordinary copied Save10 walk and keyboard entry; naturally closed17:34 then RestUntilDawn+3hours to09:00Day2",
+    "deposit": {
+      "amount": 17,
+      "carried_before": 200,
+      "carried_after": 183,
+      "bank_before": 0,
+      "bank_after": 17,
+      "input": "native paste + Return"
+    },
+    "withdraw": {
+      "amount": 7,
+      "carried_before": 183,
+      "carried_after": 190,
+      "bank_before": 17,
+      "bank_after": 10,
+      "input": "native paste + Return"
+    },
+    "save": "only one new isolated Slot1 离线银行243 through ordinaryUI, version106; no old overwrite"
+  },
+  "actual_observed_defects": [
+    "very short Space/E lost in held-only world consumer",
+    "closed-hours status hardcoded fallback despite existing Chinese service table"
+  ],
+  "production_changes": [
+    "Trigger/Use accept held or preserved pressed; fresh accepted input restarts independent latch, held500ms/67ms unchanged",
+    "closed-hours dialog receives existing HouseServiceTextTable; originalGlobalTxt414 Chinese/English format and AMPM retained"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 21.744259042,
+      "timed_out": false
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 15.954346625,
+      "timed_out": false
+    },
+    "existing-input-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.897902042,
+      "timed_out": false
+    }
+  },
+  "frozen_source_files": 4,
+  "frozen_hash_match": true,
+  "existing_input_affected_assertions": 6,
+  "new_unit_cases": 0,
+  "existing_input_program_runs": 1,
+  "headless_route_runs": 0,
+  "headless_expectations_only": "two existing closed-house expectations now use actual current-language table; cases not replayed",
+  "affected_actual_mac": [
+    "normal new Slot1/106 load retained carried190",
+    "default quick Space entered bank and displayed balance10; no transaction replay",
+    "normal8hour rest from09:14 reducedfood5→3 and returnedworld",
+    "rightclick only placedpointer atdoor; default quick E triggered Chinese closed-hours text 此处在9AM到5PM开放 with complete pixels/no clipping"
+  ],
+  "original_save_hashes_unchanged": true,
+  "new_isolated_save_hash_unchanged_after_reload": true,
+  "gameplay_save_writes": 1,
+  "affected_repair_save_writes": 0,
+  "images": "reviewed CUA inline only; no exported screenshot archive",
+  "runtime": "complete241/runtime-002 unchanged;Ui228(157source+71project),Combat223,navigation222",
+  "save_write_version": 106,
+  "resource_changes": false,
+  "App_launches": 2,
+  "first_Mac_process_collected": true,
+  "second_Mac_process": "owned by main; bank checks complete, menu-paused for next first natural shop continuation",
+  "physical_debugging": "paused by user",
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "new_release": false,
+  "fixed_releases_preserved": [
+    "229",
+    "214",
+    "195",
+    "RC1",
+    "RC2",
+    "RC3"
+  ],
+  "full_goal_achieved": false,
+  "progress_estimate": "~88%, low confidence; not quest coverage",
+  "not_claimed": [
+    "physical iPad or touch acceptance",
+    "UIKit IME marked-text ordering",
+    "bank extreme numeric capacity in actual play",
+    "natural complete campaign"
+  ],
+  "timestamp": "2026-10-31T10:09:27.340158+00:00"
+}

@@ -21492,7 +21492,8 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
                 return false;
             }
 
-            if (GameApplicationTestAccess::statusBarEventText(application) != buildClosedStatusText(*pHouseEntry))
+            if (GameApplicationTestAccess::statusBarEventText(application) != buildClosedStatusText(
+                    *pHouseEntry, &GameApplicationTestAccess::gameDataLoader(application).getHouseServiceTextTable()))
             {
                 failure = "closed house did not use the OE-style status text";
                 return false;
@@ -21659,7 +21660,8 @@ int HeadlessGameplayDiagnostics::runRegressionSuite(
                 return false;
             }
 
-            if (GameApplicationTestAccess::statusBarEventText(application) != buildClosedStatusText(*pHouseEntry))
+            if (GameApplicationTestAccess::statusBarEventText(application) != buildClosedStatusText(
+                    *pHouseEntry, &GameApplicationTestAccess::gameDataLoader(application).getHouseServiceTextTable()))
             {
                 failure = "late closed house action did not use closed status text";
                 return false;

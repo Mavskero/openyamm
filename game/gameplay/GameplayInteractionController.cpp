@@ -1379,8 +1379,9 @@ GameplayInteractionController::updateWorldInteractionFrame(
     const bool worldReady = pWorldRuntime != nullptr && pWorldRuntime->worldInteractionReady();
     const bool inspectModeActive = pWorldRuntime != nullptr && pWorldRuntime->worldInspectModeActive();
     const bool pendingSpellCancelPressed = input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
-    const bool keyboardUsePressed = input.action(KeyboardAction::Trigger).held;
-    const bool usePressed = input.action(KeyboardAction::Use).held;
+    // A down/up pair within one input poll still contributes a press, without inventing a held key.
+    const bool keyboardUsePressed = input.isActionActive(KeyboardAction::Trigger);
+    const bool usePressed = input.isActionActive(KeyboardAction::Use);
     const bool attackPressed = input.isActionActive(KeyboardAction::Attack);
     const bool leftMousePressed = input.leftMouseButton.held;
     const bool rightMousePressed = input.rightMouseButton.held;
@@ -1664,6 +1665,13 @@ GameplayInteractionController::updateWorldInteractionFrame(
                 });
         keyboardUseHit = pWorldRuntime->pickKeyboardInteractionTarget(keyboardUsePickRequest);
         hasKeyboardUseHit = true;
+    }
+
+    // Consecutive fresh presses restart the gesture instead of waiting for the previous repeat timer.
+    if (keyboardUsePressed && worldReady && input.action(KeyboardAction::Trigger).pressed)
+    {
+        worldInteractionInputState.keyboardUseLatch = false;
+        worldInteractionInputState.keyboardUseNextRepeatTickNanoseconds = 0;
     }
 
     const bool hadLootViewBeforeKeyboardInteraction = hasActiveLootView(runtime);
@@ -2003,6 +2011,13 @@ GameplayInteractionController::updateWorldInteractionFrame(
             keyboardActivationHit =
                 pickPrecisionContextActionTarget(*pWorldRuntime, keyboardActivationPickRequest);
         }
+    }
+
+    // Only an accepted fresh press resets the timer; held input keeps the existing repeat cadence.
+    if (pointerPolicy.activationPressed && worldReady && input.action(KeyboardAction::Use).pressed)
+    {
+        worldInteractionInputState.inspectKeyboardActivateLatch = false;
+        worldInteractionInputState.inspectKeyboardActivateNextRepeatTickNanoseconds = 0;
     }
 
     const KeyboardActivationInteractionResult keyboardActivationResult =
