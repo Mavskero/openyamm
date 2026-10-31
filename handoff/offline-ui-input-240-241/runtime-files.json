@@ -1,0 +1,56 @@
+{
+  "checkpoint": 241,
+  "base_runtime": "offline-input-completion-235/runtime-002",
+  "runtime": "local-data/validation/quit-confirmation-ui-241/runtime-002",
+  "changed_engine_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "added_engine_members": [],
+  "unchanged_engine_member_count": 17398,
+  "all_old227_values_retained": true,
+  "worlds": "All4 are hardlinks to preserved235 worlds; identical bytes, never written",
+  "manifest_footer_elapsed_seconds": 1.174363333,
+  "files": [
+    {
+      "path": "engine.zip",
+      "size": 713626827,
+      "sha256": "63d68ebe7c6c7abdf6a7baf98035952ff349f0f404fbb7b80ba495afcf229322"
+    },
+    {
+      "path": "conversion.json",
+      "size": 109741,
+      "sha256": "99414a02e87701a05bb85b1da1b2c555364f13fa31ad2e2a99878a9f9e775dae"
+    },
+    {
+      "path": "worlds/mm6.zip",
+      "size": 641050692,
+      "sha256": "154aa325d69eedd9c0b3cd3e96c730db4cec581e23ebe975eaaf93903ffbf676",
+      "identity_check": "same inode as preserved235 world; SHA256 inherited from verified base, no reread"
+    },
+    {
+      "path": "worlds/mm7.zip",
+      "size": 1019781051,
+      "sha256": "ef24f9591ac7ee0d431a4cc943ee276d687c6a7a2e5b27a53464d8ab806d9c5d",
+      "identity_check": "same inode as preserved235 world; SHA256 inherited from verified base, no reread"
+    },
+    {
+      "path": "worlds/mm8.zip",
+      "size": 978282137,
+      "sha256": "0def37a4ebb5b302462e310325f75f3fb7f339852cd9111bfbb938787fe1e126",
+      "identity_check": "same inode as preserved235 world; SHA256 inherited from verified base, no reread"
+    },
+    {
+      "path": "worlds/mmmerge.zip",
+      "size": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e",
+      "identity_check": "same inode as preserved235 world; SHA256 inherited from verified base, no reread"
+    }
+  ],
+  "built_source_hashes_match": true,
+  "source_rows": 157,
+  "project_rows": 71,
+  "ui_text_keys": 228,
+  "current_save_write_version": 106,
+  "assembly001_payload_reused_after_independent_reopen_check": true,
+  "footer_compatibility_repair": "streaming hashlib.sha256 for older system Python"
+}

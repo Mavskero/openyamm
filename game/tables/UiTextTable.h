@@ -245,6 +245,7 @@ public:
         ItemBroken,
         ItemNotIdentified,
         InputAnswerPrefix,
+        MenuQuitConfirmation,
         Count,
     };
 
@@ -252,7 +253,7 @@ public:
     UiTextTable();
     // Validate the current schema or migrate a complete older prefix with
     // 13, 16, 19, 26, 35, 39, 45, 72, 103, 112, 115, 116, 119, 122, 132,
-    // 149, 164, 179, 210, 214, 223, 224 or 226 keys.
+    // 149, 164, 179, 210, 214, 223, 224, 226 or 227 keys.
     bool loadFromRows(const std::vector<std::vector<std::string>> &rows);
     const std::string &text(Message message) const;
     const std::string &skillMasteryName(SkillMastery mastery) const;

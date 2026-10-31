@@ -250,6 +250,7 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.item_broken", "Broken Item"},
     {"ui.item_not_identified", "Not Identified"},
     {"ui.input_answer_prefix", "Answer: "},
+    {"ui.menu_quit_confirmation", "Are you sure?  Click again to quit"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -311,7 +312,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 214 with equipment feedback captions,
     // the 223 with character status captions,
     // the 224 with the message-scroll reading hint,
-    // and the 226 with broken/unidentified item captions.
+    // the 226 with broken/unidentified item captions,
+    // and the 227 with the input answer prefix.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -336,6 +338,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t CharacterStatusMessageCount = size_t(Message::MessageScrollReadHint);
     constexpr size_t ScrollHintMessageCount = size_t(Message::ItemBroken);
     constexpr size_t ItemStatusMessageCount = size_t(Message::InputAnswerPrefix);
+    constexpr size_t InputPromptMessageCount = size_t(Message::MenuQuitConfirmation);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -360,7 +363,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != EquipmentMessageCount
         && schemaMessageCount != CharacterStatusMessageCount
         && schemaMessageCount != ScrollHintMessageCount
-        && schemaMessageCount != ItemStatusMessageCount)
+        && schemaMessageCount != ItemStatusMessageCount
+        && schemaMessageCount != InputPromptMessageCount)
     {
         return false;
     }

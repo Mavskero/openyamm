@@ -1,0 +1,71 @@
+{
+  "checkpoints": [
+    240,
+    241
+  ],
+  "scope": "ACCEPTED_OFFLINE_MAC_INPUT_AND_AFFECTED_QUIT_UI",
+  "date": "2026-10-31",
+  "source_base": "01b5563b92868d889a5476a5448d955450b33557",
+  "source_files_changed_for241": 4,
+  "built_source_hashes_match": true,
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 143.47250725
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 134.59581025
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.194684416
+    }
+  },
+  "actual240": [
+    "ordinary creation name Chinese paste rendered, Return ended editing, Cancel returned to menu",
+    "ordinary copied old save loaded, empty save slot double-click name edit Chinese paste rendered, Escape cancelled without save write"
+  ],
+  "actual241": "Ordinary copied save Load → Escape menu → Quit once displayed complete Chinese original GlobalTxt82 in white with no clipping; further Quit left that gameplay session. CUA AX observation then presented cold main menu and PID/log record was rewritten; treat as possible tool relaunch, not a new independent-process acceptance claim. Cold-menu Quit then exited and process absent was confirmed.",
+  "native_clipboard_scope": "CUA macOS paste uses system clipboard and restores its prior contents; only non-composition text paste was observed. No actual IME preedit/UIKit/physical keyboard or touch claim.",
+  "source_and_build_only": [
+    "English Quit hint",
+    "complete old227 table migration",
+    "other inherited input/combat/device branches"
+  ],
+  "ui_text_keys": 228,
+  "source_ui_rows": 157,
+  "project_ui_rows": 71,
+  "current_save_write_version": 106,
+  "runtime": "local-data/validation/quit-confirmation-ui-241/runtime-002",
+  "changed_engine_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "unchanged_engine_members": 17398,
+  "four_worlds": "preserved235 exact same archive inodes; inherited SHA256 identities, no rehash replay",
+  "all_old227_caption_values_retained": true,
+  "new_unit_cases": 0,
+  "new_test_framework": false,
+  "save_writes": 0,
+  "original_local_backup_and_run_copy_hashes_unchanged": true,
+  "physical_device_operations": 0,
+  "simulator_operations": 0,
+  "campaign_route_replays": 0,
+  "new_release": false,
+  "failed_attempts_preserved": "240 CLI/CUA, external local file-open stall and missing temporary bundle shaders;241 mutable ZIP metadata false-negative comparison and system-Python missing file_digest footer, repaired without source/build replay.",
+  "local_development_pointer": "Updated227→complete241/runtime-002, launcher not run and existing development settings/saves not written.",
+  "subagent_model": "gpt-6.1-sol",
+  "subagent_reasoning": "max",
+  "physical_debugging": "paused by user",
+  "fixed_releases_unchanged": true,
+  "full_goal_achieved": false,
+  "estimate_percent": 88,
+  "estimate_confidence": "low",
+  "unproved": [
+    "full natural campaign completion",
+    "actual UIKit IME preedit/callback ordering",
+    "bank and shop transactions/physical drag-off",
+    "long actual question input"
+  ],
+  "next": "242 original-source-authenticated Paralyze81→Sunray87 monster projectile support/damage integration; not yet accepted"
+}

@@ -25,6 +25,16 @@ These rules apply to all AI-generated contributions in this repository.
   cannotread106;rollback uses preserved105/oldercopy. No actualflyingpixel/touch/fullcampaign claim. Current
   physicaldebugging remainsuserpaused;subagentsSol6.1/max. BoundedUIKitIME bridge source review ongoing.
 
+- 240–241 ACCEPTED_OFFLINE_MAC_SCOPED: `handoff/offline-ui-input-240-241/README.md`.
+  ActualisolatedMac creationChinese namepaste/Return/Cancel andcopiedSave10 empty-slotChinese draftpaste/Escape
+  passed;noSavewrite,localoriginal/copieshashunchanged. ObservedQuitEnglish replacedwithtypedoriginalGlobalTxt82;
+  oneaffectedMacChinesehintcomplete/noclipping,finaltemporaryprocessexited. CUAaftersecondQuit mayrelaunch;
+  nocold-processacceptanceclaim. Native143.473s/unsignediOS134.596s/coreimport0.195spass,4sourcehashmatch;
+  0newcases/campaign/device/simulator/Release. Complete241/runtime-002 changesonlyui_text228/source157/project71,
+  old227values/other17398members/4worlds retained;Save106unchanged. Localdefaultpointer227→241,launcherunrun.
+  Temporarybundle/ZIPmetadata/Pythonfooter failurespreserved, nobuildreplay. Actualpreedit/UIKit/bank/shop/
+  fullcampaignunproved,~88%lowconfidence;physicaldebugpaused,Sol6.1/max. Continue242 certifiedSunray87 gap.
+
 - 239 ACCEPTED_OFFLINE_SCOPED: `handoff/clipboard-edit-source-239/README.md`.
   Manualclipboard isnowtypedPasteText, notnativeInsertText. Save/Bank ignoreitwhilecomposing, includingemptyclip,
   retainingpreedit/realbuffer/ConfirmCancelprotection; normal30UTF8/10digits/nativecommit/nulloptretained.

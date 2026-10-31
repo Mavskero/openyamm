@@ -1,0 +1,6 @@
+{
+  "game/gameplay/GameplayOverlayInputController.cpp": "f91dc9151f71371a5cea864d0137920b6b60a90d037a68e78f080ebee8803e68",
+  "game/tables/UiTextTable.h": "3dbca182316ea75b4b24aa8f99c3cfbf4310eefbf27d6ee76bbdcea79df08457",
+  "game/tables/UiTextTable.cpp": "68e160ae1f0cba7453891e44fe4be87f9c0a7dcac13fc84e7124f5b9786ac152",
+  "tools/mmerge_import/CoreResources.cpp": "06b3129eff24ce55d9801914bf9e39cd1c83163f276b937f37022bbaef6c03ad"
+}

@@ -1344,7 +1344,8 @@ bool GameplayOverlayInputController::handleMenuOverlayInput(
                     menuScreen.newGameConfirmationArmed = false;
                     menuScreen.quitConfirmationArmed = true;
                     menuScreen.bottomBarTextUseWhite = true;
-                    menuScreen.bottomBarText = "Press Quit again to exit.";
+                    menuScreen.bottomBarText = view.gameplayUiRuntime().uiTextTable().text(
+                        UiTextTable::Message::MenuQuitConfirmation);
 
                     if (GameAudioSystem *pAudio = view.audioSystem())
                     {

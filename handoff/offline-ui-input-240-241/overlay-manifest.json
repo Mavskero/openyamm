@@ -1,0 +1,17 @@
+{
+  "relative_to_checkpoint": 235,
+  "requires_matching_source": true,
+  "not_a_complete_runtime": true,
+  "members": [
+    {
+      "path": "data_tables/ui_text.txt",
+      "size": 9492,
+      "sha256": "1d648c49e262cb40010cc713bdb910403c2e10ad7034a3aa58f7b51fd69beca7"
+    }
+  ],
+  "overlay": {
+    "path": "runtime-engine-overlay-241.zip",
+    "size": 4140,
+    "sha256": "600d3903657e039c80a7d3be2fbae5434a7c3d3e2864625bf29b969a177ff82f"
+  }
+}
