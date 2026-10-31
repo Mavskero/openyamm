@@ -61,6 +61,9 @@ struct GameplayInputFrame
     bool mobileTouchDragReleased = false;
     float mobileTouchDragStartX = 0.0f;
     float mobileTouchDragStartY = 0.0f;
+    // Only the selected HUD gesture contributes its received samples to this frame.
+    std::vector<SDL_FPoint> mobileTouchPath;
+    bool mobileTouchPathIncomplete = false;
     GameplayButtonInputState leftMouseButton = {};
     GameplayButtonInputState rightMouseButton = {};
     GameplayButtonInputState middleMouseButton = {};

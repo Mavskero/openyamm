@@ -1,0 +1,64 @@
+{
+  "checkpoint": 235,
+  "scope": "ACCEPTED_SOURCE_BUILD_IMPORT_AND_FOCUSED_OFFLINE_CHECK",
+  "at": "2026-10-31T07:28:43.202181+00:00",
+  "base_commit": "fc77fb0bb1691858719028fb812f2373381787b8",
+  "source_files": 11,
+  "built_source_hashes_match": true,
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 259.545492834,
+      "timed_out": false
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 245.121867333,
+      "timed_out": false
+    },
+    "input-check-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.87281575,
+      "timed_out": false
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.126089958,
+      "timed_out": false
+    }
+  },
+  "new_test_cases": 0,
+  "existing_input_check_augmented": true,
+  "covered_input_paths": [
+    "real quick tap start/end",
+    "subthreshold leave-return-up same batch",
+    "motion before first held frame",
+    "256 sample saturation",
+    "delivered path clearing",
+    "existing inspection isolation and cancellation"
+  ],
+  "App_run": false,
+  "device_operations": false,
+  "simulator_operations": false,
+  "save_writes": 0,
+  "old_campaign_replays": 0,
+  "physical_debugging_paused": true,
+  "subagent_model": "gpt-6.1-sol",
+  "subagent_reasoning": "max",
+  "ui_text_keys": 227,
+  "source_ui_rows": 156,
+  "project_ui_rows": 71,
+  "save_version": 105,
+  "runtime": "local-data/validation/offline-input-completion-235/runtime-002",
+  "runtime_changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "all_other_engine_members_and_four_worlds_retained": true,
+  "question_IME_scope": "TEXT_EDITING event handling and source-reviewed Cocoa ordering only; no actual IME/affected pixels/iPad claim",
+  "UIKit_TEXT_EDITING_emission_present_in_local_backend": false,
+  "preserved_assembly_failure": "001 assumed rows were emitted in definition order; no ZIP update. 002 compares actual keyed captions and retains all226 old values. No source change or repeated build needed.",
+  "new_release": false,
+  "full_goal_achieved": false,
+  "project_estimate_percent": 88,
+  "estimate_confidence": "low"
+}

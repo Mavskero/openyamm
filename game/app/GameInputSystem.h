@@ -49,10 +49,17 @@ private:
         DebugConsoleGesture
     };
 
+    struct MobileTouchPath
+    {
+        std::vector<SDL_FPoint> points;
+        bool incomplete = false;
+    };
+
     struct MobileTouchPoint
     {
         bool active = false;
         SDL_FingerID fingerId = 0;
+        uint64_t gestureId = 0;
         MobileTouchRole role = MobileTouchRole::None;
         float startX = 0.0f;
         float startY = 0.0f;
@@ -65,6 +72,7 @@ private:
         bool hudPressDelivered = false;
         bool debugConsoleGestureCandidate = false;
         bool debugConsoleGestureTriggered = false;
+        MobileTouchPath hudPath;
     };
 
     struct MobileHudTap
@@ -73,6 +81,8 @@ private:
         float startY = 0.0f;
         float x = 0.0f;
         float y = 0.0f;
+        uint64_t gestureId = 0;
+        MobileTouchPath path;
     };
 
     struct MobileInspectTarget
@@ -80,6 +90,9 @@ private:
         float x = 0.0f;
         float y = 0.0f;
     };
+
+    static void appendMobileTouchPath(MobileTouchPath &path, float x, float y);
+    void deliverMobileTouchPath(MobileTouchPath &path, int screenWidth, int screenHeight);
 
     GameplayInputFrame m_frame = {};
     uint64_t m_inputFrameId = 0;
@@ -94,17 +107,23 @@ private:
     std::array<bool, SDL_SCANCODE_COUNT> m_previousKeyboardHeld = {};
     std::array<bool, KeyboardActionCount> m_previousActionHeld = {};
     std::array<MobileTouchPoint, 8> m_mobileTouches = {};
+    uint64_t m_mobileTouchGestureSequence = 0;
+    uint64_t m_mobileDeliveredHudGestureId = 0;
     std::optional<MobileInspectTarget> m_mobileInspectTarget;
     std::deque<MobileHudTap> m_mobilePendingHudTaps;
     bool m_mobilePendingHudRelease = false;
     float m_mobilePendingHudReleaseX = 0.0f;
     float m_mobilePendingHudReleaseY = 0.0f;
+    uint64_t m_mobilePendingHudReleaseGestureId = 0;
+    MobileTouchPath m_mobilePendingHudReleasePath;
     bool m_mobilePendingHudDragRelease = false;
     bool m_mobilePendingHudDragStartDelivered = false;
     float m_mobilePendingHudDragStartX = 0.0f;
     float m_mobilePendingHudDragStartY = 0.0f;
     float m_mobilePendingHudDragReleaseX = 0.0f;
     float m_mobilePendingHudDragReleaseY = 0.0f;
+    uint64_t m_mobilePendingHudDragReleaseGestureId = 0;
+    MobileTouchPath m_mobilePendingHudDragReleasePath;
     bool m_mobilePendingCameraTap = false;
     uint64_t m_mobilePendingCameraTapTimestampNanoseconds = 0;
     float m_mobilePendingCameraTapX = 0.0f;

@@ -27,6 +27,17 @@ These rules apply to all AI-generated contributions in this repository.
   fixes: queued tap replays wrong down position; below-threshold leave-and-return motion lost before shop resolver.
   Long question path being checked; do not preclaim any affected device/touch/full natural campaign acceptance.
 
+- 235 ACCEPTED_OFFLINE_SCOPED: `handoff/offline-input-completion-235/README.md`.
+  Quick tap now replays realdown; selected-gesture sampled path makes stock/service leave-and-return stickycancel,
+  bounded256 samples/incomplete cancellation andowner isolation. Question IME composition is presentation-only,
+  keys/Submit waitforcommit;focus/console/close clear it. TypedAnswer prefixUi227=156source+71project,old226retained.
+  Native259.545s/unsignediOS245.122s/core0.126s/existinginput0.873s pass;11sourcehashmatch.0newcases/App/savewrites/
+  campaign/device/Release. Complete235/runtime-002 changesonlyui_text,other17398members/4worlds retained. First
+  assemblywrong row-order assertion exitedpreZIP;retained001;keyedcomparison002 passed,no source/build repeat.
+  IME actualpixels/input unproved;localUIKit emitsnoTEXT_EDITING. Physicaldebug remainsuserpaused;Sol6.1/max.
+  Next236: originalMM8exe-authenticated Yell flightpitch currently overwritten bytarget-height logic; no newTreant
+  defect proved fromstandarddata. Need real persistent state design, no one-frame velocity hack or oldYell replay.
+
 - 231–232 ACCEPTED_DEVICE_SCOPED (2026-10-31):
   `openyamm/handoff/ipados-device-231-232-20261031/README.md` (repo: omit openyamm/).
   Physical iPad read old104, UI-equipped armor84/mace66, wrote only new Save12/105 and loaded it in two

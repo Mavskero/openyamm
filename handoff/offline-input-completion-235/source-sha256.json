@@ -1,0 +1,46 @@
+[
+  {
+    "path": "game/app/GameApplication.cpp",
+    "sha256": "b44f4d7a5ae1dac77b728f93a8caefd34343c61c7a78e04c649504c47a5d8716"
+  },
+  {
+    "path": "game/app/GameApplication.h",
+    "sha256": "eec7522918db697ed9d5329968583874e2a50779fc04f3ee2b3621282be10219"
+  },
+  {
+    "path": "game/app/GameInputSystem.cpp",
+    "sha256": "c6a2e8e5cec315bb70c7c5eb486220d5b76b39b976fd16b4ad554bfb83592bc8"
+  },
+  {
+    "path": "game/app/GameInputSystem.h",
+    "sha256": "6cd49ea9038ebe8eddb2bb99e0c80e693f3a72ac3c6e173b648c7ac72ad06482"
+  },
+  {
+    "path": "game/gameplay/GameplayInputFrame.h",
+    "sha256": "d5c05cd19b7b07edc2b5b21ba1ae8abf80ce20b0b38032651ddd6cecc4d5a1aa"
+  },
+  {
+    "path": "game/gameplay/GameplayOverlayInputController.cpp",
+    "sha256": "7235bafb367eddd308fe447293c1337ac61ebc90940ac956ad712bf573d84a92"
+  },
+  {
+    "path": "game/tables/UiTextTable.cpp",
+    "sha256": "1544f35672eb7d3fcf752513773196d0e10032193168220d5a79c2d7f9e6ecef"
+  },
+  {
+    "path": "game/tables/UiTextTable.h",
+    "sha256": "63e2382e9e526bf5af5aadf7d6234c35582098b5e7202102c5928b575ae4b5df"
+  },
+  {
+    "path": "game/ui/GameplayDialogueRenderer.cpp",
+    "sha256": "1804be13f171d897730ae904d1fc771f4729a012a579422a5362fe3988073261"
+  },
+  {
+    "path": "tools/AppleInputCheck.cpp",
+    "sha256": "0672cc3409794d4ce34fb77e92967a1e9313e1ec1979f9c24600d138b5d7b2f8"
+  },
+  {
+    "path": "tools/mmerge_import/CoreResources.cpp",
+    "sha256": "fb8d145e05f030f3509549434ab9467e77d63f91b959645f25c45254849179f4"
+  }
+]

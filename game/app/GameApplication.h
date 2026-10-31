@@ -341,6 +341,9 @@ private:
     std::optional<DebugMapJumpStart> m_pendingPartyDefeatRespawnStart;
     bool m_pendingWinGameCertificateAfterMovie = false;
     std::string m_pendingInputText;
+    // IME composition is presentation only; only committed text enters the answer.
+    std::string m_pendingInputCompositionText;
+    bool m_pendingInputCompositionActive = false;
     std::string m_pendingInputStatusText;
     bool m_pendingInputTextActive = false;
     bool m_pendingInputClickLatch = false;

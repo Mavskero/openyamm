@@ -26,6 +26,7 @@
 #include "game/tables/ClassSkillTable.h"
 #include "game/tables/ItemTable.h"
 #include "game/tables/NpcDialogTable.h"
+#include "game/tables/UiTextTable.h"
 #include "game/ui/Utf8Text.h"
 #include "game/ui/screens/ArcomageScreen.h"
 #include "game/ui/screens/CutsceneVideoScreen.h"
@@ -5417,13 +5418,33 @@ SDL_Rect GameApplication::applicationTextInputArea(int windowWidth, int windowHe
 
 bool GameApplication::handlePendingInputPromptSdlEvent(const SDL_Event &event)
 {
+    if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
+    {
+        m_pendingInputCompositionText.clear();
+        m_pendingInputCompositionActive = false;
+        return false;
+    }
+
     if (!pendingInputPromptActive())
     {
         return false;
     }
 
+    if (event.type == SDL_EVENT_TEXT_EDITING)
+    {
+        m_pendingInputCompositionText.clear();
+        m_pendingInputCompositionActive = event.edit.text != nullptr && event.edit.text[0] != '\0';
+        if (m_pendingInputCompositionActive)
+        {
+            appendUtf8Label(m_pendingInputCompositionText, event.edit.text, MaximumPendingInputCharacters);
+        }
+        return true;
+    }
+
     if (event.type == SDL_EVENT_TEXT_INPUT)
     {
+        m_pendingInputCompositionText.clear();
+        m_pendingInputCompositionActive = false;
         if (event.text.text != nullptr)
         {
             appendUtf8Label(m_pendingInputText, event.text.text, MaximumPendingInputCharacters);
@@ -5441,6 +5462,14 @@ bool GameApplication::handlePendingInputPromptSdlEvent(const SDL_Event &event)
     }
 
     if (event.key.repeat)
+    {
+        return true;
+    }
+
+    // These keys belong to the IME while composition is pending. Cocoa clears its
+    // consumed key before sending empty TEXT_EDITING and the committed TEXT_INPUT;
+    // do not add a frame-wide latch that would swallow the next explicit Return.
+    if (m_pendingInputCompositionActive)
     {
         return true;
     }
@@ -5487,6 +5516,8 @@ void GameApplication::clearPendingInputPromptUi(bool clearStatusBar)
     m_pendingInputClickLatch = false;
     m_pendingInputPressedTarget = PendingInputPointerTarget::None;
     m_pendingInputText.clear();
+    m_pendingInputCompositionText.clear();
+    m_pendingInputCompositionActive = false;
     m_pendingInputStatusText.clear();
 
     if (clearStatusBar)
@@ -5497,6 +5528,13 @@ void GameApplication::clearPendingInputPromptUi(bool clearStatusBar)
 
 void GameApplication::updatePendingInputPrompt()
 {
+    if (m_debugConsole.wantsGameplayInputBlocked())
+    {
+        // Console-owned IME events never reach the question editor.
+        m_pendingInputCompositionText.clear();
+        m_pendingInputCompositionActive = false;
+    }
+
     {
         IGameplayWorldRuntime *pWorldRuntime = m_gameSession.activeWorldRuntime();
         EventRuntimeState *pRuntimeState = pWorldRuntime != nullptr ? pWorldRuntime->eventRuntimeState() : nullptr;
@@ -5576,7 +5614,13 @@ void GameApplication::updatePendingInputPrompt()
         return;
     }
 
-    const std::string statusText = "Answer: " + m_pendingInputText + "_";
+    std::string displayText = m_pendingInputText;
+    if (m_pendingInputCompositionActive && !m_pendingInputCompositionText.empty())
+    {
+        displayText += "[" + m_pendingInputCompositionText + "]";
+    }
+    const std::string statusText = m_gameSession.gameplayScreenRuntime().gameplayUiRuntime().uiTextTable().text(
+        UiTextTable::Message::InputAnswerPrefix) + displayText + "_";
 
     if (statusText != m_pendingInputStatusText)
     {
@@ -5665,6 +5709,11 @@ void GameApplication::finishPendingInputPrompt(bool accepted)
     {
         clearPendingInputPromptUi(false);
         return;
+    }
+
+    if (accepted && m_pendingInputCompositionActive)
+    {
+        return; // A pointer Submit must also wait for the IME's committed TEXT_INPUT.
     }
 
     const EventRuntimeState::PendingInputPrompt prompt = *pRuntimeState->pendingInputPrompt;

@@ -64,7 +64,7 @@ std::optional<std::string> pendingInputPromptHint(const GameplayScreenRuntime &v
         return std::nullopt;
     }
 
-    return std::string("Answer: _");
+    return view.gameplayUiRuntime().uiTextTable().text(UiTextTable::Message::InputAnswerPrefix) + "_";
 }
 
 constexpr uint16_t HudViewId = 2;

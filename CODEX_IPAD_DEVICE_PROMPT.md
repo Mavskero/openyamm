@@ -19,13 +19,13 @@
 `handoff/ipados-device-231-232-20261031/README.md` 与 `scoped-result.json`。
 仓库为 [Mavskero/openyamm](https://github.com/Mavskero/openyamm)，开发分支 `codex/ipados`；
 提交`8989cf96dcd1d5c23de2d5da2a58030c92e3291d`记录231–232源码和脱敏受限真机结果。
-233–234及后续源码身份按当前Git提交和对应handoff逐文件摘要核对。
+233–235及后续源码身份按当前Git提交和对应handoff逐文件摘要核对。
 恢复前先核对最新工作树和主代理后续结果，保留未提交工作，不reset／clean，不把该提交或旧Release当成更新后程序身份。
 
 固定Release229为 `ipados-ui-cumulative-229-20261030`，生产代码提交为
 `8cdae9215ef7bb52e8fe8f6e83bf16641280fd0e`；完整发布源码身份从该发布 `VERSION.json → source_head` 读取。
 按 `SOURCE-MANIFEST.json`、`ARTIFACT-SHA256SUMS`、`SHA256SUMS` 和 `delivery.json` 核对该固定发布，
-保留229、214、195和RC1–3原附件。231–234没有新Release，不能声称229附件已含后续修复。
+保留229、214、195和RC1–3原附件。231–235没有新Release，不能声称229附件已含后续修复。
 
 231–232实际通过旧Save104读取、正常UI穿戴护甲84／主手武器66、新槽Save12／105，
 以及两次保留数据更新后的独立进程读档。中文Stats／技能表头、真实重叠双指物品检查、
@@ -37,8 +37,10 @@
 234已集成随机generated NPC动态问候与原接待规则、银行／保存有序编辑、商店拖离取消、银行容量边界，
 以及House64“学习技能”。原生／未签名iOS／导入、现有输入检查和两条既有NPC用例52断言通过；
 没有新增用例、App运行、存档写入或设备验收，详见`handoff/offline-function-completion-234/`。
-234增量包含相对232的ui_text和Global.lua，必须使用匹配源码及完整资源。恢复时继续核对后续修复身份，
-尤其快速tap起点回放与小于阈值的移出再返回路径；不要把源码／离线通过当作像素或触摸通过。
+234增量包含相对232的ui_text和Global.lua；235继续修快速tap起点和细小运动路径，问题临时显示组合文本，
+UiText227增加“答案：”。235原生／未签名iOS／核心导入和现有输入检查通过，实际问题IME及像素未验。
+详见`handoff/offline-input-completion-235/`，使用匹配源码及完整资源，恢复前继续核对后续身份；
+不要把源码／离线通过当作像素或触摸通过，尤其UIKit当前未发送TEXT_EDITING事件。
 
 暂停前设备最后观察为232的House64标准商品页；已有库存截图在暂停后作了离线复核，但未执行拖离、购买或交易结果检查，商店条件仍未验。
 商店拖离取消、银行、长问题输入和完整自然通关仍未验；卷宗三页通过不能替代长NPC或问题输入证据。

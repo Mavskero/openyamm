@@ -9,6 +9,7 @@
 #include "game/ui/CharacterSkillsLayout.h"
 #include "game/gameplay/GameplayPartyOverlayInputController.h"
 #include "tests/PartySpellTestHarness.h"
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -79,6 +80,51 @@ int main()
             "Menu tap was not translated into a scaled pointer click");
         update(false, false);
         require(input.frame().leftMouseButton.released, "Menu tap did not release");
+        finger(SDL_EVENT_FINGER_DOWN, 57, 0.70f, 0.30f);
+        finger(SDL_EVENT_FINGER_MOTION, 57, 0.705f, 0.30f);
+        finger(SDL_EVENT_FINGER_UP, 57, 0.705f, 0.30f);
+        update(false, false);
+        require(input.frame().leftMouseButton.pressed
+            && std::abs(input.frame().pointerX - 0.70f * 1440.0f) < 0.01f,
+            "Quick touch replay replaced the true press position with its release position");
+        update(false, false);
+        require(input.frame().leftMouseButton.released
+            && std::abs(input.frame().pointerX - 0.705f * 1440.0f) < 0.01f,
+            "Quick touch replay lost the true release position");
+        finger(SDL_EVENT_FINGER_DOWN, 58, 0.70f, 0.30f);
+        update(false, false);
+        finger(SDL_EVENT_FINGER_MOTION, 58, 0.705f, 0.30f);
+        finger(SDL_EVENT_FINGER_MOTION, 58, 0.70f, 0.30f);
+        finger(SDL_EVENT_FINGER_UP, 58, 0.70f, 0.30f);
+        update(false, false);
+        require(input.frame().leftMouseButton.released && !input.frame().mobileTouchDragReleased
+            && !input.frame().mobileTouchPathIncomplete
+            && std::any_of(input.frame().mobileTouchPath.begin(), input.frame().mobileTouchPath.end(),
+                [](const SDL_FPoint &point) { return std::abs(point.x - 0.705f * 1440.0f) < 0.01f; }),
+            "Below-threshold leave-and-return motion disappeared from the release frame");
+        update(false, false);
+        require(input.frame().mobileTouchPath.empty() && !input.frame().mobileTouchPathIncomplete,
+            "Delivered touch trajectory leaked into a later frame");
+        finger(SDL_EVENT_FINGER_DOWN, 59, 0.70f, 0.30f);
+        finger(SDL_EVENT_FINGER_MOTION, 59, 0.71f, 0.30f);
+        finger(SDL_EVENT_FINGER_MOTION, 59, 0.70f, 0.30f);
+        update(false, false);
+        require(input.frame().leftMouseButton.pressed && !input.frame().mobileTouchDragActive
+            && std::any_of(input.frame().mobileTouchPath.begin(), input.frame().mobileTouchPath.end(),
+                [](const SDL_FPoint &point) { return std::abs(point.x - 0.71f * 1440.0f) < 0.01f; }),
+            "Motion before the first held touch frame disappeared from its press trajectory");
+        finger(SDL_EVENT_FINGER_UP, 59, 0.70f, 0.30f);
+        update(false, false);
+        finger(SDL_EVENT_FINGER_DOWN, 60, 0.70f, 0.30f);
+        for (int sample = 0; sample < 257; ++sample)
+        {
+            finger(SDL_EVENT_FINGER_MOTION, 60, sample % 2 == 0 ? 0.701f : 0.70f, 0.30f);
+        }
+        finger(SDL_EVENT_FINGER_UP, 60, 0.70f, 0.30f);
+        update(false, false);
+        require(input.frame().mobileTouchPathIncomplete && input.frame().mobileTouchPath.size() == 256,
+            "Touch trajectory overflow silently discarded cancellation evidence");
+        update(false, false);
         finger(SDL_EVENT_FINGER_DOWN, 50, 0.70f, 0.30f);
         finger(SDL_EVENT_FINGER_UP, 50, 0.70f, 0.30f);
         finger(SDL_EVENT_FINGER_DOWN, 51, 0.75f, 0.32f);
@@ -297,7 +343,7 @@ int main()
                     input.updateFromEngineInput(1210, 834, 0, touchSettings, false, false,
                         false, false, true, inputRect);
                     require(!input.frame().leftMouseButton.held && !input.frame().leftMouseButton.pressed
-                        && !input.frame().leftMouseButton.released,
+                        && !input.frame().leftMouseButton.released && input.frame().mobileTouchPath.empty(),
                         "Inspection replayed a target finger as a left click");
                     GameplayPartyOverlayInputController::handleCharacterOverlayInput(skillsRuntime, input.frame());
                 };

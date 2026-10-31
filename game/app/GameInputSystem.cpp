@@ -35,6 +35,7 @@ constexpr float MobileJoystickRadius = 64.0f;
 constexpr float MobileJoystickDeadZone = 10.0f;
 constexpr float MobileJoystickFullSpeedRadius = MobileJoystickRadius * 0.7f;
 constexpr float MobileGameplayTapMaxNormalizedDistanceSquared = 0.000225f;
+constexpr size_t MobileTouchPathCapacity = 256;
 constexpr float MobileDebugConsoleGestureTopEdgeNormalized = 0.055f;
 constexpr float MobileDebugConsoleGestureMinDragNormalized = 0.14f;
 constexpr float MobileDebugConsoleGestureMaxHorizontalNormalized = 0.09f;
@@ -75,6 +76,34 @@ void suppressButtonWhileHeld(bool physicalHeld, bool &logicalHeld, bool &suppres
 }
 
 } // namespace
+
+void GameInputSystem::appendMobileTouchPath(MobileTouchPath &path, float x, float y)
+{
+    if (!path.points.empty() && path.points.back().x == x && path.points.back().y == y)
+    {
+        return;
+    }
+    if (path.points.size() < MobileTouchPathCapacity)
+    {
+        path.points.push_back({x, y});
+    }
+    else
+    {
+        path.incomplete = true;
+    }
+}
+
+void GameInputSystem::deliverMobileTouchPath(MobileTouchPath &path, int screenWidth, int screenHeight)
+{
+    m_frame.mobileTouchPath = std::move(path.points);
+    m_frame.mobileTouchPathIncomplete = path.incomplete;
+    for (SDL_FPoint &point : m_frame.mobileTouchPath)
+    {
+        point.x *= static_cast<float>(screenWidth);
+        point.y *= static_cast<float>(screenHeight);
+    }
+    path = {};
+}
 
 void GameInputSystem::handleSdlEvent(const SDL_Event &event)
 {
@@ -217,10 +246,17 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         *pTouch = {};
         pTouch->active = true;
         pTouch->fingerId = event.tfinger.fingerID;
+        ++m_mobileTouchGestureSequence;
+        if (m_mobileTouchGestureSequence == 0)
+        {
+            ++m_mobileTouchGestureSequence;
+        }
+        pTouch->gestureId = m_mobileTouchGestureSequence;
         pTouch->startX = event.tfinger.x;
         pTouch->startY = event.tfinger.y;
         pTouch->x = event.tfinger.x;
         pTouch->y = event.tfinger.y;
+        appendMobileTouchPath(pTouch->hudPath, event.tfinger.x, event.tfinger.y);
         pTouch->debugConsoleGestureCandidate =
             event.tfinger.y >= 0.0f && event.tfinger.y <= MobileDebugConsoleGestureTopEdgeNormalized;
         if (std::any_of(m_mobileTouches.begin(), m_mobileTouches.end(), [](const MobileTouchPoint &touch)
@@ -228,6 +264,7 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         {
             // Keep this gesture owned by inspection even if both edges precede the next frame.
             pTouch->role = MobileTouchRole::InspectTarget;
+            pTouch->hudPath = {};
         }
         return;
     }
@@ -245,6 +282,10 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         pTouch->deltaY += event.tfinger.y - pTouch->y;
         pTouch->x = event.tfinger.x;
         pTouch->y = event.tfinger.y;
+        if (pTouch->role == MobileTouchRole::None || pTouch->role == MobileTouchRole::Hud)
+        {
+            appendMobileTouchPath(pTouch->hudPath, event.tfinger.x, event.tfinger.y);
+        }
 
         const float touchDragX = pTouch->x - pTouch->startX;
         const float touchDragY = pTouch->y - pTouch->startY;
@@ -262,10 +303,16 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                 && std::abs(dragX) <= MobileDebugConsoleGestureMaxHorizontalNormalized)
             {
                 pTouch->role = MobileTouchRole::DebugConsoleGesture;
+                pTouch->hudPath = {};
                 pTouch->debugConsoleGestureTriggered = true;
                 pTouch->dragThresholdExceeded = false;
                 m_mobilePendingHudTaps.clear();
                 m_mobilePendingHudRelease = false;
+                m_mobilePendingHudReleaseGestureId = 0;
+                m_mobilePendingHudReleasePath = {};
+                m_mobilePendingHudDragRelease = false;
+                m_mobilePendingHudDragReleaseGestureId = 0;
+                m_mobilePendingHudDragReleasePath = {};
                 m_mobilePendingCameraTap = false;
                 m_mobileInspectTarget.reset();
                 m_mobileJumpDoubleTapGesture.cancel();
@@ -293,6 +340,9 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                     m_mobilePendingHudRelease = true;
                     m_mobilePendingHudReleaseX = -1.0f;
                     m_mobilePendingHudReleaseY = -1.0f;
+                    m_mobilePendingHudReleaseGestureId = pTouch->gestureId;
+                    m_mobilePendingHudReleasePath = {};
+                    m_mobilePendingHudReleasePath.incomplete = true;
                 }
                 *pTouch = {};
                 return;
@@ -324,6 +374,10 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                 && pTouch->dragThresholdExceeded
                 && (pTouch->role == MobileTouchRole::Hud || pTouch->role == MobileTouchRole::None);
 
+            if (pTouch->role == MobileTouchRole::None || pTouch->role == MobileTouchRole::Hud)
+            {
+                appendMobileTouchPath(pTouch->hudPath, event.tfinger.x, event.tfinger.y);
+            }
             if (completedHudDrag)
             {
                 m_mobilePendingHudDragRelease = true;
@@ -332,7 +386,11 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                 m_mobilePendingHudDragStartY = pTouch->startY;
                 m_mobilePendingHudDragReleaseX = event.tfinger.x;
                 m_mobilePendingHudDragReleaseY = event.tfinger.y;
+                m_mobilePendingHudDragReleaseGestureId = pTouch->gestureId;
+                m_mobilePendingHudDragReleasePath = std::move(pTouch->hudPath);
                 m_mobilePendingHudRelease = false;
+                m_mobilePendingHudReleaseGestureId = 0;
+                m_mobilePendingHudReleasePath = {};
                 m_mobilePendingHudTaps.clear();
             }
             else if (pTouch->role == MobileTouchRole::Hud && pTouch->hudPressDelivered)
@@ -340,6 +398,8 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                 m_mobilePendingHudRelease = true;
                 m_mobilePendingHudReleaseX = event.tfinger.x;
                 m_mobilePendingHudReleaseY = event.tfinger.y;
+                m_mobilePendingHudReleaseGestureId = pTouch->gestureId;
+                m_mobilePendingHudReleasePath = std::move(pTouch->hudPath);
             }
             else if (pTouch->role == MobileTouchRole::Camera)
             {
@@ -362,7 +422,8 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
                 if (m_mobilePendingHudTaps.size() < 256)
                 {
                     m_mobilePendingHudTaps.push_back(
-                        {pTouch->startX, pTouch->startY, event.tfinger.x, event.tfinger.y});
+                        {pTouch->startX, pTouch->startY, event.tfinger.x, event.tfinger.y,
+                            pTouch->gestureId, std::move(pTouch->hudPath)});
                 }
                 else
                 {
@@ -441,7 +502,11 @@ void GameInputSystem::updateFromEngineInput(
     {
         m_mobilePendingHudTaps.clear();
         m_mobilePendingHudRelease = false;
+        m_mobilePendingHudReleaseGestureId = 0;
+        m_mobilePendingHudReleasePath = {};
         m_mobilePendingHudDragRelease = false;
+        m_mobilePendingHudDragReleaseGestureId = 0;
+        m_mobilePendingHudDragReleasePath = {};
         m_mobilePendingCameraTap = false;
         m_mobileInspectTarget.reset();
         m_mobileJumpDoubleTapGesture.cancel();
@@ -719,6 +784,7 @@ void GameInputSystem::updateFromEngineInput(
             && mobileInspectButtonAt(touchLogicalX(touch.startX), touchLogicalY(touch.startY)))
         {
             touch.role = MobileTouchRole::InspectModifier;
+            touch.hudPath = {};
         }
 
         if (!blockGameplayInput
@@ -738,6 +804,7 @@ void GameInputSystem::updateFromEngineInput(
                 && touch.role != MobileTouchRole::DebugConsoleGesture)
             {
                 touch.role = MobileTouchRole::InspectTarget;
+                touch.hudPath = {};
             }
         }
 
@@ -750,7 +817,11 @@ void GameInputSystem::updateFromEngineInput(
         }
         m_mobilePendingHudTaps.clear();
         m_mobilePendingHudRelease = false;
+        m_mobilePendingHudReleaseGestureId = 0;
+        m_mobilePendingHudReleasePath = {};
         m_mobilePendingHudDragRelease = false;
+        m_mobilePendingHudDragReleaseGestureId = 0;
+        m_mobilePendingHudDragReleasePath = {};
         m_mobilePendingCameraTap = false;
         m_mobileJumpDoubleTapGesture.cancel();
     }
@@ -945,25 +1016,16 @@ void GameInputSystem::updateFromEngineInput(
             pHudTouch = &touch;
             hudTouchX = touch.x * static_cast<float>(screenWidth);
             hudTouchY = touch.y * static_cast<float>(screenHeight);
-
-            if (touch.dragThresholdExceeded)
-            {
-                m_frame.mobileTouchDragActive = true;
-                m_frame.mobileTouchDragStartX = touch.startX * static_cast<float>(screenWidth);
-                m_frame.mobileTouchDragStartY = touch.startY * static_cast<float>(screenHeight);
-
-                if (!touch.dragStartDelivered)
-                {
-                    m_frame.mobileTouchDragStarted = true;
-                    touch.dragStartDelivered = true;
-                }
-            }
         }
         else if (touch.role == MobileTouchRole::DebugConsoleGesture)
         {
             hasNonHudMobileTouch = true;
         }
 
+        if (touch.role != MobileTouchRole::Hud)
+        {
+            touch.hudPath = {};
+        }
         touch.deltaX = 0.0f;
         touch.deltaY = 0.0f;
     }
@@ -972,8 +1034,46 @@ void GameInputSystem::updateFromEngineInput(
         m_mobilePendingHudDragRelease
         && (!useMobileGameplayTouchControls
             || touchStartsInHudZone(m_mobilePendingHudDragStartX, m_mobilePendingHudDragStartY));
+    const bool pendingHudTapIsUiGesture = !m_mobilePendingHudTaps.empty()
+        && (!useMobileGameplayTouchControls
+            || touchStartsInHudZone(m_mobilePendingHudTaps.front().startX, m_mobilePendingHudTaps.front().startY));
+    uint64_t hudGestureId = 0;
+    if (!inspectModifierHeld)
+    {
+        if (pendingHudDragIsUiGesture)
+        {
+            hudGestureId = m_mobilePendingHudDragReleaseGestureId;
+        }
+        else if (!m_mobilePendingHudDragRelease)
+        {
+            if (m_mobilePendingHudRelease)
+            {
+                hudGestureId = m_mobilePendingHudReleaseGestureId;
+            }
+            else if (!m_mobilePendingHudTaps.empty())
+            {
+                hudGestureId = pendingHudTapIsUiGesture ? m_mobilePendingHudTaps.front().gestureId : 0;
+            }
+            else if (hasHudTouch)
+            {
+                hudGestureId = pHudTouch->gestureId;
+            }
+        }
+    }
+    const bool hudOwnerChanged = m_previousLeftMouseButtonHeld
+        && hudGestureId != m_mobileDeliveredHudGestureId
+        && (hudGestureId != 0 || m_mobileDeliveredHudGestureId != 0);
 
-    if (inspectModifierHeld)
+    if (hudOwnerChanged)
+    {
+        // Release the previous owner outside all targets before delivering a new gesture.
+        m_frame.pointerFromTouch = true;
+        m_frame.pointerX = -1.0f;
+        m_frame.pointerY = -1.0f;
+        m_frame.mobileTouchPathIncomplete = true;
+        leftMouseButtonHeld = false;
+    }
+    else if (inspectModifierHeld)
     {
         m_frame.pointerFromTouch = true;
         m_frame.pointerX = m_mobileInspectTarget ? m_mobileInspectTarget->x * static_cast<float>(screenWidth) : -1.0f;
@@ -997,44 +1097,64 @@ void GameInputSystem::updateFromEngineInput(
         m_frame.mobileTouchDragReleased = true;
         m_frame.mobileTouchDragStartX = m_mobilePendingHudDragStartX * static_cast<float>(screenWidth);
         m_frame.mobileTouchDragStartY = m_mobilePendingHudDragStartY * static_cast<float>(screenHeight);
+        deliverMobileTouchPath(m_mobilePendingHudDragReleasePath, screenWidth, screenHeight);
         leftMouseButtonHeld = false;
         m_mobilePendingHudDragRelease = false;
+        m_mobilePendingHudDragReleaseGestureId = 0;
     }
     else if (m_mobilePendingHudDragRelease)
     {
         m_mobilePendingHudDragRelease = false;
+        m_mobilePendingHudDragReleaseGestureId = 0;
+        m_mobilePendingHudDragReleasePath = {};
     }
     else if (m_mobilePendingHudRelease)
     {
         m_frame.pointerFromTouch = true;
         m_frame.pointerX = m_mobilePendingHudReleaseX * static_cast<float>(screenWidth);
         m_frame.pointerY = m_mobilePendingHudReleaseY * static_cast<float>(screenHeight);
+        deliverMobileTouchPath(m_mobilePendingHudReleasePath, screenWidth, screenHeight);
         leftMouseButtonHeld = false;
         m_mobilePendingHudRelease = false;
+        m_mobilePendingHudReleaseGestureId = 0;
     }
     else if (!m_mobilePendingHudTaps.empty())
     {
-        const MobileHudTap tap = m_mobilePendingHudTaps.front();
+        MobileHudTap tap = std::move(m_mobilePendingHudTaps.front());
         m_mobilePendingHudTaps.pop_front();
-        if (!useMobileGameplayTouchControls
-            || touchStartsInHudZone(tap.startX, tap.startY))
+        if (pendingHudTapIsUiGesture)
         {
             m_frame.pointerFromTouch = true;
-            m_frame.pointerX = tap.x * static_cast<float>(screenWidth);
-            m_frame.pointerY = tap.y * static_cast<float>(screenHeight);
+            m_frame.pointerX = tap.startX * static_cast<float>(screenWidth);
+            m_frame.pointerY = tap.startY * static_cast<float>(screenHeight);
+            deliverMobileTouchPath(tap.path, screenWidth, screenHeight);
             leftMouseButtonHeld = true;
             m_mobilePendingHudRelease = true;
             m_mobilePendingHudReleaseX = tap.x;
             m_mobilePendingHudReleaseY = tap.y;
+            m_mobilePendingHudReleaseGestureId = tap.gestureId;
+            m_mobilePendingHudReleasePath = {};
         }
     }
     else if (hasHudTouch)
     {
+        const bool canContinueHudPress = !pHudTouch->hudPressDelivered
+            || m_mobileDeliveredHudGestureId == pHudTouch->gestureId;
         m_frame.pointerFromTouch = true;
-        m_frame.pointerX = hudTouchX;
-        m_frame.pointerY = hudTouchY;
-        leftMouseButtonHeld = true;
+        m_frame.pointerX = canContinueHudPress ? hudTouchX : -1.0f;
+        m_frame.pointerY = canContinueHudPress ? hudTouchY : -1.0f;
+        deliverMobileTouchPath(pHudTouch->hudPath, screenWidth, screenHeight);
+        m_frame.mobileTouchPathIncomplete = m_frame.mobileTouchPathIncomplete || !canContinueHudPress;
+        leftMouseButtonHeld = canContinueHudPress;
         pHudTouch->hudPressDelivered = true;
+        if (canContinueHudPress && pHudTouch->dragThresholdExceeded)
+        {
+            m_frame.mobileTouchDragActive = true;
+            m_frame.mobileTouchDragStartX = pHudTouch->startX * static_cast<float>(screenWidth);
+            m_frame.mobileTouchDragStartY = pHudTouch->startY * static_cast<float>(screenHeight);
+            m_frame.mobileTouchDragStarted = !pHudTouch->dragStartDelivered;
+            pHudTouch->dragStartDelivered = true;
+        }
     }
     else if (m_mobilePendingCameraTap)
     {
@@ -1073,11 +1193,15 @@ void GameInputSystem::updateFromEngineInput(
         // previously pressed button when focus is lost or the event queue overflows.
         m_frame.pointerX = -1.0f;
         m_frame.pointerY = -1.0f;
+        m_frame.mobileTouchPath.clear();
+        m_frame.mobileTouchPathIncomplete = true;
         leftMouseButtonHeld = false;
         rightMouseButtonHeld = false;
         middleMouseButtonHeld = false;
     }
 
+    m_mobileDeliveredHudGestureId = !hudOwnerChanged && !cancelMouseInput && leftMouseButtonHeld
+        ? hudGestureId : 0;
     m_frame.leftMouseButton = buildButtonState(leftMouseButtonHeld, m_previousLeftMouseButtonHeld);
     m_frame.rightMouseButton = buildButtonState(rightMouseButtonHeld, m_previousRightMouseButtonHeld);
     m_frame.middleMouseButton = buildButtonState(middleMouseButtonHeld, m_previousMiddleMouseButtonHeld);

@@ -3820,7 +3820,14 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                 interaction.houseShopPressedSlotIndex = hoveredSlotIndex;
             }
 
-            if (input.mobileTouchDragStarted || input.mobileTouchDragActive || input.mobileTouchDragReleased
+            const bool touchPathLeftPressedSlot = input.mobileTouchPathIncomplete
+                || std::any_of(input.mobileTouchPath.begin(), input.mobileTouchPath.end(),
+                    [&interaction, &resolveHoveredSlotIndex](const SDL_FPoint &point)
+                    {
+                        return resolveHoveredSlotIndex(point.x, point.y) != interaction.houseShopPressedSlotIndex;
+                    });
+            if (touchPathLeftPressedSlot
+                || input.mobileTouchDragStarted || input.mobileTouchDragActive || input.mobileTouchDragReleased
                 || (isLeftMousePressed && interaction.houseShopPressedSlotIndex != hoveredSlotIndex))
             {
                 interaction.houseShopPressedSlotIndex = std::numeric_limits<size_t>::max();
@@ -3894,7 +3901,15 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
             interaction.shopInventoryPressedTarget = hoveredTarget;
         }
 
-        if (input.mobileTouchDragStarted || input.mobileTouchDragActive || input.mobileTouchDragReleased
+        const bool touchPathLeftPressedTarget = input.mobileTouchPathIncomplete
+            || std::any_of(input.mobileTouchPath.begin(), input.mobileTouchPath.end(),
+                [&interaction, &resolveInventoryTarget](const SDL_FPoint &point)
+                {
+                    return !sameShopInventoryTarget(
+                        interaction.shopInventoryPressedTarget, resolveInventoryTarget(point.x, point.y));
+                });
+        if (touchPathLeftPressedTarget
+            || input.mobileTouchDragStarted || input.mobileTouchDragActive || input.mobileTouchDragReleased
             || (isLeftMousePressed
                 && !sameShopInventoryTarget(interaction.shopInventoryPressedTarget, hoveredTarget)))
         {
