@@ -6,6 +6,7 @@
 #include "game/outdoor/OutdoorMapData.h"
 #include "game/maps/MapDecorationDirection.h"
 #include "game/tables/SpriteTables.h"
+#include "tools/legacy_events/StrTable.h"
 
 #include <charconv>
 #include <fstream>
@@ -115,6 +116,56 @@ Owners archiveOwners(const std::filesystem::path &root, const std::vector<std::s
     }
     return owners;
 }
+
+std::optional<std::string> localizedTreeHint(const std::filesystem::path &root)
+{
+    try
+    {
+        if (!std::filesystem::exists(root / "Data/mmmerge.T.lod")
+            || !std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod"))
+        {
+            return std::nullopt;
+        }
+
+        std::vector<std::filesystem::path> sourceArchives;
+        const Owners owners = archiveOwners(root,
+            {"mmmerge.T.lod", "10 LocZHCN.EnglishT.lod"}, sourceArchives);
+        const auto owner = owners.find("oute3.str");
+        if (sourceArchives.size() != 2 || owner == owners.end()
+            || owner->second != checkedPath(root, "Data/10 LocZHCN.EnglishT.lod"))
+        {
+            return std::nullopt;
+        }
+
+        const auto readTree = [](const std::filesystem::path &archive, bool chinese)
+        {
+            Bytes bytes = readLodText(archive, "oute3.str");
+            require(!bytes.empty(), "Empty original oute3 STR");
+            if (bytes.back() != 0)
+            {
+                bytes.push_back(0);
+            }
+            Game::StrTable strings;
+            require(strings.loadFromNullSeparatedBytes(bytes), "Invalid original oute3 STR");
+            const std::optional<std::string> raw = strings.get(13);
+            require(raw && !raw->empty(), "Missing original oute3 tree hint");
+            size_t glyphs = 0;
+            return decodeLegacyText({raw->begin(), raw->end()}, chinese, glyphs);
+        };
+        const std::string original = readTree(sourceArchives.front(), false);
+        const std::string translated = readTree(owner->second, true);
+        // Validate the authenticated index pair; output still comes from the selected source LOD.
+        if (original == "Tree" && translated == "\u6811")
+        {
+            return translated;
+        }
+    }
+    catch (const std::exception &)
+    {
+        // Optional localized hints must not prevent importing the original decoration registry.
+    }
+    return std::nullopt;
+}
 }
 
 void convertDecorationResources(const std::filesystem::path &source, const std::filesystem::path &destination)
@@ -136,6 +187,7 @@ void convertDecorationResources(const std::filesystem::path &source, const std::
         "Image1", "Center", "Fidget", "Loaded", "Mirror0", "Mirror1", "Mirror2", "Mirror3", "Mirror4", "Mirror5",
         "Mirror6", "Mirror7", "Images3", "Glow", "Transparent", "LightRadius", "PaletteId", "Time"});
     const ConvertedSpriteFrames frames = convertSpriteFrameRows(frameRows);
+    const std::optional<std::string> treeHint = localizedTreeHint(root);
     Rows rows{{"#", "InternalName", "Hint", "Type", "Radius", "Height", "LightRadius", "Red", "Green", "Blue",
         "SoundId", "Flags", "SpriteId", "SourceSFTGroup", "MapAliases", "SourceSoundId"}};
     std::set<std::string> names;
@@ -170,7 +222,8 @@ void convertDecorationResources(const std::filesystem::path &source, const std::
         // retain the unsigned TXT value separately, without claiming ambient audio support.
         const int32_t storedSound = sourceSound <= 32767 ? int32_t(sourceSound) : int32_t(sourceSound) - 65536;
         signedSounds += sourceSound > 32767;
-        rows.push_back({std::to_string(index + 1), name, row[2], row[3], row[5], row[4], row[6],
+        const std::string &hint = row[2] == "tree" && treeHint ? *treeHint : row[2];
+        rows.push_back({std::to_string(index + 1), name, hint, row[3], row[5], row[4], row[6],
             row[20], row[21], row[22], std::to_string(storedSound), std::to_string(flags),
             std::to_string(frames.groupIds.at(group)), row[7], "", row[19]});
     }

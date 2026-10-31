@@ -1,0 +1,193 @@
+{
+  "state": "PAUSED_BY_USER",
+  "checkpoint": 256,
+  "source_branch": "codex/ipados",
+  "source_base_before256": "5f4bad70023101c2b2ee7c06bafdf9e0977e6692",
+  "baseline_release": "ipados-ui-cumulative-229-20261030",
+  "baseline_url": "https://github.com/Mavskero/openyamm/releases/tag/ipados-ui-cumulative-229-20261030",
+  "baseline_files": [
+    {
+      "path": "engine.zip",
+      "bytes": 714322244,
+      "sha256": "8dc47ce81cdf3818d182f38ccc19ebd608f0f35341042ca190609a56dd423eb0",
+      "release_asset_name": "engine.zip"
+    },
+    {
+      "path": "conversion.json",
+      "bytes": 93849,
+      "sha256": "45461f7778efc719b8fe5a48efa48d83a2cc3d838ccb15b4a66c84f89d05332a",
+      "release_asset_name": "conversion.json"
+    },
+    {
+      "path": "worlds/mm6.zip",
+      "bytes": 641050692,
+      "sha256": "154aa325d69eedd9c0b3cd3e96c730db4cec581e23ebe975eaaf93903ffbf676",
+      "release_asset_name": "mm6.zip"
+    },
+    {
+      "path": "worlds/mm7.zip",
+      "bytes": 1019781051,
+      "sha256": "ef24f9591ac7ee0d431a4cc943ee276d687c6a7a2e5b27a53464d8ab806d9c5d",
+      "release_asset_name": "mm7.zip"
+    },
+    {
+      "path": "worlds/mm8.zip",
+      "bytes": 978282137,
+      "sha256": "0def37a4ebb5b302462e310325f75f3fb7f339852cd9111bfbb938787fe1e126",
+      "release_asset_name": "mm8.zip"
+    },
+    {
+      "path": "worlds/mmmerge.zip",
+      "bytes": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e",
+      "release_asset_name": "mmmerge.zip"
+    }
+  ],
+  "changed_engine_members": [
+    {
+      "path": "data_tables/decoration_data.txt",
+      "bytes": 58298,
+      "sha256": "51fe64a407b04ec27c64862182e7432b4fec5ae1640440478a6658eaa6d18fcd",
+      "change": "replaced"
+    },
+    {
+      "path": "data_tables/ui_text.txt",
+      "bytes": 9743,
+      "sha256": "2e4270df837bbc932ebb1b7af1e6aba729437a207222859625d70c4c64e36729",
+      "change": "replaced"
+    },
+    {
+      "path": "events/Global.lua",
+      "bytes": 897950,
+      "sha256": "f1bf8754c01fb0944c4cc6d7a94e575daeb1e677eafdb4436b191fce4191f555",
+      "change": "replaced"
+    },
+    {
+      "path": "icons/6helm1v1.bmp",
+      "bytes": 2398,
+      "sha256": "24051417a0f2f51e4d04c66dd06a438d655357ffb21705174aff2b05c9e420bc",
+      "change": "replaced"
+    },
+    {
+      "path": "icons/6helm1v2.bmp",
+      "bytes": 2518,
+      "sha256": "3261e25d49247c8f4fab6035908c592854999127a21c2d0f70bb99f8d7bda8aa",
+      "change": "replaced"
+    },
+    {
+      "path": "icons/6helm1v4.bmp",
+      "bytes": 3142,
+      "sha256": "40d00c53039d17e8fe91d6037cb3ad84f2cacd8842364c21906850479c97fb1d",
+      "change": "replaced"
+    },
+    {
+      "path": "icons/6helm1v5.bmp",
+      "bytes": 2438,
+      "sha256": "ab1c874dfbb138c3acc503521a14c4e5b3410dd0a4864bbe3bafb9d01270f393",
+      "change": "replaced"
+    },
+    {
+      "path": "icons/ib_spelico.bmp",
+      "bytes": 774,
+      "sha256": "f4fac4b50a7a401dbe3ed0248515dbc191548294c0accc12817c9d9eedef7921",
+      "change": "added"
+    },
+    {
+      "path": "icons/manar.bmp",
+      "bytes": 642,
+      "sha256": "37b407f27673fd2b0656b56bd65b438b3e250b3ed172bcc9f7974af345715621",
+      "change": "added"
+    },
+    {
+      "path": "icons/manay.bmp",
+      "bytes": 642,
+      "sha256": "7f06e34ba37a15c8c3acd97355449ce36b95596ff86968c3461d917e4d171a75",
+      "change": "added"
+    },
+    {
+      "path": "icons/statbl.bmp",
+      "bytes": 1538,
+      "sha256": "ab88a6658dac962f47c5ea1dd579ccc372eb83e6c74bc9a7bcc670495572b018",
+      "change": "added"
+    },
+    {
+      "path": "icons/statg.bmp",
+      "bytes": 1590,
+      "sha256": "b4adb086ec353b96a9b3313f062f81ecfa1b1f0e00e055535c452706865aa931",
+      "change": "added"
+    },
+    {
+      "path": "icons/statr.bmp",
+      "bytes": 1590,
+      "sha256": "9df9cc733188b792f1b57593323b20d04cc4f2bbb3a58e51d0c2a53ef6709c1c",
+      "change": "added"
+    },
+    {
+      "path": "icons/staty.bmp",
+      "bytes": 1590,
+      "sha256": "407fca1096868144a49b1f4b7a02337d3fac612715a6f7ed3eeca9effa3c510a",
+      "change": "added"
+    }
+  ],
+  "removed_engine_members": [],
+  "added_members_count": 7,
+  "replaced_members_count": 7,
+  "unchanged_engine_members": 17385,
+  "total_engine_members": 17399,
+  "worlds_unchanged": 4,
+  "patch": {
+    "path": "engine-overlay-from-229.zip",
+    "bytes": 223181,
+    "sha256": "54a83aea10fa5775ee8d4997f7e52fbc6fa888fca1b144fd1d0b7de34b227e29"
+  },
+  "conversion": {
+    "path": "conversion.json",
+    "bytes": 124085,
+    "sha256": "a381f9bdea4571502f737ae1789353e62763701e36c59c33bd9d9af608eaae4e"
+  },
+  "ui_text": 233,
+  "combat_text": 223,
+  "navigation": 222,
+  "write_save_version": 106,
+  "requires_current_source_build": true,
+  "old229_binary_supports_current_save106": false,
+  "local_complete256_archive_identities": [
+    {
+      "path": "engine.zip",
+      "bytes": 713565850,
+      "sha256": "429579992c96c707cbabb0ab37429f957e71bc2f05b60541aa2abf97d9997a70"
+    },
+    {
+      "path": "conversion.json",
+      "bytes": 124085,
+      "sha256": "a381f9bdea4571502f737ae1789353e62763701e36c59c33bd9d9af608eaae4e"
+    },
+    {
+      "path": "worlds/mm6.zip",
+      "bytes": 641050692,
+      "sha256": "154aa325d69eedd9c0b3cd3e96c730db4cec581e23ebe975eaaf93903ffbf676"
+    },
+    {
+      "path": "worlds/mm7.zip",
+      "bytes": 1019781051,
+      "sha256": "ef24f9591ac7ee0d431a4cc943ee276d687c6a7a2e5b27a53464d8ab806d9c5d"
+    },
+    {
+      "path": "worlds/mm8.zip",
+      "bytes": 978282137,
+      "sha256": "0def37a4ebb5b302462e310325f75f3fb7f339852cd9111bfbb938787fe1e126"
+    },
+    {
+      "path": "worlds/mmmerge.zip",
+      "bytes": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e"
+    }
+  ],
+  "engine_container_hash_scope": "Localcomplete256zipSHAisrecorded;repackingbaselinewiththispatchpreservesmembersbutmayproduceadifferentZIPcontainerSHA",
+  "simulator_and_current_game_running": false,
+  "new_device_or_simulator_validation": false,
+  "private_saves_included": false,
+  "full_goal_achieved": false,
+  "estimate_percent": 88,
+  "timestamp": "2026-10-31T14:40:09.753808+00:00"
+}

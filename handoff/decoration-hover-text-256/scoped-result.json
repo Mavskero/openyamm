@@ -1,0 +1,93 @@
+{
+  "checkpoint": 256,
+  "status": "ACCEPTED_OFFLINE_SOURCE_RESOURCE_SCOPED",
+  "source_base": "5f4bad70023101c2b2ee7c06bafdf9e0977e6692",
+  "changed_source": [
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 61447,
+      "sha256": "b744028f94892eb43f3ab2a99669da4270499e145ca4c248ec3d66347a108a82"
+    },
+    {
+      "path": "tools/mmerge_import/DecorationResources.cpp",
+      "bytes": 15625,
+      "sha256": "20d80bf0548c840aa8fd677ca3e4f7cfae955a1e490287abbc76054cac4dca37"
+    }
+  ],
+  "unchanged_shared_parser": {
+    "path": "tools/legacy_events/StrTable.cpp",
+    "bytes": 1568,
+    "sha256": "088accad6701b18e7ba3b03cad3343d4b1ababe63241e938e777923e724ab039",
+    "unchanged_shared_parser": true
+  },
+  "source_hashes_match": 3,
+  "repair": "ExactordinarytreeHintusesauthentic same-rootEnglishTree/Chinese树OutE3.str13;othernamesandallrules retained",
+  "builds": {
+    "refresh-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.979526167
+    },
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 3.700830875
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 7.33116175
+    },
+    "import-decoration-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.892633625
+    },
+    "assemble-runtime-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 6.797516875
+    }
+  },
+  "table_delta": {
+    "rows": 673,
+    "columns": 16,
+    "changed_hint_rows": 116,
+    "before": "tree",
+    "after": "树",
+    "all_other_cells_identical": true,
+    "after_sha256": "51fe64a407b04ec27c64862182e7432b4fec5ae1640440478a6658eaa6d18fcd"
+  },
+  "runtime": {
+    "base": "complete254/runtime-001",
+    "current": "complete256/runtime-001",
+    "changed_engine_members": [
+      "data_tables/decoration_data.txt"
+    ],
+    "unchanged_engine_members": 17398,
+    "worlds_retained": 4,
+    "ui_text": 233,
+    "combat_text": 223,
+    "navigation": 222,
+    "save_version": 106
+  },
+  "engine_overlay": {
+    "path": "engine-overlay-256.zip",
+    "bytes": 16194,
+    "sha256": "4b47a82a531ceb9d13ddcccd34632e095ee13fb5162e5b85386406c23e55556e",
+    "cumulative_relative_to": "complete246/runtime-002",
+    "members": 5
+  },
+  "related_diagnoses": {
+    "255": "Savedtownfolk/guardsnonhostile;no fines/negativeconditions;nearbyoriginalgoblinsconfirmed;actualdamageattackerunknown;A/Dattackaliasexcluded",
+    "257": "45missingcape b candidates areoriginallyabsentoptionalcollars;45a bodiespresent;zero collarcoords;emptytexturelayers correctlyskipped"
+  },
+  "unit_test_runs": 0,
+  "new_cases": 0,
+  "app_runs_for256": 0,
+  "actual_repaired_hover_pixels": "Notrun;userpausedbeforeplannedaffectedview",
+  "save_writes": 0,
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "new_release": false,
+  "development_state": "PAUSED_BY_USER_2026-10-31",
+  "simulator_and_current_game_running_at_pause_cleanup": false,
+  "full_goal_achieved": false,
+  "engineering_estimate_percent": 88,
+  "estimate_confidence": "low"
+}

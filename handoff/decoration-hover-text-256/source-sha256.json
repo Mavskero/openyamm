@@ -1,0 +1,21 @@
+{
+  "changed_files": [
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 61447,
+      "sha256": "b744028f94892eb43f3ab2a99669da4270499e145ca4c248ec3d66347a108a82"
+    },
+    {
+      "path": "tools/mmerge_import/DecorationResources.cpp",
+      "bytes": 15625,
+      "sha256": "20d80bf0548c840aa8fd677ca3e4f7cfae955a1e490287abbc76054cac4dca37"
+    }
+  ],
+  "unchanged_dependency": {
+    "path": "tools/legacy_events/StrTable.cpp",
+    "bytes": 1568,
+    "sha256": "088accad6701b18e7ba3b03cad3343d4b1ababe63241e938e777923e724ab039",
+    "unchanged_shared_parser": true
+  },
+  "new_unit_cases": 0
+}

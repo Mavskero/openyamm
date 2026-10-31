@@ -1,0 +1,3230 @@
+{
+  "schema": 1,
+  "stage": "native-runtime-assembly",
+  "runtime_ready": false,
+  "common_data_validated": true,
+  "starting_map_load_validated": true,
+  "converted_maps": [
+    "mm6:outa1.odm",
+    "mm6:outa2.odm",
+    "mm6:outa3.odm",
+    "mm6:outb1.odm",
+    "mm6:outb2.odm",
+    "mm6:outb3.odm",
+    "mm6:outc1.odm",
+    "mm6:outc2.odm",
+    "mm6:outc3.odm",
+    "mm6:outd1.odm",
+    "mm6:outd2.odm",
+    "mm6:outd3.odm",
+    "mm6:oute1.odm",
+    "mm6:oute2.odm",
+    "mm6:oute3.odm",
+    "mm6:6d01.blv",
+    "mm6:6d02.blv",
+    "mm6:6d03.blv",
+    "mm6:6d04.blv",
+    "mm6:6d05.blv",
+    "mm6:6d06.blv",
+    "mm6:6d07.blv",
+    "mm6:6d08.blv",
+    "mm6:6d09.blv",
+    "mm6:6d10.blv",
+    "mm6:6d11.blv",
+    "mm6:6d12.blv",
+    "mm6:6d13.blv",
+    "mm6:6d14.blv",
+    "mm6:6d15.blv",
+    "mm6:6d16.blv",
+    "mm6:6d17.blv",
+    "mm6:6d18.blv",
+    "mm6:6d19.blv",
+    "mm6:6d20.blv",
+    "mm6:6t1.blv",
+    "mm6:6t2.blv",
+    "mm6:6t3.blv",
+    "mm6:6t4.blv",
+    "mm6:6t5.blv",
+    "mm6:6t6.blv",
+    "mm6:6t7.blv",
+    "mm6:6t8.blv",
+    "mm6:cd1.blv",
+    "mm6:cd2.blv",
+    "mm6:cd3.blv",
+    "mm6:sewer.blv",
+    "mm6:pyramid.blv",
+    "mm6:oracle.blv",
+    "mm6:sci-fi.blv",
+    "mm6:hive.blv",
+    "mm6:zarena.blv",
+    "mm6:zddb01.blv",
+    "mm6:zddb02.blv",
+    "mm6:zddb03.blv",
+    "mm6:zddb04.blv",
+    "mm6:zddb06.blv",
+    "mm6:zddb07.blv",
+    "mm6:zddb08.blv",
+    "mm6:zddb09.blv",
+    "mm6:zddb10.blv",
+    "mm6:zdtl01.blv",
+    "mm6:zdtl02.blv",
+    "mm6:zdwj01.blv",
+    "mm6:zdwj02.blv",
+    "mm6:znwc.blv",
+    "mm7:7out01.odm",
+    "mm7:7out02.odm",
+    "mm7:7out03.odm",
+    "mm7:7out04.odm",
+    "mm7:7out05.odm",
+    "mm7:7out06.odm",
+    "mm7:out09.odm",
+    "mm7:out10.odm",
+    "mm7:out11.odm",
+    "mm7:out12.odm",
+    "mm7:7out13.odm",
+    "mm7:out14.odm",
+    "mm7:7out15.odm",
+    "mm7:d01.blv",
+    "mm7:d02.blv",
+    "mm7:d03.blv",
+    "mm7:d04.blv",
+    "mm7:7d05.blv",
+    "mm7:7d06.blv",
+    "mm7:7d07.blv",
+    "mm7:7d08.blv",
+    "mm7:7d09.blv",
+    "mm7:7d10.blv",
+    "mm7:7d11.blv",
+    "mm7:7d12.blv",
+    "mm7:7d13.blv",
+    "mm7:7d14.blv",
+    "mm7:7d15.blv",
+    "mm7:7d16.blv",
+    "mm7:7d17.blv",
+    "mm7:7d18.blv",
+    "mm7:7d19.blv",
+    "mm7:7d20.blv",
+    "mm7:7d21.blv",
+    "mm7:7d22.blv",
+    "mm7:7d23.blv",
+    "mm7:7d24.blv",
+    "mm7:7d25.blv",
+    "mm7:7d26.blv",
+    "mm7:7d27.blv",
+    "mm7:7d28.blv",
+    "mm7:7d29.blv",
+    "mm7:7d30.blv",
+    "mm7:7d31.blv",
+    "mm7:7d32.blv",
+    "mm7:7d33.blv",
+    "mm7:7d34.blv",
+    "mm7:7d35.blv",
+    "mm7:7d36.blv",
+    "mm7:7d37.blv",
+    "mm7:mdk01.blv",
+    "mm7:mdk02.blv",
+    "mm7:mdk03.blv",
+    "mm7:mdk04.blv",
+    "mm7:mdk05.blv",
+    "mm7:mdt01.blv",
+    "mm7:mdt02.blv",
+    "mm7:mdt03.blv",
+    "mm7:mdt04.blv",
+    "mm7:mdt05.blv",
+    "mm7:mdr01.blv",
+    "mm7:mdr02.blv",
+    "mm7:mdr03.blv",
+    "mm7:mdr04.blv",
+    "mm7:mdr05.blv",
+    "mm7:mdt09.blv",
+    "mm7:mdt10.blv",
+    "mm7:mdt11.blv",
+    "mm7:mdt12.blv",
+    "mm7:mdt14.blv",
+    "mm7:mdt15.blv",
+    "mm7:t01.blv",
+    "mm7:t02.blv",
+    "mm7:t03.blv",
+    "mm7:t04.blv",
+    "mm7:7nwc.blv",
+    "mm8:out01.odm",
+    "mm8:out02.odm",
+    "mm8:out03.odm",
+    "mm8:out04.odm",
+    "mm8:out05.odm",
+    "mm8:out06.odm",
+    "mm8:out07.odm",
+    "mm8:out08.odm",
+    "mm8:elema.odm",
+    "mm8:eleme.blv",
+    "mm8:elemf.odm",
+    "mm8:elemw.odm",
+    "mm8:out13.odm",
+    "mm8:pbp.odm",
+    "mm8:out15.odm",
+    "mm8:d05.blv",
+    "mm8:d06.blv",
+    "mm8:d07.blv",
+    "mm8:d08.blv",
+    "mm8:d09.blv",
+    "mm8:d10.blv",
+    "mm8:d11.blv",
+    "mm8:d12.blv",
+    "mm8:d13.blv",
+    "mm8:d14.blv",
+    "mm8:d15.blv",
+    "mm8:d16.blv",
+    "mm8:d17.blv",
+    "mm8:d18.blv",
+    "mm8:d19.blv",
+    "mm8:d20.blv",
+    "mm8:d21.blv",
+    "mm8:d22.blv",
+    "mm8:d23.blv",
+    "mm8:d24.blv",
+    "mm8:d25.blv",
+    "mm8:d26.blv",
+    "mm8:d27.blv",
+    "mm8:d28.blv",
+    "mm8:d29.blv",
+    "mm8:d30.blv",
+    "mm8:d31.blv",
+    "mm8:d32.blv",
+    "mm8:d33.blv",
+    "mm8:d34.blv",
+    "mm8:d35.blv",
+    "mm8:d36.blv",
+    "mm8:d37.blv",
+    "mm8:d38.blv",
+    "mm8:d39.blv",
+    "mm8:d40.blv",
+    "mm8:d41.blv",
+    "mm8:d42.blv",
+    "mm8:d43.blv",
+    "mm8:d44.blv",
+    "mm8:d45.blv",
+    "mm8:d46.blv",
+    "mm8:d47.blv",
+    "mm8:d48.blv",
+    "mm8:d49.blv",
+    "mm8:d50.blv"
+  ],
+  "unavailable_source_maps": [
+    "mm6:zddb05.blv"
+  ],
+  "unsupported_event_maps": [],
+  "converted_worlds": [
+    "mm6",
+    "mm7",
+    "mm8",
+    "mmmerge"
+  ],
+  "native_merge_resources": {
+    "package": "worlds/mmmerge.zip",
+    "maps": [
+      "mmmerge:breach.odm",
+      "mmmerge:bralvar.odm",
+      "mmmerge:brbase.blv"
+    ],
+    "normal_enterable": true,
+    "script_execution": "sha-gated-native-source-overlay",
+    "source_profile_validated": true,
+    "arbitrary_dynamic_merge_admitted": false,
+    "scope": "first-source-journey",
+    "post_completion_source_complete": false,
+    "prepared_instance_required": [
+      "mmmerge:brbase.blv"
+    ]
+  },
+  "inspection_resources": {
+    "package": "inspection/merge-scenes.zip",
+    "maps": [
+      "mmmerge:breach.odm",
+      "mmmerge:bralvar.odm",
+      "mmmerge:brbase.blv"
+    ],
+    "normal_enterable": false,
+    "script_execution": "sha-gated-native-source-overlay",
+    "mount_requires_explicit_inspection_tool": true
+  },
+  "default_world": "mm6",
+  "converted_maps_load_validated": true,
+  "full_gameplay_validated": false,
+  "resource_audit": {
+    "schema": 1,
+    "base_archives_checked": true,
+    "chest_backgrounds_checked": true,
+    "missing_mm8_base_archives": [],
+    "missing_chest_backgrounds": []
+  },
+  "stages": [
+    "menu",
+    "core",
+    "story",
+    "combat",
+    "service",
+    "journal",
+    "class",
+    "inspection",
+    "race",
+    "inventory",
+    "frame",
+    "fx",
+    "transition",
+    "roster",
+    "doll",
+    "teacher",
+    "npc",
+    "support",
+    "bolster",
+    "voice",
+    "equipment_picture",
+    "world_rule",
+    "arcomage",
+    "sound",
+    "speech",
+    "ui",
+    "decoration",
+    "object_presentation",
+    "event",
+    "scene",
+    "merge_scene_resources",
+    "native_merge_scene_resources",
+    "house",
+    "media"
+  ],
+  "limits": [
+    "MM6/MM7/MM8 scenes with supported event commands are converted; exactly three SHA-gated native Merge source projections are packaged for the first journey",
+    "Breach post-completion source activities and deeper maze population remain incomplete",
+    "Missing original artwork/audio and MMExtension overlays remain unresolved",
+    "A successful conversion does not establish complete MM6/7/8 gameplay"
+  ],
+  "scoped_overlay_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/bralvar-actor-rules-180/runtime-001",
+  "scoped_overlay_changes": {
+    "worlds/mmmerge.zip": [
+      "maps/breach.mechanisms.yml"
+    ]
+  },
+  "scoped_overlay_additions": {
+    "worlds/mmmerge.zip": [
+      "textures/7hdwtr008.bmp",
+      "textures/7hdwtr009.bmp",
+      "textures/7hdwtr010.bmp",
+      "textures/7hdwtr011.bmp",
+      "textures/7hdwtr012.bmp",
+      "textures/7hdwtr013.bmp",
+      "textures/7wtrtyl.bmp",
+      "textures/t1books.bmp"
+    ]
+  },
+  "device_feedback_183": {
+    "baseline": "local-data/validation/merge-source-polish-181/runtime-001",
+    "ui_import": "device-feedback-183/ui-001",
+    "added_engine_members": [
+      {
+        "path": "icons/ascend_compact_default.png",
+        "size": 15109,
+        "sha256": "872b094100863439c46f11a22b718fceb6a27e60be3f19e45cb1871825a88ec2"
+      },
+      {
+        "path": "icons/ascend_compact_pressed.png",
+        "size": 13722,
+        "sha256": "58fbb4161e2e062e6370312b9255c60b240d4e7b75221ca8b2bf2a034a32f588"
+      },
+      {
+        "path": "icons/attack_default.png",
+        "size": 31116,
+        "sha256": "d7076f7e58a22cb8d410092e4d031ff79054f7965fe2ae803f877b163093473f"
+      },
+      {
+        "path": "icons/attack_pressed.png",
+        "size": 27378,
+        "sha256": "ebb7d5365def147308e1a111503ef71fe9fb8f9e69849e13c6cc4ac1e8ffc704"
+      },
+      {
+        "path": "icons/cast_default.png",
+        "size": 28822,
+        "sha256": "3dcc6f5ec377477c72b338f1c4bc2e24953327a27e2d6bb57650524cd69f01b0"
+      },
+      {
+        "path": "icons/cast_pressed.png",
+        "size": 27183,
+        "sha256": "246a87a38b4a7995385aeb503b5307a35abcf4ab1e62fbc610c1154b59ba433f"
+      },
+      {
+        "path": "icons/context_boost_default.png",
+        "size": 17462,
+        "sha256": "7ddeeecbeefaf9a1fc946f3caf2894254cf1b69c9e22cb1520a3417d442fe4b4"
+      },
+      {
+        "path": "icons/context_boost_pressed.png",
+        "size": 22318,
+        "sha256": "9f5b90923329ca533c6e0b99772227a11f66a29056e9fc7aa3a9df07294f73ba"
+      },
+      {
+        "path": "icons/context_enter_dungeon_default.png",
+        "size": 20674,
+        "sha256": "3960a748f694f19c16a0368cd5cbb706aaa838804b8e47f21e5d9fde646ba3b1"
+      },
+      {
+        "path": "icons/context_enter_dungeon_pressed.png",
+        "size": 24910,
+        "sha256": "63bd27a0f9aba934fd068c0f9cf8cbfc7395c951be452fd5750cd08678b6f703"
+      },
+      {
+        "path": "icons/context_enter_house_default.png",
+        "size": 18616,
+        "sha256": "c3e3566ffc6f8cc90bc4f24084187c385b6ff9b26f8c515d9e822dfff65b9c30"
+      },
+      {
+        "path": "icons/context_enter_house_pressed.png",
+        "size": 22680,
+        "sha256": "b0a73da76fcc60f9f09e3a51702307df12c588bcd2a67289688d24e67dd3b21c"
+      },
+      {
+        "path": "icons/context_fountain_default.png",
+        "size": 17867,
+        "sha256": "abaaa7c532393a9a656b980379f56cf2269dc2533dcd8f2cfc23d2da2e126b43"
+      },
+      {
+        "path": "icons/context_fountain_pressed.png",
+        "size": 23010,
+        "sha256": "d551209841a1599c30c2df682023181d875977e2800b9efea004cfa651a1cac3"
+      },
+      {
+        "path": "icons/context_generic_event_default.png",
+        "size": 13382,
+        "sha256": "2627d33bdab2f32ce3295e44e974b4212061a819413187a39d7674239fc32e9a"
+      },
+      {
+        "path": "icons/context_generic_event_pressed.png",
+        "size": 18738,
+        "sha256": "542935b5799f51b664481ac50196b9e0c54a3ac8cb60e76c72cda6a77ac8b9cf"
+      },
+      {
+        "path": "icons/context_leave_dungeon_default.png",
+        "size": 18347,
+        "sha256": "aacb55918957d21955ad2d3fb3dffe5dff1a4fdd9db95513bba6858dff340fbe"
+      },
+      {
+        "path": "icons/context_leave_dungeon_pressed.png",
+        "size": 21949,
+        "sha256": "8c879c6814f5150bda76ce247ec069cfbd0400e09a02c5a68412b21bc9750bb6"
+      },
+      {
+        "path": "icons/context_loot_corpse_default.png",
+        "size": 17919,
+        "sha256": "cdc14b6323d3b7c50ac4133e5397d32ce0eb45a86d48bdcdc9970904ba068350"
+      },
+      {
+        "path": "icons/context_loot_corpse_pressed.png",
+        "size": 21471,
+        "sha256": "ef07fc7583cc36368f0cbaec6aa110ef276fc94050fc57131ea6349787459cd3"
+      },
+      {
+        "path": "icons/context_obelisk_default.png",
+        "size": 13750,
+        "sha256": "323db65bea0b080701c4db7e612d67da606789400b7033db971052f5a547e742"
+      },
+      {
+        "path": "icons/context_obelisk_pressed.png",
+        "size": 17922,
+        "sha256": "c011823aaa127aba961016cd76b11e5f0a22f9f634a53ad11dab2f938bb9c5ab"
+      },
+      {
+        "path": "icons/context_open_chest_default.png",
+        "size": 16817,
+        "sha256": "0284df3265c25c3b389e64dd24c7d61e031f21f9421c6c9fbef4642a02d3ecc6"
+      },
+      {
+        "path": "icons/context_open_chest_pressed.png",
+        "size": 20550,
+        "sha256": "5119196bf87171df66a17cfe963e77c6c02a130547509c59440711cb6b53e970"
+      },
+      {
+        "path": "icons/context_open_door_default.png",
+        "size": 17793,
+        "sha256": "a93b532d7f75badff6330242cc33fe69ec32c1b614a5c4e6a7d99be862f288db"
+      },
+      {
+        "path": "icons/context_open_door_pressed.png",
+        "size": 21393,
+        "sha256": "ce7c725083cdd0ab6ed7af28d93557f7f2c694cb8d7272e3c4d77d9bfb55f9e0"
+      },
+      {
+        "path": "icons/context_passage_default.png",
+        "size": 17927,
+        "sha256": "6003b658ffee4b7851ec3494b1f864f843199ad0117ad6504b964f11188c34be"
+      },
+      {
+        "path": "icons/context_passage_pressed.png",
+        "size": 21392,
+        "sha256": "77be0e0b700c685f0c07931fbee8548282c065395c1a1f7572addc030cde756b"
+      },
+      {
+        "path": "icons/context_pickup_item_default.png",
+        "size": 14298,
+        "sha256": "d54afe39ba7b8ea7a298a5a009474db2a5a21c3418ce096b1a56e29b57d311c0"
+      },
+      {
+        "path": "icons/context_pickup_item_pressed.png",
+        "size": 19051,
+        "sha256": "d9ac1539361d1057f33e8d03cdf75c00efbe2d913c9382ec5ed255ada512c409"
+      },
+      {
+        "path": "icons/context_press_button_default.png",
+        "size": 17442,
+        "sha256": "68113e918666969afd80b56eabd6340b535c541f5e8d20c56e29205261132d2f"
+      },
+      {
+        "path": "icons/context_press_button_pressed.png",
+        "size": 21880,
+        "sha256": "b345cd8802b506425182367a35d4979008a27b40fb495cae2f43b9828e397e83"
+      },
+      {
+        "path": "icons/context_read_default.png",
+        "size": 20568,
+        "sha256": "03bc64e3e13483ba45122cd053285a1f378c82d6ef2ad7dfe2f814c13350155e"
+      },
+      {
+        "path": "icons/context_read_pressed.png",
+        "size": 25281,
+        "sha256": "39b54edb987d460a9fb8b3943672097f312ce37d9f1d2d7cb613ef0e8a5be3e0"
+      },
+      {
+        "path": "icons/context_secret_event_default.png",
+        "size": 21181,
+        "sha256": "f0da87566f4b154b59ae052eec4267e960ada6463739953fa393d986d8346642"
+      },
+      {
+        "path": "icons/context_secret_event_pressed.png",
+        "size": 25885,
+        "sha256": "90296e738b91e4d195204a61db7e7ea7dcd22ed6dba6d4d891d0d0b7a133d4a2"
+      },
+      {
+        "path": "icons/context_shrine_default.png",
+        "size": 18624,
+        "sha256": "b01e418019427b29c2c886f5e20134c0433b179dde8438f095e4438c983bd2b8"
+      },
+      {
+        "path": "icons/context_shrine_pressed.png",
+        "size": 23347,
+        "sha256": "f3b41b0af76c263c4a13c5fadc30a531d8748f6a93ffed976dd95ddacfeb31ae"
+      },
+      {
+        "path": "icons/context_talk_default.png",
+        "size": 13819,
+        "sha256": "f0ea137402211b203d5c2b21418b498ea0467e86a799e88cbefda85b222be0b6"
+      },
+      {
+        "path": "icons/context_talk_pressed.png",
+        "size": 17590,
+        "sha256": "521e9d64a7b6adbdebf21b4d9293a65f7ed05ca62cacf54f82272dd5e2259c63"
+      },
+      {
+        "path": "icons/context_teleport_default.png",
+        "size": 24569,
+        "sha256": "4b5dd739ed0b6917905ac6e1476f48c5972d6c9eee8bc359734c05941f90447d"
+      },
+      {
+        "path": "icons/context_teleport_pressed.png",
+        "size": 30221,
+        "sha256": "be7b0c984fa147cbd00171bd186ea63d02a830fafc93358f12a79a91f91fde92"
+      },
+      {
+        "path": "icons/context_travel_default.png",
+        "size": 14735,
+        "sha256": "5539b33c37f7e09cafe6bd3639d73636537d551d680c3a8658085f935de9717c"
+      },
+      {
+        "path": "icons/context_travel_pressed.png",
+        "size": 19751,
+        "sha256": "91735c25c6b4bd009e3c39701c2d0fdf0ec7667ede0f6143e8516156a5f589af"
+      },
+      {
+        "path": "icons/context_use_elevator_default.png",
+        "size": 12746,
+        "sha256": "7a1469bf285987edd01b59f2b966aa2364a28d3b637026c2f665c30da6bf0e67"
+      },
+      {
+        "path": "icons/context_use_elevator_pressed.png",
+        "size": 18201,
+        "sha256": "806ab85dc15480fb9e88bebf00366b1e9f08a90674dcebcd87dcbdc3bd54d72b"
+      },
+      {
+        "path": "icons/context_use_lever_default.png",
+        "size": 13095,
+        "sha256": "7643c6ccf2bc4ff4bc753ffb11758be695b7b568865728859ec37879d83ce776"
+      },
+      {
+        "path": "icons/context_use_lever_pressed.png",
+        "size": 18518,
+        "sha256": "77f2d309e5011ab776f3b83142c3769dbac65660a8730223b3b9b0c9abacd5f5"
+      },
+      {
+        "path": "icons/context_use_pedestal_default.png",
+        "size": 14544,
+        "sha256": "612c58973632acf821b21551cb82cddff5be8823a8ef4ed5efc256c136b39ac3"
+      },
+      {
+        "path": "icons/context_use_pedestal_pressed.png",
+        "size": 18943,
+        "sha256": "74958f68b03fde804dbd0f2a3c15f7ce82543352dcfb24ffda78c87adf0098fb"
+      },
+      {
+        "path": "icons/context_use_switch_default.png",
+        "size": 13528,
+        "sha256": "e73abdcaf9b150c1718b497babd14b3562fdfe576ec3479b674c0726c017a0a1"
+      },
+      {
+        "path": "icons/context_use_switch_pressed.png",
+        "size": 16192,
+        "sha256": "b4a2de9aa47aab3d4aae413a2c4045e8fa2f9b66cc979be15d5c113555e201f0"
+      },
+      {
+        "path": "icons/context_well_default.png",
+        "size": 19961,
+        "sha256": "560579352956911c5e59c4eee4df41df5089fd325ab705bc5ee0a45c3a5b236d"
+      },
+      {
+        "path": "icons/context_well_pressed.png",
+        "size": 25380,
+        "sha256": "49cd9d92f40fec7a32c2ee54b4eb9c30fbe7dd4d10b77cbed1f70112835ec954"
+      },
+      {
+        "path": "icons/descend_compact_default.png",
+        "size": 15131,
+        "sha256": "d03b66acfea19b0213960ca7d2c2eed796a2a473be4433c1d8e8d8b7bb9a8ada"
+      },
+      {
+        "path": "icons/descend_compact_pressed.png",
+        "size": 13667,
+        "sha256": "b64d76253593f8faff92e877effdea666abab6f8a888431c75b26b39cc6a79d7"
+      },
+      {
+        "path": "icons/interact_default.png",
+        "size": 29995,
+        "sha256": "225c1c45370fa72a33138c05b70ccb8cb8300345b295a173b0963dfd81c15adc"
+      },
+      {
+        "path": "icons/interact_pressed.png",
+        "size": 28129,
+        "sha256": "25d7988ee9b1a934e40187e1b8aec12505aaf3ffa7ca8b4ea2ad98c498649109"
+      },
+      {
+        "path": "icons/inventory_default.png",
+        "size": 29909,
+        "sha256": "adbe93c85333e8b4b56a1935e49e63b5b2ba226878dad13d36cff4a629a74eea"
+      },
+      {
+        "path": "icons/inventory_pressed.png",
+        "size": 27035,
+        "sha256": "bde2ad3b5ff1e600c9134d77be42f1cb7fadda8aa045dd789ce6d18fa0a24610"
+      },
+      {
+        "path": "icons/joystick_base_active.png",
+        "size": 24507,
+        "sha256": "af18bf559c12cce20b1426f199a7df227953bb14884656f6bec7e739fc9cdef8"
+      },
+      {
+        "path": "icons/joystick_base_default.png",
+        "size": 24507,
+        "sha256": "af18bf559c12cce20b1426f199a7df227953bb14884656f6bec7e739fc9cdef8"
+      },
+      {
+        "path": "icons/joystick_knob_active.png",
+        "size": 21339,
+        "sha256": "e32b52f067e7d1477969f06b3f2bd542872327bc2bc5cc621e41fe682b642ca7"
+      },
+      {
+        "path": "icons/joystick_knob_default.png",
+        "size": 21339,
+        "sha256": "e32b52f067e7d1477969f06b3f2bd542872327bc2bc5cc621e41fe682b642ca7"
+      },
+      {
+        "path": "icons/makeme.pcx",
+        "size": 705036,
+        "sha256": "ffc4088a7415d85a4e9ef63029b980d919e5ce6a44d903edf7f81e48a5f9b64f"
+      },
+      {
+        "path": "icons/pause_default.png",
+        "size": 28661,
+        "sha256": "aa973cb019699fc36651a2e98786ca5c4fb8762d1cd2b2b3db4cb90617b71e13"
+      },
+      {
+        "path": "icons/pause_pressed.png",
+        "size": 26861,
+        "sha256": "0fc9e95f2c5f19cb234db96739eb8ab57438b74705fe99e5c64a38c2093fa5ff"
+      },
+      {
+        "path": "icons/quick_cast_default.png",
+        "size": 28423,
+        "sha256": "a60f9adb36b0e46204015ffec5c61a256f10de16b7a234bf6e6e6e5502d7c0d2"
+      },
+      {
+        "path": "icons/quick_cast_pressed.png",
+        "size": 26322,
+        "sha256": "338e08ef298bada0873e94b9963dc65cab8f9a50657b7f587ec1a273679bd540"
+      },
+      {
+        "path": "icons/resume_default.png",
+        "size": 28998,
+        "sha256": "9c023244815b793f4a7b55cd402f156b1ed7bc943165706ea561001054244ed4"
+      },
+      {
+        "path": "icons/resume_pressed.png",
+        "size": 27290,
+        "sha256": "d28d690bc6e781b0aa5ea811570c31b7dbcd0c3933a44b6de76c0f6c3243a376"
+      },
+      {
+        "path": "icons/use_default.png",
+        "size": 30473,
+        "sha256": "fb381b3fce01a5375899c62cc3b5ebfa172ec13b3313e5760e4406a4d8cb3039"
+      },
+      {
+        "path": "icons/use_pressed.png",
+        "size": 27579,
+        "sha256": "7f023a1356dd8dab78bfb85af59f8756856c1ebb6d5d93a898ae587306d08a75"
+      }
+    ],
+    "world_packages_changed": false,
+    "new_game_intro_trigger": "application main-menu Enroth character creation, not a map overlay",
+    "physical_device_validation_of_this_patch": false
+  },
+  "loadscreen_parchment_188": {
+    "baseline": "local-data/validation/device-feedback-183/runtime-001",
+    "ui_import": "loadscreen-parchment-188/ui-001",
+    "added_engine_members": [
+      {
+        "path": "icons/ui-parch.bmp",
+        "size": 196662,
+        "sha256": "1862ee6a18c7060e574b7b0719c6105f02a6cf6daa8b6c7cd7cf06f3f6b09592"
+      }
+    ],
+    "changed_engine_members": [
+      {
+        "path": "icons/mapframe.bmp",
+        "size": 54294,
+        "sha256": "0b823dcf1185e695a12a3d661202e89ff3ec5cf1236853a406a8c511cd1aeb26",
+        "previous_sha256": "d7a5b76b611533ee4e0fadd0653716e8fd02a92f2ee5a216284d5e26172bf83b"
+      },
+      {
+        "path": "icons/ui-orr.bmp",
+        "size": 3254,
+        "sha256": "176091faed107ae09c3e82620e6419e2cb77e051fd312e2086a73f420731a8ca",
+        "previous_sha256": "20436de193b88a7a1fc0a1c28e5faea55744d6bea222de4ed2f5baf240025c11"
+      },
+      {
+        "path": "icons/ui-frmnu.bmp",
+        "size": 14742,
+        "sha256": "9fed2036ade80e028c2831141feeb20e27286ed8d388f5dc6d045fe697ef8191",
+        "previous_sha256": "78da92e585225e1d7e79d6e497d8e4a60d3b5893982a06ace5549c554f15b37d"
+      },
+      {
+        "path": "icons/ui-frgol.bmp",
+        "size": 10542,
+        "sha256": "25bf1878c1344f378f3f3d1e7aa2bc968fd3ebf06a761eb2e23b38b5202b8d49",
+        "previous_sha256": "63bc6725431277b69b7720b872da5d0141a57e51d44a6d7808dbd960b4eebab2"
+      },
+      {
+        "path": "icons/ui-orl.bmp",
+        "size": 3126,
+        "sha256": "5cf5fc7f23f1b80f6198fb87addc3c479c79b4cf8207ab195bc2d2cdf2806d27",
+        "previous_sha256": "46c3732b4b37bb20143bbf6641d344b3174e054c70ff0f31d66d8e680cd8f8b8"
+      },
+      {
+        "path": "icons/ui-frsp.bmp",
+        "size": 13722,
+        "sha256": "1bdd5ac057e4545cbdb188c09fad2067bae711ffcd63284be12b81b80026703e",
+        "previous_sha256": "fc970c3e5502b02fedbc4a54237ce676fe1dc1105eefc5f0cad68f38e7f54ab1"
+      }
+    ],
+    "source_rule": "Selected UI3 loads 6UI.icons.UI.lod after 6UI.icons.lod for the fixed UI layout.",
+    "world_packages_changed": false,
+    "physical_device_validation_of_this_patch": false
+  },
+  "device_independent_completion_190": {
+    "baseline": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/loadscreen-parchment-188/runtime-001",
+    "event_import": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-independent-completion-190/events-004",
+    "house_import": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-independent-completion-190/houses-002",
+    "scene_import": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-independent-completion-190/scenes-005",
+    "changed_members": {
+      "engine.zip": {
+        "changed": [
+          "data_tables/house_data.txt",
+          "events/Global_mmmerge_endgame_tail.lua"
+        ],
+        "added": [
+          "events/Global_mmmerge_council.lua",
+          "events/Global_mmmerge_mm6_remaining.lua",
+          "events/Global_mmmerge_mm7_remaining_0.lua",
+          "events/Global_mmmerge_mm7_remaining_1.lua",
+          "events/Global_mmmerge_quest_followers.lua"
+        ],
+        "sha256": {
+          "events/Global_mmmerge_endgame_tail.lua": "cfb36e066e9ac10920c20a06988ea826b9822115356fbaa8e7adbaab4f3bbca6",
+          "events/Global_mmmerge_council.lua": "2c69ab8f3feec26c7ffd6df8d458680da08882d27d3c34cb2743172b714079b8",
+          "events/Global_mmmerge_mm6_remaining.lua": "740acccfd23c0789aca8943d08e4a553996f5c13a53d77bbb9a20b2ba586033c",
+          "events/Global_mmmerge_mm7_remaining_0.lua": "e6cfa13bdec07b6c36e17e1425061460bbe59928ef7345a055d5ee8f4c6437dd",
+          "events/Global_mmmerge_mm7_remaining_1.lua": "ec663b91bd4c95d3983707cdd03c5052545d761b8c56f00fb478919c3aaab33b",
+          "events/Global_mmmerge_quest_followers.lua": "6b1834a7abefa549e3b5fac7b4613091511796581b598e67028e059f42566621",
+          "data_tables/house_data.txt": "5abec7454c50ef535b2e49e35d9e9b08427958df2aac8c71a3e2c3c42b02d3d2"
+        },
+        "members": 17074
+      },
+      "worlds/mm6.zip": {
+        "changed": [
+          "events/maps/outd3_mmmerge_archibald.lua"
+        ],
+        "added": [
+          "events/maps/6d02_mmmerge_remaining.lua",
+          "events/maps/6d03_mmmerge_remaining.lua",
+          "events/maps/6d07_mmmerge_key_chest.lua",
+          "events/maps/6d13_mmmerge_remaining.lua",
+          "events/maps/6t3_mmmerge_remaining.lua",
+          "events/maps/6t7_mmmerge_remaining.lua",
+          "events/maps/6t8_mmmerge_remaining.lua",
+          "events/maps/cd2_mmmerge_remaining.lua",
+          "events/maps/cd3_mmmerge_remaining.lua",
+          "events/maps/outb2_mmmerge_lost_shield.lua",
+          "events/maps/outb2_mmmerge_remaining.lua",
+          "events/maps/outb3_mmmerge_remaining.lua",
+          "events/maps/outc1_mmmerge_remaining.lua",
+          "events/maps/outc2_mmmerge_council.lua",
+          "events/maps/outc2_mmmerge_remaining.lua",
+          "events/maps/outd1_mmmerge_remaining.lua",
+          "events/maps/outd3_mmmerge_remaining.lua",
+          "events/maps/oute2_mmmerge_remaining.lua",
+          "events/maps/oute3_mmmerge_remaining.lua",
+          "events/maps/sewer_mmmerge_quest_followers.lua",
+          "maps/6d08.rules.yml",
+          "maps/6t3.rules.yml",
+          "maps/6t8.rules.yml",
+          "maps/outa2.mechanisms.yml",
+          "maps/outa3.mechanisms.yml"
+        ],
+        "sha256": {
+          "events/maps/outd3_mmmerge_archibald.lua": "62d3ead6e8d61693baf6ee42856ceec8bae0be7b118f62d6bece6f242d6e72b7",
+          "events/maps/6d02_mmmerge_remaining.lua": "698ec3f1d2d973f551763a66e487e6d45f569205600d482b43893ce9ad56f199",
+          "events/maps/6d03_mmmerge_remaining.lua": "70a6ba189b043f1a51bfdccd9fb05ff5929b1d232a9babffb3b57d51f92c3ff9",
+          "events/maps/6d07_mmmerge_key_chest.lua": "7d9fe3cfc7f45c31425347fbe7fbffa8982c6cecf856924910c54cc5e9e33375",
+          "events/maps/6d13_mmmerge_remaining.lua": "79124349e6ff4703bebd6b61e46c5c4cae135c92341a35f662f4da1936bbedf2",
+          "events/maps/6t3_mmmerge_remaining.lua": "dbf0bdc2406f148b56865b7642ed6da5ea5ba4102f680249ed7df3f1d01160be",
+          "events/maps/6t7_mmmerge_remaining.lua": "630d0ebf722817c712cea0a86410a34318ca736970f105621b835f720205040a",
+          "events/maps/6t8_mmmerge_remaining.lua": "f0df993248531977b6d76dc051e9adae8a36daadfc0e12680e355020ae941f87",
+          "events/maps/cd2_mmmerge_remaining.lua": "eead531d31a244d1fc8b76b28239bf927b9c559f3f8b7e13d0d75db63df54885",
+          "events/maps/cd3_mmmerge_remaining.lua": "f7689d6b396a30b586ac1f352f29cac45ea24f74259b79eb2850e83ed54dba44",
+          "events/maps/outb2_mmmerge_lost_shield.lua": "d1137c64902730427b799ccac79f68dbbb3604702527d31817f271df55042051",
+          "events/maps/outb2_mmmerge_remaining.lua": "b24b2ad20952a65d18479d7968dad6052ab1da89c2ea3222d225196373c9208f",
+          "events/maps/outb3_mmmerge_remaining.lua": "84102d1ecb6885b922952c2f6d1fd27c63f92fe0d4648b1ba08688b7bd1a89a4",
+          "events/maps/outc1_mmmerge_remaining.lua": "7ed74637fd04ca215aa27fe9d61c88ee6cdd456fb36b6f86e425129e6d485baa",
+          "events/maps/outc2_mmmerge_council.lua": "c0c2888957cb2315d83f6adc86be06fdc79bef7fae9511d97e91f89db510292e",
+          "events/maps/outc2_mmmerge_remaining.lua": "fc7d460f86ad9d4df646fb54cb1bb8c69174e168051743095f4e76867842385f",
+          "events/maps/outd1_mmmerge_remaining.lua": "c4e24868e0099418ae94a477061ae2da799b359b21c86a49af16a132ded6fdd2",
+          "events/maps/outd3_mmmerge_remaining.lua": "0693d5e2c02a8d09cf4f28e289bb89e3d73cb755fcb52381d88f9755a348ed22",
+          "events/maps/oute2_mmmerge_remaining.lua": "e1e5063a281c714f9eaa266452de42db06df34b421c95df8aa3994bb653eb6dd",
+          "events/maps/oute3_mmmerge_remaining.lua": "d992b470fdef0fc652d75ec790228dab2be21792ab0d80cf97ad4cb167f0faac",
+          "events/maps/sewer_mmmerge_quest_followers.lua": "f0a2b3f147fc99ff048cf7dd4f32d00d2ca7450fb76811ad216d0952915428df",
+          "maps/6d08.rules.yml": "fd87d86d7a2dacbb1e1f827bd20413f8421acbaab7f4b596d8165db46d577df5",
+          "maps/6t3.rules.yml": "fceb4870d7227246c85a4f57ad8d622b7c43b7416380e28eb4ddad6c60a370bf",
+          "maps/6t8.rules.yml": "37c6fd56b368ff1a5dfdb46853efd148f1ee90edb81d096e17505fcd2cd32e80",
+          "maps/outa2.mechanisms.yml": "0f2c15be37129dbdfbe8efd203cc93725539c8129bb5cb8163f0d9b8e6380769",
+          "maps/outa3.mechanisms.yml": "30bf48b05ea4a719ad2dc899071a1a9cdd6d137b7df5e103d77aa2fd97fd6941"
+        },
+        "members": 6304
+      },
+      "worlds/mm7.zip": {
+        "changed": [
+          "events/maps/7d24_mmmerge_stone_city.lua"
+        ],
+        "added": [
+          "events/maps/7d05_mmmerge_remaining.lua",
+          "events/maps/7d08_mmmerge_remaining.lua",
+          "events/maps/7d25_mmmerge_remaining.lua",
+          "events/maps/7d27_mmmerge_remaining.lua",
+          "events/maps/7d29_mmmerge_remaining.lua",
+          "events/maps/7d34_mmmerge_remaining.lua",
+          "events/maps/7d36_mmmerge_remaining.lua",
+          "events/maps/7out01_mmmerge_remaining.lua",
+          "events/maps/7out02_mmmerge_remaining.lua",
+          "events/maps/7out03_mmmerge_remaining.lua",
+          "events/maps/7out04_mmmerge_messenger.lua",
+          "events/maps/7out04_mmmerge_post_quest_visit.lua",
+          "events/maps/7out05_mmmerge_remaining.lua",
+          "events/maps/7out13_mmmerge_remaining.lua",
+          "events/maps/7out15_mmmerge_remaining.lua",
+          "events/maps/out09_mmmerge_remaining.lua",
+          "events/maps/out11_mmmerge_remaining.lua",
+          "events/maps/out12_mmmerge_remaining.lua",
+          "maps/7d05.rules.yml"
+        ],
+        "sha256": {
+          "events/maps/7d24_mmmerge_stone_city.lua": "0191ce7abac9b9263e145b15775f0a5e3e7438d083be43e1764706e5905fdd1a",
+          "events/maps/7d05_mmmerge_remaining.lua": "b8350b053e4cce0df8644921d3d2910688046cdc1da493201a1572c70d154fc5",
+          "events/maps/7d08_mmmerge_remaining.lua": "02a9d01e6c4915de3b41a46462eabda4f3717a88ae924c039185aa1e1a5c27b5",
+          "events/maps/7d25_mmmerge_remaining.lua": "75d3d2703cdbe1050b0b994e4b0ca2ee43c3a5c9abcac703607dff3c76655320",
+          "events/maps/7d27_mmmerge_remaining.lua": "8387adb053234b7659397853534681adc53f997fa062206f2d08dbce5e378526",
+          "events/maps/7d29_mmmerge_remaining.lua": "8a72a14b5a4f9a35c09137390d84dedf2e61ffafdd8f6b72ed7f70c1298fc7d6",
+          "events/maps/7d34_mmmerge_remaining.lua": "2e133bc7b24dfdfc7a7ac7232bb20ce872244a1997c294228f563e235bfad5f6",
+          "events/maps/7d36_mmmerge_remaining.lua": "48af2973a72e594c5016fd12a8a5440dfd860c116fcf3f6e9418c17215fb99e6",
+          "events/maps/7out01_mmmerge_remaining.lua": "6b8fb5e140bdd2e21a37ff2463b3cae57398b10ff19924492733eb95dccce11f",
+          "events/maps/7out02_mmmerge_remaining.lua": "e59973245c49bef16212c0b669346de6fd66c63cd1c3c25ccf40ccf71b6fc706",
+          "events/maps/7out03_mmmerge_remaining.lua": "7a7603e520b117ee580019cacbcfaea5a88a1a7c412dd79fb418e018dcedbcb4",
+          "events/maps/7out04_mmmerge_messenger.lua": "bb8b4dddc0d6b3daad13cc68b237b82a44df87e9e2660878b54a03d395b2c877",
+          "events/maps/7out04_mmmerge_post_quest_visit.lua": "bcd2440f8a704a7ace733586c5da632556a701f2f2fdf70e59adfb98c9d81143",
+          "events/maps/7out05_mmmerge_remaining.lua": "6083fe793504b3d73b0740d938f968d9c2b62b9b97cae53674d5e57a3b325bc7",
+          "events/maps/7out13_mmmerge_remaining.lua": "caa05f6a6f1e98a6123fe2e825a16f8d3f6a9cebf292a13db6f0ac989d494133",
+          "events/maps/7out15_mmmerge_remaining.lua": "d447aa2698a34072c0162d407c05695dc56635d58476eb430e4de62116fd0f80",
+          "events/maps/out09_mmmerge_remaining.lua": "dc58486c079917bb04ddf69abf5b2a9b0c6bc08bd1bdb7beeeddf58c74f2b69e",
+          "events/maps/out11_mmmerge_remaining.lua": "4f2b4855affd76ef3bb5e530000fef9920db26a442c31e98b1f2dec95064274d",
+          "events/maps/out12_mmmerge_remaining.lua": "b4ea4bfb48b4b59e9d7fb8b5e7dedc98a56200ab0ee3b2792757002d9ddf913d",
+          "maps/7d05.rules.yml": "b8bfd9c6657858a131a50925a020429a55e0840ae9b5376db1bad22ad89bf8e3"
+        },
+        "members": 10061
+      },
+      "worlds/mm8.zip": {
+        "changed": [],
+        "added": [
+          "events/maps/d24_mmmerge_post_quest_visit.lua",
+          "events/maps/d38_mmmerge_remaining.lua",
+          "events/maps/d39_mmmerge_remaining.lua",
+          "events/maps/out01_mmmerge_remaining.lua",
+          "events/maps/out05_mmmerge_remaining.lua",
+          "events/maps/out07_mmmerge_remaining.lua",
+          "events/maps/out13_mmmerge_cannon.lua",
+          "maps/out04.mechanisms.yml",
+          "maps/out06.mechanisms.yml",
+          "textures/gdtyl.bmp"
+        ],
+        "sha256": {
+          "events/maps/d24_mmmerge_post_quest_visit.lua": "05dd1a2bb54077ed842eac34163c4a652d8d77bd1961d6202885667012e4341f",
+          "events/maps/d38_mmmerge_remaining.lua": "8365f8365b34b0824ba8826fda3744339d7c7279eb213574f9a0dde5b29a046d",
+          "events/maps/d39_mmmerge_remaining.lua": "d7ef8426ebf684f0468fc4481f7b55c43327dcce854ed2105c5d070cd3e0749f",
+          "events/maps/out01_mmmerge_remaining.lua": "700f271325ec7f9ba8e931e3ecff37506ef9c70f38e087f02a7808bf4546a820",
+          "events/maps/out05_mmmerge_remaining.lua": "9a9d0e8cdea1402e8a32f7ccffb1227c5db7f0e8569886843c5765499ee3eba6",
+          "events/maps/out07_mmmerge_remaining.lua": "a0908bd2c4fb5b8fc358b459ffe6886ee1d140444b7de83c6b6fb5f51b7a2bd8",
+          "events/maps/out13_mmmerge_cannon.lua": "1df0f587893322d1c7222ab9a3d02127d2da8394012a74023065c1fd325edf14",
+          "maps/out04.mechanisms.yml": "fda58e74373d9ed630dc9b121fba44e405b629efdc8234a82759faafb61c900c",
+          "maps/out06.mechanisms.yml": "054c7d994a16efec6030cb9dfec972513981de8f4b183e1f84b183eaab206082",
+          "textures/gdtyl.bmp": "137e1a2c52b7c9b10e309df35e65ed355084d00e163623064386e8c085bb88f2"
+        },
+        "members": 10232
+      }
+    },
+    "controlled_gameplay_fixtures": false,
+    "natural_campaign_validated": false,
+    "physical_device_validation": false,
+    "release_status": "Consolidated local development runtime; RC1/RC2/RC3 unchanged, no new device release.",
+    "source_limits": [
+      "oute3 volcano source random ranges are reversed; original handler retained.",
+      "d42 cross-world arena ingress/origin remains unproved; no invented return world.",
+      "Source terrain rules with no matching local tiles emit no companion and retain original terrain."
+    ]
+  },
+  "ui_function_completion_191": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/story-001/story_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/device-independent-completion-190/runtime-003",
+    "changed_members": [],
+    "added_members": [
+      "data_tables/credits.txt"
+    ],
+    "credits_sha256": "b2f60f5ce30c93aea0072a6cd278fa3be41f10d09cef746fb5456c2f585c3c7b",
+    "controlled_gameplay_fixtures": false,
+    "natural_campaign_validated": false,
+    "physical_device_validation": false,
+    "release_created": false
+  },
+  "ui_text_completion_191": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-002",
+    "added_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "changed_members": [],
+    "ui_text_sha256": "8807e7762c452d9183df11204a3aa40e392c24292b2e59d1b51d2e142f344580",
+    "all_prior_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "lloyd_font_completion_191": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/ui-font-001/ui_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-002",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-003",
+    "added_members": [
+      "icons/spell.fnt"
+    ],
+    "changed_members": [],
+    "spell_font_sha256": "a13d255263c694c84395f434ded4d5d129ad7683d4567a18f68c69feb4a8dfd1",
+    "all_prior_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "ui_controls_completion_191": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/core-ui-text-002/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-003",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-004",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "55f0b43ceada00953f93060c6bde4a512b3c2ebf0110c0d60da12ee88f49498d",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "item_detail_text_completion_191": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/core-ui-text-003/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-004",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-005",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "ab97c9101fe415446307a9b50ec3ae68f812e3a04dec4bf062d664efd845f116",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "ui_text_completion_192": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/core-ui-text-002/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-191/runtime-005",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-002",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "b23f943d9d0ca35c866bbb6e9c0596d4b7964de9417d0715fdbc3352d13736ec",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "visual_resources_192": {
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-002",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-003",
+    "added_members": [
+      "icons/winbg.pcx"
+    ],
+    "changed_members": [
+      "ui/gameplay/dialogue.yml"
+    ],
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false,
+    "members_sha256": {
+      "icons/winbg.pcx": "d62057f5fc9e3416fc090dc99f8427f85a320f208e2036eca6cf87ec23e37a19",
+      "ui/gameplay/dialogue.yml": "52862c3b7fbdbd19c8d933e0305dacc6d3155c8eef71d1a91eb0236d7b8fc562"
+    }
+  },
+  "rest_resources_194": {
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-192/runtime-003",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-194/runtime-001",
+    "added_members": [
+      "icons/hglas060.bmp",
+      "icons/hglas061.bmp",
+      "icons/hglas062.bmp",
+      "icons/hglas063.bmp",
+      "icons/hglas064.bmp",
+      "icons/hglas065.bmp",
+      "icons/hglas066.bmp",
+      "icons/hglas067.bmp",
+      "icons/hglas068.bmp",
+      "icons/hglas069.bmp",
+      "icons/hglas070.bmp",
+      "icons/hglas071.bmp",
+      "icons/hglas072.bmp",
+      "icons/hglas073.bmp",
+      "icons/hglas074.bmp",
+      "icons/hglas075.bmp",
+      "icons/hglas076.bmp",
+      "icons/hglas077.bmp",
+      "icons/hglas078.bmp",
+      "icons/hglas079.bmp",
+      "icons/hglas080.bmp",
+      "icons/hglas081.bmp",
+      "icons/hglas082.bmp",
+      "icons/hglas083.bmp",
+      "icons/hglas084.bmp",
+      "icons/hglas085.bmp",
+      "icons/hglas086.bmp",
+      "icons/hglas087.bmp",
+      "icons/hglas088.bmp",
+      "icons/hglas089.bmp",
+      "icons/hglas090.bmp",
+      "icons/hglas091.bmp",
+      "icons/hglas092.bmp",
+      "icons/hglas093.bmp",
+      "icons/hglas094.bmp",
+      "icons/hglas095.bmp",
+      "icons/hglas096.bmp",
+      "icons/hglas097.bmp",
+      "icons/hglas098.bmp",
+      "icons/hglas099.bmp",
+      "icons/hglas100.bmp",
+      "icons/hglas101.bmp",
+      "icons/hglas102.bmp",
+      "icons/hglas103.bmp",
+      "icons/hglas104.bmp",
+      "icons/hglas105.bmp",
+      "icons/hglas106.bmp",
+      "icons/hglas107.bmp",
+      "icons/hglas108.bmp",
+      "icons/hglas109.bmp",
+      "icons/hglas110.bmp",
+      "icons/hglas111.bmp",
+      "icons/hglas112.bmp",
+      "icons/hglas113.bmp",
+      "icons/hglas114.bmp",
+      "icons/hglas115.bmp",
+      "icons/hglas116.bmp",
+      "icons/hglas117.bmp",
+      "icons/hglas118.bmp",
+      "icons/hglas119.bmp",
+      "icons/terra0001.bmp",
+      "icons/terra0002.bmp",
+      "icons/terra0003.bmp",
+      "icons/terra0004.bmp",
+      "icons/terra0005.bmp",
+      "icons/terra0006.bmp",
+      "icons/terra0007.bmp",
+      "icons/terra0008.bmp",
+      "icons/terra0009.bmp",
+      "icons/terra0010.bmp",
+      "icons/terra0011.bmp",
+      "icons/terra0012.bmp",
+      "icons/terra0013.bmp",
+      "icons/terra0014.bmp",
+      "icons/terra0015.bmp",
+      "icons/terra0016.bmp",
+      "icons/terra0017.bmp",
+      "icons/terra0018.bmp",
+      "icons/terra0019.bmp",
+      "icons/terra0020.bmp",
+      "icons/terra0021.bmp",
+      "icons/terra0022.bmp",
+      "icons/terra0023.bmp",
+      "icons/terra0024.bmp",
+      "icons/terra0025.bmp",
+      "icons/terra0026.bmp",
+      "icons/terra0027.bmp",
+      "icons/terra0028.bmp",
+      "icons/terra0029.bmp",
+      "icons/terra0030.bmp",
+      "icons/terra0031.bmp",
+      "icons/terra0032.bmp",
+      "icons/terra0033.bmp",
+      "icons/terra0034.bmp",
+      "icons/terra0035.bmp",
+      "icons/terra0036.bmp",
+      "icons/terra0037.bmp",
+      "icons/terra0038.bmp",
+      "icons/terra0039.bmp",
+      "icons/terra0040.bmp",
+      "icons/terra0041.bmp",
+      "icons/terra0042.bmp",
+      "icons/terra0043.bmp",
+      "icons/terra0044.bmp",
+      "icons/terra0045.bmp",
+      "icons/terra0046.bmp",
+      "icons/terra0047.bmp",
+      "icons/terra0048.bmp",
+      "icons/terra0049.bmp",
+      "icons/terra0050.bmp",
+      "icons/terra0051.bmp",
+      "icons/terra0052.bmp",
+      "icons/terra0053.bmp",
+      "icons/terra0054.bmp",
+      "icons/terra0055.bmp",
+      "icons/terra0056.bmp",
+      "icons/terra0057.bmp",
+      "icons/terra0058.bmp",
+      "icons/terra0059.bmp",
+      "icons/terra0060.bmp",
+      "icons/terra0061.bmp",
+      "icons/terra0062.bmp",
+      "icons/terra0063.bmp",
+      "icons/terra0064.bmp",
+      "icons/terra0065.bmp",
+      "icons/terra0066.bmp",
+      "icons/terra0067.bmp",
+      "icons/terra0068.bmp",
+      "icons/terra0069.bmp",
+      "icons/terra0070.bmp",
+      "icons/terra0071.bmp",
+      "icons/terra0072.bmp",
+      "icons/terra0073.bmp",
+      "icons/terra0074.bmp",
+      "icons/terra0075.bmp",
+      "icons/terra0076.bmp",
+      "icons/terra0077.bmp",
+      "icons/terra0078.bmp",
+      "icons/terra0079.bmp",
+      "icons/terra0080.bmp",
+      "icons/terra0081.bmp",
+      "icons/terra0082.bmp",
+      "icons/terra0083.bmp",
+      "icons/terra0084.bmp",
+      "icons/terra0085.bmp",
+      "icons/terra0086.bmp",
+      "icons/terra0087.bmp",
+      "icons/terra0088.bmp",
+      "icons/terra0089.bmp",
+      "icons/terra0090.bmp",
+      "icons/terra0091.bmp",
+      "icons/terra0092.bmp",
+      "icons/terra0093.bmp",
+      "icons/terra0094.bmp",
+      "icons/terra0095.bmp",
+      "icons/terra0096.bmp",
+      "icons/terra0097.bmp",
+      "icons/terra0098.bmp",
+      "icons/terra0099.bmp",
+      "icons/terra0100.bmp",
+      "icons/terra0101.bmp",
+      "icons/terra0102.bmp",
+      "icons/terra0103.bmp",
+      "icons/terra0104.bmp",
+      "icons/terra0105.bmp",
+      "icons/terra0106.bmp",
+      "icons/terra0107.bmp",
+      "icons/terra0108.bmp",
+      "icons/terra0109.bmp",
+      "icons/terra0110.bmp",
+      "icons/terra0111.bmp",
+      "icons/terra0112.bmp",
+      "icons/terra0113.bmp",
+      "icons/terra0114.bmp",
+      "icons/terra0115.bmp",
+      "icons/terra0116.bmp",
+      "icons/terra0117.bmp",
+      "icons/terra0118.bmp",
+      "icons/terra0119.bmp",
+      "icons/terra0120.bmp",
+      "icons/terra0121.bmp",
+      "icons/terra0122.bmp",
+      "icons/terra0123.bmp",
+      "icons/terra0124.bmp",
+      "icons/terra0125.bmp",
+      "icons/terra0126.bmp",
+      "icons/terra0127.bmp",
+      "icons/terra0128.bmp",
+      "icons/terra0129.bmp",
+      "icons/terra0130.bmp",
+      "icons/terra0131.bmp",
+      "icons/terra0132.bmp",
+      "icons/terra0133.bmp",
+      "icons/terra0134.bmp",
+      "icons/terra0135.bmp",
+      "icons/terra0136.bmp",
+      "icons/terra0137.bmp",
+      "icons/terra0138.bmp",
+      "icons/terra0139.bmp",
+      "icons/terra0140.bmp",
+      "icons/terra0141.bmp",
+      "icons/terra0142.bmp",
+      "icons/terra0143.bmp",
+      "icons/terra0144.bmp",
+      "icons/terra0145.bmp",
+      "icons/terra0146.bmp",
+      "icons/terra0147.bmp",
+      "icons/terra0148.bmp",
+      "icons/terra0149.bmp",
+      "icons/terra0150.bmp",
+      "icons/terra0151.bmp",
+      "icons/terra0152.bmp",
+      "icons/terra0153.bmp",
+      "icons/terra0154.bmp",
+      "icons/terra0155.bmp",
+      "icons/terra0156.bmp",
+      "icons/terra0157.bmp",
+      "icons/terra0158.bmp",
+      "icons/terra0159.bmp",
+      "icons/terra0160.bmp",
+      "icons/terra0161.bmp",
+      "icons/terra0162.bmp",
+      "icons/terra0163.bmp",
+      "icons/terra0164.bmp",
+      "icons/terra0165.bmp",
+      "icons/terra0166.bmp",
+      "icons/terra0167.bmp",
+      "icons/terra0168.bmp",
+      "icons/terra0169.bmp",
+      "icons/terra0170.bmp",
+      "icons/terra0171.bmp",
+      "icons/terra0172.bmp",
+      "icons/terra0173.bmp",
+      "icons/terra0174.bmp",
+      "icons/terra0175.bmp",
+      "icons/terra0176.bmp",
+      "icons/terra0177.bmp",
+      "icons/terra0178.bmp",
+      "icons/terra0179.bmp",
+      "icons/terra0180.bmp",
+      "icons/terra0181.bmp",
+      "icons/terra0182.bmp",
+      "icons/terra0183.bmp",
+      "icons/terra0184.bmp",
+      "icons/terra0185.bmp",
+      "icons/terra0186.bmp",
+      "icons/terra0187.bmp",
+      "icons/terra0188.bmp",
+      "icons/terra0189.bmp",
+      "icons/terra0190.bmp",
+      "icons/terra0191.bmp",
+      "icons/terra0192.bmp",
+      "icons/terra0193.bmp",
+      "icons/terra0194.bmp",
+      "icons/terra0195.bmp",
+      "icons/terra0196.bmp",
+      "icons/terra0197.bmp",
+      "icons/terra0198.bmp",
+      "icons/terra0199.bmp",
+      "icons/terra0200.bmp",
+      "icons/terra0201.bmp",
+      "icons/terra0202.bmp",
+      "icons/terra0203.bmp",
+      "icons/terra0204.bmp",
+      "icons/terra0205.bmp",
+      "icons/terra0206.bmp",
+      "icons/terra0207.bmp",
+      "icons/terra0208.bmp",
+      "icons/terra0209.bmp",
+      "icons/terra0210.bmp",
+      "icons/terra0211.bmp",
+      "icons/terra0212.bmp",
+      "icons/terra0213.bmp",
+      "icons/terra0214.bmp",
+      "icons/terra0215.bmp",
+      "icons/terra0216.bmp",
+      "icons/terra0217.bmp",
+      "icons/terra0218.bmp",
+      "icons/terra0219.bmp",
+      "icons/terra0220.bmp",
+      "icons/terra0221.bmp",
+      "icons/terra0222.bmp",
+      "icons/terra0223.bmp",
+      "icons/terra0224.bmp",
+      "icons/terra0225.bmp",
+      "icons/terra0226.bmp",
+      "icons/terra0227.bmp",
+      "icons/terra0228.bmp",
+      "icons/terra0229.bmp",
+      "icons/terra0230.bmp",
+      "icons/terra0231.bmp",
+      "icons/terra0232.bmp",
+      "icons/terra0233.bmp",
+      "icons/terra0234.bmp",
+      "icons/terra0235.bmp",
+      "icons/terra0236.bmp",
+      "icons/terra0237.bmp",
+      "icons/terra0238.bmp",
+      "icons/terra0239.bmp",
+      "icons/terra0240.bmp",
+      "icons/terra0241.bmp",
+      "icons/terra0242.bmp",
+      "icons/terra0243.bmp"
+    ],
+    "changed_members": [
+      "ui/gameplay/rest.yml",
+      "data_tables/ui_text.txt"
+    ],
+    "dynamic_rest_frames": 304,
+    "all_other_members_retained": true,
+    "worlds_unchanged": true,
+    "controlled_gameplay_fixtures": false,
+    "new_release": false,
+    "sha256": {
+      "icons/terra0152.bmp": "cf287e68ef4be4193c1d49f9631dbc7795565962b8214d5286beb5d56252ffc7",
+      "icons/terra0146.bmp": "67e361552ee646b55547750d85522c8bf89b89d939809cb8bd4baa2039689e27",
+      "icons/terra0191.bmp": "8c53c5ef437aacb0aba23dfc998112930afd1fb4ee46229c54c092771ad911bf",
+      "icons/terra0185.bmp": "2242bc41c0679712d102449e2e39f7f30637569c9dd98260b2eab8af1c633f9f",
+      "icons/terra0026.bmp": "4f31384cf74855944623e0e273b2a85a1054e14266ec827d4f91fd2c04eb8272",
+      "icons/terra0032.bmp": "e88ea6aff29d9d921152b5138623dd97b9cf1b952ec27b1ecac07bb2e7612174",
+      "icons/terra0218.bmp": "959441cc1cca56c4136f3dbb6e07f685bb250ce4babf0f7090d6f4ff346414f8",
+      "icons/terra0224.bmp": "2bd776c589c1e6eb2d618bd8b2e80550782e7ecb1d3c3104b123c45bf58db824",
+      "icons/terra0230.bmp": "1cf6d4758ed4917f17345a3277b9f86e8e2d0aa77ab57ee6c7e2c7cc2f39e72a",
+      "icons/terra0231.bmp": "992032fe827cd272473590ee36d02b3cca0a6d8245f1dc2def6c4d8c7128a1d3",
+      "icons/terra0225.bmp": "8733a9a21efe8a74f228c0f3e85f1ebbd9d0ab6724b5b05a2ca12c0c0fa43493",
+      "icons/terra0219.bmp": "62b3fe7fb0171b2924f3124ec06a8576f81150413bde84ce19427b8178eaaf13",
+      "icons/terra0033.bmp": "2daeac115dbf84589b932858d7b31e75d6f0c94155915968ca893ab7287f2f1e",
+      "icons/terra0027.bmp": "91eeb457f87714215dba0f7daf4704358b95fb43fdb2a824b5e700f1b7ba93dc",
+      "icons/terra0184.bmp": "92947a079f30ea508c50e29cb3f50ef4f01cec7e4ded098aedd298cffca56168",
+      "icons/terra0190.bmp": "5d8122e11c023604d5d0f5f2ee10e1950583ebc153e92ee3fc284a462cf0ca5d",
+      "icons/terra0147.bmp": "4ed53b12a410c5bdeb0ab68eb6190a7b7784bd3d2a6fe0a625d137d413a7cf4b",
+      "icons/terra0153.bmp": "b533e2bc3eb6c436193118d8db18322438da8ae1cb57684cd144c5b8c1b7cd8d",
+      "icons/terra0179.bmp": "7e25202d13de1fc2f9d0cc63204e34c55316fb1eaaeef64c596d9210d1e6286b",
+      "icons/terra0145.bmp": "d79cba3887ea55f153cfc3345fbf2a6161cd598845c9828e9173c5670af93c5c",
+      "icons/terra0151.bmp": "9f94c94462af9a016db527c8dab63c0e11b54bfc0e0f2034b6c5077ee511cf0b",
+      "icons/terra0186.bmp": "3f12d12c77c068a0176ae691540ec5312ff9fc54b69dd7bc557c4af07f60ebd9",
+      "icons/terra0192.bmp": "6d5e5f4959ed9729744711914b30ef77d39a182e32dbca4d3139400e2daf726a",
+      "icons/terra0019.bmp": "f5be106d650b564fb71a4706f6a1798a4c031193e72c90f667fbd23ee22c66bb",
+      "icons/terra0031.bmp": "dc5e113c84bf78068278538f822a843ad182f3a6436e6521237c01d59498de2a",
+      "icons/terra0025.bmp": "94d8701fbbff09e6c6d0d53fc98385433c9bb550d68b08b328bf0dcde81f16ab",
+      "icons/terra0233.bmp": "14d3cea5bad1a90e8658f8b4ef5b18c8b72a5ef2689a2e32380b84edd892d68c",
+      "icons/terra0227.bmp": "3ce13b79423622f6dc8856545517c4fb36397e4861616ff41a50f20230d6d81a",
+      "icons/terra0226.bmp": "6e3b98bc7f1a641a7f90d97ba3855ddd8516ba303d1ae6c8987e44f4a9d82b9d",
+      "icons/terra0232.bmp": "8662a00a339b2ad1600d2a0dd946dee456283cbb72a76eb31564ace49f367d92",
+      "icons/terra0024.bmp": "d8e9a8061886e3856b32ba432f902bf609fc4faa00d05937aa5f7c5a0d807831",
+      "icons/terra0030.bmp": "960a02b636929d90fc3945db24abbfade0be98d7695772bfe6a392f05a7d6e64",
+      "icons/terra0018.bmp": "73e3207c8f9746de9817881d9e1d8a66b729b0ec4ca5e8953d572c3c2c8c23c8",
+      "icons/terra0193.bmp": "e0347146fb91b6bfca108df39b400e3652afcb967dfe220c11a1b61679298a69",
+      "icons/terra0187.bmp": "ff921fc9bb71cf4ad731416491372fcf4c38a6305cd6e6f79749c1d5de8c87de",
+      "icons/terra0150.bmp": "84ea9b46e5e438cae6f5d650f298f5cd622650f5a227f7e11b484a14ca1d55eb",
+      "icons/terra0144.bmp": "e4b2a2afdb56c506f16c128b6c9720124c4dc549be62c29f2d9c051f217503b1",
+      "icons/terra0178.bmp": "c54e0ff96ceec39c7adecf333d5d432e82d6532aeb0c153a210ae1eccb67e67a",
+      "icons/terra0140.bmp": "d090aef5d4659beb7578287f812cc918e0c93d52e7310c3598ce7da69e9c87e6",
+      "icons/terra0154.bmp": "671903ef7120e5aae9be6c0065dccb660f6edd2f3faf826b2a041c429f5705c5",
+      "icons/terra0168.bmp": "6c704139581d4e0d6c86996f25485526582c9756af149e57108477848313201f",
+      "icons/terra0183.bmp": "72e3137e3e76f15655291664acc6ccfbb2794e0797f33cc51b4b16a6f8c7abea",
+      "icons/terra0197.bmp": "b2e9994a4bf7ff2e1a1fc80ebf35d108fd6a383fc5e1d65e7526fab3a71442ae",
+      "icons/terra0034.bmp": "6528ece9be9b44270503a7403b2fbb6bdc3f87bef7de9365f900ac9c870e9600",
+      "icons/terra0020.bmp": "9fc7c1246e3a17add25515cb85506a822f4b878530ca7f79f897c2d2deeffe4b",
+      "icons/terra0008.bmp": "3be06549e2982f7dabc21d30f53f69d407a869e36b638b8da8399112ae138300",
+      "icons/terra0236.bmp": "28538a89b2312cfbdb6684b443ba0bf911059f3ed79551822220f32d3e38e9ba",
+      "icons/terra0222.bmp": "0435868306ed8642ddad41a093f19abcbccd22aab55417fa56d10530b18e1678",
+      "icons/terra0223.bmp": "54129e48c0c746eb68d631ee8f386c1a03c57d6bed6e2e3294505431f9a45952",
+      "icons/terra0237.bmp": "0be38ce30e2d52707d774db35031325db5cf60283f6e3ecf16775309138954f2",
+      "icons/terra0009.bmp": "3b975cfe6268958a073371d0030daa67c093af687e6db86335c27b045b4c4f00",
+      "icons/terra0021.bmp": "6cebaf53632d2998875548b7cc3423178236bea177244db9c4482bab4e26af1b",
+      "icons/terra0035.bmp": "6063608c5c958ea40ab673871f04170a01cc186daa38cc40f26e9b168df563f4",
+      "icons/terra0196.bmp": "2da70aa8bc6337ed30e75dd841d5e81dd809e31634d2a91cdcbf10635620b630",
+      "icons/terra0182.bmp": "e55ae6c8bebcc4d70642365b064196713f9716de47f8018e8aa4d52def05df79",
+      "icons/terra0169.bmp": "55e78d8876b11890ffe017e717fa3462e3316d42f2faffcb77371b7750e8ce12",
+      "icons/terra0155.bmp": "48cddc655c43f33bb48eefbc5d31ed1978d182fc82cdf027d22ac919f61541d0",
+      "icons/terra0141.bmp": "1839a8402c523b58421b835f4c67307587a37ad587e724798cceec5c1b469ec7",
+      "icons/terra0157.bmp": "96f191197a9c87c09016cab1392397d7614ed9318010b5fec8c85e299f8b5e5a",
+      "icons/terra0143.bmp": "7f39abf2bce0cdf8a1d6cabb155efa5bb167024cd847670b9e18037436c6ae72",
+      "icons/terra0194.bmp": "ef856efb61bf665338d0a42051d8a89300abc57eb316c99e56b7c1a90a4408c9",
+      "icons/terra0180.bmp": "8fe958fe39403427f50a34e71dd8cb3b0e0b37da30e0c74e56d71038d1a69ded",
+      "icons/terra0023.bmp": "a042a328da2cbd16aea8a4e1c9d8ded57fb1fe5af9e0b96e84c49e3a2566b99c",
+      "icons/terra0037.bmp": "6803929134df031dda1f7768ca2c7e03ea605fe82a9b1f68df7434bf2c6659b8",
+      "icons/terra0221.bmp": "93a0283f44e3f1e45a56e8e7eb4a741c30410e07580606bfe7129916b9c6d8b3",
+      "icons/terra0235.bmp": "ee7fd206f016ed99d7d025a2e55090d4e196afda08a8b55b58f619129da50591",
+      "icons/terra0209.bmp": "11357fbdf5e43a11c33d65be5e6c9ee4d9a3600eabeeddd92799145484a90878",
+      "icons/terra0208.bmp": "02901fd1cb7dd2b632ae9508160ec01182e5fedfa6720e7d6e0d75d5e0b03fde",
+      "icons/terra0234.bmp": "d8ce4a36fd8564bcbabeab2b94e9bd749650a6f11683f8d5ce251b02fac2d600",
+      "icons/terra0220.bmp": "14fa6c539af562fbc803d6a4f388bf15d98da6038c00f16cbe9ad7fccc308c6c",
+      "icons/terra0036.bmp": "f9b6b78346c15d3fedc3641f43f251fa0f0053a78f9831d57621354e6ae8b4d2",
+      "icons/terra0022.bmp": "ed93559b4253a2514aaef5e536528c0d14fabbe6008b11e5a29e83c4e2fb37d3",
+      "icons/terra0181.bmp": "3565e27b1b32c8c2384cd2d9bd291ed7b6e3b65fc1cce15f6e7f2b81038bdec3",
+      "icons/terra0195.bmp": "ed54f5cddf8b35ca92e9ca1251844708fc14d63b338f94a93b99a25a5b18ae1a",
+      "icons/terra0142.bmp": "d97bc05a58cd50f86d32a36e5f7f83e6c8e02e6d312e455525498337eccc01ea",
+      "icons/terra0156.bmp": "37e09fc5a64edc634ae234f5925b599be57a016cd3965cee152780b0417bacf0",
+      "icons/hglas089.bmp": "d04ab6b929e821fbfb0f340e5f676e4528c3311189812d80e061c6b766349239",
+      "icons/hglas076.bmp": "fb938fc764a41b9e001252cca30028217872624b27cba0784909fc69bb81ed99",
+      "icons/hglas062.bmp": "80c7e522a45340feef5bc69768064cdad7f484b7f6687117f361c19c70a343ac",
+      "icons/terra0119.bmp": "364cafae3ed3f3037e311f53f9388071fef3a85db6af2baf34f21fcfe1052273",
+      "icons/terra0131.bmp": "219d8f75e87a8ac1c3184f07b6a3b21db5feda69be29df0d7e0b66851707a7a1",
+      "icons/terra0125.bmp": "4b05d2df4a3841cc6ead8226f9b1044f74036407f15a3015a45a834fa9b0900f",
+      "icons/terra0079.bmp": "178d979a0902758d33fdc48d2c4582f6ac6894d63c2baffa9af8a42bfd888998",
+      "icons/terra0045.bmp": "5aec06e952cd10fd602b8dd4b0911770a60d842f0311a07c56b25d2ce6b91c22",
+      "icons/terra0051.bmp": "ac682904c14a1122f6c9a4a2b57c74221d57397fd842987072cddb44593ed75e",
+      "icons/terra0086.bmp": "f584f1ffdc57215f1f2428238b6fb6eccff5ad5cbed74532436e943dd7dd83cd",
+      "icons/terra0092.bmp": "06d54542f1d61cb68d1792315e0d39082d426d07e6c9f247eb34b031758406e9",
+      "icons/hglas102.bmp": "a13ede4c2dc17b5721f97f6fcfafd859b234a5a0e9bb97b4a2a89f8e77e91882",
+      "icons/hglas116.bmp": "af1a46c57272892be80b02e968a7ba5824b29f516ded365391434a7e73e09d01",
+      "icons/hglas117.bmp": "8ae9f581976c97cf705eb0fab33ed91369e7d7ee30be4b757c93bd8e934c1f71",
+      "icons/hglas103.bmp": "fb6079891860fb9d1dcaa94ef09e9f5196febcf4da6d0c48a5afc081f9e10e41",
+      "icons/terra0093.bmp": "1b0ef6460bb4b30b46ec19f8a3d03f288378727bc1436e145e959f4dd61acc7c",
+      "icons/terra0087.bmp": "fee6026aa8fb4879023907f6bed4e993195e2ac6da83dea4f1a845c221f571bb",
+      "icons/terra0050.bmp": "a1333fd09e3b2bb37a821aa46c3a9d59a43dd405e17d12744ecbb521ad6d9da5",
+      "icons/terra0044.bmp": "e2b56225894e18f49d21b260ee621773feadb267f4f1735575481a149ec942df",
+      "icons/terra0078.bmp": "7cab09d9f32bbf62bf89ae00481c3ac741a0dc294e82c611daf98077cbcb3b47",
+      "icons/terra0124.bmp": "2cbde8597e2641ab248ab7b42d334dcf4e06247a4a62793709ec529ad7f443a2",
+      "icons/terra0130.bmp": "6ebfed6936e836a2657aa32a17edd2ced12a59343f5f339d80c32249391342de",
+      "icons/terra0118.bmp": "a6110f5c8e85d4fcd36ddd07e18a8cf8d54b9c7139e6ee51759218f2394a57f5",
+      "icons/hglas063.bmp": "6c66072b3c4287237e74ce6ecc76af0d42f1e0008c355c0f70f9b26e3380653f",
+      "icons/hglas077.bmp": "41fabc9ca0f07cf94dc033db19eb2cd4bab358e7d8749fefcd449f1b793dc5f2",
+      "icons/hglas088.bmp": "e4aa51bdf530d0a7c23ea374668d02c7fb5a6c59b8ad2ca1dfe25cbfa9ab44cb",
+      "icons/hglas061.bmp": "b509b2fd141693546318f308cc624c9f75682af16a1de235e312bb950aed30d3",
+      "icons/hglas075.bmp": "1e180db30039412600bc092a020b1bf4d21d199e6acb24f5fcf2c8f19730aa3a",
+      "icons/terra0126.bmp": "c5118678ee8a5a5760a1b1ac07659e380504a721c7d310b0457a6a4b851ee475",
+      "icons/terra0132.bmp": "d1844dc448c9ade88bc3a611a1320c455f8699f147ef1692bf48dd8b0e284548",
+      "icons/terra0052.bmp": "e32d02dd139de9eef1c6892cb47c9a5cbb23665bacd9fce5900a3dcfeec99cbd",
+      "icons/terra0046.bmp": "0d8ab81f37f8339fc49b85f32f1ef35e7ee7129d959223c5b96ca41dc8f57601",
+      "icons/terra0091.bmp": "946d50799455e3f705e8f3fd1b168c996ee3643dbb083ce596931291bb6baf57",
+      "icons/terra0085.bmp": "7fe076c915523f0cf605bb9ef53e7eb2d04ad00c73615e499b8bd6ec032d1823",
+      "icons/hglas115.bmp": "0407da3b3c943771397799d77ef76ce533077ce13541fc3ffb8d225f541e9b8e",
+      "icons/hglas101.bmp": "e761265743202d7ea9ce60bc014723695b79718f7c92e09b86d2fddb757bed06",
+      "icons/hglas100.bmp": "0c478fef6d434c467c94efbfd7ac4211bcb9d4c888fedff914ce5a216579a898",
+      "icons/hglas114.bmp": "f2752efd10286d57cb2e362e8cb224418f41363ebf70d635fac4a18c1ff41ac5",
+      "icons/terra0084.bmp": "de8f9b9413a8f665eaa17b52dfee9d4e5068911e0a2a437c219be02ff33a5eca",
+      "icons/terra0090.bmp": "5178dfd17f27859fabc109979f86fbfaaef13bb44193e896674e9f036f1d90d3",
+      "icons/terra0047.bmp": "88abdd7330c66d1e8c40604d3bb2fdcfea4f0e433153a6613c40a4fbbda3f135",
+      "icons/terra0053.bmp": "ca8b45a369edaeba016b4a9714d96b644a861135afcffb10b77e87e3d2bb57c9",
+      "icons/terra0133.bmp": "b5bcadc2b9d0e561a6c0c6c1b6d7be932e44608187b700b30b91371796ad5ffa",
+      "icons/terra0127.bmp": "592f67ff983534d139a19e1b3a7e928715bdff16d2fa4b37ea8e423e40ad8a39",
+      "icons/hglas074.bmp": "5a06ea9fb62a0161ac9980e1d99346b020cd9e598577de77b8e8004665efc9d2",
+      "icons/hglas060.bmp": "bbc3e34428cf93f42e9ad4386701b0136b50b2ddb7a0ddc5fce03c1317e0d563",
+      "icons/hglas064.bmp": "0b503b6b6257dda3a3479c6640c060870ec9cfbb2680d5904b163cc90c8d975b",
+      "icons/hglas070.bmp": "e48950a8d159740c124a6b9dadb17d3e74762f41d4ca8d894e8b86085ef79019",
+      "icons/terra0123.bmp": "3d860f4f77f4da6d1b8abc6357680c80e2bc6692ba88413d41f804c069b553d8",
+      "icons/terra0137.bmp": "a886d93f86fe4c9fbaa335a105b2de09b520c2aaa7aeca9fa96106513c29fa91",
+      "icons/terra0057.bmp": "fddbfa3935672be1da6053839b485fbc9d0fdbd5e87fc041a7cb3bbc4bea14c0",
+      "icons/terra0043.bmp": "75461b7f24d4b65b950a2c5557052304c09dbaca2580119806a91c43bab83725",
+      "icons/terra0094.bmp": "67c53ecc23ca598ebb4782619819937f1b44fb6a7f2810a43ec92fce430e604b",
+      "icons/terra0080.bmp": "4a8dac8a824c141f32ba1aac758336c3aaf30c296744e6d62cd1c7e838cd1107",
+      "icons/terra0241.bmp": "90ece70c789e87566b1b9a7268ad8d0b2ba1e9c4871326fd5bc1952dd22ba347",
+      "icons/hglas110.bmp": "979c7eeac85a55fe568d9ce29ec71ef2843454a79d066d9c3822c40e8c6e2472",
+      "icons/hglas104.bmp": "17fb3ba840800d5a2aa23f4ea325981954ed5ea0ca9b2939c5407d098675028f",
+      "icons/hglas105.bmp": "68d160a393b1543671c5f176a046fa75568d0736a09f91b897164359ddbb7b30",
+      "icons/hglas111.bmp": "9e42f768343b8cee67d7015800675683657e5afe18a68b232749f5b6cb5866dc",
+      "icons/terra0240.bmp": "143f6d9637dc01cd83f1babaab6124218a4424f5548b735dd2cc642c5c10b8d9",
+      "icons/terra0081.bmp": "e9aa4756a1fe74f04a04fdee48381f0f04e30b1a7f6280976ffb458eda5e5402",
+      "icons/terra0095.bmp": "f8e41e7032eed6e40b011faee69deb78aeec33acabcfacc4857121ecfb2ca202",
+      "icons/terra0042.bmp": "c2747ffe05df4617933ee74d4825eab05ad1ff6295a5619fde21c34ebbb7d872",
+      "icons/terra0056.bmp": "fd878360d2c62933436f75f5610da2bca5ba69028ee3fc0c80cbab5299a10676",
+      "icons/terra0136.bmp": "02da2e5cf704706616c555b71a782f55896c216233540773c9d8caf8d9865855",
+      "icons/terra0122.bmp": "6e59074e6260d784e5904b71a16b6250280e1362f1dd007f27c84fd931bdecdd",
+      "icons/hglas071.bmp": "f232451b4799f9cb72e0e1cec77969f352d033342b3599b2646a2b4b4dd90857",
+      "icons/hglas065.bmp": "b17cb74e5e0407c9d983161ad65c7d3be49dd158cc5e13364373ef19cc1fa373",
+      "icons/hglas098.bmp": "180084eaee1e59f9e761e556e0f8e485ccbc3d23b0703d9f8a43164eae06a2bf",
+      "icons/hglas073.bmp": "29c2319c6001ac607668922eaf6969ee2a97883d06b70f3f304941128ea6f36e",
+      "icons/hglas067.bmp": "98cc757b18544925ead4ea67c01775f3425b4754d1de98c033b31f363f1051c6",
+      "icons/terra0134.bmp": "5f0a45d5052b1c7e4807d9e038a5d3d6705e5f9525e531825aa5e5ec9755f273",
+      "icons/terra0120.bmp": "dc302985e4c2ed09e86e86603143925e653e77c5de0688ea2e0848a6ba4b62e0",
+      "icons/terra0108.bmp": "0577bb5b2ff5fe499833ed5802f04537aa3284ca7d43d69248e308bc46b91148",
+      "icons/terra0040.bmp": "16ca9eeff0f2748ffd1b03c45d0a5c6d93286370010e1b47b03e7f897d919bdc",
+      "icons/terra0054.bmp": "bf4cbaacc18257f71ba89e2df8f6e565bedc4d7857fa13f50710fb8cffa5a6d5",
+      "icons/terra0068.bmp": "2f1ca1c4b97f73de8b4d3da07492faf5ea42e198877227508091e6288f624e07",
+      "icons/terra0083.bmp": "82a88d0e699e56f8e24d948d57b44cbc08039ce0dd931defae7fafc106457485",
+      "icons/terra0097.bmp": "ed4600a7597bee9c7b7e0a269ec69a3e2430bd06547dc30fbb86d5794c280946",
+      "icons/terra0242.bmp": "3530dd5b02d47d18d65dfc8d33dcf432af5e862bff2ac3f01afcc631138603e6",
+      "icons/hglas107.bmp": "23a6725a11b8ef003aa6bec3ce037cf6b368c07ba6509c98365debd150d0adf9",
+      "icons/hglas113.bmp": "d9e1ecc914625ddba3380acb4ddd5f7d7a7d682d65b647125a4e4f55c6ce0a0a",
+      "icons/hglas112.bmp": "6fce141023a967ca1b9a8963009e33e7ca42d5b437aa16f4390402687601d17b",
+      "icons/hglas106.bmp": "e20e86b1721acb9bf36b7bf4ddcc4322096bb37c8360cba55fa9319cb4a7c3d9",
+      "icons/terra0243.bmp": "45f681d393feb0588b5c1f25b632160299a02ca70ecb8e615f4e41dc1728d9ce",
+      "icons/terra0096.bmp": "8f2e1269894a3cb91a5fcc1583b5436d5f5756dda07bc26f5ec64b5082dd9ab2",
+      "icons/terra0082.bmp": "023698a46cd0efab705ac486e6b88d52cd6d396b4aa854ac36317642821d091e",
+      "icons/terra0069.bmp": "4908108f462c65008c8c381795f0263ac526b4b3a86044dbaa47870ce5a0046f",
+      "icons/terra0055.bmp": "261e0a7a11d73316eec3062f47d149c02c660ecaf653ce7e0bcaa21699e66835",
+      "icons/terra0041.bmp": "4a801c9eb4286f268a06e608d48380ee80c61ef5c62f784160ecd348fdad691a",
+      "icons/terra0109.bmp": "473f4075c58c59e324a7d94d46b1028798ae7a4ba214035e270e6514e50066a9",
+      "icons/terra0121.bmp": "3a3d13a225ea773e7e80bce99144c2347c195bfbe6836a4cd16dac6f973894d0",
+      "icons/terra0135.bmp": "f4ed8670b19b37d21bafb953d789ba1ab581f62da298c989b53647c4db3d3575",
+      "icons/hglas066.bmp": "d84daa1ac500a311da87f70c72d3e40083f1ee9c23dcbc58c1a8d5054d500f53",
+      "icons/hglas072.bmp": "99445a963fcd52ae677491d1440631a80f1c7518866237487abedc3d9bd9d2fd",
+      "icons/hglas099.bmp": "2a961486b551bd94bfadbd810058078d08d45c941fd5d700b6fb2ac5068d918d",
+      "icons/hglas094.bmp": "3bdf6f4427725a2a7159e7089b5e215c08044eab5f4fae0125671191c8603b94",
+      "icons/hglas080.bmp": "905dcd385fda49251d0852b59b68f3f158532738aa26946afb87be867273ed9b",
+      "icons/terra0138.bmp": "a46735f47d8f994ca18addccbdde6f87fffb82906d9b07ddc0031e816a5f5da6",
+      "icons/terra0110.bmp": "e54419e97bbde543f9e4462d9cdb2a9655fd0816ea49643332abe5c8080c8ca5",
+      "icons/terra0104.bmp": "13f0a70a4db23ba6ba7102fe6ab0996a375bb61f71a5144ac5a52e44124c89a2",
+      "icons/terra0058.bmp": "1ae0648b84a5ad4b7dad60329cc436bd232a6e53b218bc10475c8c42339dc351",
+      "icons/terra0064.bmp": "37c987c60ee0a0e4fb765cc005ffa6798bbe0ea7eb07dc8ed2b5e10975ea6442",
+      "icons/terra0070.bmp": "232f7040bfc8ed43e7e26a8a5775c77d1cada30d4bdc7dc3bf6c5498cbde5528",
+      "icons/terra0071.bmp": "11ce27a4409e2f916bb046eab55d0857e01e7057dcaf8b4b4bd8899f33336144",
+      "icons/terra0065.bmp": "507db5cbb41840d031f282539ba8fbfb5cf5763e6082508f75890505ab4c3989",
+      "icons/terra0059.bmp": "b7a3b255d492b897efe149c9db09f7b0decdd932e55335ac232d5b820b086edb",
+      "icons/terra0105.bmp": "9963e26337c5b8bf9742759a2206584e479e6451e50ea7901b9d9ef7b7ae083c",
+      "icons/terra0111.bmp": "55fdd2d14cc84dc3254c052046038b60940d974f3a5a15eb3f3010502967fe99",
+      "icons/terra0139.bmp": "79e7e77a7929764c0b10cb290438f8793809cef45bbf42e7999fc27da4cba702",
+      "icons/hglas081.bmp": "9bfc57ab1de1e7faf6ddc4c98d5c6179a431f41f8d369a9f32f27429f81bc6e7",
+      "icons/hglas095.bmp": "b00fb02ba4a5195b5db5579656106c2f54432f5cc8efee3e106876594447f7d0",
+      "icons/hglas083.bmp": "3a1eeb3ab7f5b619aa30a2a29570c4c9db97f1ba0e14a9b68ea850eb527e4cb2",
+      "icons/hglas097.bmp": "2e7e06eb0187c88b068b8055ba130dd3b0a01dcdf8ffe4bd8a0496d1d67650aa",
+      "icons/hglas068.bmp": "759a29b5f2c5df933b0b59a9710330fcd2295a8fc99df80393a711af1d2eace3",
+      "icons/terra0107.bmp": "0ee81a0a4f2d74560f513c517ae8a3bc9a2c194c1eb18b8100c9bc6cf7dd3c25",
+      "icons/terra0113.bmp": "5c420b9ad8384e23009f3ba505330b5d40601ca1a74c24f3ec6e658077d4b993",
+      "icons/terra0073.bmp": "4bcc3f86dfc93772d50aa977701029fb7c3f8fe20519e5a7be4b7e67def370df",
+      "icons/terra0067.bmp": "cfae1b8f03b36fa3a5112833027ec0ecb98a6aa5c66ff78b73a34f85930205d6",
+      "icons/terra0098.bmp": "ac8a0152ea04c7b77f40e20b25e2a23150049249d2fac59f63e6bf0711592c73",
+      "icons/hglas108.bmp": "a09ea343fc7ea9daabae900bbfddaf7aca70681fc8b4772c2f6436330d9b9145",
+      "icons/hglas109.bmp": "71e316f2783191d951b0b0483e1e2adaa87df125cd1dd5f35c3cd76c92b3268c",
+      "icons/terra0099.bmp": "38ea31c9145a654e4c3ca242b0c184cb6953c66495518b29e9b1445a2d044f63",
+      "icons/terra0066.bmp": "60669297736d11250b05abccd929d072e69b67371f45c8beb0f746d1c9918575",
+      "icons/terra0072.bmp": "d3b8d6240c4c85479606b2705491ed87c0cb2d119c8c242483cd766c61262ff9",
+      "icons/terra0112.bmp": "5d3159d1aa1016734e6423dc3ee7eb7fd5485f71680089a55198f3be21e23de7",
+      "icons/terra0106.bmp": "5883e07c1e15584ecb9d3363a9ebceeaa5b22fc8ae4391a5624d2299b39f4f54",
+      "icons/hglas069.bmp": "0ff4820e7835d06d1ed24c855d192355ce5d7bcf5aac3321b4d47387173323c1",
+      "icons/hglas096.bmp": "b406defa57e29d13f355acbb6b7fcf01d45b9d4d86defd6a0ea52871995e35d2",
+      "icons/hglas082.bmp": "4f49001106392ce3a8cdd82248dcdb8e1b0c0aa8fcdc887f8e3df712b3e11668",
+      "icons/hglas086.bmp": "7aa38bcd72de058d0ef83c0260df71dba28ac626fedf3e74a9144fe24d36a491",
+      "icons/hglas092.bmp": "d44fa1636ba1df34056947c817b3f6bc0ca5ecbe339d98f42e29f1a5747c5e74",
+      "icons/hglas079.bmp": "c09a669c4fa80842c55fe3fc8a1db3cf124cba2158bf76a00ef45cfa76c90189",
+      "icons/terra0102.bmp": "846cdafeb79cd79c7fb5ad031a92b850974bf171d2fd7b641c469e71bcecc800",
+      "icons/terra0116.bmp": "1605751667ec4a909e024400253e318304613cc6912c7105d3f3fc21978e1fa8",
+      "icons/terra0076.bmp": "0bb29f89a7edbceb5cdd94fb3de89d2e72a7b99d73c32678829058186d9aee68",
+      "icons/terra0062.bmp": "8e3eab9841cf4eb9ec7d72458d49f247bf101f457f73f80facdb1646c787818a",
+      "icons/terra0089.bmp": "f9cb40fa03aed490e97f1a876431dce5da62215d340e0d6630b2b8438b5a3ccf",
+      "icons/hglas119.bmp": "f14ba8294047d38508cf4e5aac41de8fef76d36059f070b87f738468ba83dd7d",
+      "icons/hglas118.bmp": "2a01e4c2f7431736530add31a506bb357a68ff874d5485e546a4299debd1ca32",
+      "icons/terra0088.bmp": "dda482a1eadefa9dde494db9aaa6e052f64eecc69bc841948f4f5382701bee04",
+      "icons/terra0063.bmp": "f3d419012fcbed8e8182e0e4d90f4728e3eff04630954923b0237ff4fb25ad91",
+      "icons/terra0077.bmp": "7460d774e57aabfb9743810fe15c1263838cb918c9094d3d6996ca4a0165cd53",
+      "icons/terra0117.bmp": "930458ee4a0a0d163945e46ee3a4146c27c2465e98e995d3b254917660c8e810",
+      "icons/terra0103.bmp": "44edaebef48bfe70cb44b96afd087866f2dc137054a852e8c67810d2ae49bca4",
+      "icons/hglas078.bmp": "aa2361c2f3152f7e5ed539ea7e6e68ddda06f281ccc0a3f23f45d3a308e1cefc",
+      "icons/hglas093.bmp": "d2c93233c7297b43363994beb4abcd5add42375b393fb4b9f8ea63b165430d4c",
+      "icons/hglas087.bmp": "41254af9bb27ec3404d1206dfc648198e0d20f50362c215c252c8a05f62874eb",
+      "icons/hglas091.bmp": "24913c9098a2c8caceac413aba96496610b2723a5c789c349ccbd78660f1a9bc",
+      "icons/hglas085.bmp": "cce3c56595dac6c0d1ea54677463f220561b18b2fa4df4f90361117a1c6951c6",
+      "icons/terra0115.bmp": "668351538c33663cb4b375c5db4ac955a35f770877cfd114f3d140dbd1fdd3c5",
+      "icons/terra0101.bmp": "e1b8e1348c086c4ac38fd1f133a1f54e49fc51e79a7f20e45a1819d21b1011fd",
+      "icons/terra0129.bmp": "b2eba6359b7c8fb69aea5c520ab6e87b9847d5e914fe95e6d00dc20cd03a7c41",
+      "icons/terra0061.bmp": "94a3a594bf2b995580209752bb228a4c602bd06cc38dd7db873bc56687bee937",
+      "icons/terra0075.bmp": "4cb36d9219944ec21e7d17d0ff9e8ecee33cd388a4e93636d511e6b501b3bb8e",
+      "icons/terra0049.bmp": "7aff20cb2cd169931ddffb939bfd977e1b24adbd6a81934c1d1bb9c699e4e3d7",
+      "icons/terra0048.bmp": "7eccfa7fab40fabc3fcd6cf95a51af4ef449f600179d3d843796555701862494",
+      "icons/terra0074.bmp": "27754f64ee3bc1b1f1e309fb71d953593bab94574bb63e3a1cbcd3060332f13d",
+      "icons/terra0060.bmp": "5093c3755b61fd2a2039516de5bb011cd99313e9d309d8002aa30b116ad416a4",
+      "icons/terra0128.bmp": "63b2192d09e6b99866a735377c31fcf65b74152ecd18331241f1243717c86818",
+      "icons/terra0100.bmp": "7576b3e2f3990e0db3188282dce3d685d6bc03bd1849132a8469f25c162a091f",
+      "icons/terra0114.bmp": "f3db15e6cf33cc1f849daf4a11a9bc2744cb6dc4ad5790bbfa11e15145f54fa7",
+      "icons/hglas084.bmp": "85112271c9d243913ff32569cb926c38b87815e130814a2c36abe83dda379b9a",
+      "icons/hglas090.bmp": "cce9535f4d76c4e3625fbc2065d9ae7715faec3152cca75a34e15617241f7950",
+      "icons/terra0173.bmp": "9a4af717dccedf61714d3b18666e68c0ae1489c2d156d4a0a14d8792d4d4d5d7",
+      "icons/terra0167.bmp": "4cb334b529ab32a0d11ff537b2683915dae7692284a4d7f82aac51d0d8c783f0",
+      "icons/terra0198.bmp": "2902053a4e57b7232357e65191516f250a093f14cb4c985388aa989a99485c10",
+      "icons/terra0007.bmp": "700fb2f15143570c65947d3ec10e0a2fa8c50e1c455e040ab88aa3a09bcdb6f2",
+      "icons/terra0013.bmp": "a0550bdaf756e298243eb78902dd9c672e7b6a46f16af1ef2bae40554558a041",
+      "icons/terra0239.bmp": "9f2cc440a0b8204cc45d1f18f1d3f509a8e841d6fa113b29ea6453090a450ca4",
+      "icons/terra0205.bmp": "dcd904970d2ba136cfb31f594b7ebd7f46d1973044ccb385156b9b3c549b9083",
+      "icons/terra0211.bmp": "2f9b7243b8917e2ac93f7feb266544df6679348873aa327443f8bf9ee96e1444",
+      "icons/terra0210.bmp": "2d91e53f097ff72bb592d32d2a8a9ebce9588560a4ef9e26e8877b15a24a3567",
+      "icons/terra0204.bmp": "a581adefa92277278ace134b117b076f2a2d930f7813b017da8969ec5a9a18d3",
+      "icons/terra0238.bmp": "29b5b9ca0f9bbfc5bcb33ab72011197687eaf89d24cdbf852b8761e7f55f41ee",
+      "icons/terra0012.bmp": "253b34baf33b78ba1315b9648668641a45798e72f113123ecfe24951f14b1896",
+      "icons/terra0006.bmp": "b853bc9501c9b99604114865f4e345c184d035dcb61dad98ea7c7708158ba717",
+      "icons/terra0199.bmp": "842d7950daead094fb96e3775690d0afcb9a2e639049d2eb78fc4afe0db9f5be",
+      "icons/terra0166.bmp": "14bf4474f04fcf01df703de81ff050c14d968e2f853ccfa980bc1c8b2384bf55",
+      "icons/terra0172.bmp": "1eaabb29c0220c4ca5e02ce87c1dcdbed7256de527a5d4a0e068f843952dbbb0",
+      "icons/terra0158.bmp": "6fadcd2377d7954bda616bcd1fdcc5537f3c02d8f8c9c3fdced0f46f5ec27978",
+      "icons/terra0164.bmp": "c09dd106c2191b6a4bfbbfa96d1859b41e3fe65303fdfbf3a2d8abf4f7f9a1d0",
+      "icons/terra0170.bmp": "324a339959538758e15ac21d562bc07c0c631f07c66d994b1e9e910c08ff7c61",
+      "icons/terra0038.bmp": "4958a6abdbc87d03dc7402d3f6c45d1cc11973735f8725a9558a0d06e1a868d6",
+      "icons/terra0010.bmp": "767d46f6795593a283bf8175de7e3fa4b87b6aead2521b3c98b1371930e93c1a",
+      "icons/terra0004.bmp": "cedcb01170f8a66f5e0a49331f6e083a272b438b55f07e36efe2411102765b9b",
+      "icons/terra0212.bmp": "7da8aba8d8b0e0691e4774b44608492504d92fa4e492569eb93616f48248cddd",
+      "icons/terra0206.bmp": "c3282d7027ca1847cb3fc406a5a16d78f0a544635c0f46de2e585fbf1c36cd8b",
+      "icons/terra0207.bmp": "e8228adbc7fcef55c4d3a59a37c89292715b47595bc3c51440ef0105248bb612",
+      "icons/terra0213.bmp": "3a2dd05e81e06f91465c6f4f34f56c5edbb302a00065dec0ee3618b5bebe79c7",
+      "icons/terra0005.bmp": "9af8514e6f26e2d015803a08c83e7c2baf73f09563f23f85b120d0fb38338ea6",
+      "icons/terra0011.bmp": "8993b3b267080f56fc928c2129d81b65ad8c4eb4fa127c0bee8c408a158042d6",
+      "icons/terra0039.bmp": "93a6acd3ae114fcc7db21f2a4a301b78ffb9a24921478e11e4f2f06b7ca9f5b6",
+      "icons/terra0171.bmp": "f98a408dda00b830fc9778a41e251b5a8b21b8e38c20f78f0dd5faadf449aef6",
+      "icons/terra0165.bmp": "1d8943916b3a4b65c0dc3700fed493919ab2eddc1dace8c8b882a7db4ec005c5",
+      "icons/terra0159.bmp": "cb7ca2c07ddbfa7d44dc078ce72c6b35179f0fa4e166ccc9cc59bb8ee2face67",
+      "icons/terra0161.bmp": "cdbf5fb73a4193f0a6a72a2c69bbcd26e0e4a9952ce77019cf376315cc2c9e24",
+      "icons/terra0175.bmp": "de41076c6504cecdbde2d087a046a9fdd3bfe3dc8dd36ce87693f3bf5f52e800",
+      "icons/terra0149.bmp": "376a310e3fe79ac3b24ef47994d729a97aee2ef367e83b6817f1fbd8a3fd075e",
+      "icons/terra0015.bmp": "ba385837cf8d7e8da0b05b5f3bd24b9365681d2bca055739cd42dbc792e44379",
+      "icons/terra0001.bmp": "f31b3dda7e024e8eafe82563a257bd04b2437c492963b418e133f46d1c59a3f2",
+      "icons/terra0029.bmp": "11547404ca46900ae77a143ba0208dc86935cde2c8fdab286f99fe1b50d3d184",
+      "icons/terra0217.bmp": "c6767b3d3b15653e5b2d2e40a76ac6dab16c39932746963f2783bb4eeb98e5c7",
+      "icons/terra0203.bmp": "ed5ffb48732847e6bbda9f8a0b60afaf3f167f95c763a30287640c74c127cf2b",
+      "icons/terra0202.bmp": "8a8f811aaa0d6181bdfa82cc50692e52d0f25784f629ce265deb3f43f291c93d",
+      "icons/terra0216.bmp": "e77acabbdab5b5be0020ed6f260ed9657b32d2c56c2e65223c11bd5fe3dd09ed",
+      "icons/terra0028.bmp": "217487c77e5ce26107236b96fc89ccfa511dedcb17855af77fe9d097a8efe52e",
+      "icons/terra0000.bmp": "310cbb1d788d9b316cc122f9ff407dcee3a09efb2bfda98b180ed3173a0f75e2",
+      "icons/terra0014.bmp": "5c2006cdcc402f20dad501f77db37ef53093b62eea78a4ce8895ab40006b34ef",
+      "icons/terra0148.bmp": "f8b5abe85e7c832c3b9a59f2852eb03b0c05d5f45e85551fae726bc569f9d7de",
+      "icons/terra0174.bmp": "b76219b4b841d0256a9a379eb794971a92badf810dbc2a81d10a6ae9a4e3cb38",
+      "icons/terra0160.bmp": "cc408d3acd78fe512268d8471a7755d6efcc67e781d2f48bcdeb80db8d547cc4",
+      "icons/terra0176.bmp": "e26ed721402bb97cdb2df8d6093e914ada39de815c329da5f8422e49a192ef31",
+      "icons/terra0162.bmp": "56d32417705a9017d16ca0dbaaf4260d026b34bf73aa74351f9118cc237f0dc7",
+      "icons/terra0189.bmp": "ade4a64c7a7fe9eee49b0ec1f096d84bdf74e7f94f6802767f83123267a75560",
+      "icons/terra0002.bmp": "ad52b5508ca067ad7080a33159e64505a8062ceea371ad9745f390845ff14d3e",
+      "icons/terra0016.bmp": "8aa4b7e071e828947707e8a0273dfe65d9d57631b2cfdc96d45e4ca24fcaa877",
+      "icons/terra0200.bmp": "d5e0e466e5c333cd1890ca0e5ac272b9ff209002914ed8f86e35252a25681e6e",
+      "icons/terra0214.bmp": "19d9da7b4d613afdda3900b2ee68addd2316216172ee774f25459b0c9ec37125",
+      "icons/terra0228.bmp": "4807a1d040e0581123528eb6d73d265990f48958cf3dc96ee177603be0950f5a",
+      "icons/terra0229.bmp": "4c6023282a7604e1e9203adea8cba7319add27d0a03e251df52b486317630d28",
+      "icons/terra0215.bmp": "200ea17a8848cba6757f37bcbf79dca314ee3f0309a0aa4ce45cd59815dfb2af",
+      "icons/terra0201.bmp": "e41e2ee339875178369e5509d48eb7e493d0b36e667f537dfc8a328c8b2f19e7",
+      "icons/terra0017.bmp": "0dc6d9c2e1723bd873881d50ecb03967be65f24203b2982f8a3db4abb6195813",
+      "icons/terra0003.bmp": "a67852e0b57ef2ab5663018c6022fe4eeafdc127722a4076513a87c7caf3a135",
+      "icons/terra0188.bmp": "3ecd3436c5ef2e392f6eb6d0e5c9d3fca9dca252e4dbf568ccac1f5a0d1e5f2e",
+      "icons/terra0163.bmp": "1392eb006c81f5c10eea3d68b606aded0af2ac504dccdc47b9ad49f493c92413",
+      "icons/terra0177.bmp": "bbc16ef2de91759e404065db30e628e9caa24830417e8ecfa4aa7f2da0dbb936",
+      "data_tables/ui_text.txt": "9d85a14cf1f0186984c3842447f206d0b3c38d6070d5c416fee84d698dd85fc9",
+      "ui/gameplay/rest.yml": "728fb569e4cbd516bcc9b40d1bb65adf4b53b290565d251a0cc529d38b9a48d1"
+    }
+  },
+  "ui_text_completion_195": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-194/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/runtime-001",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "bc4d6a8e1f0a84094db2695bb304c7ed5ede825979ae5fd8c32c409e7ffd8733",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "video_brightness_198": {
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-195/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-198/runtime-003",
+    "added_members": [
+      "icons/convol00.bmp",
+      "icons/convol10.bmp",
+      "icons/convol20.bmp",
+      "icons/convol30.bmp",
+      "icons/convol40.bmp",
+      "icons/convol50.bmp",
+      "icons/convol60.bmp",
+      "icons/convol70.bmp",
+      "icons/convol80.bmp",
+      "icons/convol90.bmp"
+    ],
+    "changed_members": [
+      "ui/gameplay/video_options.yml"
+    ],
+    "layout_sha256": "e494291e6da63e09d401324e4a31be86ca636c2a5f5350e17c7c6c38a0207231",
+    "all_other_archive_members_retained": true,
+    "new_image_assets": [
+      "convol00",
+      "convol10",
+      "convol20",
+      "convol30",
+      "convol40",
+      "convol50",
+      "convol60",
+      "convol70",
+      "convol80",
+      "convol90"
+    ],
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "ui_text_completion_204": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-204/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-198/runtime-003",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-204/runtime-001",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "e99aaa3cca3c38a47736654000e08842acda64d4ac5583f363a044124f5cbedc",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "ui_text_completion_207": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-207/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-204/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-207/runtime-001",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "f8ce3ca5c5ce1734da29d4714bd0045d53c3b072fdee8ba94189b2a222e0b829",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "ui_text_completion_216": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-216/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-207/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-216/runtime-001",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "9baaf93feaa9f27cac8524c43406ac979d539819248e0ed85152293b77d1bfff",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "ui_text_completion_217": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-217/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-216/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-217/runtime-001",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "7e685ea7a1cd35d37a3450c436b0cb185ac8dfa90be87bd35d2240d7583a9420",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "ui_text_completion_218": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-218/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-217/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-218/runtime-001",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "8019036a96adef71b63e07825d7dac9c6db62512e3aca39bf478a812af0e5570",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "ui_text_completion_220": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-220/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-218/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-220/runtime-001",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "986acc4ef7834ad533046c9b75469721488a39875ef0e4cbe84209973f1834a9",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "ui_text_completion_221": {
+    "source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-221/core-ui-text-001/core_conversion.json",
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-220/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-221/runtime-001",
+    "added_members": [],
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_sha256": "ef363a9e209453553307cca96a8a45ed11012a0652aa59d4f0dfb6f4d225238b",
+    "all_other_archive_members_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "release_created": false
+  },
+  "native_mm8_navigation_222": {
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/ui-function-completion-221/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/mm8-native-boundary-222/runtime-001",
+    "added_members": [
+      "data_tables/map_navigation.txt"
+    ],
+    "changed_members": [],
+    "native_navigation_sha256": "3c706f9eb10d9743ba86870e69820ca6d591db3cc8cba46f2f793d6aa1ecc3df",
+    "native_source": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/mm8-native-boundary-222/world-rule-output-001/world_rule_conversion.json",
+    "unchanged_existing_rules": [
+      "data_tables/town_portal_switch.txt",
+      "data_tables/transport_locations.txt",
+      "data_tables/hw_water_textures.txt",
+      "data_tables/overlay.txt",
+      "data_tables/outdoor_travels.txt",
+      "data_tables/transport_index.txt",
+      "data_tables/house_exits.txt",
+      "data_tables/house_rules.txt",
+      "data_tables/continent_settings.txt"
+    ],
+    "all_other_archive_members_retained": true,
+    "all_worlds_retained": true,
+    "controlled_gameplay_fixtures": false,
+    "new_release": false
+  },
+  "spell_combat_ui_223": {
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/mm8-native-boundary-222/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-combat-ui-223/runtime-001",
+    "changed_members": [
+      "data_tables/ui_text.txt",
+      "data_tables/combat_text.txt"
+    ],
+    "added_members": [],
+    "catalogs": {
+      "data_tables/ui_text.txt": {
+        "old": 132,
+        "new": 149,
+        "added_keys": [
+          "ui.finish_current_action",
+          "ui.spell_not_learned",
+          "ui.spell_select_actor",
+          "ui.spell_select_character",
+          "ui.spell_select_ground",
+          "ui.spell_select_target",
+          "ui.spell_target_controls_mouse",
+          "ui.spell_target_controls_touch_ground",
+          "ui.spell_target_controls_touch_portrait",
+          "ui.spell_target_controls_touch_target",
+          "ui.town_portal_choose_destination",
+          "ui.high_magic_presence",
+          "ui.spell_unknown_quick",
+          "ui.town_portal_data_missing",
+          "ui.spell_cast",
+          "ui.spell_no_valid_target",
+          "ui.spell_not_enough_spell_points"
+        ],
+        "sha256": "23a9a43dfc7b18a40db2affac8b543095b13cc1c7fd26e2f1542d9bc2005a447"
+      },
+      "data_tables/combat_text.txt": {
+        "old": 6,
+        "new": 7,
+        "added_keys": [
+          "combat.evades_damage"
+        ],
+        "sha256": "06d0f1eed423ab355639a1146cb75fe58a3e8cb9ba7db19df1227d3ce321e120"
+      }
+    },
+    "all_old_caption_values_retained": true,
+    "all_other_archive_members_and_worlds_retained": true,
+    "navigation222_retained": true,
+    "controlled_fixtures": false,
+    "new_release": false
+  },
+  "spell_failure_ui_224": {
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-combat-ui-223/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-failure-ui-224/runtime-001",
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "added_members": [],
+    "old_ui_count": 149,
+    "new_ui_count": 164,
+    "added_keys": [
+      "ui.spell_divine_intervention_blocked_by_gear",
+      "ui.spell_wand_already_charged",
+      "ui.spell_not_skilled_enough",
+      "ui.spell_canceled",
+      "ui.spell_unknown_attack",
+      "ui.spell_failed",
+      "ui.spell_meteor_shower_indoors",
+      "ui.spell_starburst_indoors",
+      "ui.spell_fly_indoors",
+      "ui.spell_armageddon_indoors",
+      "ui.spell_inferno_outdoors",
+      "ui.spell_prismatic_light_outdoors",
+      "ui.spell_hostile_creatures_nearby",
+      "ui.spell_item_quality_too_low",
+      "ui.spell_summon_limit_reached"
+    ],
+    "all_old_caption_values_retained": true,
+    "ui_text_sha256": "614485341cae18c2cac9ee782a2094e65884008a0907bbcda064b809329403d6",
+    "combat223_navigation222_and_all_other_members_worlds_retained": true,
+    "controlled_fixtures": false,
+    "new_release": false
+  },
+  "spell_item_feedback_225": {
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-failure-ui-224/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-item-feedback-225/runtime-001",
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "added_members": [],
+    "old_ui_count": 164,
+    "new_ui_count": 179,
+    "added_keys": [
+      "ui.spell_armageddon_already_active",
+      "ui.spell_armageddon_daily_limit",
+      "ui.generic_item_name",
+      "ui.stealing_skill_required",
+      "ui.interaction_too_far",
+      "ui.stealing_nothing",
+      "ui.item_identified",
+      "ui.item_repaired",
+      "ui.item_unavailable",
+      "ui.found_gold",
+      "ui.found_item",
+      "ui.pack_full",
+      "ui.stealing_caught",
+      "ui.stealing_failed",
+      "ui.found_gold_and_item"
+    ],
+    "all_old_caption_values_retained": true,
+    "ui_text_sha256": "29e629974c654991fac368f05a0c0f34014be79ebc9ba73bd9c78fc00b51d89d",
+    "combat223_navigation222_and_all_other_members_worlds_retained": true,
+    "controlled_fixtures": false,
+    "new_release": false
+  },
+  "consumable_feedback_226": {
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/spell-item-feedback-225/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/consumable-feedback-226/runtime-001",
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "added_members": [],
+    "old_ui_count": 179,
+    "new_ui_count": 210,
+    "added_keys": [
+      "ui.item_mixed_potion",
+      "ui.item_target_inactive",
+      "ui.item_skills_already_known",
+      "ui.item_skills_not_learnable",
+      "ui.item_skill_learning_failed",
+      "ui.item_skill_learned",
+      "ui.item_skills_learned",
+      "ui.item_reward_value",
+      "ui.item_reward_exclaim",
+      "ui.item_reward_permanent_format",
+      "ui.item_spell_data_missing",
+      "ui.item_unknown_scroll_spell",
+      "ui.item_connector_invalid_state",
+      "ui.item_mix_explosion",
+      "ui.item_cannot_use",
+      "ui.item_target_inactive_format",
+      "ui.item_use_underwater",
+      "ui.item_spell_learning_skill_required",
+      "ui.item_spell_already_known",
+      "ui.item_horseshoe_skill_points",
+      "ui.item_reward_gold",
+      "ui.item_reward_food",
+      "ui.item_reward_permanent",
+      "ui.condition_asleep",
+      "ui.condition_paralyzed",
+      "ui.condition_unconscious",
+      "ui.condition_dead",
+      "ui.condition_petrified",
+      "ui.condition_eradicated",
+      "ui.party_burning",
+      "ui.party_drowning"
+    ],
+    "all_old_caption_values_retained": true,
+    "ui_text_sha256": "cf6a6ca98463134389d752ad1c8d29b831bf835697dc7705623cd428716fdcfc",
+    "combat223_navigation222_and_all_other_members_worlds_retained": true,
+    "controlled_fixtures": false,
+    "new_release": false
+  },
+  "equipment_feedback_227": {
+    "runtime_base": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/consumable-feedback-226/runtime-001",
+    "runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/validation/equipment-feedback-227/runtime-001",
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "added_members": [],
+    "old_ui_count": 210,
+    "new_ui_count": 214,
+    "added_keys": [
+      "ui.item_cannot_equip_here",
+      "ui.item_cannot_equip",
+      "ui.item_cannot_place_here",
+      "ui.item_equip_target_occupied"
+    ],
+    "all_old_caption_values_retained": true,
+    "ui_text_sha256": "7215f3cb0d144472c8bc5d9f5cca507c8f7d6d593bb3ed91fed8fae5e42fee19",
+    "combat223_navigation222_and_all_other_members_worlds_retained": true,
+    "controlled_fixtures": false,
+    "new_release": false
+  },
+  "device_feedback_231": {
+    "checkpoint": 231,
+    "base_complete_runtime": "/Volumes/NVMeSSD/Projects/openyamm-Ⅰpados/local-data/device-validation/cumulative-229-20261030-001/resources-229",
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "added_members": [
+      "icons/manay.bmp",
+      "icons/manar.bmp",
+      "icons/statbl.bmp",
+      "icons/statr.bmp",
+      "icons/staty.bmp",
+      "icons/statg.bmp",
+      "icons/ib_spelico.bmp"
+    ],
+    "old_ui_keys": 214,
+    "new_ui_keys": 223,
+    "old_caption_values_retained": true,
+    "all_other_engine_members_byte_structure_retained": true,
+    "all_four_worlds_retained": true,
+    "save_version": 105,
+    "gameplay_rules_changed": false,
+    "natural_campaign_proved": false
+  },
+  "device_feedback_232": {
+    "checkpoint": 232,
+    "base_checkpoint": 231,
+    "changed_members": [
+      "data_tables/ui_text.txt",
+      "icons/statbl.bmp",
+      "icons/statr.bmp",
+      "icons/staty.bmp",
+      "icons/statg.bmp"
+    ],
+    "added_members": [],
+    "old_ui_keys": 223,
+    "new_ui_keys": 224,
+    "old_caption_values_retained": true,
+    "four_stat_images_original_palette_indices_retained": true,
+    "other_engine_members_retained": true,
+    "all_four_worlds_retained": true,
+    "save_version": 105,
+    "gameplay_rules_changed": false,
+    "controlled_fixtures": false,
+    "natural_campaign_proved": false
+  },
+  "item_status_ui_233": {
+    "checkpoint": 233,
+    "scope": "SOURCE_BUILD_IMPORT_ONLY",
+    "base_checkpoint": 232,
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "added_members": [],
+    "old_ui_keys": 224,
+    "new_ui_keys": 226,
+    "all_old_values_retained": true,
+    "original_global_text_rows": [
+      32,
+      232
+    ],
+    "all_other_engine_members_and_worlds_retained": true,
+    "save_version": 105,
+    "rules_changed": false,
+    "device_or_App_run": false,
+    "new_test_cases": 0,
+    "new_release": false
+  },
+  "offline_function_completion_234": {
+    "checkpoint": 234,
+    "scope": "SOURCE_BUILD_IMPORT_AND_FOCUSED_OFFLINE_CHECKS",
+    "base_checkpoint": 233,
+    "changed_members": [
+      "events/Global.lua"
+    ],
+    "added_members": [],
+    "imported_global_text_ids": [
+      97,
+      155,
+      379,
+      383,
+      384,
+      388,
+      389,
+      392,
+      395,
+      396,
+      397,
+      399,
+      402,
+      434
+    ],
+    "global_lua_sha256": "f1bf8754c01fb0944c4cc6d7a94e575daeb1e677eafdb4436b191fce4191f555",
+    "all_other_engine_members_and_four_worlds_retained": true,
+    "ui_text_keys": 226,
+    "save_version": 105,
+    "new_test_cases": 0,
+    "device_or_simulator_operations": false,
+    "App_run": false,
+    "full_natural_campaign_proved": false,
+    "new_release": false
+  },
+  "offline_input_completion_235": {
+    "checkpoint": 235,
+    "base_checkpoint": 234,
+    "scope": "SOURCE_BUILD_IMPORT_AND_FOCUSED_OFFLINE_CHECK",
+    "changed_members": [
+      "data_tables/ui_text.txt"
+    ],
+    "added_members": [],
+    "old_ui_keys": 226,
+    "new_ui_keys": 227,
+    "source_ui_rows": 156,
+    "project_ui_rows": 71,
+    "all_old_values_retained": true,
+    "all_other_engine_members_and_four_worlds_retained": true,
+    "save_version": 105,
+    "new_test_cases": 0,
+    "device_or_simulator_operations": false,
+    "App_run": false,
+    "full_natural_campaign_proved": false,
+    "new_release": false
+  },
+  "quit_confirmation_ui_241": {
+    "base": "complete235/runtime-002",
+    "changed": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_keys": 228,
+    "source_ids": [
+      34,
+      375,
+      523,
+      19,
+      56,
+      57,
+      109,
+      110,
+      437,
+      436,
+      463,
+      187,
+      522,
+      449,
+      18,
+      203,
+      53,
+      464,
+      11,
+      465,
+      9,
+      37,
+      94,
+      129,
+      245,
+      132,
+      146,
+      148,
+      25,
+      60,
+      244,
+      112,
+      183,
+      236,
+      237,
+      238,
+      239,
+      81,
+      431,
+      433,
+      432,
+      225,
+      153,
+      145,
+      230,
+      243,
+      227,
+      91,
+      188,
+      222,
+      415,
+      416,
+      417,
+      418,
+      419,
+      420,
+      421,
+      422,
+      423,
+      424,
+      425,
+      426,
+      16,
+      748,
+      706,
+      707,
+      708,
+      709,
+      710,
+      711,
+      712,
+      713,
+      714,
+      715,
+      716,
+      717,
+      718,
+      719,
+      720,
+      721,
+      722,
+      724,
+      725,
+      726,
+      727,
+      728,
+      729,
+      730,
+      731,
+      732,
+      733,
+      85,
+      742,
+      8,
+      141,
+      745,
+      746,
+      174,
+      602,
+      534,
+      242,
+      138,
+      143,
+      704,
+      705,
+      122,
+      407,
+      408,
+      126,
+      485,
+      496,
+      586,
+      428,
+      491,
+      495,
+      494,
+      499,
+      492,
+      497,
+      638,
+      585,
+      648,
+      467,
+      471,
+      563,
+      376,
+      377,
+      490,
+      444,
+      36,
+      382,
+      652,
+      381,
+      380,
+      125,
+      97,
+      653,
+      121,
+      14,
+      162,
+      231,
+      58,
+      220,
+      76,
+      661,
+      660,
+      98,
+      52,
+      241,
+      4,
+      69,
+      117,
+      166,
+      65,
+      32,
+      232,
+      82
+    ],
+    "project_translations": [
+      {
+        "key": "ui.empty_slot",
+        "en": "Empty",
+        "zh-CN": "空槽"
+      },
+      {
+        "key": "ui.menu",
+        "en": "Menu",
+        "zh-CN": "菜单"
+      },
+      {
+        "key": "ui.submit",
+        "en": "Submit",
+        "zh-CN": "提交"
+      },
+      {
+        "key": "ui.arcomage_resign",
+        "en": "Resign",
+        "zh-CN": "认输"
+      },
+      {
+        "key": "ui.arcomage_touch_hint",
+        "en": "Tap to play; swipe up to discard.",
+        "zh-CN": "轻点出牌，上划弃牌"
+      },
+      {
+        "key": "ui.arcomage_discard_hint",
+        "en": "Choose a card to discard.",
+        "zh-CN": "请选择要弃掉的牌"
+      },
+      {
+        "key": "ui.win_ending",
+        "en": "Excellent work! By thwarting the Destroyer of Worlds, you have pulled your world from the brink of unending oblivion. Not only may life continue, but a new peace reigns over Jadame. The mighty alliance you forged will see to the land's restoration and eventual prosperity.",
+        "zh-CN": "干得好！你挫败了世界毁灭者，将你的世界从永恒毁灭的边缘拯救了回来。生命得以延续，贾达姆也迎来了新的和平。你缔结的强大联盟将确保这片土地得到重建，并最终走向繁荣。"
+      },
+      {
+        "key": "ui.save_slot",
+        "en": "Save",
+        "zh-CN": "存档"
+      },
+      {
+        "key": "ui.keyboard_use",
+        "en": "Use",
+        "zh-CN": "使用"
+      },
+      {
+        "key": "ui.keyboard_double_speed",
+        "en": "Double Speed",
+        "zh-CN": "双倍速度"
+      },
+      {
+        "key": "ui.keyboard_press_input",
+        "en": "Choose key",
+        "zh-CN": "等待输入"
+      },
+      {
+        "key": "ui.keyboard_binding_conflict",
+        "en": "Conflict",
+        "zh-CN": "绑定冲突"
+      },
+      {
+        "key": "ui.journal_notes",
+        "en": "Notes",
+        "zh-CN": "笔记"
+      },
+      {
+        "key": "ui.inventory_target_hint",
+        "en": "Select an item to cast; Exit cancels.",
+        "zh-CN": "选择物品施法；退出取消。"
+      },
+      {
+        "key": "ui.skill_training_learned",
+        "en": "%s is now a %s in %s.",
+        "zh-CN": "%s已掌握%s级的%s技能。"
+      },
+      {
+        "key": "ui.skill_training_requirement",
+        "en": "Your base %s must be at least %u to learn %s %s.",
+        "zh-CN": "基础%s至少达到%u点，才能学习%s级%s。"
+      },
+      {
+        "key": "ui.confirm",
+        "en": "OK",
+        "zh-CN": "确定"
+      },
+      {
+        "key": "ui.transition_enter",
+        "en": "Do you wish to enter %s?",
+        "zh-CN": "你想进入%s吗？"
+      },
+      {
+        "key": "ui.transition_leave_area",
+        "en": "Do you wish to leave this area?",
+        "zh-CN": "你想离开这个区域吗？"
+      },
+      {
+        "key": "ui.throne_serve_sentence",
+        "en": "Serve Sentence",
+        "zh-CN": "服刑"
+      },
+      {
+        "key": "ui.disabled",
+        "en": "disabled",
+        "zh-CN": "不可用"
+      },
+      {
+        "key": "ui.throne_no_fine",
+        "en": "You do not owe a fine.",
+        "zh-CN": "你没有未缴的罚金。"
+      },
+      {
+        "key": "ui.throne_sentence_served",
+        "en": "You have served one year in prison.",
+        "zh-CN": "你已经服刑一年。"
+      },
+      {
+        "key": "ui.finish_current_action",
+        "en": "Finish current action",
+        "zh-CN": "请先完成当前动作。"
+      },
+      {
+        "key": "ui.spell_not_learned",
+        "en": "Spell not learned",
+        "zh-CN": "尚未学会此法术。"
+      },
+      {
+        "key": "ui.spell_select_actor",
+        "en": "Select actor for %s",
+        "zh-CN": "请选择%s的目标生物。"
+      },
+      {
+        "key": "ui.spell_select_character",
+        "en": "Select character for %s",
+        "zh-CN": "请选择%s的目标队员。"
+      },
+      {
+        "key": "ui.spell_select_ground",
+        "en": "Select ground point for %s",
+        "zh-CN": "请选择%s的施法位置。"
+      },
+      {
+        "key": "ui.spell_select_target",
+        "en": "Select target for %s",
+        "zh-CN": "请选择%s的目标。"
+      },
+      {
+        "key": "ui.spell_target_controls_mouse",
+        "en": "LMB cast  Esc cancel",
+        "zh-CN": "鼠标左键施法，Esc取消"
+      },
+      {
+        "key": "ui.spell_target_controls_touch_ground",
+        "en": "Drag target  Spell button cast  Pause cancel",
+        "zh-CN": "拖动选择目标，法术按钮施法，暂停取消"
+      },
+      {
+        "key": "ui.spell_target_controls_touch_portrait",
+        "en": "Tap portrait  Menu cancel",
+        "zh-CN": "轻点头像，菜单取消"
+      },
+      {
+        "key": "ui.spell_target_controls_touch_target",
+        "en": "Tap target  Menu cancel",
+        "zh-CN": "轻点目标，菜单取消"
+      },
+      {
+        "key": "ui.town_portal_choose_destination",
+        "en": "Choose Town Portal destination",
+        "zh-CN": "请选择时空之门目的地。"
+      },
+      {
+        "key": "ui.high_magic_presence",
+        "en": "You feel high magic presence here.",
+        "zh-CN": "你感觉到这里有强大的魔法力量。"
+      },
+      {
+        "key": "ui.spell_unknown_quick",
+        "en": "Unknown quick spell",
+        "zh-CN": "未知的快捷法术"
+      },
+      {
+        "key": "ui.town_portal_data_missing",
+        "en": "Town Portal data missing",
+        "zh-CN": "缺少时空之门数据"
+      },
+      {
+        "key": "ui.spell_divine_intervention_blocked_by_gear",
+        "en": "Divine Intervention is blocked by equipped gear",
+        "zh-CN": "当前装备阻止施展此法术。"
+      },
+      {
+        "key": "ui.spell_wand_already_charged",
+        "en": "Wand already charged!",
+        "zh-CN": "魔杖已经充能！"
+      },
+      {
+        "key": "ui.spell_not_skilled_enough",
+        "en": "Not skilled enough",
+        "zh-CN": "魔法技能不足"
+      },
+      {
+        "key": "ui.spell_canceled",
+        "en": "Spell canceled",
+        "zh-CN": "已取消施法"
+      },
+      {
+        "key": "ui.spell_unknown_attack",
+        "en": "Unknown attack spell",
+        "zh-CN": "未知的攻击法术"
+      },
+      {
+        "key": "ui.spell_armageddon_already_active",
+        "en": "Armageddon already active",
+        "zh-CN": "末日审判已经生效"
+      },
+      {
+        "key": "ui.spell_armageddon_daily_limit",
+        "en": "No Armageddon casts left today",
+        "zh-CN": "今天的末日审判施放次数已用完"
+      },
+      {
+        "key": "ui.generic_item_name",
+        "en": "item",
+        "zh-CN": "物品"
+      },
+      {
+        "key": "ui.stealing_skill_required",
+        "en": "You need Stealing skill.",
+        "zh-CN": "需要偷窃技能。"
+      },
+      {
+        "key": "ui.interaction_too_far",
+        "en": "Too far away.",
+        "zh-CN": "距离太远。"
+      },
+      {
+        "key": "ui.stealing_nothing",
+        "en": "Nothing to steal.",
+        "zh-CN": "没有可偷取的物品。"
+      },
+      {
+        "key": "ui.item_identified",
+        "en": "Identified %s.",
+        "zh-CN": "已鉴定%s。"
+      },
+      {
+        "key": "ui.item_repaired",
+        "en": "Repaired %s.",
+        "zh-CN": "已修理%s。"
+      },
+      {
+        "key": "ui.item_unavailable",
+        "en": "Unavailable.",
+        "zh-CN": "暂不可用。"
+      },
+      {
+        "key": "ui.item_mixed_potion",
+        "en": "Mixed potion",
+        "zh-CN": "药剂混合完成"
+      },
+      {
+        "key": "ui.item_target_inactive",
+        "en": "That player is not active",
+        "zh-CN": "该队员当前无法行动"
+      },
+      {
+        "key": "ui.item_skills_already_known",
+        "en": "You already know one or more skills in %s",
+        "zh-CN": "你已经学会%s中的一项或多项技能"
+      },
+      {
+        "key": "ui.item_skills_not_learnable",
+        "en": "This character cannot learn the skills in %s",
+        "zh-CN": "该角色无法学习%s中的技能"
+      },
+      {
+        "key": "ui.item_skill_learning_failed",
+        "en": "The skill could not be learned",
+        "zh-CN": "未能学会此技能"
+      },
+      {
+        "key": "ui.item_skill_learned",
+        "en": "Learned %s",
+        "zh-CN": "已学会%s"
+      },
+      {
+        "key": "ui.item_skills_learned",
+        "en": "Learned the skills in %s",
+        "zh-CN": "已学会%s中的技能"
+      },
+      {
+        "key": "ui.item_reward_value",
+        "en": "+%u %s",
+        "zh-CN": "+%u %s"
+      },
+      {
+        "key": "ui.item_reward_exclaim",
+        "en": "+%u %s!",
+        "zh-CN": "+%u %s！"
+      },
+      {
+        "key": "ui.item_reward_permanent_format",
+        "en": "+%u %s %s",
+        "zh-CN": "+%u %s（%s）"
+      },
+      {
+        "key": "ui.item_spell_data_missing",
+        "en": "Spell data missing",
+        "zh-CN": "缺少法术数据"
+      },
+      {
+        "key": "ui.item_unknown_scroll_spell",
+        "en": "Unknown scroll spell",
+        "zh-CN": "未知的卷轴法术"
+      },
+      {
+        "key": "ui.item_connector_invalid_state",
+        "en": "Invalid connector state.",
+        "zh-CN": "连接石状态无效。"
+      },
+      {
+        "key": "ui.item_cannot_equip_here",
+        "en": "Can't equip that item there",
+        "zh-CN": "无法在此处装备这件物品。"
+      },
+      {
+        "key": "ui.item_cannot_equip",
+        "en": "Can't equip that item",
+        "zh-CN": "无法装备这件物品。"
+      },
+      {
+        "key": "ui.item_cannot_place_here",
+        "en": "Can't place that item here",
+        "zh-CN": "物品无法放在这里。"
+      },
+      {
+        "key": "ui.item_equip_target_occupied",
+        "en": "That equipment slot is occupied",
+        "zh-CN": "该装备位置已被占用。"
+      },
+      {
+        "key": "ui.not_applicable",
+        "en": "N/A",
+        "zh-CN": "不适用"
+      },
+      {
+        "key": "ui.message_scroll_read_hint",
+        "en": "A message scroll. Pick up the scroll, then select the character's full-body portrait to read it.",
+        "zh-CN": "一卷消息卷宗。拿起卷宗后，选择人物全身像阅读。"
+      },
+      {
+        "key": "ui.input_answer_prefix",
+        "en": "Answer: ",
+        "zh-CN": "答案："
+      }
+    ],
+    "source": "Data/10 LocZHCN.EnglishT.lod::global.txt",
+    "typed_validation": true,
+    "full_gameplay_validated": false,
+    "device_acceptance": false
+  },
+  "follower_feedback_246": {
+    "base": "complete241/runtime-002",
+    "changed": [
+      "data_tables/ui_text.txt"
+    ],
+    "ui_text_keys": 233,
+    "source_ids": [
+      34,
+      375,
+      523,
+      19,
+      56,
+      57,
+      109,
+      110,
+      437,
+      436,
+      463,
+      187,
+      522,
+      449,
+      18,
+      203,
+      53,
+      464,
+      11,
+      465,
+      9,
+      37,
+      94,
+      129,
+      245,
+      132,
+      146,
+      148,
+      25,
+      60,
+      244,
+      112,
+      183,
+      236,
+      237,
+      238,
+      239,
+      81,
+      431,
+      433,
+      432,
+      225,
+      153,
+      145,
+      230,
+      243,
+      227,
+      91,
+      188,
+      222,
+      415,
+      416,
+      417,
+      418,
+      419,
+      420,
+      421,
+      422,
+      423,
+      424,
+      425,
+      426,
+      16,
+      748,
+      706,
+      707,
+      708,
+      709,
+      710,
+      711,
+      712,
+      713,
+      714,
+      715,
+      716,
+      717,
+      718,
+      719,
+      720,
+      721,
+      722,
+      724,
+      725,
+      726,
+      727,
+      728,
+      729,
+      730,
+      731,
+      732,
+      733,
+      85,
+      742,
+      8,
+      141,
+      745,
+      746,
+      174,
+      602,
+      534,
+      242,
+      138,
+      143,
+      704,
+      705,
+      122,
+      407,
+      408,
+      126,
+      485,
+      496,
+      586,
+      428,
+      491,
+      495,
+      494,
+      499,
+      492,
+      497,
+      638,
+      585,
+      648,
+      467,
+      471,
+      563,
+      376,
+      377,
+      490,
+      444,
+      36,
+      382,
+      652,
+      381,
+      380,
+      125,
+      97,
+      653,
+      121,
+      14,
+      162,
+      231,
+      58,
+      220,
+      76,
+      661,
+      660,
+      98,
+      52,
+      241,
+      4,
+      69,
+      117,
+      166,
+      65,
+      32,
+      232,
+      82
+    ],
+    "project_translations": [
+      {
+        "key": "ui.empty_slot",
+        "en": "Empty",
+        "zh-CN": "空槽"
+      },
+      {
+        "key": "ui.menu",
+        "en": "Menu",
+        "zh-CN": "菜单"
+      },
+      {
+        "key": "ui.submit",
+        "en": "Submit",
+        "zh-CN": "提交"
+      },
+      {
+        "key": "ui.arcomage_resign",
+        "en": "Resign",
+        "zh-CN": "认输"
+      },
+      {
+        "key": "ui.arcomage_touch_hint",
+        "en": "Tap to play; swipe up to discard.",
+        "zh-CN": "轻点出牌，上划弃牌"
+      },
+      {
+        "key": "ui.arcomage_discard_hint",
+        "en": "Choose a card to discard.",
+        "zh-CN": "请选择要弃掉的牌"
+      },
+      {
+        "key": "ui.win_ending",
+        "en": "Excellent work! By thwarting the Destroyer of Worlds, you have pulled your world from the brink of unending oblivion. Not only may life continue, but a new peace reigns over Jadame. The mighty alliance you forged will see to the land's restoration and eventual prosperity.",
+        "zh-CN": "干得好！你挫败了世界毁灭者，将你的世界从永恒毁灭的边缘拯救了回来。生命得以延续，贾达姆也迎来了新的和平。你缔结的强大联盟将确保这片土地得到重建，并最终走向繁荣。"
+      },
+      {
+        "key": "ui.save_slot",
+        "en": "Save",
+        "zh-CN": "存档"
+      },
+      {
+        "key": "ui.keyboard_use",
+        "en": "Use",
+        "zh-CN": "使用"
+      },
+      {
+        "key": "ui.keyboard_double_speed",
+        "en": "Double Speed",
+        "zh-CN": "双倍速度"
+      },
+      {
+        "key": "ui.keyboard_press_input",
+        "en": "Choose key",
+        "zh-CN": "等待输入"
+      },
+      {
+        "key": "ui.keyboard_binding_conflict",
+        "en": "Conflict",
+        "zh-CN": "绑定冲突"
+      },
+      {
+        "key": "ui.journal_notes",
+        "en": "Notes",
+        "zh-CN": "笔记"
+      },
+      {
+        "key": "ui.inventory_target_hint",
+        "en": "Select an item to cast; Exit cancels.",
+        "zh-CN": "选择物品施法；退出取消。"
+      },
+      {
+        "key": "ui.skill_training_learned",
+        "en": "%s is now a %s in %s.",
+        "zh-CN": "%s已掌握%s级的%s技能。"
+      },
+      {
+        "key": "ui.skill_training_requirement",
+        "en": "Your base %s must be at least %u to learn %s %s.",
+        "zh-CN": "基础%s至少达到%u点，才能学习%s级%s。"
+      },
+      {
+        "key": "ui.confirm",
+        "en": "OK",
+        "zh-CN": "确定"
+      },
+      {
+        "key": "ui.transition_enter",
+        "en": "Do you wish to enter %s?",
+        "zh-CN": "你想进入%s吗？"
+      },
+      {
+        "key": "ui.transition_leave_area",
+        "en": "Do you wish to leave this area?",
+        "zh-CN": "你想离开这个区域吗？"
+      },
+      {
+        "key": "ui.throne_serve_sentence",
+        "en": "Serve Sentence",
+        "zh-CN": "服刑"
+      },
+      {
+        "key": "ui.disabled",
+        "en": "disabled",
+        "zh-CN": "不可用"
+      },
+      {
+        "key": "ui.throne_no_fine",
+        "en": "You do not owe a fine.",
+        "zh-CN": "你没有未缴的罚金。"
+      },
+      {
+        "key": "ui.throne_sentence_served",
+        "en": "You have served one year in prison.",
+        "zh-CN": "你已经服刑一年。"
+      },
+      {
+        "key": "ui.finish_current_action",
+        "en": "Finish current action",
+        "zh-CN": "请先完成当前动作。"
+      },
+      {
+        "key": "ui.spell_not_learned",
+        "en": "Spell not learned",
+        "zh-CN": "尚未学会此法术。"
+      },
+      {
+        "key": "ui.spell_select_actor",
+        "en": "Select actor for %s",
+        "zh-CN": "请选择%s的目标生物。"
+      },
+      {
+        "key": "ui.spell_select_character",
+        "en": "Select character for %s",
+        "zh-CN": "请选择%s的目标队员。"
+      },
+      {
+        "key": "ui.spell_select_ground",
+        "en": "Select ground point for %s",
+        "zh-CN": "请选择%s的施法位置。"
+      },
+      {
+        "key": "ui.spell_select_target",
+        "en": "Select target for %s",
+        "zh-CN": "请选择%s的目标。"
+      },
+      {
+        "key": "ui.spell_target_controls_mouse",
+        "en": "LMB cast  Esc cancel",
+        "zh-CN": "鼠标左键施法，Esc取消"
+      },
+      {
+        "key": "ui.spell_target_controls_touch_ground",
+        "en": "Drag target  Spell button cast  Pause cancel",
+        "zh-CN": "拖动选择目标，法术按钮施法，暂停取消"
+      },
+      {
+        "key": "ui.spell_target_controls_touch_portrait",
+        "en": "Tap portrait  Menu cancel",
+        "zh-CN": "轻点头像，菜单取消"
+      },
+      {
+        "key": "ui.spell_target_controls_touch_target",
+        "en": "Tap target  Menu cancel",
+        "zh-CN": "轻点目标，菜单取消"
+      },
+      {
+        "key": "ui.town_portal_choose_destination",
+        "en": "Choose Town Portal destination",
+        "zh-CN": "请选择时空之门目的地。"
+      },
+      {
+        "key": "ui.high_magic_presence",
+        "en": "You feel high magic presence here.",
+        "zh-CN": "你感觉到这里有强大的魔法力量。"
+      },
+      {
+        "key": "ui.spell_unknown_quick",
+        "en": "Unknown quick spell",
+        "zh-CN": "未知的快捷法术"
+      },
+      {
+        "key": "ui.town_portal_data_missing",
+        "en": "Town Portal data missing",
+        "zh-CN": "缺少时空之门数据"
+      },
+      {
+        "key": "ui.spell_divine_intervention_blocked_by_gear",
+        "en": "Divine Intervention is blocked by equipped gear",
+        "zh-CN": "当前装备阻止施展此法术。"
+      },
+      {
+        "key": "ui.spell_wand_already_charged",
+        "en": "Wand already charged!",
+        "zh-CN": "魔杖已经充能！"
+      },
+      {
+        "key": "ui.spell_not_skilled_enough",
+        "en": "Not skilled enough",
+        "zh-CN": "魔法技能不足"
+      },
+      {
+        "key": "ui.spell_canceled",
+        "en": "Spell canceled",
+        "zh-CN": "已取消施法"
+      },
+      {
+        "key": "ui.spell_unknown_attack",
+        "en": "Unknown attack spell",
+        "zh-CN": "未知的攻击法术"
+      },
+      {
+        "key": "ui.spell_armageddon_already_active",
+        "en": "Armageddon already active",
+        "zh-CN": "末日审判已经生效"
+      },
+      {
+        "key": "ui.spell_armageddon_daily_limit",
+        "en": "No Armageddon casts left today",
+        "zh-CN": "今天的末日审判施放次数已用完"
+      },
+      {
+        "key": "ui.generic_item_name",
+        "en": "item",
+        "zh-CN": "物品"
+      },
+      {
+        "key": "ui.stealing_skill_required",
+        "en": "You need Stealing skill.",
+        "zh-CN": "需要偷窃技能。"
+      },
+      {
+        "key": "ui.interaction_too_far",
+        "en": "Too far away.",
+        "zh-CN": "距离太远。"
+      },
+      {
+        "key": "ui.stealing_nothing",
+        "en": "Nothing to steal.",
+        "zh-CN": "没有可偷取的物品。"
+      },
+      {
+        "key": "ui.item_identified",
+        "en": "Identified %s.",
+        "zh-CN": "已鉴定%s。"
+      },
+      {
+        "key": "ui.item_repaired",
+        "en": "Repaired %s.",
+        "zh-CN": "已修理%s。"
+      },
+      {
+        "key": "ui.item_unavailable",
+        "en": "Unavailable.",
+        "zh-CN": "暂不可用。"
+      },
+      {
+        "key": "ui.item_mixed_potion",
+        "en": "Mixed potion",
+        "zh-CN": "药剂混合完成"
+      },
+      {
+        "key": "ui.item_target_inactive",
+        "en": "That player is not active",
+        "zh-CN": "该队员当前无法行动"
+      },
+      {
+        "key": "ui.item_skills_already_known",
+        "en": "You already know one or more skills in %s",
+        "zh-CN": "你已经学会%s中的一项或多项技能"
+      },
+      {
+        "key": "ui.item_skills_not_learnable",
+        "en": "This character cannot learn the skills in %s",
+        "zh-CN": "该角色无法学习%s中的技能"
+      },
+      {
+        "key": "ui.item_skill_learning_failed",
+        "en": "The skill could not be learned",
+        "zh-CN": "未能学会此技能"
+      },
+      {
+        "key": "ui.item_skill_learned",
+        "en": "Learned %s",
+        "zh-CN": "已学会%s"
+      },
+      {
+        "key": "ui.item_skills_learned",
+        "en": "Learned the skills in %s",
+        "zh-CN": "已学会%s中的技能"
+      },
+      {
+        "key": "ui.item_reward_value",
+        "en": "+%u %s",
+        "zh-CN": "+%u %s"
+      },
+      {
+        "key": "ui.item_reward_exclaim",
+        "en": "+%u %s!",
+        "zh-CN": "+%u %s！"
+      },
+      {
+        "key": "ui.item_reward_permanent_format",
+        "en": "+%u %s %s",
+        "zh-CN": "+%u %s（%s）"
+      },
+      {
+        "key": "ui.item_spell_data_missing",
+        "en": "Spell data missing",
+        "zh-CN": "缺少法术数据"
+      },
+      {
+        "key": "ui.item_unknown_scroll_spell",
+        "en": "Unknown scroll spell",
+        "zh-CN": "未知的卷轴法术"
+      },
+      {
+        "key": "ui.item_connector_invalid_state",
+        "en": "Invalid connector state.",
+        "zh-CN": "连接石状态无效。"
+      },
+      {
+        "key": "ui.item_cannot_equip_here",
+        "en": "Can't equip that item there",
+        "zh-CN": "无法在此处装备这件物品。"
+      },
+      {
+        "key": "ui.item_cannot_equip",
+        "en": "Can't equip that item",
+        "zh-CN": "无法装备这件物品。"
+      },
+      {
+        "key": "ui.item_cannot_place_here",
+        "en": "Can't place that item here",
+        "zh-CN": "物品无法放在这里。"
+      },
+      {
+        "key": "ui.item_equip_target_occupied",
+        "en": "That equipment slot is occupied",
+        "zh-CN": "该装备位置已被占用。"
+      },
+      {
+        "key": "ui.not_applicable",
+        "en": "N/A",
+        "zh-CN": "不适用"
+      },
+      {
+        "key": "ui.message_scroll_read_hint",
+        "en": "A message scroll. Pick up the scroll, then select the character's full-body portrait to read it.",
+        "zh-CN": "一卷消息卷宗。拿起卷宗后，选择人物全身像阅读。"
+      },
+      {
+        "key": "ui.input_answer_prefix",
+        "en": "Answer: ",
+        "zh-CN": "答案："
+      },
+      {
+        "key": "ui.follower_unavailable",
+        "en": "That follower is not available.",
+        "zh-CN": "该随从当前不可用。"
+      },
+      {
+        "key": "ui.follower_already_following",
+        "en": "%s is already following you.",
+        "zh-CN": "%s已经在跟随你。"
+      },
+      {
+        "key": "ui.follower_joined",
+        "en": "%s joined the followers.",
+        "zh-CN": "%s加入了随从队伍。"
+      },
+      {
+        "key": "ui.follower_left",
+        "en": "%s left the followers.",
+        "zh-CN": "%s离开了随从队伍。"
+      },
+      {
+        "key": "ui.generic_follower_name",
+        "en": "The follower",
+        "zh-CN": "该随从"
+      }
+    ],
+    "source": "Data/10 LocZHCN.EnglishT.lod::global.txt",
+    "typed_validation": true,
+    "full_gameplay_validated": false,
+    "device_acceptance": false,
+    "old228_values_retained": true
+  },
+  "equipment_indexed_253": {
+    "base": "complete246/runtime-002",
+    "changed": [
+      "icons/6helm1v1.bmp"
+    ],
+    "original_index_identity_preserved": true,
+    "same_rgb_pixels": true,
+    "ui_text_keys": 233,
+    "full_gameplay_validated": false,
+    "device_acceptance": false
+  },
+  "equipment_indexed_254": {
+    "base": "complete253/runtime-001",
+    "changed": [
+      "icons/6helm1v2.bmp",
+      "icons/6helm1v4.bmp",
+      "icons/6helm1v5.bmp"
+    ],
+    "original_index_identity_preserved": true,
+    "same_rgb_pixels": true,
+    "source": "253unchanged",
+    "other_existing_color_key_members_retained": 1058,
+    "missing_stage_refs_excluded": 45,
+    "device_acceptance": false
+  },
+  "decoration_hint_256": {
+    "base": "complete254/runtime-001",
+    "changed_engine_members": [
+      "data_tables/decoration_data.txt"
+    ],
+    "changed_hint_rows": 116,
+    "all_other_cells_identical": true,
+    "original_source": "Same-root English/ChineseOutE3.str13",
+    "no_schema_rule_or_id_change": true,
+    "full_gameplay_validated": false,
+    "device_acceptance": false
+  }
+}

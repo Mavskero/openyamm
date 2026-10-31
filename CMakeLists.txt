@@ -91,7 +91,8 @@ if (APPLE)
         tools/mmerge_import/ActorResources.cpp tools/mmerge_import/SpriteFrameResources.cpp
         tools/mmerge_import/SurfaceResources.cpp)
     target_link_libraries(openyamm_outdoor_import PUBLIC openyamm_menu_import openyamm_game)
-    add_library(openyamm_text_import STATIC tools/mmerge_import/TextResources.cpp)
+    add_library(openyamm_text_import STATIC tools/mmerge_import/TextResources.cpp
+        tools/legacy_events/StrTable.cpp)
     target_include_directories(openyamm_text_import PUBLIC "${CMAKE_SOURCE_DIR}")
     target_link_libraries(openyamm_text_import PRIVATE iconv)
     add_library(openyamm_story_import STATIC tools/mmerge_import/StoryResources.cpp)
@@ -213,7 +214,7 @@ if (APPLE)
         tools/mmerge_import/BreachAlvarCompanionResources.cpp
         tools/mmerge_import/BreachMercenaryResources.cpp
         tools/mmerge_import/MercenaryReleaseResources.cpp
-        tools/LegacyLuaExport.cpp tools/legacy_events/EvtProgram.cpp tools/legacy_events/StrTable.cpp)
+        tools/LegacyLuaExport.cpp tools/legacy_events/EvtProgram.cpp)
     file(READ "${CMAKE_SOURCE_DIR}/assets_dev/engine/scripts/common/event_support.lua" OPENYAMM_EVENT_SUPPORT_SOURCE)
     configure_file(tools/mmerge_import/EventSupportSource.h.in generated/EventSupportSource.h @ONLY)
     file(READ "${CMAKE_SOURCE_DIR}/tools/mmerge_import/overlays/Global_mmmerge_cross_continents_intro.lua"

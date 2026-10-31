@@ -4,6 +4,22 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- USER PAUSE 2026-10-31: user explicitly requests temporary stop, close simulators and push current work/docs.
+  Full development goal is PAUSED (goal tool confirmed), not complete. No new development/build/App/device/simulator
+  work until explicit user resume; only requested GitHub delivery cleanup is authorized now. Simulator/Emulator and
+  current Mac game confirmed not running; all source agents inactive, all owned build/import/assembly jobs collected.
+  Resume handoff: `openyamm/handoff/paused-offline-256-20261031/README.md`; complete256 runtime prepared,
+  229-based cumulative14-member overlay+currentconversion preserve4identicalworlds. Fullnaturalcampaign unproved/~88%.
+
+- 256 ACCEPTED_OFFLINE_SOURCE_RESOURCE_SCOPED: `openyamm/handoff/decoration-hover-text-256/README.md`.
+  ExacttreeHint usesauthenticated same-rootEnglish/ChineseOutE3.str13;116Hintcells only/673rows/16cols.
+  ExistingStrTable.cpp movedunchangedto sharedtext_import;3source/dependencyhashmatch. Native3.701s/iOS7.331s/
+  originalimport0.893s/assembly6.798spass;0unit/newcases/App/device/simulator. Complete256changesoneHinttable,
+  other17398engine members/4worlds/Ui233/Combat223/nav222/Save106 retained. Actualrepairedhover postponedbyuserpause.
+  255savedtownfolk/guardsfriendly/nofine/conditions;A/Dattackaliasexcluded;damageattackerunknown,norulepatch.
+  25745missingcape b candidatesoriginallyabsentoptionalcollars;45bodiespresent,emptylayerscorrectlyskipped.
+  Alljobscollected;paused,not fullgoalcompletion. Preservefixedreleases/allsaves;onlyexplicituserresumerestartswork.
+
 - USER STEERING 2026-10-31: physical-device debugging is PAUSED by explicit user request.
   Continue device-independent implementation; no device/simulator interactions, installs, screenshots or
   keep-awake input while paused. User switched all current subagents to gpt-6.1-sol/max; old Astra work is
