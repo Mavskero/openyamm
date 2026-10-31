@@ -7,7 +7,7 @@
 
 仓库为 [Mavskero/openyamm](https://github.com/Mavskero/openyamm)，开发分支为 `codex/ipados`。
 `8989cf96dcd1d5c23de2d5da2a58030c92e3291d`记录231–232源码和脱敏受限真机证据；
-后续233–253集成身份按当前Git提交及各handoff逐文件摘要核对，不改写固定发布`ipados-ui-cumulative-229-20261030`。
+后续233–254集成身份按当前Git提交及各handoff逐文件摘要核对，不改写固定发布`ipados-ui-cumulative-229-20261030`；254仅资源变更。
 242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`；243为`ACCEPTED_OFFLINE_MAC_SCOPED`，自然Mac银行及两项受影响修复已受限通过。
 244同为`ACCEPTED_OFFLINE_MAC_SCOPED`，自然Mac商店及Cocoa拖离误购买修复已受限通过，不作iPad触控验收。
 245自然Mac generated NPC与职业说明修复亦为`ACCEPTED_OFFLINE_MAC_SCOPED`；修后职业说明实际复查的是另一NPC伯尼，未声称威尔勒德职业16说明复验。
@@ -15,7 +15,8 @@
 其累计基线`cb084d3a06c8085939ff60c1b0b00d8ed3125271`已推送并核对；248–249为`ACCEPTED_OFFLINE_MECHANICS_SCOPED`，9份最终源码摘要已核对。
 248–249提交`69c2fe94a574d0dbf34e06b5113670ccea1053bb`已推送，远端HEAD及提交内9文件摘要核对通过；250为`ACCEPTED_OFFLINE_MECHANICS_SCOPED`，7文件最终摘要全部匹配。
 250提交`1bfefd6ff5fa1b970922a8e3e7072bd19503b25b`已推送，远端及提交内7份摘要核对通过；251–253为`ACCEPTED_OFFLINE_MAC_SCOPED`，5源码摘要匹配，实际仅010首个装备画面受限通过。
-固定229、214、195、RC1/RC2/RC3及其原始附件继续保留；231–253没有发布新Release。
+251–253提交`dba702bf92d8a38fb4097f1b419b89803a44715a`已推送，远端5份源码摘要核实；254为`ACCEPTED_OFFLINE_RESOURCE_SCOPED`，没有新增源码或构建。
+固定229、214、195、RC1/RC2/RC3及其原始附件继续保留；231–254没有发布新Release。
 
 ## 当前状态与继续入口
 
@@ -40,7 +41,8 @@
 | [247武器随从加成](handoff/weapon-follower-bonus-247/README.md) | 原脚本七武器加成接入实际战斗读取，以独立瞬态表保留stored技能、精通、装备资格及Save106。原生166.684508秒／未签名iOS171.877579秒通过，5生产＋1既有测试文件共6摘要匹配；一个既有case2.029935秒、27／27断言通过，14个其他case跳过，含Mace4→7命中＋3及未学Bow有效3／Normal。零新case／App／写档／资源变更，不作自然雇佣或实战验收 |
 | [248–249被动随从加成](handoff/passive-follower-completion-248-249/README.md) | 23项技能projection接经验／价格／utility／护甲／施法，Luck和四抗接实际承伤并避免Event双加；两名合法职业37各＋20、合计四抗＋40。全量原生187.762773秒／iOS194.328930秒及单cpp增量3.467936秒／6.777035秒通过，7生产＋2既有测试共9摘要核对。首轮3个既有case中spell／defense通过，utility价格夹具修正后单独36／36断言通过；原两项未重跑，零新case／App／写档／资源变更 |
 | [250随从步行减时与ActualLuck](handoff/follower-travel-luck-250/README.md) | ActualLuck脚本getter补实际值，步行quote／plan共享职业5／6／7／44减时，仅处理正Days的.odm→.odm。原生30.834420秒／未签名iOS30.590615秒通过，7摘要匹配；首次2个既有case2.060471秒、57断言通过，15跳过、零新case。两种确认形式quote／plan5→4，deferred结算后＋4日、food10→5并治疗；Luck两public别名及解雇清理通过。0日原源适配未证明，零App／写档／资源变更 |
-| [251–253房屋字幕与头盔显示](handoff/house-ui-and-equipment-251-253/README.md) | 009普通任务全文／给key及穿戴暴露头盔magenta矩形，仅新槽3默认名保存一次，009已退出收集。最终原生176.964303秒／iOS171.930220秒通过、5源码摘要匹配；253只换原6helm1v1为Indexed8。010正常读槽3，首个inventory画面1691透明正常、armor84／mace66正确，无夹具或修后写档；010随后继续普通游玩；四档在装备画面核对后摘要一致，尚非最终收尾。学习／122／1690仍限源码构建，不计中文自定名或全部装备UI通过 |
+| [251–253房屋字幕与头盔显示](handoff/house-ui-and-equipment-251-253/README.md) | 009普通任务全文／给key及穿戴暴露头盔magenta矩形，仅新槽3默认名保存一次，009已退出收集。最终原生176.964303秒／iOS171.930220秒通过、5源码摘要匹配；253只换原6helm1v1为Indexed8。010正常读槽3，首个inventory画面1691透明正常、armor84／mace66正确；010已正常退出并收集，4／4私档SHA不变、修后零写档。学习／122／1690仍限源码构建，不计中文自定名或全部装备UI通过 |
+| [254头盔palette0同源资源](handoff/helmet-palette-family-254/README.md) | 精确恢复6helm1v2／v4／v5三图Indexed8，RGB逐点不变，17396个其他engine成员及四world保留。零源码／构建／单元／App；新增3图仅原源及数值范围，45个missing未解决。254覆盖包相对246累计v1／v2／v4／v5四图，不是完整runtime或Release；010始终253程序／资源，已退出收集、4／4私档SHA不变，后续死亡未计新缺陷，未到训练营 |
 
 暂停前安装的是232，最后观察为House64标准商品页。该页已有截图在暂停后仅作离线复核：8件商品和600金币报价可见，拖离、购买与交易结果未执行。
 目标iPad的商店拖离取消、银行和长问题输入仍未验；243–245仅补Mac普通银行、商店、generated NPC及受影响修复，完整自然通关仍未证明。
@@ -63,10 +65,11 @@ UIKit隐藏输入框的preedit桥接已在237完成源码与编译验收；保�
 各handoff中的旧设备继续语句以本次暂停指令为准。236–240资源完全沿用235；完整241位于外层
 `local-data/validation/quit-confirmation-ui-241/runtime-002/`，只更新`data_tables/ui_text.txt`及conversion记录，
 其他17398个engine成员与四个world沿用235；world身份由相同inode及235既有摘要继承，没有重读四个大文件。
-241、246、253的单成员overlay按固定229完整六文件→231–232→234→235→241→246→253顺序搭配当前源码使用，不是完整runtime或新Release。
+当前覆盖顺序为固定229完整六文件→231–232→234→235→241→246→254；254相对246累计四图，已含253的v1。241／246各单成员、254四成员覆盖包均不是完整runtime或新Release。
 242–245沿用完整241；246/runtime-002只更新engine中的ui_text，247–250无资源变更。
 253已组装完整开发资源，位于外层`local-data/validation/natural-mac-gameplay-251/runtime-001/`，只替换`icons/6helm1v1.bmp`，其余17398成员与四world保留；实际仅010首个受影响装备画面通过。
-当前UiText233（157原源＋76项目）、Combat223、导航222不变；253单成员覆盖包见整组交接。
+待用完整254资源位于外层`local-data/validation/equipment-indexed-family-254/runtime-001/`，相对253仅再换v2／v4／v5三BMP，17396个其他engine成员及四world保留。
+UiText233（157原源＋76项目）、Combat223、导航222不变；010始终使用253程序／资源且已正常退出，254没有App操作或新增3图实际像素验收。
 当前写Save106，回退固定229或235需保留的105或更旧可读副本；不覆盖原存档。
 240–241只复核了内联CUA画面，没有导出截图；241二次退出后的AX观察可能重启至冷菜单，该段不计冷启动验收，
 随后正常退出，最终确认该次进程不存在。临时启动／打包环境失败和资源组装误报均保留，不是新增产品修复；详情见240–241交接。

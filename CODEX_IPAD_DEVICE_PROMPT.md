@@ -19,18 +19,19 @@
 `handoff/ipados-device-231-232-20261031/README.md` 与 `scoped-result.json`。
 仓库为 [Mavskero/openyamm](https://github.com/Mavskero/openyamm)，开发分支 `codex/ipados`；
 提交`8989cf96dcd1d5c23de2d5da2a58030c92e3291d`记录231–232源码和脱敏受限真机结果。
-233–253及后续源码身份按当前Git提交和对应handoff逐文件摘要核对；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
+233–254及后续集成身份按当前Git提交和对应handoff摘要核对，254仅资源变更；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
 243–245为`ACCEPTED_OFFLINE_MAC_SCOPED`，Mac自然银行、商店、generated NPC及受影响修复已受限通过，未扩大到目标iPad验收。
 246随从字幕、247武器随从加成按源码／构建及既有组件范围受限通过，由主代理一次累计源码提交；没有新增App或设备验收。
 其累计基线`cb084d3a06c8085939ff60c1b0b00d8ed3125271`已推送并核对；248–249为`ACCEPTED_OFFLINE_MECHANICS_SCOPED`，7生产＋2既有测试共9份最终摘要核对。
 248–249已提交并推送`69c2fe94a574d0dbf34e06b5113670ccea1053bb`，远端HEAD及提交内9文件摘要核对通过；250已按源码／构建及两个既有case受限通过，7文件最终摘要全部匹配。
 250已提交推送`1bfefd6ff5fa1b970922a8e3e7072bd19503b25b`，远端及提交内7份摘要核对通过；251–253合并交接为`ACCEPTED_OFFLINE_MAC_SCOPED`，5源码摘要匹配，实际仅010首个装备画面受限通过。
+251–253提交`dba702bf92d8a38fb4097f1b419b89803a44715a`已推送且远端5源码摘要核实；254为`ACCEPTED_OFFLINE_RESOURCE_SCOPED`，零源码／构建／单元／App操作。
 恢复前先核对最新工作树和主代理后续结果，保留未提交工作，不reset／clean，不把该提交或旧Release当成更新后程序身份。
 
 固定Release229为 `ipados-ui-cumulative-229-20261030`，生产代码提交为
 `8cdae9215ef7bb52e8fe8f6e83bf16641280fd0e`；完整发布源码身份从该发布 `VERSION.json → source_head` 读取。
 按 `SOURCE-MANIFEST.json`、`ARTIFACT-SHA256SUMS`、`SHA256SUMS` 和 `delivery.json` 核对该固定发布，
-保留229、214、195和RC1–3原附件。231–253没有新Release，不能声称229附件已含后续修复。
+保留229、214、195和RC1–3原附件。231–254没有新Release，不能声称229附件已含后续修复。
 
 231–232实际通过旧Save104读取、正常UI穿戴护甲84／主手武器66、新槽Save12／105，
 以及两次保留数据更新后的独立进程读档。中文Stats／技能表头、真实重叠双指物品检查、
@@ -119,7 +120,11 @@ walking两种生产确认形式（unpositioned／认证map_boundary）在Party�
 253复用convertLodImages API提取原6helm1v1为39×33 Indexed8，0.010753秒；1287个RGB像素与旧24bpp逐点相同，恢复668个palette0索引，BMP2398字节。
 完整253/runtime-001组装6.454302秒通过，只换`icons/6helm1v1.bmp`，其余17398成员／四world及Ui233／Combat223／导航222／Save106不变；253覆盖包仅该成员，不是完整runtime或新Release。
 010用最新程序及完整253资源正常读槽3，首个inventory画面1691头盔透明正常，armor84／mace66正确；只计此画面，无夹具／修后写档，不扩为其他装备runtime或全部装备UI验收。
-010在装备画面核对后继续普通游玩，仍由主代理运行，最终日志收尾未完成；4份隔离存档在该画面核对后摘要一致，不能记成010最终收尾。009已退出并收集，见[251–253交接](handoff/house-ui-and-equipment-251-253/README.md)。
+010已正常退出、PID不存在、日志收集，4／4私有档SHA完全不变，修后零写档；009也已退出并收集，见[251–253交接](handoff/house-ui-and-equipment-251-253/README.md)。
+254只将剩余同源6helm1v2／v4／v5三BMP恢复Indexed8，RGB逐点不变，零源码／构建／单元／App；新增三图仅原源和数值范围，未证明实际像素，45个既有missing引用未解决。
+待用完整254/runtime-001相对253只改三BMP，17396个其他成员及四world保留；Ui233／Combat223／导航222／Save106不变。
+254覆盖包相对246累计v1／v2／v4／v5四图，已含253的v1，不是完整runtime或Release。010始终使用253程序／资源；后续喷泉／受伤两次死亡，正常复活及UI重读槽3，未到训练营，未主动Attack／偷窃／施法。
+255仅作定点只读诊断，死亡不是新产品缺陷证明，学习界面仍限源码构建；没有额外单元、构建或设备操作，见[254交接](handoff/helmet-palette-family-254/README.md)。
 完整自然战役和所有离线工作完成仍未证明。
 
 暂停前设备最后观察为232的House64标准商品页；已有库存截图在暂停后作了离线复核，但未执行拖离、购买或交易结果检查，商店条件仍未验。
@@ -138,8 +143,8 @@ walking两种生产确认形式（unpositioned／认证map_boundary）在Party�
 固定214／195及旧RC也不能读取105，回退须用保留的相应可读旧格式副本。
 
 固定229完整六文件为 `engine.zip`、`conversion.json`、`mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip`。
-其基线runtime227包含214项UiText、Combat223和导航222；当前源码使用固定229→231–232→234→235→241→246→253的engine覆盖顺序。
-241与246覆盖包各只有ui_text，253只有`icons/6helm1v1.bmp`，均为单成员覆盖包，不是完整runtime或新Release，具体摘要见对应交接；完整资源及conversion身份按当时handoff核对。
+其基线runtime227包含214项UiText、Combat223和导航222；当前资源使用固定229→231–232→234→235→241→246→254的engine覆盖顺序。
+241与246覆盖包各只有ui_text，254相对246累计`icons/6helm1v1.bmp`／v2／v4／v5四图、已含253单图；均不是完整runtime或新Release，具体摘要见对应交接，完整资源及conversion身份按当时handoff核对。
 新机器按 `IPADOS_HANDOFF.md` 组装完整assets目录，engine与conversion在根目录，四个world在 `worlds/`，
 从组装后的根目录核对保留该相对路径的 `SHA256SUMS`。五个ZIP保持压缩，旧资源目录保留。
 MM6／MM7／MM8在190已改变，不能复用RC2旧world；不能把小型覆盖包或故障资源目录当成完整运行资源。

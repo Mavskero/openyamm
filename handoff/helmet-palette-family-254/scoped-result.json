@@ -1,0 +1,141 @@
+{
+  "checkpoint": 254,
+  "status": "ACCEPTED_OFFLINE_RESOURCE_SCOPED",
+  "source_base": "dba702bf92d8a38fb4097f1b419b89803a44715a",
+  "source_changes": 0,
+  "built_source_hashes_match": 5,
+  "basis": "Existing equipment-picture import stage:1062current images;1alreadyIndexed8;remaining3 palette0 colors not recognized by existing keys;1058others retain current key handling;45missing refs excluded",
+  "image_conversion": [
+    {
+      "member": "icons/6helm1v2.bmp",
+      "source_owner": "originalData/mmmerge.icons.lod::6helm1v2",
+      "dimensions": [
+        40,
+        36
+      ],
+      "before_bits": 24,
+      "after_bits": 8,
+      "palette_zero_rgb": [
+        252,
+        0,
+        216
+      ],
+      "palette_zero_pixels": 720,
+      "same_all_rgb_pixels": true,
+      "old_sha256": "e14517d3929e5b4c06c899fe135107a1f84c6f36b7fedc873b0637046c043e86",
+      "sha256": "3261e25d49247c8f4fab6035908c592854999127a21c2d0f70bb99f8d7bda8aa",
+      "bytes": 2518
+    },
+    {
+      "member": "icons/6helm1v4.bmp",
+      "source_owner": "originalData/mmmerge.icons.lod::6helm1v4",
+      "dimensions": [
+        47,
+        43
+      ],
+      "before_bits": 24,
+      "after_bits": 8,
+      "palette_zero_rgb": [
+        252,
+        0,
+        216
+      ],
+      "palette_zero_pixels": 1169,
+      "same_all_rgb_pixels": true,
+      "old_sha256": "544f642e8d627bb4e18d7853ca63f7092a60840135cc6c4500600f667dd8739b",
+      "sha256": "40d00c53039d17e8fe91d6037cb3ad84f2cacd8842364c21906850479c97fb1d",
+      "bytes": 3142
+    },
+    {
+      "member": "icons/6helm1v5.bmp",
+      "source_owner": "originalData/mmmerge.icons.lod::6helm1v5",
+      "dimensions": [
+        37,
+        34
+      ],
+      "before_bits": 24,
+      "after_bits": 8,
+      "palette_zero_rgb": [
+        252,
+        0,
+        216
+      ],
+      "palette_zero_pixels": 659,
+      "same_all_rgb_pixels": true,
+      "old_sha256": "f5a4ae0109f304abee46071ae6623b6ab2691585350f9e62f88b5155298ee3ba",
+      "sha256": "ab1c874dfbb138c3acc503521a14c4e5b3410dd0a4864bbe3bafb9d01270f393",
+      "bytes": 2438
+    }
+  ],
+  "original_art_rgb_unchanged": true,
+  "producer_repair_inherited_from": 253,
+  "original_zero_rgb": [
+    252,
+    0,
+    216
+  ],
+  "runtime": {
+    "base": "complete253/runtime-001",
+    "current": "complete254/runtime-001",
+    "changed_engine_members": [
+      "icons/6helm1v2.bmp",
+      "icons/6helm1v4.bmp",
+      "icons/6helm1v5.bmp"
+    ],
+    "unchanged_engine_members": 17396,
+    "worlds_retained": 4,
+    "ui_text": 233,
+    "combat_text": 223,
+    "navigation": 222,
+    "save_version": 106,
+    "assembly_elapsed_seconds": 9.721012208
+  },
+  "engine_overlay": {
+    "path": "engine-overlay-254.zip",
+    "bytes": 7394,
+    "sha256": "d5cfb8ad7da0693aea04b60cda0dde53663d050c0e1fb06e6f93dc68a35e6f14",
+    "cumulative_relative_to": "complete246/runtime-002",
+    "members": [
+      "icons/6helm1v1.bmp",
+      "icons/6helm1v2.bmp",
+      "icons/6helm1v4.bmp",
+      "icons/6helm1v5.bmp"
+    ]
+  },
+  "builds": 0,
+  "unit_test_runs": 0,
+  "new_cases": 0,
+  "app_operations_for254": 0,
+  "inherited_actual_scope": "253Mac010 normalprivateSlot3inventory verified6helm1v1 transparent;the other3variants are source/resource numeric scope only",
+  "active_mac_process": {
+    "number": 10,
+    "code": 253,
+    "runtime": 253,
+    "owned_by": "main",
+    "state": "Normalmenuquit;PIDabsent;logcollected;all4privateSavehashesunchanged",
+    "save_writes_after_repair_so_far": 0
+  },
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "physical_debugging": "paused_by_user",
+  "new_release": false,
+  "full_goal_achieved": false,
+  "engineering_estimate_percent": 88,
+  "estimate_confidence": "low",
+  "not_claimed": [
+    "Actual3remainingvariantpixels/touch",
+    "45missingrefs fixed",
+    "AllothergearUIcomplete",
+    "Fullnaturalcampaign",
+    "CurrentiPadacceptance"
+  ],
+  "mac253_later_continuation": {
+    "fountainandtwoDeaths": "Observed;not productpass or new defect proof",
+    "normalUIreload": true,
+    "training_ui_reached": false,
+    "quit_collected": true,
+    "all4_private_save_hashes_unchanged": true,
+    "unit_runs": 0,
+    "source_diagnosis_next": 255
+  }
+}

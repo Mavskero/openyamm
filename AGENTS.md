@@ -15,6 +15,14 @@ These rules apply to all AI-generated contributions in this repository.
   Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
   publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
 
+- 254 ACCEPTED_OFFLINE_RESOURCE_SCOPED: `openyamm/handoff/helmet-palette-family-254/README.md`.
+  Exactremaining3 selectedequipmentpalette0 defects:6helm1v2/v4/v5,allitem1691/originalmmmerge.icons.lod,
+  RGB252/0/216,index0counts720/1169/659. ExistingIndexed8APIre-extractionpreservesallRGBpixels;0source/build/unitcases.
+  Complete254/001changesonly3BMP,17396othermembers/4worldsretained;original253v1fixed,inheritedUi233/Save106.
+  Cumulative4BMPoverlay;noRelease/devicecheckpoint.45missingstagerefs/othergearUIexcluded;3variantsnotactualviewed.
+  Mac010253normalQuit/logcollected,4privateSavehashesunchanged/0repairwrites;learningUIunreached/deathcause255review.
+  Physicalpaused,Sol6.1/max,~88%lowconfidence. ContinuefirstactualnonTemplelearningandconcreteofflinework.
+
 - 251–253 ACCEPTED_OFFLINE_MAC_SCOPED: `openyamm/handoff/house-ui-and-equipment-251-253/README.md`.
   OrdinaryLearnSkill currentlanguage templates/skillnames shared;Guild122/Deck1690 useexistingNPCtable,no newkeys.
   NormalMac009 copiedSlot2→TownHall/JaniceGoblinwatch/Chinesequest/key/equip66+84+1691 foundopaquehelmetvariant.
