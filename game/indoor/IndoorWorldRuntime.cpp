@@ -6304,6 +6304,12 @@ bool IndoorWorldRuntime::applyIndoorActorProjectileRequest(const ActorProjectile
     spawnRequest.ability = ability;
     spawnRequest.definition = buildIndoorGameplayProjectileDefinition(definition, objectSpriteFrameIndex);
     spawnRequest.damage = projectileRequest.damage;
+    if (actorAbilityIsSpellProjectile(projectileRequest.ability)
+        && isSpellId(static_cast<uint32_t>(definition.spellId), SpellId::Sunray))
+    {
+        // Shared AI supplies monster-level fallback damage here, not an explicit spell damage override.
+        spawnRequest.damage = 0;
+    }
     spawnRequest.skillLevel = projectileRequest.skillLevel;
     spawnRequest.skillMastery = static_cast<uint32_t>(projectileRequest.skillMastery);
     spawnRequest.attackBonus = projectileRequest.attackBonus;
@@ -6756,6 +6762,11 @@ GameplayProjectileService::ProjectileFrameFacts IndoorWorldRuntime::collectIndoo
     facts.partyCollisionRadius = PartyCollisionRadius;
     facts.partyCollisionHeight = PartyCollisionHeight;
     facts.canHitParty = pPartyMoveState != nullptr;
+    facts.monsterSunrayDamage = GameplayProjectileService::makeMonsterSunrayDamageProfile(
+        projectile,
+        m_pSpellTable != nullptr && isSpellId(static_cast<uint32_t>(projectile.spellId), SpellId::Sunray)
+            ? m_pSpellTable->findById(projectile.spellId)
+            : nullptr);
 
     GameplayProjectileService::ProjectilePartyImpactDamageInput damageInput = {};
     damageInput.sourceKind = projectile.sourceKind;

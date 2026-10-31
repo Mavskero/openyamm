@@ -1,0 +1,8 @@
+{
+  "game/gameplay/MonsterSpellSupport.cpp": "5bb748439645c15c4f8f4941069d300a0a831e1427554a578f8c92c3156cdc1f",
+  "game/gameplay/GameplayProjectileService.h": "1df26ce9161dca41495849531a286fa1e82867a4f7433c2f573baf1f76b92ac5",
+  "game/gameplay/GameplayProjectileService.cpp": "01f939ca0eba988b7c8acf57cbf8cb958dbd9c1db83800098f4303ef33c85f89",
+  "game/outdoor/OutdoorWorldRuntime.cpp": "869f2e770cdb68f314b6fde8c2c4cf5bfcea9de0322be3eed37430f5c01a841d",
+  "game/indoor/IndoorWorldRuntime.cpp": "a2134d1ed326afa45cf6c888dfb0b6d13141b7af32786184ce8fd120b0876b29",
+  "tests/GameplayProjectileServiceTests.cpp": "3c39147b8853ae84deac80831694d79fb9d0c6642c224435a88b8f8170f121d1"
+}

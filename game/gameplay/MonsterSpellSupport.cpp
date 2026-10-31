@@ -13,7 +13,7 @@ bool isMonsterProjectileSpellName(const std::string &spellName)
         "ice bolt", "icebolt", "ice blast", "iceblast", "acid burst", "deadly swarm", "blades",
         "rock blast", "mass distortion", "sparks", "mind blast", "psychic shock", "psychic shockt",
         "harm", "flying fist", "light bolt", "spirit lash", "toxic cloud", "shrapmetal", "dark grasp",
-        "dragon breath", "poison spray"};
+        "dragon breath", "poison spray", "sunray"};
 
     const std::string lowered = toLowerCopy(spellName);
     return ProjectileSpellNames.find(lowered) != ProjectileSpellNames.end();

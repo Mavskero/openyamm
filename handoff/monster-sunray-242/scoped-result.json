@@ -1,0 +1,99 @@
+{
+  "checkpoint": 242,
+  "scope": "ACCEPTED_SOURCE_BUILD_AND_ONE_EXISTING_COMPONENT_CASE",
+  "base_commit": "94ad4840e69543d095c7bf1df792125b15bdf7c6",
+  "trigger": "Actual shared monster table has seven Paralyze Spell1 rows; original81→87 replacement exists but actual87 is rejected by supported projectile names",
+  "shared_source_row_ids": [
+    145,
+    146,
+    147,
+    196,
+    197,
+    198,
+    575
+  ],
+  "source_rows_scope": "Shared table occurrence, not natural encounters in each world",
+  "source_exe_sha256": "97be86a7597fbd9763f9b4b0ed1f4a7e47c960703fa30857c32daa056b7d403b",
+  "original_evidence": [
+    "SpellsTweaks.lua183–186 MonsterCastSpellM81→87",
+    "MonsterCast404D67/selector40606C=0→404DB9 common projectile",
+    "HitPlayer437B06→437F9E→43900E→439140–439167→CalcSpellDamage438B05;87 goes438B9F,table4F4880+87*20=20/d20;450394 rolls rank dice via4D99F2",
+    "MonsterToMonster438DDE/4257A1 hit then438E7C damage helper; no spawn-phase438B05 xref"
+  ],
+  "implementation": [
+    "Shared supported name includes sunray",
+    "Only transient87 profile from actualSpellEntry and projectile final rank/mastery; no persistent field",
+    "Unresolved87 pre-collision/area/direct budgets0; contact Party/Actor rolls once after lifetime/noCollision/bounce earlyreturns",
+    "Indoor private shared-AI87 placeholder cleared; positive explicit projectileDamage/Party/Event/other spells retain old branches",
+    "Existing Light resistance,87 FX8090/8091/audio kept; instant impact remains old visual-only, no invented hit"
+  ],
+  "source_only_limitations": [
+    "Both actual world AI→spawn→contact integration built/reviewed, no live monster fight/pixels or device claim",
+    "No global correction of other existing monster spell damage stages",
+    "No original87 MonsterToMonster accuracy overhaul"
+  ],
+  "not_added": [
+    "DayOfGods83 original direct-exit/no authenticated buff field",
+    "MassCurse existing44 mapping kept",
+    "FingerOfDeath unsupported token kept"
+  ],
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 136.936332625,
+      "timed_out": false
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 132.003561208,
+      "timed_out": false
+    },
+    "compile-focused-001": {
+      "exit_code": 1,
+      "elapsed_seconds": 2.73680275,
+      "timed_out": false
+    },
+    "compile-focused-002": {
+      "exit_code": 0,
+      "elapsed_seconds": 3.765625416,
+      "timed_out": false
+    },
+    "focused-projectile-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.187559417,
+      "timed_out": false
+    }
+  },
+  "built_production_files": 5,
+  "existing_test_file": 1,
+  "all6_frozen_hashes_match": true,
+  "new_unit_cases": 0,
+  "existing_case_run": 1,
+  "case_assertions": 79,
+  "affected_new_assertions": 15,
+  "other_cases_skipped": 28,
+  "check_scope": "Controlled canonical87 SpellEntry/profile and frame contact decisions; supportname,prebudget0,flight/world without damage,Party/Actor damage range29..200 forrank9,rank0=20,positive37 override. No game-state fixtures/App/world route. RNG stage also source-reviewed, no access to thread-local RNG state.",
+  "compile_failure_retained": "First affected check compilation2.737s rejected two unparenthesized doctest boolean assertions; test syntax only corrected, no case executed then;5 product files/builds unchanged. Compile0023.766s then case once0.188s passed.",
+  "new_test_framework": false,
+  "App_runs": 0,
+  "save_reads_or_writes": 0,
+  "resource_changes": false,
+  "runtime_retained": "complete241/runtime-002",
+  "ui_text_keys": 228,
+  "combat_text": 223,
+  "navigation": 222,
+  "save_write_version": 106,
+  "legacy_read_evidence": "236 retained, not replayed",
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "campaign_replays": 0,
+  "new_release": false,
+  "fixed_releases_unchanged": true,
+  "physical_debugging": "paused by user",
+  "subagent_model": "gpt-6.1-sol",
+  "subagent_reasoning": "max",
+  "full_goal_achieved": false,
+  "estimate_percent": 88,
+  "estimate_confidence": "low",
+  "timestamp": "2026-10-31T09:18:15.567079+00:00"
+}

@@ -13523,6 +13523,11 @@ OutdoorWorldRuntime::ProjectileFrameWorldFacts OutdoorWorldRuntime::collectProje
     worldFacts.frame.partyCollisionRadius = m_partyCollisionRadius;
     worldFacts.frame.partyCollisionHeight = m_partyCollisionHeight;
     worldFacts.frame.canHitParty = true;
+    worldFacts.frame.monsterSunrayDamage = GameplayProjectileService::makeMonsterSunrayDamageProfile(
+        projectile,
+        m_pSpellTable != nullptr && isSpellId(static_cast<uint32_t>(projectile.spellId), SpellId::Sunray)
+            ? m_pSpellTable->findById(projectile.spellId)
+            : nullptr);
     worldFacts.frame.nonPartyProjectileDamage = resolveProjectilePartyImpactDamage(projectile);
 
     size_t directActorIndex = static_cast<size_t>(-1);

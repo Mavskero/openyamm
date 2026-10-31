@@ -15,6 +15,7 @@ class ItemTable;
 struct ObjectEntry;
 class ObjectTable;
 class SpecialItemEnchantTable;
+struct SpellEntry;
 class SpriteFrameTable;
 
 class GameplayProjectileService
@@ -418,6 +419,7 @@ public:
         float partyCollisionHeight = 0.0f;
         bool canHitParty = true;
         int nonPartyProjectileDamage = 0;
+        std::optional<MonsterSpellDamageProfile> monsterSunrayDamage;
 
         std::vector<ProjectileAreaImpactActorFacts> areaActors;
     };
@@ -662,6 +664,9 @@ public:
         float y,
         float z) const;
     std::optional<ProjectileAudioRequest> buildWaterSplashAudioRequest(float x, float y, float z) const;
+    static std::optional<MonsterSpellDamageProfile> makeMonsterSunrayDamageProfile(
+        const ProjectileState &projectile,
+        const SpellEntry *pSpellEntry);
     int resolveProjectilePartyImpactDamage(const ProjectilePartyImpactDamageInput &input) const;
     int resolvePartyProjectileDamageMultiplier(
         const ProjectileState &projectile,

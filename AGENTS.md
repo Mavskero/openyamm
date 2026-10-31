@@ -25,6 +25,16 @@ These rules apply to all AI-generated contributions in this repository.
   cannotread106;rollback uses preserved105/oldercopy. No actualflyingpixel/touch/fullcampaign claim. Current
   physicaldebugging remainsuserpaused;subagentsSol6.1/max. BoundedUIKitIME bridge source review ongoing.
 
+- 242 ACCEPTED_OFFLINE_SOURCE_SCOPED: `handoff/monster-sunray-242/README.md`.
+  SevenrealsharedParalyze81→87 rows nowpassSunray support. Actual87table/finalprojectilerank transientprofile;
+  onlyParty/Actorcontactroll20+rank*d20, noflight/world/bounce/expiry dice;IndoorprivateAIplaceholderclear,
+  positiveoverride/Party/Event/other spells retained. Native136.936s/unsignediOS132.004spass;oneexistingcase
+  0.188s/79assert(15affectednewassert,0newcases,28unrun)passes;6source/checkhashmatch. Firstdoctestmacro
+  syntaxfailurefixedonlytest,passedproductionbuildsnotreplayed. Nospawnpre-roll/persistentfield/Save/resource/
+  App/device/simulator/campaign/Release. Complete241/Ui228/Save106 retained;realSunrayfight/pixels/fullcampaign
+  unproved,~88%lowconfidence. Day83originaldirectexitnotinvented;MassCurse44/FingerDeathretained.243mainmay
+  tryfirstnaturalMacbankwitholdSave10copy, nofixtures/teleport/oldoverwrite. Physicaldebugpaused,Sol6.1/max.
+
 - 240–241 ACCEPTED_OFFLINE_MAC_SCOPED: `handoff/offline-ui-input-240-241/README.md`.
   ActualisolatedMac creationChinese namepaste/Return/Cancel andcopiedSave10 empty-slotChinese draftpaste/Escape
   passed;noSavewrite,localoriginal/copieshashunchanged. ObservedQuitEnglish replacedwithtypedoriginalGlobalTxt82;

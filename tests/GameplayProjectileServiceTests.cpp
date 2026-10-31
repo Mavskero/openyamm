@@ -2,6 +2,8 @@
 
 #include "game/audio/SoundIds.h"
 #include "game/gameplay/GameplayProjectileService.h"
+#include "game/gameplay/MonsterSpellSupport.h"
+#include "game/tables/SpellTable.h"
 #include "game/fx/FxSharedTypes.h"
 #include "game/fx/ParticleRecipes.h"
 #include "game/fx/ParticleSystem.h"
@@ -111,6 +113,53 @@ TEST_CASE("monster spell projectile damage uses spell dice instead of monster le
         CHECK_GE(damage, 7);
         CHECK_LE(damage, 56);
     }
+
+    // The original Paralyze replacement must use actual Sunray data only on contact.
+    CHECK(OpenYAMM::Game::isMonsterProjectileSpellName("Sunray"));
+    OpenYAMM::Game::SpellEntry sunrayEntry = {};
+    sunrayEntry.id = static_cast<uint32_t>(SpellId::Sunray);
+    sunrayEntry.damageBase = 20;
+    sunrayEntry.damageDiceSides = 20;
+    auto sunray = makeActorProjectile();
+    sunray.damage = 0;
+    sunray.spellId = static_cast<int>(SpellId::Sunray);
+    sunray.ability = GameplayProjectileService::MonsterAttackAbility::Spell1;
+    sunray.skillLevel = 9;
+    sunray.skillMastery = static_cast<uint32_t>(SkillMastery::Master);
+    sunray.lifetimeTicks = 1000;
+    const auto profile = service.makeMonsterSunrayDamageProfile(sunray, &sunrayEntry);
+    REQUIRE(profile.has_value());
+    input.spellId = sunray.spellId;
+    CHECK_EQ(service.resolveProjectilePartyImpactDamage(input), 0);
+    GameplayProjectileService::ProjectileFrameFacts facts = {};
+    facts.deltaSeconds = 1.0f / 128.0f;
+    facts.monsterSunrayDamage = profile;
+    auto result = service.updateProjectileFrame(sunray, facts);
+    CHECK((result.applyMotionEnd && !result.directPartyDamage && !result.directActorImpact));
+    facts.hasCollision = true;
+    facts.collision.kind = GameplayProjectileService::ProjectileFrameCollisionKind::World;
+    result = service.updateProjectileFrame(sunray, facts);
+    CHECK((result.expireProjectile && !result.directPartyDamage && !result.directActorImpact));
+    facts.collision.kind = GameplayProjectileService::ProjectileFrameCollisionKind::Party;
+    result = service.updateProjectileFrame(sunray, facts);
+    REQUIRE(result.directPartyDamage.has_value());
+    CHECK_GE(*result.directPartyDamage, 29);
+    CHECK_LE(*result.directPartyDamage, 200);
+    facts.collision.kind = GameplayProjectileService::ProjectileFrameCollisionKind::Actor;
+    result = service.updateProjectileFrame(sunray, facts);
+    REQUIRE(result.directActorImpact.has_value());
+    CHECK_GE(result.directActorImpact->damage, 29);
+    CHECK_LE(result.directActorImpact->damage, 200);
+    sunray.skillLevel = 0;
+    facts.monsterSunrayDamage = service.makeMonsterSunrayDamageProfile(sunray, &sunrayEntry);
+    facts.collision.kind = GameplayProjectileService::ProjectileFrameCollisionKind::Party;
+    result = service.updateProjectileFrame(sunray, facts);
+    REQUIRE(result.directPartyDamage.has_value());
+    CHECK_EQ(*result.directPartyDamage, 20);
+    sunray.damage = 37;
+    CHECK_FALSE(service.makeMonsterSunrayDamageProfile(sunray, &sunrayEntry).has_value());
+    input.projectileDamage = 37;
+    CHECK_EQ(service.resolveProjectilePartyImpactDamage(input), 37);
 }
 
 TEST_CASE("monster attack projectile damage rolls monster table dice")

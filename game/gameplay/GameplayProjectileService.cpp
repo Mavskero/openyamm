@@ -10,6 +10,7 @@
 #include "game/StringUtils.h"
 #include "game/party/SpellIds.h"
 #include "game/tables/ObjectTable.h"
+#include "game/tables/SpellTable.h"
 #include "game/tables/SpriteTables.h"
 
 #include <algorithm>
@@ -255,6 +256,17 @@ int rollMonsterProjectileDamage(const GameplayProjectileService::MonsterProjecti
     }
 
     return std::max(0, profile.bonus) + rollDice(static_cast<uint32_t>(profile.diceRolls), profile.diceSides);
+}
+
+bool isMonsterSunrayProjectile(
+    GameplayProjectileService::ProjectileState::SourceKind sourceKind,
+    GameplayProjectileService::MonsterAttackAbility ability,
+    int spellId)
+{
+    return sourceKind == GameplayProjectileService::ProjectileState::SourceKind::Actor
+        && (ability == GameplayProjectileService::MonsterAttackAbility::Spell1
+            || ability == GameplayProjectileService::MonsterAttackAbility::Spell2)
+        && isSpellId(static_cast<uint32_t>(spellId), SpellId::Sunray);
 }
 
 int rollMonsterSpellDamage(
@@ -1359,6 +1371,27 @@ GameplayProjectileService::buildWaterSplashAudioRequest(float x, float y, float 
     return request;
 }
 
+std::optional<GameplayProjectileService::MonsterSpellDamageProfile>
+GameplayProjectileService::makeMonsterSunrayDamageProfile(
+    const ProjectileState &projectile,
+    const SpellEntry *pSpellEntry)
+{
+    if (projectile.damage > 0
+        || !isMonsterSunrayProjectile(projectile.sourceKind, projectile.ability, projectile.spellId)
+        || pSpellEntry == nullptr
+        || pSpellEntry->id != projectile.spellId)
+    {
+        return std::nullopt;
+    }
+
+    MonsterSpellDamageProfile profile = {};
+    profile.baseDamage = pSpellEntry->damageBase;
+    profile.diceSides = pSpellEntry->damageDiceSides;
+    profile.skillLevel = projectile.skillLevel;
+    profile.skillMastery = static_cast<SkillMastery>(projectile.skillMastery);
+    return profile;
+}
+
 int GameplayProjectileService::resolveProjectilePartyImpactDamage(
     const ProjectilePartyImpactDamageInput &input) const
 {
@@ -1375,6 +1408,12 @@ int GameplayProjectileService::resolveProjectilePartyImpactDamage(
     if (input.sourceKind == ProjectileState::SourceKind::Actor && input.projectileDamage > 0)
     {
         return input.projectileDamage;
+    }
+
+    if (isMonsterSunrayProjectile(input.sourceKind, input.monsterAbility, input.spellId))
+    {
+        // Frame facts carry this spell's dice until an actual party or actor contact.
+        return 0;
     }
 
     if (!input.hasMonsterFacts)
@@ -1675,10 +1714,19 @@ GameplayProjectileService::ProjectileFrameResult GameplayProjectileService::upda
 
     const bool directPartyDamage = facts.collision.kind == ProjectileFrameCollisionKind::Party;
     const bool directActorImpact = facts.collision.kind == ProjectileFrameCollisionKind::Actor;
+    int nonPartyProjectileDamage = facts.nonPartyProjectileDamage;
+
+    if ((directPartyDamage || directActorImpact)
+        && projectile.damage <= 0
+        && isMonsterSunrayProjectile(projectile.sourceKind, projectile.ability, projectile.spellId)
+        && facts.monsterSunrayDamage)
+    {
+        nonPartyProjectileDamage = std::max(1, rollMonsterSpellDamage(projectile.spellId, *facts.monsterSunrayDamage));
+    }
 
     if (directPartyDamage)
     {
-        result.directPartyDamage = buildProjectileDirectPartyDamage(projectile, facts.nonPartyProjectileDamage);
+        result.directPartyDamage = buildProjectileDirectPartyDamage(projectile, nonPartyProjectileDamage);
     }
     else if (directActorImpact)
     {
@@ -1689,7 +1737,7 @@ GameplayProjectileService::ProjectileFrameResult GameplayProjectileService::upda
         input.damageMultiplier = facts.collision.damageMultiplier;
         input.halfIncomingMissileDamage = facts.collision.halfIncomingMissileDamage;
         input.targetDistance = facts.collision.targetDistance;
-        input.nonPartyProjectileDamage = facts.nonPartyProjectileDamage;
+        input.nonPartyProjectileDamage = nonPartyProjectileDamage;
         result.directActorImpact = buildProjectileDirectActorImpact(projectile, input);
     }
 
