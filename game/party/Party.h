@@ -168,7 +168,10 @@ struct Character
     float recoveryProgressMultiplier = 1.0f;
     std::unordered_map<std::string, int> itemSkillBonuses;
     // Derived from the party's current hirelings; never changes learned skills or save data.
-    std::unordered_map<std::string, int> hiredNpcWeaponSkillBonuses;
+    std::unordered_map<std::string, int> hiredNpcSkillBonuses;
+    CharacterStatBonuses hiredNpcDefenseBonuses = {};
+    // A Party projection is authoritative even when empty; standalone characters may use event context.
+    bool hasHiredNpcDefenseProjection = false;
     std::unordered_set<std::string> equippedItemEffectFlags;
     std::array<std::optional<LloydBeacon>, 5> lloydsBeacons = {};
 
@@ -189,6 +192,7 @@ struct Character
     bool hasCanonicalSkill(const std::string &canonicalSkillName) const;
     const CharacterSkill *findSkill(const std::string &skillName) const;
     const CharacterSkill *findSkillByCanonicalName(const std::string &canonicalSkillName) const;
+    CharacterSkill skillWithNpcBonus(const std::string &skillName) const;
     CharacterSkill *findSkill(const std::string &skillName);
     CharacterSkill *findSkillByCanonicalName(const std::string &canonicalSkillName);
     bool setSkillMastery(const std::string &skillName, SkillMastery mastery);
@@ -752,7 +756,7 @@ private:
     bool hasDetachedRosterMember(uint32_t rosterId) const;
     size_t totalPendingItemDeliveries() const;
     void synchronizeCharacterBuffCasters();
-    void rebuildHiredNpcWeaponSkillBonuses();
+    void rebuildHiredNpcSkillBonuses();
     void rebuildMagicalBonusesPreservingProgress();
     void queueSound(SoundId soundId);
     void queueSpeech(size_t memberIndex, SpeechId speechId);

@@ -325,31 +325,16 @@ bool isDragonClass(const Character &character)
 
 int skillLevel(const Character &character, std::string_view skillName)
 {
-    const CharacterSkill *pSkill = character.findSkill(std::string(skillName));
-    const auto bonusIt = character.itemSkillBonuses.find(std::string(skillName));
+    const CharacterSkill effectiveSkill = character.skillWithNpcBonus(std::string(skillName));
+    const std::unordered_map<std::string, int>::const_iterator bonusIt =
+        character.itemSkillBonuses.find(std::string(skillName));
     const int bonusLevel = bonusIt != character.itemSkillBonuses.end() ? bonusIt->second : 0;
-    const auto followerBonusIt = character.hiredNpcWeaponSkillBonuses.find(std::string(skillName));
-    const int followerBonusLevel = followerBonusIt != character.hiredNpcWeaponSkillBonuses.end()
-        ? followerBonusIt->second : 0;
-    return (pSkill != nullptr ? static_cast<int>(pSkill->level) : 0) + bonusLevel + followerBonusLevel;
+    return static_cast<int>(effectiveSkill.level) + bonusLevel;
 }
 
 SkillMastery skillMastery(const Character &character, std::string_view skillName)
 {
-    const CharacterSkill *pSkill = character.findSkill(std::string(skillName));
-    const SkillMastery mastery = pSkill != nullptr ? pSkill->mastery : SkillMastery::None;
-    const auto followerBonusIt = character.hiredNpcWeaponSkillBonuses.find(std::string(skillName));
-
-    // Original GetSkill repacks a positive hireling-only rank as Normal, without learning the skill.
-    if (mastery == SkillMastery::None
-        && followerBonusIt != character.hiredNpcWeaponSkillBonuses.end()
-        && followerBonusIt->second > 0
-        && skillLevel(character, skillName) > 0)
-    {
-        return SkillMastery::Normal;
-    }
-
-    return mastery;
+    return character.skillWithNpcBonus(std::string(skillName)).mastery;
 }
 
 bool percentRoll(std::mt19937 &rng, int percentChance)
@@ -2200,6 +2185,21 @@ CharacterSheetSummary GameMechanics::buildCharacterSheetSummary(
     CharacterAttackTuning attackTuning)
 {
     CharacterSheetSummary summary = {};
+    CharacterStatBonuses followerDefenseBonuses = {};
+
+    if (character.hasHiredNpcDefenseProjection)
+    {
+        followerDefenseBonuses = character.hiredNpcDefenseBonuses;
+    }
+    else if (pEventRuntimeState != nullptr)
+    {
+        followerDefenseBonuses.luck = hiredNpcPrimaryStatBonus(*pEventRuntimeState, "Luck");
+        followerDefenseBonuses.resistances.fire = hiredNpcResistanceBonus(*pEventRuntimeState, "Fire");
+        followerDefenseBonuses.resistances.air = hiredNpcResistanceBonus(*pEventRuntimeState, "Air");
+        followerDefenseBonuses.resistances.water = hiredNpcResistanceBonus(*pEventRuntimeState, "Water");
+        followerDefenseBonuses.resistances.earth = hiredNpcResistanceBonus(*pEventRuntimeState, "Earth");
+    }
+
     const EquippedItems equippedItems = resolveEquippedItems(character, pItemTable);
     const CharacterStatBonuses equippedItemBonuses = resolveEquippedItemStatBonuses(
         character,
@@ -2229,9 +2229,7 @@ CharacterSheetSummary GameMechanics::buildCharacterSheetSummary(
     summary.endurance = makeSheetValue(baseEndurance, actualEndurance);
     summary.accuracy = makeSheetValue(baseAccuracy, actualAccuracy);
     summary.speed = makeSheetValue(baseSpeed, actualSpeed);
-    const int followerLuckBonus =
-        pEventRuntimeState != nullptr ? hiredNpcPrimaryStatBonus(*pEventRuntimeState, "Luck") : 0;
-    summary.luck = makeSheetValue(baseLuck, actualLuck + followerLuckBonus);
+    summary.luck = makeSheetValue(baseLuck, actualLuck + followerDefenseBonuses.luck);
 
     summary.health.baseMaximum = character.maxHealth + character.permanentBonuses.maxHealth;
     summary.health.maximum = calculateEffectiveCharacterMaxHealth(character);
@@ -2306,30 +2304,21 @@ CharacterSheetSummary GameMechanics::buildCharacterSheetSummary(
         + character.magicalBonuses.resistances.body
         - equippedItemBonuses.resistances.body;
 
-    const int followerFireResistance =
-        pEventRuntimeState != nullptr ? hiredNpcResistanceBonus(*pEventRuntimeState, "Fire") : 0;
-    const int followerAirResistance =
-        pEventRuntimeState != nullptr ? hiredNpcResistanceBonus(*pEventRuntimeState, "Air") : 0;
-    const int followerWaterResistance =
-        pEventRuntimeState != nullptr ? hiredNpcResistanceBonus(*pEventRuntimeState, "Water") : 0;
-    const int followerEarthResistance =
-        pEventRuntimeState != nullptr ? hiredNpcResistanceBonus(*pEventRuntimeState, "Earth") : 0;
-
     summary.fireResistance = makeResistanceValue(
         fireBase,
-        fireActual + followerFireResistance,
+        fireActual + followerDefenseBonuses.resistances.fire,
         character.permanentImmunities.fire || character.magicalImmunities.fire);
     summary.airResistance = makeResistanceValue(
         airBase,
-        airActual + followerAirResistance,
+        airActual + followerDefenseBonuses.resistances.air,
         character.permanentImmunities.air || character.magicalImmunities.air);
     summary.waterResistance = makeResistanceValue(
         waterBase,
-        waterActual + followerWaterResistance,
+        waterActual + followerDefenseBonuses.resistances.water,
         character.permanentImmunities.water || character.magicalImmunities.water);
     summary.earthResistance = makeResistanceValue(
         earthBase,
-        earthActual + followerEarthResistance,
+        earthActual + followerDefenseBonuses.resistances.earth,
         character.permanentImmunities.earth || character.magicalImmunities.earth);
     summary.mindResistance = makeResistanceValue(
         mindBase,
@@ -3100,9 +3089,7 @@ int GameMechanics::resolveCharacterIncomingDamage(
         resistance = directResistance(&CharacterResistanceSet::dark);
     }
 
-    const int luckBonus = parameterBonus(static_cast<int>(character.luck)
-        + character.permanentBonuses.luck
-        + character.magicalBonuses.luck);
+    const int luckBonus = parameterBonus(summary.luck.actual);
 
     if (resistance + luckBonus > 0)
     {
@@ -3324,33 +3311,33 @@ int GameMechanics::resolveCharacterPerceptionValue(const Character &character)
         return 0;
     }
 
-    const CharacterSkill *pSkill = character.findSkillByCanonicalName(PerceptionSkillName);
+    const CharacterSkill effectiveSkill = character.skillWithNpcBonus(PerceptionSkillName);
 
-    if (pSkill == nullptr || pSkill->mastery == SkillMastery::None || pSkill->level == 0)
+    if (effectiveSkill.mastery == SkillMastery::None || effectiveSkill.level == 0)
     {
         return 0;
     }
 
-    if (pSkill->mastery == SkillMastery::Grandmaster)
+    if (effectiveSkill.mastery == SkillMastery::Grandmaster)
     {
         return 10000;
     }
 
-    return static_cast<int>(pSkill->level) * masteryMultiplier(pSkill->mastery, 1, 2, 3, 5);
+    return static_cast<int>(effectiveSkill.level) * masteryMultiplier(effectiveSkill.mastery, 1, 2, 3, 5);
 }
 
 int GameMechanics::resolveCharacterDisarmTrapValue(const Character &character)
 {
     static const std::string DisarmTrapSkillName = "DisarmTraps";
 
-    const CharacterSkill *pSkill = character.findSkillByCanonicalName(DisarmTrapSkillName);
+    const CharacterSkill effectiveSkill = character.skillWithNpcBonus(DisarmTrapSkillName);
 
-    if (pSkill == nullptr || pSkill->mastery == SkillMastery::None || pSkill->level == 0)
+    if (effectiveSkill.mastery == SkillMastery::None || effectiveSkill.level == 0)
     {
         return 0;
     }
 
-    if (pSkill->mastery == SkillMastery::Grandmaster)
+    if (effectiveSkill.mastery == SkillMastery::Grandmaster)
     {
         return 10000;
     }
@@ -3367,8 +3354,8 @@ int GameMechanics::resolveCharacterDisarmTrapValue(const Character &character)
         + bonusForName("DisarmTrap")
         + bonusForName("DisarmTraps");
 
-    const int effectiveLevel = std::max(0, static_cast<int>(pSkill->level) + itemBonus);
-    return effectiveLevel * masteryMultiplier(pSkill->mastery, 1, 2, 3, 5);
+    const int effectiveLevel = std::max(0, static_cast<int>(effectiveSkill.level) + itemBonus);
+    return effectiveLevel * masteryMultiplier(effectiveSkill.mastery, 1, 2, 3, 5);
 }
 
 int GameMechanics::resolvePartyPerceptionValue(const Party &party)

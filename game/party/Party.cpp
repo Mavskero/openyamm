@@ -94,7 +94,9 @@ int itemSkillBonusForName(const Character &member, const std::string &skillName)
 
 int genericUtilitySkillScore(const Character &member, const std::string &skillName)
 {
-    const CharacterSkill *pSkill = member.findSkill(skillName);
+    const CharacterSkill effectiveSkill = member.skillWithNpcBonus(skillName);
+    const CharacterSkill *pStoredSkill = member.findSkill(skillName);
+    const CharacterSkill *pSkill = pStoredSkill != nullptr || effectiveSkill.level > 0 ? &effectiveSkill : nullptr;
     const int itemBonus = itemSkillBonusForName(member, skillName);
 
     if ((pSkill == nullptr || pSkill->level == 0 || pSkill->mastery == SkillMastery::None) && itemBonus == 0)
@@ -1139,26 +1141,26 @@ uint64_t experienceRequiredForNextLevel(uint32_t currentLevel)
 
 int learningPercentForExperienceGain(const Character &member)
 {
-    const CharacterSkill *pSkill = member.findSkill("Learning");
+    const CharacterSkill effectiveSkill = member.skillWithNpcBonus("Learning");
 
-    if (pSkill == nullptr || pSkill->level == 0)
+    if (effectiveSkill.level == 0)
     {
         return 0;
     }
 
-    switch (pSkill->mastery)
+    switch (effectiveSkill.mastery)
     {
         case SkillMastery::Normal:
-            return 9 + static_cast<int>(pSkill->level);
+            return 9 + static_cast<int>(effectiveSkill.level);
 
         case SkillMastery::Expert:
-            return 9 + 2 * static_cast<int>(pSkill->level);
+            return 9 + 2 * static_cast<int>(effectiveSkill.level);
 
         case SkillMastery::Master:
-            return 9 + 3 * static_cast<int>(pSkill->level);
+            return 9 + 3 * static_cast<int>(effectiveSkill.level);
 
         case SkillMastery::Grandmaster:
-            return 9 + 5 * static_cast<int>(pSkill->level);
+            return 9 + 5 * static_cast<int>(effectiveSkill.level);
 
         case SkillMastery::None:
         default:
@@ -2112,6 +2114,27 @@ const CharacterSkill *Character::findSkillByCanonicalName(const std::string &can
     return it != skills.end() ? &it->second : nullptr;
 }
 
+CharacterSkill Character::skillWithNpcBonus(const std::string &skillName) const
+{
+    const std::string canonicalName = canonicalSkillName(skillName);
+    const CharacterSkill *pStoredSkill = findSkillByCanonicalName(canonicalName);
+    CharacterSkill effectiveSkill = pStoredSkill != nullptr
+        ? *pStoredSkill : CharacterSkill{canonicalName, 0, SkillMastery::None};
+    const std::unordered_map<std::string, int>::const_iterator bonusIt = hiredNpcSkillBonuses.find(canonicalName);
+    const int npcBonus = bonusIt != hiredNpcSkillBonuses.end() ? bonusIt->second : 0;
+    const int64_t effectiveLevel = static_cast<int64_t>(effectiveSkill.level) + npcBonus;
+    effectiveSkill.level = static_cast<uint32_t>(std::clamp<int64_t>(
+        effectiveLevel, 0, std::numeric_limits<uint32_t>::max()));
+
+    // Original GetSkill repacks a positive hireling-only rank as Normal, without learning the skill.
+    if (npcBonus > 0 && effectiveSkill.level > 0 && effectiveSkill.mastery == SkillMastery::None)
+    {
+        effectiveSkill.mastery = SkillMastery::Normal;
+    }
+
+    return effectiveSkill;
+}
+
 CharacterSkill *Character::findSkill(const std::string &skillName)
 {
     const std::string canonicalName = canonicalSkillName(skillName);
@@ -3042,7 +3065,7 @@ void Party::applyEventRuntimeState(const EventRuntimeState &runtimeState, bool g
         }
     }
 
-    rebuildHiredNpcWeaponSkillBonuses();
+    rebuildHiredNpcSkillBonuses();
 }
 
 bool Party::applyDamageToActiveMember(int damage, const std::string &status)
@@ -4089,7 +4112,7 @@ bool Party::recruitRosterMember(const RosterEntry &rosterEntry)
 
     m_characterBuffs[m_members.size() - 1] = {};
     synchronizeCharacterBuffCasters();
-    rebuildHiredNpcWeaponSkillBonuses();
+    rebuildHiredNpcSkillBonuses();
     m_lastStatus = "party member recruited";
     return true;
 }
@@ -4123,7 +4146,7 @@ bool Party::recruitCharacter(const Character &character)
     initializePortraitRuntimeState(m_members.back());
     m_characterBuffs[m_members.size() - 1] = {};
     synchronizeCharacterBuffCasters();
-    rebuildHiredNpcWeaponSkillBonuses();
+    rebuildHiredNpcSkillBonuses();
     m_lastStatus = "party member recruited";
     return true;
 }
@@ -4152,7 +4175,9 @@ bool Party::addAdventurersInnMember(const Character &character, uint32_t portrai
     }
     AdventurersInnMember member = {};
     member.character = character;
-    member.character.hiredNpcWeaponSkillBonuses.clear();
+    member.character.hiredNpcSkillBonuses.clear();
+    member.character.hiredNpcDefenseBonuses = {};
+    member.character.hasHiredNpcDefenseProjection = true;
     if (!assignMemberIdentity(member.character))
     {
         return false;
@@ -4193,7 +4218,7 @@ bool Party::hireAdventurersInnMember(size_t innIndex)
     m_adventurersInnMembers.erase(m_adventurersInnMembers.begin() + innIndex);
     m_characterBuffs[m_members.size() - 1] = {};
     synchronizeCharacterBuffCasters();
-    rebuildHiredNpcWeaponSkillBonuses();
+    rebuildHiredNpcSkillBonuses();
     m_lastStatus = "adventurer hired from inn";
     return true;
 }
@@ -4900,7 +4925,9 @@ bool Party::detachMembersWithReserves(const std::string &ownerKey,
         projection.synchronizeCharacterBuffCasters();
         projection.rebuildMagicalBonusesPreservingProgress();
         detached.character = std::move(projection.m_members.front());
-        detached.character.hiredNpcWeaponSkillBonuses.clear();
+        detached.character.hiredNpcSkillBonuses.clear();
+        detached.character.hiredNpcDefenseBonuses = {};
+        detached.character.hasHiredNpcDefenseProjection = true;
         GameMechanics::refreshCharacterBaseResources(detached.character, true, candidate.m_pClassMultiplierTable);
     }
     ++candidate.m_dialogueEligibilityRevision;
@@ -5166,7 +5193,7 @@ void Party::addHiredNpcFollower(const HiredNpcFollower &follower)
     }
 
     m_unavailableNpcIds.insert(follower.npcId);
-    rebuildHiredNpcWeaponSkillBonuses();
+    rebuildHiredNpcSkillBonuses();
 }
 
 void Party::removeHiredNpcFollower(uint32_t npcId)
@@ -5190,7 +5217,7 @@ void Party::removeHiredNpcFollower(uint32_t npcId)
         }
 
         m_hiredNpcFollowers.erase(followerIt, m_hiredNpcFollowers.end());
-        rebuildHiredNpcWeaponSkillBonuses();
+        rebuildHiredNpcSkillBonuses();
     }
 }
 
@@ -7850,10 +7877,16 @@ SoundId Party::resolveDamageImpactSoundForMember(size_t memberIndex) const
     return pickRandomSoundId(DullArmorSounds);
 }
 
-void Party::rebuildHiredNpcWeaponSkillBonuses()
+void Party::rebuildHiredNpcSkillBonuses()
 {
+    static constexpr std::array<const char *, 23> SkillNames = {
+        "Staff", "Sword", "Dagger", "Axe", "Spear", "Bow", "Mace",
+        "FireMagic", "AirMagic", "WaterMagic", "EarthMagic", "SpiritMagic", "MindMagic", "BodyMagic",
+        "LightMagic", "DarkMagic", "Learning", "Merchant", "DisarmTraps", "Perception",
+        "LeatherArmor", "ChainArmor", "PlateArmor",
+    };
     std::unordered_map<std::string, int> bonuses;
-    for (const char *pSkillName : {"Staff", "Sword", "Dagger", "Axe", "Spear", "Bow", "Mace"})
+    for (const char *pSkillName : SkillNames)
     {
         const int bonus = hiredNpcSkillBonus(m_hiredNpcFollowers, pSkillName);
 
@@ -7863,25 +7896,38 @@ void Party::rebuildHiredNpcWeaponSkillBonuses()
         }
     }
 
+    CharacterStatBonuses defenseBonuses = {};
+    defenseBonuses.luck = hiredNpcPrimaryStatBonus(m_hiredNpcFollowers, "Luck");
+    defenseBonuses.resistances.fire = hiredNpcResistanceBonus(m_hiredNpcFollowers, "Fire");
+    defenseBonuses.resistances.air = hiredNpcResistanceBonus(m_hiredNpcFollowers, "Air");
+    defenseBonuses.resistances.water = hiredNpcResistanceBonus(m_hiredNpcFollowers, "Water");
+    defenseBonuses.resistances.earth = hiredNpcResistanceBonus(m_hiredNpcFollowers, "Earth");
+
     for (Character &member : m_members)
     {
-        member.hiredNpcWeaponSkillBonuses = bonuses;
+        member.hiredNpcSkillBonuses = bonuses;
+        member.hiredNpcDefenseBonuses = defenseBonuses;
+        member.hasHiredNpcDefenseProjection = true;
     }
 
     for (AdventurersInnMember &member : m_adventurersInnMembers)
     {
-        member.character.hiredNpcWeaponSkillBonuses.clear();
+        member.character.hiredNpcSkillBonuses.clear();
+        member.character.hiredNpcDefenseBonuses = {};
+        member.character.hasHiredNpcDefenseProjection = true;
     }
 
     for (DetachedPartyMember &member : m_detachedMembers)
     {
-        member.character.hiredNpcWeaponSkillBonuses.clear();
+        member.character.hiredNpcSkillBonuses.clear();
+        member.character.hiredNpcDefenseBonuses = {};
+        member.character.hasHiredNpcDefenseProjection = true;
     }
 }
 
 void Party::rebuildMagicalBonusesFromBuffs()
 {
-    rebuildHiredNpcWeaponSkillBonuses();
+    rebuildHiredNpcSkillBonuses();
 
     for (Character &member : m_members)
     {

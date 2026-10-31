@@ -302,6 +302,11 @@ int hiredNpcSkillBonus(const std::vector<HiredNpcFollower> &followers, const std
 
 int hiredNpcPrimaryStatBonus(const EventRuntimeState &eventRuntimeState, const std::string &statName)
 {
+    return hiredNpcPrimaryStatBonus(eventRuntimeState.hiredNpcFollowers, statName);
+}
+
+int hiredNpcPrimaryStatBonus(const std::vector<HiredNpcFollower> &followers, const std::string &statName)
+{
     if (statName != "Luck")
     {
         return 0;
@@ -309,7 +314,7 @@ int hiredNpcPrimaryStatBonus(const EventRuntimeState &eventRuntimeState, const s
 
     int bonus = 0;
 
-    for (const EventRuntimeState::HiredNpcFollower &follower : eventRuntimeState.hiredNpcFollowers)
+    for (const HiredNpcFollower &follower : followers)
     {
         if (follower.professionId == 27)
         {
@@ -326,12 +331,25 @@ int hiredNpcPrimaryStatBonus(const EventRuntimeState &eventRuntimeState, const s
 
 int hiredNpcResistanceBonus(const EventRuntimeState &eventRuntimeState, const std::string &resistanceName)
 {
+    return hiredNpcResistanceBonus(eventRuntimeState.hiredNpcFollowers, resistanceName);
+}
+
+int hiredNpcResistanceBonus(const std::vector<HiredNpcFollower> &followers, const std::string &resistanceName)
+{
     if (resistanceName != "Fire" && resistanceName != "Air" && resistanceName != "Water" && resistanceName != "Earth")
     {
         return 0;
     }
 
-    return hiredNpcHasProfession(eventRuntimeState, 37) ? 20 : 0;
+    int bonus = 0;
+    for (const HiredNpcFollower &follower : followers)
+    {
+        if (follower.professionId == 37)
+        {
+            bonus += 20;
+        }
+    }
+    return bonus;
 }
 
 uint32_t hiredNpcGoldFindBonusPercent(const EventRuntimeState &eventRuntimeState)

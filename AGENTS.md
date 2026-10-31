@@ -15,6 +15,17 @@ These rules apply to all AI-generated contributions in this repository.
   Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
   publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
 
+- 248–249 ACCEPTED_OFFLINE_MECHANICS_SCOPED: `openyamm/handoff/passive-follower-completion-248-249/README.md`.
+  Shared23canonical NPCskillprojection/effectivecopy nowfeeds ordinaryspell/XP/price/Perception/Disarm/armor,
+  retained7weapons;storedskills/mastery/equip/known/override/ownitemformulas preserved. IndependenttypedLuck/
+  fourresists authoritativePartyprojection includesempty/inactive;standaloneEventfallback,no double/stale revival.
+  Originalpermits twoIDsdifferent37(Cost1000/Joins) andeachadds20;oldpresencehelper correctedtosum,twogive40.
+  Native187.763s/iOS194.329spass,late1cpp increment3.468s/6.777spass;9finalsource/checkhashesmatch.3existingcases
+  covered: initialspell/defensepassed;utilitypricefixture1.0floored correctedto2.0,onlyfailedcase rerun1.943s/36assert
+  pass,other2notreplayed.0newcases/App/Save/resourceimport/device/simulator/campaign/Release. Runtime246/002Ui233/
+  Combat223/nav222/Save106 retained;fixedreleases/originals preserved. Physicaluserpaused,Sol6.1/max,~88%lowconfidence;
+  fullnaturalcampaign/allofflinecompletion unproved. Continueconcreteoffline UI/functions,nopassedroutematrix.
+
 - 246–247 ACCEPTED_OFFLINE_SOURCE_MECHANICS_SCOPED: `openyamm/handoff/weapon-follower-bonus-247/README.md`.
   246typed follower feedback233keys(157source/76project) retainsallold228,active success/dailylimit/food useoriginal
   569/561/140. Native114.342s/iOS107.300s/core0.191s/runtime0026.791s pass;onlyui_text changes,17398members/4worlds

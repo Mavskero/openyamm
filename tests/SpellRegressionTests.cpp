@@ -336,11 +336,12 @@ TEST_CASE("divine intervention recovery is shortened by light skill")
 
 TEST_CASE("party spell backend haste applies party buff and spends mana")
 {
+    using namespace OpenYAMM::Game;
     const OpenYAMM::Tests::RegressionGameData &gameData = requireRegressionGameData();
     OpenYAMM::Game::Party party = OpenYAMM::Tests::makeSpellRegressionParty(gameData);
     OpenYAMM::Tests::PartySpellTestWorldRuntime worldRuntime = {};
     worldRuntime.bindParty(&party);
-    seedDefaultSpellTarget(worldRuntime);
+    const size_t targetActorIndex = seedDefaultSpellTarget(worldRuntime);
 
     OpenYAMM::Game::Character *pCaster = party.member(0);
     REQUIRE(pCaster != nullptr);
@@ -362,6 +363,40 @@ TEST_CASE("party spell backend haste applies party buff and spends mana")
     CHECK(party.hasPartyBuff(OpenYAMM::Game::PartyBuffId::Haste));
     CHECK_EQ(pCaster->spellPoints, initialSpellPoints - 5);
     CHECK(worldRuntime.syncSpellMovementStatesCalled());
+
+    party.addHiredNpcFollower({1001, 19, 400});
+    request.applyRecovery = false;
+    const auto enhanced = PartySpellSystem::castSpell(party, worldRuntime, gameData.spellTable, request);
+    REQUIRE(enhanced.succeeded());
+    CHECK_EQ(enhanced.skillLevel, 10u);
+    CHECK(enhanced.skillMastery == SkillMastery::Expert);
+    REQUIRE(party.partyBuff(PartyBuffId::Haste) != nullptr);
+    CHECK_EQ(party.partyBuff(PartyBuffId::Haste)->skillLevel, 10u);
+
+    pCaster->skills["FireMagic"] = {"FireMagic", 0, SkillMastery::None};
+    request.spellId = spellIdValue(SpellId::FireBolt);
+    request.targetActorIndex = targetActorIndex;
+    const auto borrowed = PartySpellSystem::castSpell(party, worldRuntime, gameData.spellTable, request);
+    REQUIRE(borrowed.succeeded());
+    CHECK_EQ(borrowed.skillLevel, 4u);
+    CHECK(borrowed.skillMastery == SkillMastery::Normal);
+    REQUIRE_FALSE(worldRuntime.projectileRequests().empty());
+    CHECK_EQ(worldRuntime.projectileRequests().back().skillLevel, 4u);
+    CHECK_EQ(pCaster->findSkill("FireMagic")->level, 0u);
+    CHECK(pCaster->findSkill("FireMagic")->mastery == SkillMastery::None);
+
+    request.skillLevelOverride = 5;
+    request.skillMasteryOverride = SkillMastery::Master;
+    request.spendMana = false;
+    const auto overridden = PartySpellSystem::castSpell(party, worldRuntime, gameData.spellTable, request);
+    REQUIRE(overridden.succeeded());
+    CHECK_EQ(overridden.skillLevel, 5u);
+    CHECK(overridden.skillMastery == SkillMastery::Master);
+    party.removeHiredNpcFollower(1001);
+    request.skillLevelOverride = 0;
+    request.skillMasteryOverride = SkillMastery::None;
+    const auto dismissed = PartySpellSystem::castSpell(party, worldRuntime, gameData.spellTable, request);
+    CHECK(dismissed.status == PartySpellCastStatus::NotSkilledEnough);
 }
 
 TEST_CASE("invisibility uses OpenEnroth mastery duration")

@@ -19,15 +19,16 @@
 `handoff/ipados-device-231-232-20261031/README.md` 与 `scoped-result.json`。
 仓库为 [Mavskero/openyamm](https://github.com/Mavskero/openyamm)，开发分支 `codex/ipados`；
 提交`8989cf96dcd1d5c23de2d5da2a58030c92e3291d`记录231–232源码和脱敏受限真机结果。
-233–247及后续源码身份按当前Git提交和对应handoff逐文件摘要核对；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
+233–249及后续源码身份按当前Git提交和对应handoff逐文件摘要核对；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
 243–245为`ACCEPTED_OFFLINE_MAC_SCOPED`，Mac自然银行、商店、generated NPC及受影响修复已受限通过，未扩大到目标iPad验收。
 246随从字幕、247武器随从加成按源码／构建及既有组件范围受限通过，由主代理一次累计源码提交；没有新增App或设备验收。
+其累计基线`cb084d3a06c8085939ff60c1b0b00d8ed3125271`已推送并核对；248–249为`ACCEPTED_OFFLINE_MECHANICS_SCOPED`，7生产＋2既有测试共9份最终摘要核对。
 恢复前先核对最新工作树和主代理后续结果，保留未提交工作，不reset／clean，不把该提交或旧Release当成更新后程序身份。
 
 固定Release229为 `ipados-ui-cumulative-229-20261030`，生产代码提交为
 `8cdae9215ef7bb52e8fe8f6e83bf16641280fd0e`；完整发布源码身份从该发布 `VERSION.json → source_head` 读取。
 按 `SOURCE-MANIFEST.json`、`ARTIFACT-SHA256SUMS`、`SHA256SUMS` 和 `delivery.json` 核对该固定发布，
-保留229、214、195和RC1–3原附件。231–247没有新Release，不能声称229附件已含后续修复。
+保留229、214、195和RC1–3原附件。231–249没有新Release，不能声称229附件已含后续修复。
 
 231–232实际通过旧Save104读取、正常UI穿戴护甲84／主手武器66、新槽Save12／105，
 以及两次保留数据更新后的独立进程读档。中文Stats／技能表头、真实重叠双指物品检查、
@@ -98,7 +99,13 @@ Cocoa独立补丁只在绝对Dragged事件前跳过按钮reconcile，既有relea
 一个既有MM7Mechanics case2.029935秒、27／27断言通过，14个其他case跳过；含Mace4→7命中＋3、未学Bow有效3／Normal但storedNone、重建／内存snapshot／解雇，不称实际磁盘读档或冷启动。
 零新case／App／写档／资源变更。
 首次case仅Bow夹具筛选误把原Missile当Bow，修夹具后通过，生产构建未重跑，见[247交接](handoff/weapon-follower-bonus-247/README.md)。
-247继续完整246/runtime-002／Ui233／Combat223／导航222／Save106。248九系magic遗漏已确认、准备继续，尚不计通过，不能宣称全部离线或自然战役完成。
+248–249共享stored＋NPC且不含item的技能副本，以23项临时projection接经验／价格／utility／护甲／施法；独立防御projection补Luck和四抗，保留原公式、stored技能／精通、known／装备资格及Save106。
+Party权威刷新含空followers，standalone Event fallback保留，带Event时不双加或复活旧值；原NPCFollowers按id去重且允许不同NPC同为37，原Stats逐人四抗＋20，两名合计＋40。
+全量原生187.762773秒／iOS194.328930秒通过；37叠加修正仅单cpp增量3.467936秒／6.777035秒通过，之后首次3个既有case中spell／defense通过、utility因价格夹具触最低价1000失败。
+首轮72断言71通过；只改两个夹具multiplier1.0→2.0，生产源不变，聚焦编译11.934844秒后仅该失败case复查1.942915秒／36断言通过，其他60个case未跑，原两项没有重跑，零新case。
+组件检查含XP125／价格／Perception与Disarm7／护甲AC＋2、buff／projectile rank／override／解雇、借用None→有效Normal、无Event防御／去重／stale Event／实际伤害函数及两名37叠加。
+247–249继续完整246/runtime-002／Ui233／Combat223／导航222／Save106；本批零App／写档／资源导入／设备／模拟器／战役回放／新Release，详见[248–249交接](handoff/passive-follower-completion-248-249/README.md)。
+完整自然战役和所有离线工作完成仍未证明。
 
 暂停前设备最后观察为232的House64标准商品页；已有库存截图在暂停后作了离线复核，但未执行拖离、购买或交易结果检查，商店条件仍未验。
 目标iPad的商店拖离取消、银行、长问题输入仍未验；243–245限于Mac普通银行、商店、generated NPC及受影响修复，未验IME／preedit、极端容量或iPad触控。
@@ -112,7 +119,7 @@ Cocoa独立补丁只在绝对Dragged事件前跳过按钮reconcile，既有relea
 不得沿用上次摘要冒充恢复前的新核对。旧档只用副本，新保存只用未占用槽和新名称，不覆盖原件。
 合法 `save10.oysav` 是195正常新建牧师的“中文保存测试”手动档，恢复授权后可用于新索匹格镇银行自然条件；
 不能修改其物品、金钱或位姿来凑条件。243／245隔离Mac新档不扩大232设备原核对时点的结论。
-当前247仍写Save106、真实105／104读取证据沿用236；固定229及235不能读106，
+当前249仍写Save106、真实105／104读取证据沿用236；固定229及235不能读106，
 固定214／195及旧RC也不能读取105，回退须用保留的相应可读旧格式副本。
 
 固定229完整六文件为 `engine.zip`、`conversion.json`、`mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip`。

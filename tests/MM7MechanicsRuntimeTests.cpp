@@ -10,6 +10,7 @@
 #include "game/gameplay/StealingRuntime.h"
 #include "game/items/InventoryItemUseRuntime.h"
 #include "game/items/ItemRuntime.h"
+#include "game/items/PriceCalculator.h"
 #include "game/party/Party.h"
 #include "game/tables/MergedBaseTables.h"
 
@@ -470,6 +471,40 @@ TEST_CASE("MMerge follower bonuses expose skill, gold, food, and item-service ef
     CHECK_EQ(dismissed.meleeSkillLevel, baseline.meleeSkillLevel);
     CHECK_EQ(dismissed.meleeAttackBonus, baseline.meleeAttackBonus);
     CHECK_EQ(dismissed.rangedSkillLevel, 0u);
+
+    Party utility = makeOneMemberParty();
+    Character *learner = utility.activeMember();
+    REQUIRE(learner != nullptr);
+    learner->skills["Learning"] = {"Learning", 1, SkillMastery::Normal};
+    learner->skills["Merchant"] = {"Merchant", 1, SkillMastery::Normal};
+    learner->skills["Perception"] = {"Perception", 1, SkillMastery::Normal};
+    learner->skills["DisarmTraps"] = {"DisarmTraps", 1, SkillMastery::Normal};
+    learner->skills["LeatherArmor"] = {"LeatherArmor", 1, SkillMastery::Normal};
+    const int originalPrice = PriceCalculator::itemBuyingPrice(learner, 1000, 2.0f);
+    utility.addHiredNpcFollower({2001, 14, 150});
+    utility.addHiredNpcFollower({2002, 21, 400});
+    utility.addHiredNpcFollower({2003, 26, 600});
+    utility.addHiredNpcFollower({2004, 22, 300});
+    utility.grantSharedExperience(100);
+    CHECK_EQ(learner->experience, 125u);
+    CHECK_EQ(learner->findSkill("Learning")->level, 1u);
+    CHECK(PriceCalculator::itemBuyingPrice(learner, 1000, 2.0f) < originalPrice);
+    CHECK_EQ(GameMechanics::resolveCharacterPerceptionValue(*learner), 7);
+    CHECK_EQ(GameMechanics::resolveCharacterDisarmTrapValue(*learner), 7);
+
+    const auto leather = std::find_if(items.entries().begin(), items.entries().end(), [](const ItemDefinition &item)
+    {
+        return canonicalSkillName(item.skillGroup) == "LeatherArmor" && item.rarity == ItemRarity::Common;
+    });
+    REQUIRE(leather != items.entries().end());
+    learner->equipment.armor = leather->itemId;
+    utility.setItemTable(&items);
+    const int armorBefore = GameMechanics::buildCharacterSheetSummary(*learner, &items).armorClass.actual;
+    utility.removeHiredNpcFollower(2001);
+    utility.addHiredNpcFollower({2005, 46, 400});
+    CHECK_EQ(GameMechanics::buildCharacterSheetSummary(*learner, &items).armorClass.actual, armorBefore + 2);
+    utility.removeHiredNpcFollower(2005);
+    CHECK_EQ(GameMechanics::buildCharacterSheetSummary(*learner, &items).armorClass.actual, armorBefore);
 }
 
 TEST_CASE("MMerge follower luck and resistance bonuses are visible in character summaries")
@@ -493,6 +528,36 @@ TEST_CASE("MMerge follower luck and resistance bonuses are visible in character 
     CHECK_EQ(summary.airResistance.actual, 26);
     CHECK_EQ(summary.waterResistance.actual, 27);
     CHECK_EQ(summary.earthResistance.actual, 28);
+
+    PartySeed seed = {};
+    seed.members.push_back(member);
+    Party party = {};
+    party.seed(seed);
+    party.addHiredNpcFollower({1001, 27, 100});
+    party.addHiredNpcFollower({1002, 37, 100});
+    const auto projected = GameMechanics::buildCharacterSheetSummary(*party.activeMember(), nullptr);
+    const auto explicitEvent = GameMechanics::buildCharacterSheetSummary(
+        *party.activeMember(), nullptr, nullptr, nullptr, &state);
+    CHECK_EQ(projected.luck.actual, summary.luck.actual);
+    CHECK_EQ(projected.fireResistance.actual, summary.fireResistance.actual);
+    CHECK_EQ(explicitEvent.luck.actual, projected.luck.actual);
+    CHECK_EQ(explicitEvent.fireResistance.actual, projected.fireResistance.actual);
+    party.addHiredNpcFollower({1003, 37, 1000});
+    const auto stacked = GameMechanics::buildCharacterSheetSummary(*party.activeMember(), nullptr);
+    CHECK_EQ(stacked.fireResistance.actual, 45);
+    std::mt19937 plainRolls(0), boostedRolls(0);
+    const int plainDamage = GameMechanics::resolveCharacterIncomingDamage(
+        member, nullptr, nullptr, nullptr, 80, CombatDamageType::Fire, plainRolls);
+    const int boostedDamage = GameMechanics::resolveCharacterIncomingDamage(
+        *party.activeMember(), nullptr, nullptr, nullptr, 80, CombatDamageType::Fire, boostedRolls);
+    CHECK(boostedDamage < plainDamage);
+    party.removeHiredNpcFollower(1001);
+    party.removeHiredNpcFollower(1002);
+    party.removeHiredNpcFollower(1003);
+    const auto staleEvent = GameMechanics::buildCharacterSheetSummary(
+        *party.activeMember(), nullptr, nullptr, nullptr, &state);
+    CHECK_EQ(staleEvent.luck.actual, 10);
+    CHECK_EQ(staleEvent.fireResistance.actual, 5);
 }
 
 TEST_CASE("MMerge shop stealing integrates with stock and reputation")

@@ -1,0 +1,52 @@
+{
+  "changed_files": [
+    {
+      "path": "game/party/Party.h",
+      "bytes": 34569,
+      "sha256": "d7ea36e9389c774b4911c903d53769f5bef2ec636ef485f1ae75d1e1f35effa0"
+    },
+    {
+      "path": "game/party/Party.cpp",
+      "bytes": 260189,
+      "sha256": "fd0178feec70a0bbc4ee9b5b902e3ad60a4197ee64e368bc3930f90eb0fa9f42"
+    },
+    {
+      "path": "game/gameplay/GameMechanics.cpp",
+      "bytes": 120672,
+      "sha256": "efaa552cf3c055f1c2240ab3d3f7bdc56c3df32c39f53192037d5918af4807d6"
+    },
+    {
+      "path": "game/items/PriceCalculator.cpp",
+      "bytes": 12283,
+      "sha256": "f786ab5e2ea906bb395a499c6792a6d096d0706703f1d603afcc7f8b9d3163e8"
+    },
+    {
+      "path": "game/party/PartySpellSystem.cpp",
+      "bytes": 132154,
+      "sha256": "a52eb552b84e44a5a51013687fd5398446fb8a66ec3dea4fb62ef72765c88b88"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.h",
+      "bytes": 2445,
+      "sha256": "6737d5f1ac51b0adb01f6359d76f31ff955d9f4563e629fea3adde2aeff0d882"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.cpp",
+      "bytes": 11923,
+      "sha256": "6d31638ae292801585b830db44439176a4ad95392ff754d6af4c8ae9f3ce0621"
+    },
+    {
+      "path": "tests/MM7MechanicsRuntimeTests.cpp",
+      "bytes": 30097,
+      "sha256": "65d19c5011ed6ec8634e2db1484bce818958e1b171843c3a15e576e5dafcc385"
+    },
+    {
+      "path": "tests/SpellRegressionTests.cpp",
+      "bytes": 95264,
+      "sha256": "9d1a71ccffda2861c9abb0e9834a1f20ce72035a90bcb333019b960f08095e99"
+    }
+  ],
+  "production_files_count": 7,
+  "existing_test_files_count": 2,
+  "product_build_inputs_unchanged_after002": true
+}

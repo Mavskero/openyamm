@@ -1,0 +1,151 @@
+{
+  "checkpoints": [
+    248,
+    249
+  ],
+  "status": "ACCEPTED_OFFLINE_MECHANICS_SCOPED",
+  "source_base": "cb084d3a06c8085939ff60c1b0b00d8ed3125271",
+  "physical_debugging": "paused",
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "changed_source": [
+    {
+      "path": "game/party/Party.h",
+      "bytes": 34569,
+      "sha256": "d7ea36e9389c774b4911c903d53769f5bef2ec636ef485f1ae75d1e1f35effa0"
+    },
+    {
+      "path": "game/party/Party.cpp",
+      "bytes": 260189,
+      "sha256": "fd0178feec70a0bbc4ee9b5b902e3ad60a4197ee64e368bc3930f90eb0fa9f42"
+    },
+    {
+      "path": "game/gameplay/GameMechanics.cpp",
+      "bytes": 120672,
+      "sha256": "efaa552cf3c055f1c2240ab3d3f7bdc56c3df32c39f53192037d5918af4807d6"
+    },
+    {
+      "path": "game/items/PriceCalculator.cpp",
+      "bytes": 12283,
+      "sha256": "f786ab5e2ea906bb395a499c6792a6d096d0706703f1d603afcc7f8b9d3163e8"
+    },
+    {
+      "path": "game/party/PartySpellSystem.cpp",
+      "bytes": 132154,
+      "sha256": "a52eb552b84e44a5a51013687fd5398446fb8a66ec3dea4fb62ef72765c88b88"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.h",
+      "bytes": 2445,
+      "sha256": "6737d5f1ac51b0adb01f6359d76f31ff955d9f4563e629fea3adde2aeff0d882"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.cpp",
+      "bytes": 11923,
+      "sha256": "6d31638ae292801585b830db44439176a4ad95392ff754d6af4c8ae9f3ce0621"
+    },
+    {
+      "path": "tests/MM7MechanicsRuntimeTests.cpp",
+      "bytes": 30097,
+      "sha256": "65d19c5011ed6ec8634e2db1484bce818958e1b171843c3a15e576e5dafcc385"
+    },
+    {
+      "path": "tests/SpellRegressionTests.cpp",
+      "bytes": 95264,
+      "sha256": "9d1a71ccffda2861c9abb0e9834a1f20ce72035a90bcb333019b960f08095e99"
+    }
+  ],
+  "production_source_count": 7,
+  "existing_test_source_count": 2,
+  "skill_repair": "Shared Character effective stored+NPC rank/mastery copy;23canonical transient projection;real weapon/magic/XP/merchant/perception/disarm/armor consumers. Items remain consumer-specific; raw learned skills andeligibility unchanged.",
+  "defense_repair": "Independent transient Luck/fourresists from authoritativeParty projection, includingempty/inactive state; unprojectedstandalone Event fallback preserved; no doubleaddition orstaleEvent revival; actualdamage Luck uses sameactualsummary.",
+  "profession37_correction": "Original permitsdifferentNPCids sameprofession37(Cost1000/Joins; no professionexclusion). Originaleachadds20fourresists; oldpresence-only helper correctedtocountall. Two nowgive40.",
+  "source_authentication": [
+    "NPCFollowersSkills.lua54–57,116–132,239–261,296–301",
+    "ExtraEvents.lua770–779,824–850,892–903",
+    "RemoveSkillValueLimits.lua60–89,443–463",
+    "NPCFollowers.lua108–115,220–257,569–570",
+    "NPC professions.txt ID37 Cost1000 Joins=x",
+    "Originalexe actual spell/damage/resistance/Luck callpaths reviewed locally"
+  ],
+  "builds": {
+    "build-native-001": {
+      "passed": true,
+      "elapsed_seconds": 187.76277270900002
+    },
+    "build-ios-001": {
+      "passed": true,
+      "elapsed_seconds": 194.3289295
+    },
+    "build-native-002": {
+      "passed": true,
+      "elapsed_seconds": 3.4679355839999997
+    },
+    "build-ios-002": {
+      "passed": true,
+      "elapsed_seconds": 6.777035167
+    },
+    "compile-focused-002": {
+      "passed": true,
+      "elapsed_seconds": 11.934844333000001
+    },
+    "focused-utility-recheck-002": {
+      "passed": true,
+      "elapsed_seconds": 1.942915333
+    }
+  },
+  "incremental_followup": "Firstfullnative/iOS pass retained; onlyNpcFollowerRuntime.cpp incrementallyrebuilt once for newlyauthenticatedprofession37stacking beforeanyfocusedcaserun.",
+  "focused_checks": {
+    "selected_existing_cases": 3,
+    "new_cases": 0,
+    "initial_run": {
+      "cases": 3,
+      "passed": 2,
+      "failed_fixture_cases": 1,
+      "assertions": 72,
+      "passed_assertions": 71,
+      "seconds": 1.975211667
+    },
+    "already_passed_not_replayed": [
+      "ordinaryspell buff/projectile/rank/override/dismiss",
+      "Luck/resistance projection,doubleaddition,staleEvent,stacked37,actualdamage"
+    ],
+    "recheck": "Only existingfollowerbonus utility case after fixture buyingmultiplier1.0→2.0 toavoidminimumpricefloor",
+    "coverage": [
+      "Actual XP125 from100 withNPC Learning",
+      "Actual merchant buyingdiscount",
+      "Perception/Disarm effective7",
+      "Squire leather AC+2/removal",
+      "Retained weapon4→7/restore/dismiss",
+      "Haste rank6→10 andbuffrank10",
+      "BorrowedFireBolt rank4/Normal/projectile while stored0/None",
+      "Explicitoverride5Master unchanged",
+      "Dismiss removesmagic eligibility",
+      "Defensiveactualdamage andone/twoprofession37 contributions"
+    ]
+  },
+  "all7_built_source_hashes_match": true,
+  "runtime": "complete246/runtime-002 unchanged",
+  "ui_text": 233,
+  "combat_text": 223,
+  "navigation": 222,
+  "save_version": 106,
+  "save_codec_changed": false,
+  "resource_imports": 0,
+  "app_runs": 0,
+  "save_writes": 0,
+  "old_routes_replayed": 0,
+  "campaigns_replayed": 0,
+  "new_release": false,
+  "not_claimed": [
+    "All professions/skills/full fight matrix",
+    "Full UI/pixels/touch acceptance",
+    "Physical iPad/UIKit",
+    "Full natural campaign",
+    "All offline work complete"
+  ],
+  "estimate_percent": 88,
+  "estimate_confidence": "low",
+  "full_goal_achieved": false,
+  "timestamp": "2026-10-31T12:25:23.444753+00:00"
+}

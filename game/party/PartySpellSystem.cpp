@@ -1017,17 +1017,17 @@ bool resolveSpellSkill(
         return false;
     }
 
-    const CharacterSkill *pSkill = caster.findSkill(*skillName);
+    const CharacterSkill effectiveSkill = caster.skillWithNpcBonus(*skillName);
 
-    if (pSkill == nullptr || pSkill->mastery == SkillMastery::None)
+    if (effectiveSkill.mastery == SkillMastery::None)
     {
         return false;
     }
 
     const auto bonusIt = caster.itemSkillBonuses.find(*skillName);
     const int bonusLevel = bonusIt != caster.itemSkillBonuses.end() ? bonusIt->second : 0;
-    skillLevel = std::max(0, static_cast<int>(pSkill->level) + bonusLevel);
-    skillMastery = pSkill->mastery;
+    skillLevel = std::max(0, static_cast<int>(effectiveSkill.level) + bonusLevel);
+    skillMastery = effectiveSkill.mastery;
     return skillLevel > 0;
 }
 

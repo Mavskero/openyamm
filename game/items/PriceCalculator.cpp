@@ -133,20 +133,21 @@ int PriceCalculator::playerMerchant(const Character *pCharacter, int effectiveRe
         return 0;
     }
 
-    const CharacterSkill *pMerchant = pCharacter->findSkill("Merchant");
+    const CharacterSkill merchantSkill = pCharacter->skillWithNpcBonus("Merchant");
     const int merchantBonus = std::max(0, pCharacter->merchantBonus);
 
-    if (pMerchant == nullptr || pMerchant->mastery == SkillMastery::None)
+    if (merchantSkill.mastery == SkillMastery::None)
     {
         return std::min(merchantBonus - effectiveReputation, 100);
     }
 
-    if (pMerchant->mastery == SkillMastery::Grandmaster)
+    if (merchantSkill.mastery == SkillMastery::Grandmaster)
     {
         return 100;
     }
 
-    const int bonus = static_cast<int>(pMerchant->level) * masteryMerchantMultiplier(pMerchant->mastery) + merchantBonus;
+    const int bonus = static_cast<int>(merchantSkill.level)
+        * masteryMerchantMultiplier(merchantSkill.mastery) + merchantBonus;
 
     if (bonus <= 0)
     {
