@@ -1,0 +1,111 @@
+{
+  "checkpoint": 244,
+  "status": "ACCEPTED_OFFLINE_MAC_SCOPED",
+  "physical_debugging": "paused",
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "source_base": "d956e8cbba637e07a2da30c2752288d73bb93d91",
+  "native_build_seconds": 2.938982458,
+  "native_build_pass": true,
+  "actual_dependency_sha256": "b0f5908df31fb5a3f74fa79467abd47577117d783aad78180dd9fbc8a63a6d10",
+  "native_executable_sha256": "0c21b2ca405726a1f4504386b57dcffb2b7c02e9940550cbbf9f38f366d22af0",
+  "patches_reverse_checks_pass": true,
+  "main_and_sol_peer_review": true,
+  "gameplay_context": "normal UI Load legitimate private Slot1/106 with190gold5food; walked to same MM6 House62 without state fixtures or teleport",
+  "affected_recheck": [
+    {
+      "action": "standard stock RMB same second helmet",
+      "result": "price90, gold190, helmet visible"
+    },
+    {
+      "action": "ordinary CUA drag from observed1280 screenshot(440,210) to rightblank(1040,500)",
+      "result": "PASS cancelled; gold190, helmet retained, no purchase status"
+    },
+    {
+      "action": "ordinary fresh click same helmet",
+      "result": "PASS purchase; gold190→100, helmet removed from stock, Chinese success status"
+    },
+    {
+      "action": "Escape then 显示行囊",
+      "result": "PASS new helmet present in inventory, other original items retained visually"
+    }
+  ],
+  "save_writes": 0,
+  "runtime": "complete241/runtime-002 unchanged",
+  "ui_text": 228,
+  "combat_text": 223,
+  "navigation": 222,
+  "save_version": 106,
+  "ios_build": "not repeated for Mac-only Cocoa guard;243 unsigned generic iOS artifact retained",
+  "new_unit_cases": 0,
+  "unit_cases_run": 0,
+  "old_routes_replayed": 0,
+  "campaigns_replayed": 0,
+  "new_release": false,
+  "causal_scope": "Actual before/after behavior and source-confirmed condition; original failing global snapshot value not instrumented or claimed captured",
+  "not_claimed": [
+    "physical target iPad touch",
+    "UIKit/preedit",
+    "all stock/services/relative-mouse modes",
+    "full natural campaign",
+    "all offline work complete"
+  ],
+  "estimate_percent": 88,
+  "estimate_confidence": "low",
+  "full_goal_achieved": false,
+  "screenshots": "inline CUA reviewed only, no exported screenshot files",
+  "timestamp": "2026-10-31T10:48:07.137137+00:00",
+  "original_and_private_save_hashes_unchanged": true,
+  "private_save_inventory": "only existing private Slot1/106 and copied Save10; zero new/changed files",
+  "process_scope": "006 normal Quit collected;007 main-owned continues offline",
+  "initial_actual_observation": {
+    "normal_house": 62,
+    "stock_quote_gold": 90,
+    "drag_to_blank_unexpected_purchase": "190→100",
+    "new_helmet_present_in_inventory": true,
+    "ordinary_sale_quote_gold": 17,
+    "ordinary_sale_success": "100→117, new helmet removed",
+    "failing_snapshot_value_logged": false,
+    "record_retained_locally": true
+  },
+  "source_changes": [
+    "Add Mac-only independent incremental Cocoa patch at sole reconcile callsite",
+    "Skip reconcile only for explicit absolute Left/Right/OtherMouseDragged; relative and other events retained",
+    "Append patch after old position/release patches; preserve each original patch and idempotence"
+  ],
+  "built_source_freeze_files": [
+    {
+      "path": "cmake/PatchSdlCocoa.cmake",
+      "bytes": 1352,
+      "sha256": "2cde8489f66c4a7fc264b7cdb3c87852387a7f99ca519bf23b564b74b0a5ce4f"
+    },
+    {
+      "path": "cmake/patches/sdl-cocoa-drag-button-state.patch",
+      "bytes": 946,
+      "sha256": "7254e60b8d30eabebe0b34b2c14ee0fa6ba6cc20c2eda0f7431abb3eb9fed678"
+    }
+  ],
+  "published_source_files": [
+    {
+      "path": "cmake/PatchSdlCocoa.cmake",
+      "bytes": 1352,
+      "sha256": "2cde8489f66c4a7fc264b7cdb3c87852387a7f99ca519bf23b564b74b0a5ce4f"
+    },
+    {
+      "path": "cmake/patches/sdl-cocoa-drag-button-state.patch",
+      "bytes": 881,
+      "sha256": "cddfa82c3c54bb81e7eefb14330426965974a9bf6f70fd83e2b7ea95fe783c67"
+    }
+  ],
+  "postbuild_patch_context_only_repair": {
+    "reason": "git diff --cached --check rejected a unified-diff blank context line as trailing whitespace before commit; initial244 push sent no new commit",
+    "old_patch_sha256": "7254e60b8d30eabebe0b34b2c14ee0fa6ba6cc20c2eda0f7431abb3eb9fed678",
+    "new_patch_sha256": "cddfa82c3c54bb81e7eefb14330426965974a9bf6f70fd83e2b7ea95fe783c67",
+    "change": "Removed three trailing context-only lines, old/new hunk counts12/20→9/17; added/removed production lines identical",
+    "actual_sdl_source_sha256_unchanged": "b0f5908df31fb5a3f74fa79467abd47577117d783aad78180dd9fbc8a63a6d10",
+    "new_patch_reverse_check": true,
+    "production_build_repeated": false,
+    "actual_affected_recheck_repeated": false,
+    "timestamp": "2026-10-31T10:52:57.529164+00:00"
+  }
+}

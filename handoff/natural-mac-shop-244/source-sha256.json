@@ -1,0 +1,51 @@
+{
+  "changed_files": [
+    {
+      "path": "cmake/PatchSdlCocoa.cmake",
+      "bytes": 1352,
+      "sha256": "2cde8489f66c4a7fc264b7cdb3c87852387a7f99ca519bf23b564b74b0a5ce4f"
+    },
+    {
+      "path": "cmake/patches/sdl-cocoa-drag-button-state.patch",
+      "bytes": 881,
+      "sha256": "cddfa82c3c54bb81e7eefb14330426965974a9bf6f70fd83e2b7ea95fe783c67"
+    }
+  ],
+  "old_patches_retained": [
+    {
+      "path": "cmake/patches/sdl-cocoa-button-release.patch",
+      "bytes": 810,
+      "sha256": "04c8bcd456131426edc0b061f0fb268650d5c750c30d7041c902e039dad4388f"
+    },
+    {
+      "path": "cmake/patches/sdl-cocoa-button-position.patch",
+      "bytes": 1316,
+      "sha256": "bcc19b4f4f104761db6315a45ed7611aa1fa5a83c34a37b8777504355ca91451"
+    }
+  ],
+  "actual_dependency_sha256": "b0f5908df31fb5a3f74fa79467abd47577117d783aad78180dd9fbc8a63a6d10",
+  "native_executable_sha256": "0c21b2ca405726a1f4504386b57dcffb2b7c02e9940550cbbf9f38f366d22af0",
+  "build_input_files": [
+    {
+      "path": "cmake/PatchSdlCocoa.cmake",
+      "bytes": 1352,
+      "sha256": "2cde8489f66c4a7fc264b7cdb3c87852387a7f99ca519bf23b564b74b0a5ce4f"
+    },
+    {
+      "path": "cmake/patches/sdl-cocoa-drag-button-state.patch",
+      "bytes": 946,
+      "sha256": "7254e60b8d30eabebe0b34b2c14ee0fa6ba6cc20c2eda0f7431abb3eb9fed678"
+    }
+  ],
+  "postbuild_patch_context_only_repair": {
+    "reason": "git diff --cached --check rejected a unified-diff blank context line as trailing whitespace before commit; initial244 push sent no new commit",
+    "old_patch_sha256": "7254e60b8d30eabebe0b34b2c14ee0fa6ba6cc20c2eda0f7431abb3eb9fed678",
+    "new_patch_sha256": "cddfa82c3c54bb81e7eefb14330426965974a9bf6f70fd83e2b7ea95fe783c67",
+    "change": "Removed three trailing context-only lines, old/new hunk counts12/20→9/17; added/removed production lines identical",
+    "actual_sdl_source_sha256_unchanged": "b0f5908df31fb5a3f74fa79467abd47577117d783aad78180dd9fbc8a63a6d10",
+    "new_patch_reverse_check": true,
+    "production_build_repeated": false,
+    "actual_affected_recheck_repeated": false,
+    "timestamp": "2026-10-31T10:52:57.529164+00:00"
+  }
+}

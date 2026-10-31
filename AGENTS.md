@@ -15,6 +15,16 @@ These rules apply to all AI-generated contributions in this repository.
   Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
   publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
 
+- 244 ACCEPTED_OFFLINE_MAC_SCOPED: `handoff/natural-mac-shop-244/README.md`.
+  FirstnormalMM6 House62 stockMacdrag unexpectedly bought90gold; ordinarynewhelmet sale17worked, originalitems
+  retained. MacCocoa explicitabsolute Dragged nowbypasses prematureglobal-snapshot reconcile atuniquecallsite;
+  oldposition/releasepatches,relative/otherEvents unchanged; thirdincrementalpatch idempotenceverified.
+  Native2.939s pass,2changedsourceSHA and3patchreversechecks pass. FirstaffectednormalMacdrag cancelswith190gold/
+  stockretained; freshclick buys190→100 andhelmetinbag.0newcases/unitruns/iOSrebuild/Savewrites/device/simulator/
+  campaign/Release; original/copySave10 andprivateSlot1 unchanged. Initialglobalmasknotlogged,nophysicaltouchclaim.
+  Resource241/Ui228/Combat223/nav222/Save106 retained;006exited/collected,007main-owned continuesordinaryNPC.
+  Physicaldebug remainsuserpaused,Sol6.1/max,~88%lowconfidence; fullnaturalcampaign/allofflinecompletionunproved.
+
 - 243 ACCEPTED_OFFLINE_MAC_SCOPED: `handoff/natural-mac-bank-243/README.md`.
   FirstnaturalMac copiedSave10 walk→House297 bank;17deposit/7withdraw gives190carried/10bank. Onlynew
   isolatedSlot1/106 savedthroughnormalUI;original/copySave10 andnewSlot1afterreload hashesunchanged.

@@ -1,0 +1,21 @@
+--- a/src/video/cocoa/SDL_cocoamouse.m
++++ b/src/video/cocoa/SDL_cocoamouse.m
+@@ -543,9 +543,17 @@
+     NSEventType event_type = [event type];
+     if (event_type == NSEventTypeMouseExited) {
+         Cocoa_MouseFocus = NULL;
+     } else {
+         if ([event window] != NULL) {
+             Cocoa_MouseFocus = [event window];
+-            Cocoa_ReconcileButtonState(event);
++            // A drag event reports a held button. The independent global snapshot
++            // must not release it before the event's motion is delivered.
++            if (SDL_GetMouse()->relative_mode
++                || (event_type != NSEventTypeLeftMouseDragged
++                    && event_type != NSEventTypeRightMouseDragged
++                    && event_type != NSEventTypeOtherMouseDragged))
++            {
++                Cocoa_ReconcileButtonState(event);
++            }
+         }
+     }
