@@ -15,6 +15,18 @@ These rules apply to all AI-generated contributions in this repository.
   Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
   publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
 
+- 251–253 ACCEPTED_OFFLINE_MAC_SCOPED: `openyamm/handoff/house-ui-and-equipment-251-253/README.md`.
+  OrdinaryLearnSkill currentlanguage templates/skillnames shared;Guild122/Deck1690 useexistingNPCtable,no newkeys.
+  NormalMac009 copiedSlot2→TownHall/JaniceGoblinwatch/Chinesequest/key/equip66+84+1691 foundopaquehelmetvariant.
+  OnlynewemptyprivateSlot3/106 defaultname新索匹格镇 writtenonce;old3privatecopiesunchanged;009normalQuit/logcollected.
+  Original6helm1v1palette0(252,0,216) lostinRgb24;producerIndexed8fixed,singleBMP re-extracted39x33/2398B,
+  all1287RGBsame/668index0preserved. Native176.964s/iOS171.930s/assembly6.454spass;5sourcehashmatch,0unit/newcases.
+  Mac010 firstnormalSlot3 inventoryshows transparenthelmet/armor/mace;0repairwrites,4privatehashesunchangedatcheckpoint.
+  010continuednormalplayafterinventorycheck,stillmain-owned/notclaimedexited. Complete253/001 changesonly6helm1v1;17398members/4worlds,
+  Ui233/Combat223/nav222/Save106 retained;otheroldRGB24gearunfixedinruntime. No device/sim/campaign/Release.
+  Physicalpaused,Sol6.1/max,~88%lowconfidence;fullnaturalcampaign/allofflineunproved. Continueconcretesame-family
+  source/assetworkandnormalplay;do not replaypassedbank/shop/routesorcreateanotherdevicecheckpoint.
+
 - 250 ACCEPTED_OFFLINE_MECHANICS_SCOPED: `openyamm/handoff/follower-travel-luck-250/README.md`.
   Sharedpositiveoutdoorwalkingdays helper feedsquote andbothdeferredconfirmplans;Partyfollowers authoritative,
   original5/6/7/44sum/min1;knownnonemptyoriginaledgespositive,unproven/default0retainedwithoutinventingaday.

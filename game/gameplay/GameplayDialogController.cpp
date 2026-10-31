@@ -2877,9 +2877,9 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
         {
             if (!partyCanPlayArcomageInHouse(*pHouseEntry, context.pParty))
             {
-                const char *pMessage = arcomageDeckRequiredMessage();
-                context.eventRuntimeState.messages.push_back(pMessage);
-                context.uiController.setStatusBarEvent(pMessage);
+                const std::string message = arcomageDeckRequiredMessage(context.pNpcDialogTable);
+                context.eventRuntimeState.messages.push_back(message);
+                context.uiController.setStatusBarEvent(message);
                 refreshCurrentHouseServiceDialog(context, pHouseEntry->id);
                 result.shouldOpenPendingEventDialog = true;
                 return result;

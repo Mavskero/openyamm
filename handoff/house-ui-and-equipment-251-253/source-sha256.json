@@ -1,0 +1,31 @@
+{
+  "changed_files": [
+    {
+      "path": "game/gameplay/HouseInteraction.h",
+      "bytes": 4972,
+      "sha256": "a9cdc45406a2b76e303f004d12073eb944fd4294d3befb93974e6346c399d5e0"
+    },
+    {
+      "path": "game/gameplay/HouseInteraction.cpp",
+      "bytes": 92403,
+      "sha256": "d2ff93511b504a92f75c44d19819c318d67ba179aab4f5855f1ee96c282408c3"
+    },
+    {
+      "path": "game/events/EventDialogContent.cpp",
+      "bytes": 77528,
+      "sha256": "3f56c174c3b0809541f6bf32cf624046e6d5afdce818603e0d23d172269c606b"
+    },
+    {
+      "path": "game/gameplay/GameplayDialogController.cpp",
+      "bytes": 191729,
+      "sha256": "877d2a00a2a62cc6a834caecb9445c5866988bff2a869d0a705cfecbf2f786d0"
+    },
+    {
+      "path": "tools/mmerge_import/EquipmentPictureResources.cpp",
+      "bytes": 20190,
+      "sha256": "75b5c64471fef0f3f5d9e9d84a377d0f031c2bf84006447d34f181aa07e3cf3c"
+    }
+  ],
+  "production_files_count": 5,
+  "new_cases": 0
+}

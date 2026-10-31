@@ -137,7 +137,7 @@ std::string buildClosedStatusText(
     const HouseServiceTextTable *pHouseServiceTextTable = nullptr);
 bool isBoatHouse(const HouseEntry &houseEntry);
 uint32_t arcomageDeckItemId();
-const char *arcomageDeckRequiredMessage();
+std::string arcomageDeckRequiredMessage(const NpcDialogTable *pNpcDialogTable = nullptr);
 bool partyHasArcomageDeck(const Party *pParty);
 bool houseRequiresArcomageDeck(const HouseEntry &houseEntry);
 bool partyCanPlayArcomageInHouse(const HouseEntry &houseEntry, const Party *pParty);
@@ -148,7 +148,8 @@ std::vector<std::string> buildHouseServiceInfoLines(
     const ClassSkillTable *pClassSkillTable,
     DialogueMenuId menuId,
     const HouseServiceTextTable *pHouseServiceTextTable = nullptr,
-    const UiTextTable *pUiTextTable = nullptr
+    const UiTextTable *pUiTextTable = nullptr,
+    const NpcDialogTable *pNpcDialogTable = nullptr
 );
 
 std::vector<HouseActionOption> buildHouseActionOptions(
@@ -160,7 +161,8 @@ std::vector<HouseActionOption> buildHouseActionOptions(
     DialogueMenuId menuId,
     const CharacterInspectTable *pCharacterInspectTable = nullptr,
     const HouseServiceTextTable *pHouseServiceTextTable = nullptr,
-    const UiTextTable *pUiTextTable = nullptr
+    const UiTextTable *pUiTextTable = nullptr,
+    const NpcDialogTable *pNpcDialogTable = nullptr
 );
 
 HouseActionResult performHouseAction(

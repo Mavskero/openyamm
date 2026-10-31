@@ -1,0 +1,156 @@
+{
+  "checkpoints": [
+    251,
+    252,
+    253
+  ],
+  "status": "ACCEPTED_OFFLINE_MAC_SCOPED",
+  "source_base": "1bfefd6ff5fa1b970922a8e3e7072bd19503b25b",
+  "changed_source": [
+    {
+      "path": "game/gameplay/HouseInteraction.h",
+      "bytes": 4972,
+      "sha256": "a9cdc45406a2b76e303f004d12073eb944fd4294d3befb93974e6346c399d5e0"
+    },
+    {
+      "path": "game/gameplay/HouseInteraction.cpp",
+      "bytes": 92403,
+      "sha256": "d2ff93511b504a92f75c44d19819c318d67ba179aab4f5855f1ee96c282408c3"
+    },
+    {
+      "path": "game/events/EventDialogContent.cpp",
+      "bytes": 77528,
+      "sha256": "3f56c174c3b0809541f6bf32cf624046e6d5afdce818603e0d23d172269c606b"
+    },
+    {
+      "path": "game/gameplay/GameplayDialogController.cpp",
+      "bytes": 191729,
+      "sha256": "877d2a00a2a62cc6a834caecb9445c5866988bff2a869d0a705cfecbf2f786d0"
+    },
+    {
+      "path": "tools/mmerge_import/EquipmentPictureResources.cpp",
+      "bytes": 20190,
+      "sha256": "75b5c64471fef0f3f5d9e9d84a377d0f031c2bf84006447d34f181aa07e3cf3c"
+    }
+  ],
+  "source_hashes_match_before_after": 5,
+  "repairs": [
+    "AllordinaryLearnSkill entrances/quotes/results reuse existinggeneric currentlanguage templates andskillnames",
+    "Guildmembershipinfo/disabledReason read originalNPCText122;deckinfo/refusalread originalNPCText1690 withonlyoriginalASCIIdividertrimmed",
+    "Equipmentpictureexport preserves original Indexed8;observedhelmet1691/6helm1v1 resource re-extracted withoutart changes"
+  ],
+  "original_rules_unchanged": [
+    "Learningeligibility/prices/Party mutationorder/speech",
+    "Guildmembershipanddeck1453 gates",
+    "Equipment/Save106/originalart RGBcolors"
+  ],
+  "builds": {
+    "build-native-001": {
+      "passed": true,
+      "elapsed_seconds": 4.8234924999999995
+    },
+    "build-ios-001": {
+      "passed": true,
+      "elapsed_seconds": 9.709751166999999
+    },
+    "build-native-002": {
+      "passed": true,
+      "elapsed_seconds": 176.96430341599998
+    },
+    "build-ios-002": {
+      "passed": true,
+      "elapsed_seconds": 171.930219583
+    },
+    "extract-helmet-001": {
+      "passed": true,
+      "elapsed_seconds": 0.010752999999999999
+    },
+    "assemble-runtime-001": {
+      "passed": true,
+      "elapsed_seconds": 6.454302458
+    }
+  },
+  "unit_test_runs": 0,
+  "new_cases": 0,
+  "natural_mac_before_repair": {
+    "process": 9,
+    "code_version": 250,
+    "runtime": 246,
+    "normal_load_private_slot": 2,
+    "fixtures": false,
+    "observations": [
+      "Townwalk/TownHall/JaniceGoblinwatchtopic/Chinesequesttext/keygrant",
+      "Inventorykeyvisible andequip66/84/1691",
+      "Helmet dedicatedimage opaqueRGBpalette0 background observedandremained athead aftercursor moved"
+    ],
+    "new_empty_private_slot_writes": 1,
+    "new_slot": 3,
+    "new_slot_name": "新索匹格镇",
+    "name_scope": "Defaultname; earlierpastewasnotadmittedasnameedit",
+    "original3_private_saves_unchanged": true,
+    "normal_quit_and_log_collected": true
+  },
+  "actual_affected_recheck": {
+    "process": 10,
+    "normal_load_private_slot": 3,
+    "fixtures": false,
+    "observed": "Firstnormalinventoryview: helmet1691 backgroundtransparent;armor84/mace66 correct",
+    "new_save_writes": 0,
+    "all4_private_save_hashes_unchanged_at_checkpoint": true,
+    "process_state": "Activeinventorypausedunder mainownership;notclaimedclosed/collected"
+  },
+  "image_conversion": {
+    "asset": "icons/6helm1v1.bmp",
+    "source_owner": "originalData/mmmerge.icons.lod::6helm1v1",
+    "dimensions": [
+      39,
+      33
+    ],
+    "before_bits": 24,
+    "after_bits": 8,
+    "all1287_rgb_pixels_identical": true,
+    "preserved_palette_zero_pixels": 668,
+    "palette_zero_rgb": [
+      252,
+      0,
+      216
+    ],
+    "old_sha256": "e3ee6eb252707d6a8a535a536186a5e6f015c419ee4885b04136c1d0d85bcf68",
+    "new_sha256": "24051417a0f2f51e4d04c66dd06a438d655357ffb21705174aff2b05c9e420bc",
+    "new_bytes": 2398,
+    "image_content_or_palette_changed": false
+  },
+  "runtime": {
+    "path": "complete253/runtime-001",
+    "base": "complete246/runtime-002",
+    "changed_engine_members": [
+      "icons/6helm1v1.bmp"
+    ],
+    "unchanged_engine_members": 17398,
+    "worlds_retained": 4,
+    "ui_text": 233,
+    "combat_text": 223,
+    "navigation": 222,
+    "save_version": 106
+  },
+  "engine_overlay": {
+    "path": "engine-overlay-253.zip",
+    "bytes": 1774,
+    "sha256": "5ca65bd169254fa2d272774a75dff2363a1273ddfdd04be34738580512c1e0e0"
+  },
+  "not_claimed": [
+    "ActualLearnSkill/Guild122/Deck1690pixels/touch",
+    "AllotheroldRGB24equipmentvariantsfixedin runtime",
+    "NaturalcompletionoftheGoblinwatchquest orfullcampaign",
+    "CurrentiPadacceptance"
+  ],
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "physical_debugging": "paused_by_user",
+  "campaign_replays": 0,
+  "new_release": false,
+  "subagents": "gpt-6.1-sol/max",
+  "full_goal_achieved": false,
+  "engineering_estimate_percent": 88,
+  "estimate_confidence": "low"
+}

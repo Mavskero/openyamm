@@ -7,6 +7,7 @@
 #include "game/tables/ClassSkillTable.h"
 #include "game/tables/CharacterInspectTable.h"
 #include "game/tables/HouseServiceTextTable.h"
+#include "game/tables/NpcDialogTable.h"
 #include "game/gameplay/HouseServiceRuntime.h"
 #include "game/gameplay/NpcFollowerRuntime.h"
 #include "game/gameplay/ReputationRuntime.h"
@@ -48,6 +49,21 @@ constexpr const char *pLorettaPriceFixingLabel = "Price Fixing";
 constexpr const char *pLorettaPriceFixingMessage =
     "Well, If Loretta's got a new scheme, count me in!\n"
     "But you better get all the other companies to sign up!";
+
+std::string guildMembershipRequiredMessage(const NpcDialogTable *pNpcDialogTable)
+{
+    if (pNpcDialogTable != nullptr)
+    {
+        const std::optional<std::string> localized = pNpcDialogTable->getText(122);
+
+        if (localized.has_value() && !localized->empty())
+        {
+            return *localized;
+        }
+    }
+
+    return "You must be a member of this guild to study here.";
+}
 
 std::string serviceText(
     const HouseServiceTextTable *pTable,
@@ -551,8 +567,26 @@ uint32_t arcomageDeckItemId()
     return ArcomageDeckItemId;
 }
 
-const char *arcomageDeckRequiredMessage()
+std::string arcomageDeckRequiredMessage(const NpcDialogTable *pNpcDialogTable)
 {
+    if (pNpcDialogTable != nullptr)
+    {
+        const std::optional<std::string> localized = pNpcDialogTable->getText(1690);
+
+        if (localized.has_value() && !localized->empty())
+        {
+            std::string message = *localized;
+            // NPCText 1690 ends with an ASCII underscore divider in both source languages.
+            const size_t lastText = message.find_last_not_of("_ \t\r\n");
+
+            if (lastText != std::string::npos)
+            {
+                message.resize(lastText + 1);
+                return message;
+            }
+        }
+    }
+
     return pArcomageDeckRequiredMessage;
 }
 
@@ -1064,7 +1098,8 @@ std::vector<std::string> buildHouseServiceInfoLines(
     const ClassSkillTable *pClassSkillTable,
     DialogueMenuId menuId,
     const HouseServiceTextTable *pHouseServiceTextTable,
-    const UiTextTable *pUiTextTable
+    const UiTextTable *pUiTextTable,
+    const NpcDialogTable *pNpcDialogTable
 )
 {
     std::vector<std::string> lines;
@@ -1074,7 +1109,7 @@ std::vector<std::string> buildHouseServiceInfoLines(
         && menuId == DialogueMenuId::None
         && !hasSkillGuildMembership(houseEntry, pParty, nullptr))
     {
-        lines.push_back("You must be a member of this guild to study here.");
+        lines.push_back(guildMembershipRequiredMessage(pNpcDialogTable));
         return lines;
     }
 
@@ -1091,13 +1126,10 @@ std::vector<std::string> buildHouseServiceInfoLines(
         if (collectLearnableSkills(houseEntry, pParty, pClassSkillTable).empty())
         {
             lines.push_back(std::string {});
-            const bool localizeTemple = serviceType == HouseServiceType::Temple;
-            lines.push_back(localizeTemple
-                ? templeText(
-                    pHouseServiceTextTable,
-                    HouseServiceTextTable::Message::TempleNoSkills,
-                    "No skills are available here for this character.")
-                : "No skills are available here for this character.");
+            lines.push_back(templeText(
+                pHouseServiceTextTable,
+                HouseServiceTextTable::Message::TempleNoSkills,
+                "No skills are available here for this character."));
         }
     }
     else if (menuId == DialogueMenuId::TavernArcomage)
@@ -1110,7 +1142,7 @@ std::vector<std::string> buildHouseServiceInfoLines(
         }
         else
         {
-            lines.push_back(arcomageDeckRequiredMessage());
+            lines.push_back(arcomageDeckRequiredMessage(pNpcDialogTable));
         }
     }
 
@@ -1135,7 +1167,8 @@ std::vector<HouseActionOption> buildHouseActionOptions(
     DialogueMenuId menuId,
     const CharacterInspectTable *pCharacterInspectTable,
     const HouseServiceTextTable *pHouseServiceTextTable,
-    const UiTextTable *pUiTextTable
+    const UiTextTable *pUiTextTable,
+    const NpcDialogTable *pNpcDialogTable
 )
 {
     std::vector<HouseActionOption> options;
@@ -1154,21 +1187,17 @@ std::vector<HouseActionOption> buildHouseActionOptions(
 
         for (const std::string &skillName : learnableSkills)
         {
-            const std::string skillDisplayName = serviceType == HouseServiceType::Temple
-                ? templeSkillDisplayName(skillName, pCharacterInspectTable)
-                : displaySkillName(skillName);
+            const std::string skillDisplayName = templeSkillDisplayName(skillName, pCharacterInspectTable);
             const int skillPrice = price;
             HouseActionOption learn = makeOption(
                 HouseActionId::LearnSkill,
-                serviceType == HouseServiceType::Temple
-                    ? templeText(
-                        pHouseServiceTextTable,
-                        HouseServiceTextTable::Message::TempleLearnSkillAction,
-                        "Learn " + skillDisplayName + " for " + std::to_string(skillPrice) + " gold",
-                        {},
-                        skillDisplayName,
-                        skillPrice)
-                    : "Learn " + skillDisplayName + " for " + std::to_string(skillPrice) + " gold",
+                templeText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleLearnSkillAction,
+                    "Learn " + skillDisplayName + " for " + std::to_string(skillPrice) + " gold",
+                    {},
+                    skillDisplayName,
+                    skillPrice),
                 isHouseOpenNow,
                 closedReason
             );
@@ -1180,12 +1209,10 @@ std::vector<HouseActionOption> buildHouseActionOptions(
         {
             HouseActionOption noSkills = makeOption(
                 HouseActionId::LearnSkill,
-                serviceType == HouseServiceType::Temple
-                    ? templeText(
-                        pHouseServiceTextTable,
-                        HouseServiceTextTable::Message::TempleNoSkills,
-                        "No skills are available here for this character.")
-                    : "No skills are available here for this character.",
+                templeText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleNoSkills,
+                    "No skills are available here for this character."),
                 true,
                 std::string {}
             );
@@ -1409,7 +1436,14 @@ std::vector<HouseActionOption> buildHouseActionOptions(
         }
 
         options.push_back(std::move(food));
-        options.push_back(makeOption(HouseActionId::OpenLearnSkillsMenu, "Learn Skills", isHouseOpenNow, closedReason));
+        options.push_back(makeOption(
+            HouseActionId::OpenLearnSkillsMenu,
+            serviceText(
+                pHouseServiceTextTable,
+                HouseServiceTextTable::Message::TempleLearnSkillsAction,
+                "Learn Skills"),
+            isHouseOpenNow,
+            closedReason));
 
         if (houseEntry.arcomageRule.has_value())
         {
@@ -1497,7 +1531,10 @@ std::vector<HouseActionOption> buildHouseActionOptions(
         {
             options.push_back(makeOption(
                 HouseActionId::OpenLearnSkillsMenu,
-                "Learn Skills",
+                serviceText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleLearnSkillsAction,
+                    "Learn Skills"),
                 isHouseOpenNow,
                 closedReason));
         }
@@ -1570,10 +1607,16 @@ std::vector<HouseActionOption> buildHouseActionOptions(
         if (isSkillGuildHouse(houseEntry)
             && !hasSkillGuildMembership(houseEntry, pParty, pWorldRuntime))
         {
-            HouseActionOption learnSkills =
-                makeOption(HouseActionId::OpenLearnSkillsMenu, "Learn Skills", isHouseOpenNow, closedReason);
+            HouseActionOption learnSkills = makeOption(
+                HouseActionId::OpenLearnSkillsMenu,
+                serviceText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleLearnSkillsAction,
+                    "Learn Skills"),
+                isHouseOpenNow,
+                closedReason);
             learnSkills.enabled = false;
-            learnSkills.disabledReason = "You must be a member of this guild to study here.";
+            learnSkills.disabledReason = guildMembershipRequiredMessage(pNpcDialogTable);
             options.push_back(std::move(learnSkills));
             return finalizeHouseActionOptions(
                 houseEntry,
@@ -1595,7 +1638,14 @@ std::vector<HouseActionOption> buildHouseActionOptions(
             ));
         }
 
-        options.push_back(makeOption(HouseActionId::OpenLearnSkillsMenu, "Learn Skills", isHouseOpenNow, closedReason));
+        options.push_back(makeOption(
+            HouseActionId::OpenLearnSkillsMenu,
+            serviceText(
+                pHouseServiceTextTable,
+                HouseServiceTextTable::Message::TempleLearnSkillsAction,
+                "Learn Skills"),
+            isHouseOpenNow,
+            closedReason));
         return finalizeHouseActionOptions(houseEntry, serviceType, menuId, pParty, pWorldRuntime, currentGameMinutes, std::move(options));
     }
 
@@ -2343,16 +2393,12 @@ HouseActionResult performHouseAction(
 
         case HouseActionId::LearnSkill:
         {
-            const bool localizeTemple = resolveHouseServiceType(houseEntry) == HouseServiceType::Temple;
-
             if (action.argument.empty() || pClassSkillTable == nullptr)
             {
-                result.messages.push_back(localizeTemple
-                    ? templeText(
-                        pHouseServiceTextTable,
-                        HouseServiceTextTable::Message::TempleLessonUnavailable,
-                        "That lesson is not available.")
-                    : "That lesson is not available.");
+                result.messages.push_back(templeText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleLessonUnavailable,
+                    "That lesson is not available."));
                 return result;
             }
 
@@ -2360,28 +2406,22 @@ HouseActionResult performHouseAction(
 
             if (pMember == nullptr)
             {
-                result.messages.push_back(localizeTemple
-                    ? templeText(
-                        pHouseServiceTextTable,
-                        HouseServiceTextTable::Message::TempleNoCharacter,
-                        "No character is selected.")
-                    : "No character is selected.");
+                result.messages.push_back(templeText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleNoCharacter,
+                    "No character is selected."));
                 return result;
             }
 
             if (!party.canActiveMemberLearnSkill(action.argument))
             {
-                const std::string skillDisplayName = localizeTemple
-                    ? templeSkillDisplayName(action.argument, pCharacterInspectTable)
-                    : displaySkillName(action.argument);
-                result.messages.push_back(localizeTemple
-                    ? templeText(
-                        pHouseServiceTextTable,
-                        HouseServiceTextTable::Message::TempleCannotLearn,
-                        pMember->name + " cannot learn " + skillDisplayName + " here.",
-                        pMember->name,
-                        skillDisplayName)
-                    : pMember->name + " cannot learn " + skillDisplayName + " here.");
+                const std::string skillDisplayName = templeSkillDisplayName(action.argument, pCharacterInspectTable);
+                result.messages.push_back(templeText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleCannotLearn,
+                    pMember->name + " cannot learn " + skillDisplayName + " here.",
+                    pMember->name,
+                    skillDisplayName));
                 return result;
             }
 
@@ -2393,12 +2433,10 @@ HouseActionResult performHouseAction(
 
             if (party.gold() < price)
             {
-                result.messages.push_back(localizeTemple
-                    ? templeText(
-                        pHouseServiceTextTable,
-                        HouseServiceTextTable::Message::TempleLearnInsufficientGold,
-                        "You don't have enough gold.")
-                    : "You don't have enough gold.");
+                result.messages.push_back(templeText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleLearnInsufficientGold,
+                    "You don't have enough gold."));
                 result.soundType = HouseSoundType::GeneralNotEnoughGold;
                 result.speechId = SpeechId::NotEnoughGold;
                 return result;
@@ -2406,34 +2444,28 @@ HouseActionResult performHouseAction(
 
             if (!party.learnActiveMemberSkill(action.argument))
             {
-                result.messages.push_back(localizeTemple
-                    ? templeText(
-                        pHouseServiceTextTable,
-                        HouseServiceTextTable::Message::TempleLessonUnavailable,
-                        "That lesson is not available.")
-                    : "That lesson is not available.");
+                result.messages.push_back(templeText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleLessonUnavailable,
+                    "That lesson is not available."));
                 return result;
             }
 
             party.addGold(-price);
-            const std::string skillDisplayName = localizeTemple
-                ? templeSkillDisplayName(action.argument, pCharacterInspectTable)
-                : displaySkillName(action.argument);
+            const std::string skillDisplayName = templeSkillDisplayName(action.argument, pCharacterInspectTable);
             const std::string fallback = pMember->name
                 + " learns "
                 + skillDisplayName
                 + " for "
                 + std::to_string(price)
                 + " gold.";
-            result.messages.push_back(localizeTemple
-                ? templeText(
-                    pHouseServiceTextTable,
-                    HouseServiceTextTable::Message::TempleLearnSuccess,
-                    fallback,
-                    pMember->name,
-                    skillDisplayName,
-                    price)
-                : fallback);
+            result.messages.push_back(templeText(
+                pHouseServiceTextTable,
+                HouseServiceTextTable::Message::TempleLearnSuccess,
+                fallback,
+                pMember->name,
+                skillDisplayName,
+                price));
             result.succeeded = true;
             result.speechId = SpeechId::SkillLearned;
             return result;

@@ -929,7 +929,8 @@ EventDialogContent buildEventDialogContent(
                 currentHouseServiceMenuId(eventRuntimeState),
                 pCharacterInspectTable,
                 pHouseServiceTextTable,
-                pUiTextTable
+                pUiTextTable,
+                pNpcDialogTable
             );
             const std::optional<uint32_t> residentNpcId = singleSelectableResidentNpcId(
                 *pHouseEntry,
@@ -1284,7 +1285,8 @@ EventDialogContent buildEventDialogContent(
                 houseServiceMenuId,
                 pCharacterInspectTable,
                 pHouseServiceTextTable,
-                pUiTextTable
+                pUiTextTable,
+                pNpcDialogTable
             );
 
             for (const HouseActionOption &houseAction : houseActions)
@@ -1903,7 +1905,8 @@ EventDialogContent buildEventDialogContent(
                     pClassSkillTable,
                     menuId,
                     pHouseServiceTextTable,
-                    pUiTextTable);
+                    pUiTextTable,
+                    pNpcDialogTable);
             }
         }
     }

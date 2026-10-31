@@ -19,17 +19,18 @@
 `handoff/ipados-device-231-232-20261031/README.md` 与 `scoped-result.json`。
 仓库为 [Mavskero/openyamm](https://github.com/Mavskero/openyamm)，开发分支 `codex/ipados`；
 提交`8989cf96dcd1d5c23de2d5da2a58030c92e3291d`记录231–232源码和脱敏受限真机结果。
-233–250及后续源码身份按当前Git提交和对应handoff逐文件摘要核对；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
+233–253及后续源码身份按当前Git提交和对应handoff逐文件摘要核对；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
 243–245为`ACCEPTED_OFFLINE_MAC_SCOPED`，Mac自然银行、商店、generated NPC及受影响修复已受限通过，未扩大到目标iPad验收。
 246随从字幕、247武器随从加成按源码／构建及既有组件范围受限通过，由主代理一次累计源码提交；没有新增App或设备验收。
 其累计基线`cb084d3a06c8085939ff60c1b0b00d8ed3125271`已推送并核对；248–249为`ACCEPTED_OFFLINE_MECHANICS_SCOPED`，7生产＋2既有测试共9份最终摘要核对。
 248–249已提交并推送`69c2fe94a574d0dbf34e06b5113670ccea1053bb`，远端HEAD及提交内9文件摘要核对通过；250已按源码／构建及两个既有case受限通过，7文件最终摘要全部匹配。
+250已提交推送`1bfefd6ff5fa1b970922a8e3e7072bd19503b25b`，远端及提交内7份摘要核对通过；251–253合并交接为`ACCEPTED_OFFLINE_MAC_SCOPED`，5源码摘要匹配，实际仅010首个装备画面受限通过。
 恢复前先核对最新工作树和主代理后续结果，保留未提交工作，不reset／clean，不把该提交或旧Release当成更新后程序身份。
 
 固定Release229为 `ipados-ui-cumulative-229-20261030`，生产代码提交为
 `8cdae9215ef7bb52e8fe8f6e83bf16641280fd0e`；完整发布源码身份从该发布 `VERSION.json → source_head` 读取。
 按 `SOURCE-MANIFEST.json`、`ARTIFACT-SHA256SUMS`、`SHA256SUMS` 和 `delivery.json` 核对该固定发布，
-保留229、214、195和RC1–3原附件。231–250没有新Release，不能声称229附件已含后续修复。
+保留229、214、195和RC1–3原附件。231–253没有新Release，不能声称229附件已含后续修复。
 
 231–232实际通过旧Save104读取、正常UI穿戴护甲84／主手武器66、新槽Save12／105，
 以及两次保留数据更新后的独立进程读档。中文Stats／技能表头、真实重叠双指物品检查、
@@ -94,7 +95,7 @@ Cocoa独立补丁只在绝对Dragged事件前跳过按钮reconcile，既有relea
 246普通随从不可用／已跟随／加入／离开／名字fallback接typed当前UI，主动能力复用原GlobalTxt569／561／140；UiText233＝157原源＋76项目，旧228键值和完整表兼容保留。
 原生114.342001秒／未签名iOS107.299712秒／导入0.190589秒／组装002为6.790999秒通过，4冻结摘要一致；零单元运行／新case／App／写档。
 失败消息进入重开对话的源码链路已核对，加入／离开成功消息可见性未独立确认，不能声称HUD或实际主动能力通过，见[246交接](handoff/follower-feedback-246/README.md)。
-当前完整246/runtime-002只更新engine内ui_text，其他17398成员／四world保留；4233字节覆盖包仅含ui_text，不是完整runtime或新Release。
+246/runtime-002只更新engine内ui_text，其他17398成员／四world保留；4233字节覆盖包仅含ui_text，不是完整runtime或新Release。
 247将原职业15／16／46七武器＋2／＋3／＋2接入实际战斗有效技能，独立瞬态weapon表与item bonus隔离；窄None→Normal遵原packed skill，stored技能／精通、装备资格及Save106不改。
 雇佣、更新、解雇、恢复、seed、成员加入／重入均刷新，Inn／Detached清旧不叠加；原生166.684508秒／未签名iOS171.877579秒通过，5生产＋1既有测试共6摘要一致。
 一个既有MM7Mechanics case2.029935秒、27／27断言通过，14个其他case跳过；含Mace4→7命中＋3、未学Bow有效3／Normal但storedNone、重建／内存snapshot／解雇，不称实际磁盘读档或冷启动。
@@ -111,6 +112,14 @@ Party权威刷新含空followers，standalone Event fallback保留，带Event时
 walking两种生产确认形式（unpositioned／认证map_boundary）在Party有职业5、Event followers为空时quote／plan5→4，deferred前时间／食物不动、apply后＋4日／food10→5并治疗；Luck public值20、Base／未投影／解雇后10保持。
 原Lua无条件min1，但已知原表非空edge均正Days，未找到认证0日实例；default／未证0日保留，0日原源适配未证明。脚本／MM9／boat等路径不变；相邻Resistance仅raw／Base／Bonus，未找到ActualResistance消费者，未改。
 250零App／写档／资源导入／设备／模拟器／旧路线／战役回放／Release，继续完整246/runtime-002／Ui233／Combat223／导航222／Save106，见[250交接](handoff/follower-travel-luck-250/README.md)。
+251–253为`ACCEPTED_OFFLINE_MAC_SCOPED`：009以250程序／246资源正常经TownHall到Janice大耳怪前哨任务，中文全文与给key已有观察；正常UI穿戴Mace66／armor84／helmet1691（characterData1）后发现头盔magenta矩形。
+只正常新增隔离空槽3一次，默认名“新索匹格镇”，粘贴未进入编辑，不能计中文自定名；旧3副本摘要保持，009正常Quit／PID退出／日志收集。
+251学习UI单cpp原生4.8234925秒／iOS9.709751秒通过；252通用LearnSkill接现有HouseServiceTextTable，guild122／deck1690复用当前NPC表，保留fallback／门控、无新资源key，学习／122／1690仍只计源码构建。
+最终game＋equipment_picture_import原生176.964303秒／iOS171.930220秒通过，5最终源码摘要before／after全部匹配，零新增／运行单元用例。
+253复用convertLodImages API提取原6helm1v1为39×33 Indexed8，0.010753秒；1287个RGB像素与旧24bpp逐点相同，恢复668个palette0索引，BMP2398字节。
+完整253/runtime-001组装6.454302秒通过，只换`icons/6helm1v1.bmp`，其余17398成员／四world及Ui233／Combat223／导航222／Save106不变；253覆盖包仅该成员，不是完整runtime或新Release。
+010用最新程序及完整253资源正常读槽3，首个inventory画面1691头盔透明正常，armor84／mace66正确；只计此画面，无夹具／修后写档，不扩为其他装备runtime或全部装备UI验收。
+010在装备画面核对后继续普通游玩，仍由主代理运行，最终日志收尾未完成；4份隔离存档在该画面核对后摘要一致，不能记成010最终收尾。009已退出并收集，见[251–253交接](handoff/house-ui-and-equipment-251-253/README.md)。
 完整自然战役和所有离线工作完成仍未证明。
 
 暂停前设备最后观察为232的House64标准商品页；已有库存截图在暂停后作了离线复核，但未执行拖离、购买或交易结果检查，商店条件仍未验。
@@ -125,12 +134,12 @@ walking两种生产确认形式（unpositioned／认证map_boundary）在Party�
 不得沿用上次摘要冒充恢复前的新核对。旧档只用副本，新保存只用未占用槽和新名称，不覆盖原件。
 合法 `save10.oysav` 是195正常新建牧师的“中文保存测试”手动档，恢复授权后可用于新索匹格镇银行自然条件；
 不能修改其物品、金钱或位姿来凑条件。243／245隔离Mac新档不扩大232设备原核对时点的结论。
-当前250仍写Save106、真实105／104读取证据沿用236；固定229及235不能读106，
+当前253仍写Save106、真实105／104读取证据沿用236；固定229及235不能读106，
 固定214／195及旧RC也不能读取105，回退须用保留的相应可读旧格式副本。
 
 固定229完整六文件为 `engine.zip`、`conversion.json`、`mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip`。
-其基线runtime227包含214项UiText、Combat223和导航222；当前源码使用固定229→231–232→234→235→241→246的engine覆盖顺序。
-241与246覆盖包各只有ui_text一个成员，不是完整runtime或新Release，具体摘要见对应交接；完整资源及conversion身份按当时handoff核对。
+其基线runtime227包含214项UiText、Combat223和导航222；当前源码使用固定229→231–232→234→235→241→246→253的engine覆盖顺序。
+241与246覆盖包各只有ui_text，253只有`icons/6helm1v1.bmp`，均为单成员覆盖包，不是完整runtime或新Release，具体摘要见对应交接；完整资源及conversion身份按当时handoff核对。
 新机器按 `IPADOS_HANDOFF.md` 组装完整assets目录，engine与conversion在根目录，四个world在 `worlds/`，
 从组装后的根目录核对保留该相对路径的 `SHA256SUMS`。五个ZIP保持压缩，旧资源目录保留。
 MM6／MM7／MM8在190已改变，不能复用RC2旧world；不能把小型覆盖包或故障资源目录当成完整运行资源。

@@ -160,7 +160,8 @@ std::vector<ConvertedLodImage> exportEquipmentImages(const std::filesystem::path
     std::vector<ConvertedLodImage> images;
     for (const auto &[archive, names] : byArchive)
     {
-        const std::vector<ConvertedLodImage> converted = convertLodImages({archive}, names, output / "engine/icons");
+        const std::vector<ConvertedLodImage> converted =
+            convertLodImages({archive}, names, output / "engine/icons", LodImagePixelFormat::Indexed8);
         require(converted.size() == names.size(), "Equipment conversion omitted selected images");
         images.insert(images.end(), converted.begin(), converted.end());
     }
