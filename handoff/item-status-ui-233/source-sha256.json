@@ -1,0 +1,18 @@
+[
+  {
+    "path": "game/tables/UiTextTable.h",
+    "sha256": "59b086db2b0787b486663fe1c36acc1431bd74cbc73b4d97bdee8bb9b0e167b6"
+  },
+  {
+    "path": "game/tables/UiTextTable.cpp",
+    "sha256": "14768b7e627f2eb0ae7eb627c0c5117f3058f3cffba49894185a4abd337faccb"
+  },
+  {
+    "path": "game/ui/GameplayPartyOverlayRenderer.cpp",
+    "sha256": "a7f8fca38c59fc7cf23b0bd8eadc8257307e3a86530d5785444d0143c44df901"
+  },
+  {
+    "path": "tools/mmerge_import/CoreResources.cpp",
+    "sha256": "a1b33fb20755eb8cb9b15a99d85fc9979774b5108c502914dbb3eadfe85962e4"
+  }
+]

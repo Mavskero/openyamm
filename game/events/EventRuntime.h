@@ -372,6 +372,16 @@ struct EventRuntimeState
 
     struct DialogueRuntimeState
     {
+        struct GeneratedNpcConversation
+        {
+            uint32_t npcId = 0;
+            std::string actorKey;
+            // Prepared by the real NpcEnter event, never by dialogue layout or a visibility query.
+            bool admissionReady = false;
+            bool willSpeak = false;
+            std::optional<std::string> greeting;
+        };
+        std::optional<GeneratedNpcConversation> generatedNpcConversation;
         // Ephemeral script branch, rebuilt on NPC enter; omitted from save data.
         uint32_t scriptedBranchNpcId = 0;
         std::string scriptedBranch;

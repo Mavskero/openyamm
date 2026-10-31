@@ -134,15 +134,19 @@ void updateSaveGameEraseRepeat(
     GameplayOverlayInteractionState &state,
     bool eraseHeld,
     uint16_t erasePressCount,
-    uint64_t nowTicks)
+    uint64_t nowTicks,
+    bool erasePressesAlreadyApplied)
 {
     if (erasePressCount > 0)
     {
-        for (uint16_t pressIndex = 0; pressIndex < erasePressCount; ++pressIndex)
+        if (!erasePressesAlreadyApplied)
         {
-            if (!eraseSaveGameEditCharacter(saveGameScreen))
+            for (uint16_t pressIndex = 0; pressIndex < erasePressCount; ++pressIndex)
             {
-                break;
+                if (!eraseSaveGameEditCharacter(saveGameScreen))
+                {
+                    break;
+                }
             }
         }
 
@@ -232,6 +236,19 @@ void appendDigitTextInput(std::string &buffer, const std::string &textInput, siz
             buffer.push_back(character);
         }
     }
+}
+
+char digitForTextInputScancode(SDL_Scancode scancode)
+{
+    if (scancode >= SDL_SCANCODE_1 && scancode <= SDL_SCANCODE_9)
+    {
+        return static_cast<char>('1' + scancode - SDL_SCANCODE_1);
+    }
+    if (scancode >= SDL_SCANCODE_KP_1 && scancode <= SDL_SCANCODE_KP_9)
+    {
+        return static_cast<char>('1' + scancode - SDL_SCANCODE_KP_1);
+    }
+    return scancode == SDL_SCANCODE_0 || scancode == SDL_SCANCODE_KP_0 ? '0' : '\0';
 }
 
 struct HudPointerState
@@ -2204,14 +2221,49 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
     const bool commitPressed = saveGameScreen.editActive
         && (input.scancodePressCount(SDL_SCANCODE_RETURN) > 0
             || (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_RETURN]));
+    uint16_t appliedErasePressCount = 0;
 
     if (saveGameScreen.editActive && !escapePressed)
     {
         // IME commit and Return can arrive in one frame. Apply the committed
         // Unicode text before checking the final name and creating the save.
-        const std::string textBeforeAppend = saveGameScreen.editBuffer;
-        appendUtf8Label(saveGameScreen.editBuffer, input.textInput, 30);
-        if (saveGameScreen.editBuffer != textBeforeAppend)
+        const std::string textBeforeEdits = saveGameScreen.editBuffer;
+        if (input.textEdits)
+        {
+            for (const GameplayTextEditOperation &edit : *input.textEdits)
+            {
+                if (edit.kind == GameplayTextEditOperation::Kind::InsertText)
+                {
+                    appendUtf8Label(saveGameScreen.editBuffer, edit.text, 30);
+                }
+                else if (edit.kind == GameplayTextEditOperation::Kind::Backspace
+                    || edit.kind == GameplayTextEditOperation::Kind::Delete)
+                {
+                    eraseSaveGameEditCharacter(saveGameScreen);
+                    if (appliedErasePressCount < std::numeric_limits<uint16_t>::max())
+                    {
+                        ++appliedErasePressCount;
+                    }
+                }
+                else if (edit.kind == GameplayTextEditOperation::Kind::FallbackKey && input.textInput.empty())
+                {
+                    for (const SaveGameKeyBinding &binding : SaveGameEditBindings)
+                    {
+                        if (binding.scancode == edit.scancode)
+                        {
+                            appendUtf8Label(saveGameScreen.editBuffer,
+                                std::string(1, edit.shift ? binding.upper : binding.lower), 30);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            appendUtf8Label(saveGameScreen.editBuffer, input.textInput, 30);
+        }
+        if (saveGameScreen.editBuffer != textBeforeEdits)
         {
             saveGameScreen.errorText.clear();
         }
@@ -2257,7 +2309,7 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
 
             if (pressed)
             {
-                if (input.textInput.empty()
+                if (!input.textEdits && input.textInput.empty()
                     && !view.interactionState().saveGameEditKeyLatches[bindingIndex]
                     && (SDL_GetKeyboardFocus() == nullptr || !SDL_TextInputActive(SDL_GetKeyboardFocus())))
                 {
@@ -2277,9 +2329,10 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
             saveGameScreen,
             view.interactionState(),
             pKeyboardState[SDL_SCANCODE_BACKSPACE] || pKeyboardState[SDL_SCANCODE_DELETE],
-            input.scancodePressCount(SDL_SCANCODE_BACKSPACE)
-                + input.scancodePressCount(SDL_SCANCODE_DELETE),
-            SDL_GetTicks());
+            input.textEdits ? appliedErasePressCount
+                : input.scancodePressCount(SDL_SCANCODE_BACKSPACE) + input.scancodePressCount(SDL_SCANCODE_DELETE),
+            SDL_GetTicks(),
+            input.textEdits.has_value());
     }
     else
     {
@@ -3257,7 +3310,33 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
     if (bankInputActive)
     {
         clearShopInventoryGesture(view);
-        appendDigitTextInput(view.houseBankState().inputText, input.textInput, 10);
+        if (input.textEdits)
+        {
+            for (const GameplayTextEditOperation &edit : *input.textEdits)
+            {
+                std::string &text = view.houseBankState().inputText;
+                if (edit.kind == GameplayTextEditOperation::Kind::InsertText)
+                {
+                    appendDigitTextInput(text, edit.text, 10);
+                }
+                else if (edit.kind == GameplayTextEditOperation::Kind::FallbackKey && input.textInput.empty())
+                {
+                    const char digit = digitForTextInputScancode(edit.scancode);
+                    if (digit != '\0')
+                    {
+                        appendDigitTextInput(text, std::string(1, digit), 10);
+                    }
+                }
+                else if (edit.kind == GameplayTextEditOperation::Kind::Backspace && !text.empty())
+                {
+                    text.pop_back();
+                }
+            }
+        }
+        else
+        {
+            appendDigitTextInput(view.houseBankState().inputText, input.textInput, 10);
+        }
 
         static constexpr SDL_Scancode DigitScancodes[10] = {
             SDL_SCANCODE_0,
@@ -3294,7 +3373,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
             {
                 pressCount = 1;
             }
-            if (input.textInput.empty() && view.houseBankState().inputText.size() < 10)
+            if (!input.textEdits && input.textInput.empty() && view.houseBankState().inputText.size() < 10)
             {
                 const size_t available = 10 - view.houseBankState().inputText.size();
                 view.houseBankState().inputText.append(std::min(pressCount, available), static_cast<char>('0' + digit));
@@ -3303,8 +3382,9 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         }
 
         const bool backspaceHeld = input.isScancodeHeld(SDL_SCANCODE_BACKSPACE);
-        size_t eraseCount = input.scancodePressCount(SDL_SCANCODE_BACKSPACE);
-        if (eraseCount == 0 && backspaceHeld && !view.interactionState().houseBankBackspaceLatch)
+        size_t eraseCount = input.textEdits ? 0 : input.scancodePressCount(SDL_SCANCODE_BACKSPACE);
+        if (!input.textEdits && eraseCount == 0
+            && backspaceHeld && !view.interactionState().houseBankBackspaceLatch)
         {
             eraseCount = 1;
         }
@@ -3646,18 +3726,7 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
 
                     return std::numeric_limits<size_t>::max();
                 };
-            const HudPointerState houseShopPointerState = {
-                dialogMouseX,
-                dialogMouseY,
-                isLeftMousePressed
-            };
-
-            handlePointerClickRelease(
-                houseShopPointerState,
-                view.interactionState().houseShopClickLatch,
-                view.interactionState().houseShopPressedSlotIndex,
-                std::numeric_limits<size_t>::max(),
-                resolveHoveredSlotIndex,
+            const auto activateStockSlot =
                 [&view, pDialogueHouseEntry, stockMode, &input](size_t slotIndex)
                 {
                     if (slotIndex == std::numeric_limits<size_t>::max()
@@ -3740,7 +3809,34 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                     {
                         view.playSpeechReaction(activeMemberIndex, SpeechId::InventoryRoom, true);
                     }
-                });
+                };
+
+            GameplayOverlayInteractionState &interaction = view.interactionState();
+            const size_t hoveredSlotIndex = resolveHoveredSlotIndex(dialogMouseX, dialogMouseY);
+            if (input.leftMouseButton.pressed
+                || (input.frameId == 0 && isLeftMousePressed && !interaction.houseShopClickLatch))
+            {
+                interaction.houseShopClickLatch = true;
+                interaction.houseShopPressedSlotIndex = hoveredSlotIndex;
+            }
+
+            if (input.mobileTouchDragStarted || input.mobileTouchDragActive || input.mobileTouchDragReleased
+                || (isLeftMousePressed && interaction.houseShopPressedSlotIndex != hoveredSlotIndex))
+            {
+                interaction.houseShopPressedSlotIndex = std::numeric_limits<size_t>::max();
+            }
+
+            if (!isLeftMousePressed && interaction.houseShopClickLatch)
+            {
+                const size_t releasedSlotIndex = interaction.houseShopPressedSlotIndex == hoveredSlotIndex
+                    ? interaction.houseShopPressedSlotIndex : std::numeric_limits<size_t>::max();
+                interaction.houseShopClickLatch = false;
+                interaction.houseShopPressedSlotIndex = std::numeric_limits<size_t>::max();
+                if (releasedSlotIndex != std::numeric_limits<size_t>::max())
+                {
+                    activateStockSlot(releasedSlotIndex);
+                }
+            }
         }
     }
 

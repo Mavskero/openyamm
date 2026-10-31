@@ -65,14 +65,19 @@ public:
         return m_uiController;
     }
 
+    void bindWorldRuntime(PartySpellTestWorldRuntime *pWorldRuntime)
+    {
+        m_pWorldRuntime = pWorldRuntime;
+    }
+
     PartySpellTestWorldRuntime &worldRuntime()
     {
-        return m_worldRuntime;
+        return m_pWorldRuntime != nullptr ? *m_pWorldRuntime : m_worldRuntime;
     }
 
     const PartySpellTestWorldRuntime &worldRuntime() const
     {
-        return m_worldRuntime;
+        return m_pWorldRuntime != nullptr ? *m_pWorldRuntime : m_worldRuntime;
     }
 
     const Game::EventDialogContent &activeDialog() const
@@ -286,8 +291,8 @@ public:
             m_currentMap.has_value() ? &*m_currentMap : nullptr,
             nullptr,
             &m_party,
-            &m_worldRuntime,
-            m_worldRuntime.gameMinutes(),
+            &worldRuntime(),
+            worldRuntime().gameMinutes(),
             &m_gameData.mergedNpcProfessionTable,
             &m_gameData.mergedNewsProfessionTopicTable,
             &m_gameData.mergedNpcBtbTable,
@@ -327,7 +332,7 @@ private:
             m_uiController.eventDialog().content,
             m_uiController.eventDialog().selectionIndex,
             &m_party,
-            &m_worldRuntime,
+            &worldRuntime(),
             &m_gameData.globalEventProgram,
             &m_gameData.houseTable,
             &m_gameData.classSkillTable,
@@ -358,6 +363,7 @@ private:
     const RegressionGameData &m_gameData;
     Game::Party m_party = {};
     PartySpellTestWorldRuntime m_worldRuntime = {};
+    PartySpellTestWorldRuntime *m_pWorldRuntime = nullptr;
     Game::GameplayUiController m_uiController = {};
     Game::GameplayDialogController m_controller = {};
     Game::EventRuntimeState m_eventRuntimeState = {};

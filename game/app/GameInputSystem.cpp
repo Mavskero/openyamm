@@ -86,6 +86,7 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         m_mouseInputCanceled = true;
         m_pendingKeyboardPressCounts.fill(0);
         m_pendingTextInput.clear();
+        m_pendingTextEdits.clear();
         resetRelativeMouseMotion();
         return;
     }
@@ -122,6 +123,7 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         if (event.text.text != nullptr)
         {
             m_pendingTextInput.append(event.text.text, std::strlen(event.text.text));
+            m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::InsertText, event.text.text});
         }
 
         return;
@@ -142,15 +144,31 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         {
             pWindow = SDL_GetKeyboardFocus();
         }
+        const bool textInputActive = pWindow != nullptr && SDL_TextInputActive(pWindow);
         if (pasteModifier && event.key.scancode == SDL_SCANCODE_V
-            && pWindow != nullptr && SDL_TextInputActive(pWindow))
+            && textInputActive)
         {
             char *pClipboard = SDL_GetClipboardText();
             if (pClipboard != nullptr)
             {
                 m_pendingTextInput += pClipboard;
+                m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::InsertText, pClipboard});
                 SDL_free(pClipboard);
             }
+        }
+        if (event.key.scancode == SDL_SCANCODE_BACKSPACE)
+        {
+            m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::Backspace, {}});
+        }
+        else if (event.key.scancode == SDL_SCANCODE_DELETE)
+        {
+            m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::Delete, {}});
+        }
+        else if (!textInputActive)
+        {
+            m_pendingTextEdits.push_back({
+                GameplayTextEditOperation::Kind::FallbackKey, {}, event.key.scancode,
+                (event.key.mod & SDL_KMOD_SHIFT) != 0});
         }
         uint16_t &pressCount = m_pendingKeyboardPressCounts[event.key.scancode];
 
@@ -391,12 +409,15 @@ void GameInputSystem::updateFromEngineInput(
     m_frame.mouseWheelDelta = blockGameplayInput ? 0.0f : mouseWheelDelta;
     m_frame.textInput = blockGameplayInput ? std::string() : std::move(m_pendingTextInput);
     m_pendingTextInput.clear();
+    m_frame.textEdits.emplace();
 
     if (!blockGameplayInput)
     {
+        *m_frame.textEdits = std::move(m_pendingTextEdits);
         m_frame.keyboardPressCounts = m_pendingKeyboardPressCounts;
     }
 
+    m_pendingTextEdits.clear();
     m_pendingKeyboardPressCounts.fill(0);
 
     int keyboardStateCount = 0;

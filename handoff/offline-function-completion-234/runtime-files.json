@@ -1,0 +1,41 @@
+{
+  "checkpoint": 234,
+  "changed_engine_members": [
+    "events/Global.lua"
+  ],
+  "added_engine_members": [],
+  "unchanged_engine_member_count": 17398,
+  "four_worlds_sha256_equal": true,
+  "files": [
+    {
+      "path": "engine.zip",
+      "size": 713628258,
+      "sha256": "c58bd26e692f7cae09f99662f7e3e4f60e3c4dd637e170ed2a2c88579a8b2aad"
+    },
+    {
+      "path": "conversion.json",
+      "size": 96605,
+      "sha256": "613fd11b87fc923a87ce02a95fbfe90cf06d7edc20c39a909e6cd18d0a889b9f"
+    },
+    {
+      "path": "worlds/mm6.zip",
+      "size": 641050692,
+      "sha256": "154aa325d69eedd9c0b3cd3e96c730db4cec581e23ebe975eaaf93903ffbf676"
+    },
+    {
+      "path": "worlds/mm7.zip",
+      "size": 1019781051,
+      "sha256": "ef24f9591ac7ee0d431a4cc943ee276d687c6a7a2e5b27a53464d8ab806d9c5d"
+    },
+    {
+      "path": "worlds/mm8.zip",
+      "size": 978282137,
+      "sha256": "0def37a4ebb5b302462e310325f75f3fb7f339852cd9111bfbb938787fe1e126"
+    },
+    {
+      "path": "worlds/mmmerge.zip",
+      "size": 151441875,
+      "sha256": "1567c036c5a0cbce32458f1127f5ecc91166585b6197813cb7d31e014ef1de8e"
+    }
+  ]
+}

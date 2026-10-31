@@ -3,6 +3,7 @@
 #include "game/events/ISceneEventContext.h"
 #include "game/app/GameSession.h"
 #include "game/gameplay/OwnedMercenaryRuntime.h"
+#include "game/gameplay/GenericActorDialog.h"
 #include "game/gameplay/HouseInteraction.h"
 #include "game/gameplay/MasteryTeacherDialog.h"
 #include "game/gameplay/MercenaryRecruitmentRuntime.h"
@@ -211,7 +212,8 @@ void appendNpcBtbAction(
     uint32_t successTextId,
     uint32_t failTextId,
     bool accepts,
-    uint32_t cost = 0)
+    uint32_t cost = 0,
+    const ScriptedEventProgram *pGlobalProgram = nullptr)
 {
     const std::optional<NpcDialogTable::ResolvedTopic> topic = npcDialogTable.getTopicById(topicId);
 
@@ -221,49 +223,13 @@ void appendNpcBtbAction(
     action.secondaryId = accepts ? successTextId : failTextId;
     action.argument = accepts ? "accepted" : "rejected";
     action.label = topic && !topic->topic.empty() ? topic->topic : "Talk";
-    if (topicId == NpcBribeTopicId && cost != 0)
+    if (topicId == NpcBribeTopicId)
     {
-        action.label += " " + std::to_string(cost) + " Gold";
+        const std::optional<std::string> gold =
+            pGlobalProgram != nullptr ? pGlobalProgram->getImportedGlobalText(97) : std::nullopt;
+        action.label += " " + std::to_string(cost) + " " + gold.value_or("Gold");
     }
     dialog.actions.push_back(std::move(action));
-}
-
-bool isRuntimeRandomNpc(const EventRuntimeState &eventRuntimeState, uint32_t npcId)
-{
-    return eventRuntimeState.npcNameOverrides.contains(npcId)
-        && eventRuntimeState.npcProfessionOverrides.contains(npcId);
-}
-
-bool npcBtbDialogueAccessGrantedToday(
-    const EventRuntimeState &eventRuntimeState,
-    uint32_t npcId,
-    float currentGameMinutes)
-{
-    const std::unordered_map<uint32_t, int32_t>::const_iterator accessIt =
-        eventRuntimeState.variables.find(npcBtbDialogueAccessVariableKey(npcId));
-
-    if (accessIt == eventRuntimeState.variables.end())
-    {
-        return false;
-    }
-
-    const uint32_t currentDay = npcBtbDialogueAccessDay(currentGameMinutes);
-    return currentDay == 0 || accessIt->second == static_cast<int32_t>(currentDay);
-}
-
-bool continentReputationAffectsNpc(
-    const MapStatsEntry *pCurrentMap,
-    const MergedContinentSettingTable *pContinentSettingTable)
-{
-    if (pCurrentMap == nullptr || pContinentSettingTable == nullptr)
-    {
-        return true;
-    }
-
-    const MergedContinentSettingEntry *pContinentSetting =
-        pContinentSettingTable->findById(pCurrentMap->mergedContinentId);
-
-    return pContinentSetting == nullptr || pContinentSetting->reputationAffectsNpc;
 }
 
 const MergedContinentSettingEntry *currentContinentSetting(
@@ -300,25 +266,16 @@ bool continentAllowsNpcFollowers(
 
 bool randomNpcNeedsBtbGate(
     const EventRuntimeState &eventRuntimeState,
-    const MapStatsEntry *pCurrentMap,
-    const IGameplayWorldRuntime *pWorldRuntime,
-    const MergedContinentSettingTable *pContinentSettingTable,
+    const IGameplayWorldRuntime *pWorld,
     uint32_t npcId,
-    bool npcIsHired,
-    const MergedNpcBtbEntry *pBtbEntry,
-    float currentGameMinutes)
+    std::optional<uint32_t> actorIndex)
 {
-    if (npcIsHired
-        || pBtbEntry == nullptr
-        || !isRuntimeRandomNpc(eventRuntimeState, npcId)
-        || !continentReputationAffectsNpc(pCurrentMap, pContinentSettingTable)
-        || npcBtbDialogueAccessGrantedToday(eventRuntimeState, npcId, currentGameMinutes)
-        || pWorldRuntime == nullptr)
-    {
-        return false;
-    }
-
-    return effectivePartyReputation(pWorldRuntime->currentLocationReputation(), &eventRuntimeState) > 5;
+    const std::optional<GeneratedNpcIdentity> identity = pWorld != nullptr
+        ? generatedNpcIdentity(eventRuntimeState, npcId, *pWorld, actorIndex) : std::nullopt;
+    const std::optional<EventRuntimeState::DialogueRuntimeState::GeneratedNpcConversation> &conversation =
+        eventRuntimeState.dialogueState.generatedNpcConversation;
+    return identity && conversation && conversation->npcId == npcId && conversation->actorKey == identity->actorKey
+        && conversation->admissionReady && !conversation->willSpeak;
 }
 
 std::string lowerTransitionTitle(const std::string &title)
@@ -1379,6 +1336,14 @@ EventDialogContent buildEventDialogContent(
         const std::optional<NpcEntry> npcEntry =
             runtimeNpcEntryIfExists(pNpcDialogTable, npcRuntimeState, dialog.sourceId);
         const NpcEntry *pNpc = npcEntry ? &*npcEntry : nullptr;
+        const std::optional<GeneratedNpcIdentity> generatedIdentity = pWorldRuntime != nullptr
+            ? generatedNpcIdentity(npcRuntimeState, dialog.sourceId, *pWorldRuntime, context.sourceActorIndex)
+            : std::nullopt;
+        const std::optional<EventRuntimeState::DialogueRuntimeState::GeneratedNpcConversation> &generatedConversation =
+            eventRuntimeState.dialogueState.generatedNpcConversation;
+        const bool hasGeneratedConversation = generatedIdentity && generatedConversation
+            && generatedConversation->npcId == dialog.sourceId
+            && generatedConversation->actorKey == generatedIdentity->actorKey;
         const bool reusableMercenaryNpc = pParty != nullptr && isReusableMercenaryNpcId(*pParty, dialog.sourceId);
         const bool hasGeneratedMercenaryCandidate =
             npcRuntimeState.generatedMercenaryRecruitsByNpcId.contains(dialog.sourceId);
@@ -1450,24 +1415,28 @@ EventDialogContent buildEventDialogContent(
             && !hasPendingGuildMembershipOffer
             && !hasPendingNpcHireOffer
             && !hasEventMessageLines
-            && pGreeting != nullptr)
+            && ((hasGeneratedConversation && generatedConversation->greeting) || pGreeting != nullptr))
         {
+            const bool generatedGreeting = hasGeneratedConversation && generatedConversation->greeting;
             const uint32_t greetingDisplayCount = npcRuntimeState.npcGreetingDisplayCounts[dialog.sourceId];
-            const bool primaryGreeting = greetingDisplayCount == 0 || pGreeting->greetingSecondary.empty();
+            const bool primaryGreeting = pGreeting != nullptr
+                && (greetingDisplayCount == 0 || pGreeting->greetingSecondary.empty());
             const auto primaryOverride = npcRuntimeState.npcPrimaryGreetingTextOverrides.find(dialog.sourceId);
-            const std::string &greetingText =
-                primaryGreeting
-                ? (primaryOverride != npcRuntimeState.npcPrimaryGreetingTextOverrides.end()
-                    ? primaryOverride->second : pGreeting->greetingPrimary)
-                : pGreeting->greetingSecondary;
+            const std::string &greetingText = generatedGreeting ? *generatedConversation->greeting
+                : primaryGreeting
+                    ? (primaryOverride != npcRuntimeState.npcPrimaryGreetingTextOverrides.end()
+                        ? primaryOverride->second : pGreeting->greetingPrimary)
+                    : pGreeting->greetingSecondary;
 
             if (!greetingText.empty())
             {
-                const std::vector<std::string> wrappedGreeting =
-                    wrapDialogText(greetingText, MaxLineWidth);
+                const std::vector<std::string> wrappedGreeting = wrapDialogText(greetingText, MaxLineWidth);
                 dialog.lines.insert(dialog.lines.end(), wrappedGreeting.begin(), wrappedGreeting.end());
-                eventRuntimeState.npcGreetingDisplayCounts[dialog.sourceId] = greetingDisplayCount + 1;
-                dialog.displayedNpcGreetingCount = greetingDisplayCount + 1;
+                if (!generatedGreeting)
+                {
+                    eventRuntimeState.npcGreetingDisplayCounts[dialog.sourceId] = greetingDisplayCount + 1;
+                    dialog.displayedNpcGreetingCount = greetingDisplayCount + 1;
+                }
             }
         }
 
@@ -1621,7 +1590,9 @@ EventDialogContent buildEventDialogContent(
 
                 for (const NpcDialogTable::ResolvedTopic &topic : topics)
                 {
-                    if (topic.topic.empty())
+                    if (topic.topic.empty()
+                        || (hasGeneratedConversation && generatedConversation->admissionReady
+                            && !generatedConversation->willSpeak))
                     {
                         continue;
                     }
@@ -1699,17 +1670,8 @@ EventDialogContent buildEventDialogContent(
                         continentAllowsNpcFollowers(pCurrentMap, pContinentSettingTable);
                     const MergedNpcBtbEntry *pBtbEntry =
                         pNpcBtbTable != nullptr ? pNpcBtbTable->get(pProfession->personality) : nullptr;
-                    const bool showBtbGate =
-                        canUseNpcFollowers
-                        && randomNpcNeedsBtbGate(
-                            npcRuntimeState,
-                            pCurrentMap,
-                            pWorldRuntime,
-                            pContinentSettingTable,
-                            pNpc->id,
-                            npcIsHired,
-                            pBtbEntry,
-                            currentGameMinutes);
+                    const bool showBtbGate = pBtbEntry != nullptr
+                        && randomNpcNeedsBtbGate(npcRuntimeState, pWorldRuntime, pNpc->id, context.sourceActorIndex);
 
                     if (showBtbGate)
                     {
@@ -1734,7 +1696,8 @@ EventDialogContent buildEventDialogContent(
                             pBtbEntry->bribeSuccessTextId,
                             pBtbEntry->bribeFailTextId,
                             pBtbEntry->acceptBribe,
-                            pProfession->weeklyCost != 0 ? pProfession->weeklyCost : 50u);
+                            pProfession->weeklyCost,
+                            globalProgram ? &*globalProgram : nullptr);
                         suppressProfessionNews = true;
                     }
                     else if (!npcIsHired && npcCanJoin && canUseNpcFollowers)

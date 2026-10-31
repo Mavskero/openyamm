@@ -6,7 +6,9 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace OpenYAMM::Game
 {
@@ -15,6 +17,22 @@ struct GameplayButtonInputState
     bool held = false;
     bool pressed = false;
     bool released = false;
+};
+
+struct GameplayTextEditOperation
+{
+    enum class Kind
+    {
+        InsertText,
+        Backspace,
+        Delete,
+        FallbackKey
+    };
+
+    Kind kind = Kind::InsertText;
+    std::string text;
+    SDL_Scancode scancode = SDL_SCANCODE_UNKNOWN;
+    bool shift = false;
 };
 
 struct GameplayInputFrame
@@ -28,6 +46,8 @@ struct GameplayInputFrame
     float relativeMouseX = 0.0f;
     float relativeMouseY = 0.0f;
     std::string textInput;
+    // SDL frames retain editing order; absent records preserve legacy caller input.
+    std::optional<std::vector<GameplayTextEditOperation>> textEdits;
     bool mobileJoystickActive = false;
     bool turnBasedMovementStep = false;
     bool turnBasedPhysicsStep = false;

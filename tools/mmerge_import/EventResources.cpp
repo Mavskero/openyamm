@@ -43,6 +43,7 @@
 #include "game/events/ScriptedEventProgram.h"
 #include "tools/LegacyLuaExport.h"
 
+#include <CommonCrypto/CommonDigest.h>
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -52,6 +53,7 @@
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 namespace OpenYAMM::Import
@@ -152,6 +154,107 @@ std::unordered_map<uint32_t, std::string> textLookup(const std::filesystem::path
         require(row.size() > column, "Incomplete lookup row in " + path.string());
         require(result.emplace(*rowId(row), row[column]).second, "Duplicate lookup ID in " + path.string());
     }
+    return result;
+}
+
+constexpr std::array<std::pair<std::string_view, std::string_view>, 3> GeneratedNpcSources = {{
+    {"Scripts/General/NPCNewsTopics.lua", "9531bafcbc2482c153bef05dfd8ff49ff3d46d5e9cadaa22634bc1089582b258"},
+    {"Scripts/General/NPCFollowers.lua", "d1798480623d05d954b6b82de04761b8e54d2dfbce237d2a150549368810c107"},
+    {"Scripts/Global/Reputation.lua", "21630dbcb976fc9619979336748ec0477cf3b9ab0a1dda250e83d1010ac3416e"}
+}};
+
+std::string npcSourceSha256(const std::vector<uint8_t> &bytes)
+{
+    require(!bytes.empty() && bytes.size() <= 16 * 1024 * 1024, "Invalid generated NPC source size");
+    std::array<unsigned char, CC_SHA256_DIGEST_LENGTH> hash;
+    CC_SHA256(bytes.data(), static_cast<CC_LONG>(bytes.size()), hash.data());
+    std::ostringstream result;
+    for (unsigned char byte : hash)
+    {
+        result << std::hex << std::setfill('0') << std::setw(2) << unsigned(byte);
+    }
+    return result.str();
+}
+
+std::filesystem::path checkedNpcSourcePath(const std::filesystem::path &root, std::string_view relative)
+{
+    const std::filesystem::path path = std::filesystem::canonical(root / relative);
+    const std::filesystem::path local = path.lexically_relative(root);
+    require(!local.empty() && !local.is_absolute() && *local.begin() != ".."
+        && std::filesystem::is_regular_file(path), "Generated NPC dependency escapes source root");
+    return path;
+}
+
+struct GeneratedNpcTexts
+{
+    std::string luaSource;
+    std::string archive;
+    std::string globalTextSha256;
+};
+
+std::optional<GeneratedNpcTexts> loadGeneratedNpcTexts(const std::filesystem::path &root)
+{
+    if (!std::filesystem::exists(root / GeneratedNpcSources[0].first))
+    {
+        return std::nullopt;
+    }
+    for (const auto &[path, expected] : GeneratedNpcSources)
+    {
+        const std::filesystem::path source = checkedNpcSourcePath(root, path);
+        const uintmax_t size = std::filesystem::file_size(source);
+        require(size > 0 && size <= 16 * 1024 * 1024, "Invalid generated NPC script size");
+        std::ifstream input(source, std::ios::binary);
+        const std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+        require(npcSourceSha256(bytes) == expected, "Unsupported generated NPC script: " + std::string(path));
+    }
+    const bool chinese = std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod");
+    GeneratedNpcTexts result;
+    result.archive = chinese ? "Data/10 LocZHCN.EnglishT.lod" : "Data/mmmerge.T.lod";
+    const std::vector<uint8_t> bytes = readLodText(checkedNpcSourcePath(root, result.archive), "global.txt");
+    result.globalTextSha256 = npcSourceSha256(bytes);
+    size_t glyphs = 0;
+    const std::optional<Engine::TextTable> table =
+        Engine::TextTable::parseTabSeparated(decodeLegacyText(bytes, chinese, glyphs));
+    require(table && table->getRowCount() > 2
+        && table->getRow(0) == std::vector<std::string>{"Global Text", ""}, "Invalid generated NPC GlobalTxt");
+    const std::set<uint32_t> required = {97, 155, 379, 383, 384, 388, 389, 392, 395, 396, 397, 399, 402, 434};
+    std::map<uint32_t, std::string> texts;
+    for (size_t index = 1; index < table->getRowCount(); ++index)
+    {
+        const std::vector<std::string> &row = table->getRow(index);
+        const std::optional<uint32_t> id = rowId(row);
+        if (!id || !required.contains(*id))
+        {
+            continue;
+        }
+        require(row.size() >= 2 && !row[1].empty() && texts.emplace(*id, row[1]).second,
+            "Missing or duplicate generated NPC GlobalTxt");
+    }
+    require(texts.size() == required.size(), "Incomplete generated NPC GlobalTxt dependencies");
+    std::ostringstream lua;
+    lua << "\n-- NPCNewsTopics/NPCFollowers/Reputation native greeting text dependencies, active source language.\n"
+        << "evt.importedGlobalText = evt.importedGlobalText or {}\n";
+    for (const auto &[id, text] : texts)
+    {
+        lua << "evt.importedGlobalText[" << id << "] = \"";
+        for (unsigned char byte : text)
+        {
+            if (byte == '"' || byte == '\\')
+            {
+                lua << '\\' << char(byte);
+            }
+            else if (byte < 32 || byte == 127)
+            {
+                lua << '\\' << std::setw(3) << std::setfill('0') << uint32_t(byte);
+            }
+            else
+            {
+                lua << char(byte);
+            }
+        }
+        lua << "\"\n";
+    }
+    result.luaSource = lua.str();
     return result;
 }
 
@@ -302,6 +405,7 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
     lookups.npcNames = textLookup(tables / "npc.txt", 1);
     lookups.npcTopicNames = textLookup(tables / "npc_topic.txt", 1);
     lookups.questNotes = textLookup(tables / "english/quests.txt", 1);
+    const std::optional<GeneratedNpcTexts> generatedNpcTexts = loadGeneratedNpcTexts(root);
 
     const std::optional<BlasterLearningProfile> blasterLearning = loadBlasterLearningProfile(
         root, std::filesystem::exists(root / "Data/10 LocZHCN.EnglishT.lod"));
@@ -600,8 +704,29 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
         }
         manifest << "],\"selective_overlays\":[";
         bool firstSelectiveOverlay = true;
+        if (generatedNpcTexts)
+        {
+            manifest << "{\"profile\":\"mmmerge-generated-npc-greeting-v1\",\"sources\":[";
+            for (size_t index = 0; index < GeneratedNpcSources.size(); ++index)
+            {
+                const auto &[path, hash] = GeneratedNpcSources[index];
+                manifest << (index ? "," : "") << "{\"path\":" << std::quoted(std::string(path))
+                    << ",\"sha256\":" << std::quoted(std::string(hash)) << '}';
+            }
+            manifest << "],\"path\":\"engine/events/Global.lua\",\"global_text_archive\":"
+                << std::quoted(generatedNpcTexts->archive) << ",\"global_text_member\":\"global.txt\","
+                "\"global_text_payload_sha256\":" << std::quoted(generatedNpcTexts->globalTextSha256)
+                << ",\"scope\":\"Native generated identity greeting, admission and typed BTB history; "
+                "existing names, portraits and professions retained\","
+                "\"complete_quest\":false}";
+            firstSelectiveOverlay = false;
+        }
         if (crossContinents)
         {
+            if (!firstSelectiveOverlay)
+            {
+                manifest << ',';
+            }
             manifest << "{\"profile\":\"mmmerge-cross-continents-final-guide-v6\","
                 "\"source\":\"Scripts/Global/Quest_CrossContinents.lua\",\"source_sha256\":"
                 << std::quoted(crossContinents->sourceSha256)
@@ -1206,9 +1331,13 @@ void convertEventResourcesForMaps(const std::filesystem::path &source, const std
                 mapLookups.mapName = map.name;
                 mapLookups.sourceMapFile = map.file;
             }
-            const std::string lua = Game::generateLegacyEventLuaChunk(evt, strings, mapLookups,
+            std::string lua = Game::generateLegacyEventLuaChunk(evt, strings, mapLookups,
                 global ? Game::LegacyLuaExportScope::Global : Game::LegacyLuaExportScope::Map,
                 Game::LegacyEventVersion::Mm8);
+            if (global && generatedNpcTexts)
+            {
+                lua += generatedNpcTexts->luaSource;
+            }
             std::string error;
             const std::optional<Game::ScriptedEventProgram> program = Game::ScriptedEventProgram::loadFromLuaText(
                 std::string(EventSupportSource) + "\n" + lua, "@" + evtName,

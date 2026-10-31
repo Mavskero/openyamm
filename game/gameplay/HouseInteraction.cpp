@@ -1555,7 +1555,10 @@ std::vector<HouseActionOption> buildHouseActionOptions(
         {
             options.push_back(makeOption(
                 HouseActionId::OpenLearnSkillsMenu,
-                "Learn Skills",
+                serviceText(
+                    pHouseServiceTextTable,
+                    HouseServiceTextTable::Message::TempleLearnSkillsAction,
+                    "Learn Skills"),
                 isHouseOpenNow,
                 closedReason));
         }

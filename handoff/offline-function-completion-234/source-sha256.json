@@ -1,0 +1,82 @@
+[
+  {
+    "path": "game/app/GameInputSystem.cpp",
+    "sha256": "5d74dd0475de33c6ccfdb9b8866c66148dc7ebfa7b01e4725d304db3c379a022"
+  },
+  {
+    "path": "game/app/GameInputSystem.h",
+    "sha256": "5ab24342737a2a812a55188aa4eedf2a738f68e938ce2fcf5815236bac9fcb37"
+  },
+  {
+    "path": "game/events/EventDialogContent.cpp",
+    "sha256": "207704fa09955d3b541f0aa229d7592339df7347886692e9fbbc7656b2a39759"
+  },
+  {
+    "path": "game/events/EventRuntime.cpp",
+    "sha256": "52c3cc2a115adfa7be1606b8125873f3fa4388ee39b421313cf7dc5331a8dc67"
+  },
+  {
+    "path": "game/events/EventRuntime.h",
+    "sha256": "7ae5086c125f0c8fd3f97576dcece78f8196f9f7137809bf4c833e6a281c0eef"
+  },
+  {
+    "path": "game/gameplay/GameplayDialogController.cpp",
+    "sha256": "61390466a59bf1e62a2d12291099c26513b5a93b333708e6e53603f32825c00c"
+  },
+  {
+    "path": "game/gameplay/GameplayInputFrame.h",
+    "sha256": "9604c7a0dc27e94fd7a5d904dd297c2ccb04fd327e11ea45ad3c3f177c78bc80"
+  },
+  {
+    "path": "game/gameplay/GameplayOverlayInputController.cpp",
+    "sha256": "0e4355e9783c281eccf52226ba4725ca41e7737e533d77f3d2fdc8f0f08bfc28"
+  },
+  {
+    "path": "game/gameplay/GenericActorDialog.cpp",
+    "sha256": "3d7d2c8b58286b89246d7997f96144ce13517ed2d3cd83cbde29a06d951772f7"
+  },
+  {
+    "path": "game/gameplay/GenericActorDialog.h",
+    "sha256": "28440a1694d247514dd5cbb2d4cc17bb4635bd374a080b34ae8eabf6dcc015c3"
+  },
+  {
+    "path": "game/gameplay/HouseInteraction.cpp",
+    "sha256": "d62c0d9ba3e97ad635e17c394d6e137ec01cc5ba9fddd56da90ce80d5bb25ff6"
+  },
+  {
+    "path": "game/party/Party.cpp",
+    "sha256": "0f77d9ed3d55b2fc208cf70063af1df1d1da63233eb831e24f2e69fc0027eea4"
+  },
+  {
+    "path": "game/tables/UiTextTable.cpp",
+    "sha256": "14768b7e627f2eb0ae7eb627c0c5117f3058f3cffba49894185a4abd337faccb"
+  },
+  {
+    "path": "game/tables/UiTextTable.h",
+    "sha256": "59b086db2b0787b486663fe1c36acc1431bd74cbc73b4d97bdee8bb9b0e167b6"
+  },
+  {
+    "path": "game/ui/GameplayPartyOverlayRenderer.cpp",
+    "sha256": "a7f8fca38c59fc7cf23b0bd8eadc8257307e3a86530d5785444d0143c44df901"
+  },
+  {
+    "path": "tools/AppleInputCheck.cpp",
+    "sha256": "8124d3c4634346ea8c81d655dd9065516669bb0d9d37f59cc4aa6d02b6b8c195"
+  },
+  {
+    "path": "tools/mmerge_import/CoreResources.cpp",
+    "sha256": "a1b33fb20755eb8cb9b15a99d85fc9979774b5108c502914dbb3eadfe85962e4"
+  },
+  {
+    "path": "tools/mmerge_import/EventResources.cpp",
+    "sha256": "316f4b29019592e2dd00a961afd0aa566ccb66fabb1f2aa229eeb16c84c0084f"
+  },
+  {
+    "path": "tests/HouseDialogueRegressionTests.cpp",
+    "sha256": "102c7a44dd7f0c0e6ec3fae7ddb062885163f15c0eb5c332f5ab0ae1fa3b4048"
+  },
+  {
+    "path": "tests/HouseDialogueTestHarness.h",
+    "sha256": "661aff5e76fe4200be2a4a55a25ac0efce83cb25b2469ad2039dfa2c87b1e71d"
+  }
+]

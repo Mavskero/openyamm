@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 int main()
@@ -643,6 +644,26 @@ elements:
         seed.members.push_back(member);
         Party party;
         party.seed(seed);
+        {
+            PartySeed capacitySeed = seed;
+            capacitySeed.gold = std::numeric_limits<int>::max() - 7;
+            Party capacityParty;
+            capacityParty.seed(capacitySeed);
+            capacityParty.depositGoldToBank(capacitySeed.gold);
+            capacityParty.addGold(100);
+            require(capacityParty.depositGoldToBank(100) == 7 && capacityParty.gold() == 93
+                && capacityParty.bankGold() == std::numeric_limits<int>::max(),
+                "Bank deposit exceeded destination capacity or lost untransferred gold");
+            require(capacityParty.depositGoldToBank(1) == 0 && capacityParty.gold() == 93,
+                "A full bank consumed carried gold");
+            capacityParty.addGold(std::numeric_limits<int>::max() - 98);
+            require(capacityParty.withdrawBankGold(100) == 5
+                && capacityParty.gold() == std::numeric_limits<int>::max()
+                && capacityParty.bankGold() == std::numeric_limits<int>::max() - 5,
+                "Bank withdrawal exceeded carried capacity or lost untransferred gold");
+            require(capacityParty.withdrawBankGold(1) == 0,
+                "Withdrawal into a full carried balance transferred gold");
+        }
         OpenYAMM::Tests::PartySpellTestWorldRuntime world;
         world.bindParty(&party);
         session.bindActiveWorldRuntime(&world);
@@ -1003,6 +1024,27 @@ elements:
             update();
             GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
         };
+        for (const bool eraseFirst : {true, false})
+        {
+            saveScreen.editBuffer = "12";
+            if (eraseFirst)
+            {
+                keyTap(SDL_SCANCODE_BACKSPACE);
+            }
+            SDL_Event replacement = {};
+            replacement.type = SDL_EVENT_TEXT_INPUT;
+            replacement.text.text = "3";
+            input.handleSdlEvent(replacement);
+            if (!eraseFirst)
+            {
+                keyTap(SDL_SCANCODE_BACKSPACE);
+            }
+            update();
+            GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+            require(saveScreen.editBuffer == (eraseFirst ? "13" : "12"),
+                "Same-frame replacement lost the order of text and Backspace");
+        }
+        saveScreen.editBuffer.clear();
         textInput("新索匹格镇 MM678");
         require(saveScreen.editBuffer == "新索匹格镇 MM678", "Save controller rejected Chinese input");
         textInput("𠀀");

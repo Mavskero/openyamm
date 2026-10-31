@@ -1,0 +1,101 @@
+{
+  "checkpoint": 234,
+  "scope": "ACCEPTED_SOURCE_IMPORT_BUILD_AND_FOCUSED_OFFLINE_CHECKS",
+  "at": "2026-10-31T07:13:36.197974+00:00",
+  "base_commit": "8989cf96dcd1d5c23de2d5da2a58030c92e3291d",
+  "source_files": 20,
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 380.696353,
+      "timed_out": false
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 378.997579083,
+      "timed_out": false
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.18083720800000003,
+      "timed_out": false
+    },
+    "event-import-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.446927917,
+      "timed_out": false
+    },
+    "input-check-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.932222542,
+      "timed_out": false
+    },
+    "build-npc-check-002": {
+      "exit_code": 0,
+      "elapsed_seconds": 13.64767,
+      "timed_out": false
+    },
+    "build-npc-check-003": {
+      "exit_code": 0,
+      "elapsed_seconds": 13.597731207999999,
+      "timed_out": false
+    },
+    "npc-btb-check-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 3.1489148329999996,
+      "timed_out": false
+    }
+  },
+  "npc_existing_test_cases": 2,
+  "npc_assertions": 52,
+  "new_test_cases": 0,
+  "existing_input_check_augmented": true,
+  "old_campaign_replays": 0,
+  "App_run": false,
+  "device_operations": false,
+  "simulator_operations": false,
+  "save_writes": 0,
+  "physical_debugging_paused": true,
+  "requested_subagent_model": "gpt-6.1-sol",
+  "requested_subagent_reasoning": "max",
+  "save_version": 105,
+  "ui_text_keys": 226,
+  "runtime_global_changed_member": "events/Global.lua",
+  "npc_imported_global_text_ids": [
+    97,
+    155,
+    379,
+    383,
+    384,
+    388,
+    389,
+    392,
+    395,
+    396,
+    397,
+    399,
+    402,
+    434
+  ],
+  "all_four_worlds_retained": true,
+  "built_production_source_hashes_match": true,
+  "unproved": [
+    "actual affected pixels and touch",
+    "natural bank/shop transactions",
+    "long NPC/question input",
+    "complete natural campaign"
+  ],
+  "preserved_failure": {
+    "name": "build-unit-target-001",
+    "exit_code": 1,
+    "reason": "unknown target openyamm_unit_tests; existing focused target used instead"
+  },
+  "further_concrete_source_findings": [
+    "queued tap down incorrectly replays release position",
+    "below-threshold leave-and-return motion lost before shop target resolver"
+  ],
+  "new_release": false,
+  "full_goal_achieved": false,
+  "project_estimate_percent": 88,
+  "estimate_confidence": "low"
+}

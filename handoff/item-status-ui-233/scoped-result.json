@@ -1,0 +1,42 @@
+{
+  "checkpoint": 233,
+  "scope": "SOURCE_BUILD_IMPORT_ONLY",
+  "base_checkpoint": 232,
+  "changed_members": [
+    "data_tables/ui_text.txt"
+  ],
+  "added_members": [],
+  "old_ui_keys": 224,
+  "new_ui_keys": 226,
+  "all_old_values_retained": true,
+  "original_global_text_rows": [
+    32,
+    232
+  ],
+  "all_other_engine_members_and_worlds_retained": true,
+  "save_version": 105,
+  "rules_changed": false,
+  "device_or_App_run": false,
+  "new_test_cases": 0,
+  "new_release": false,
+  "builds": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 144.040892333,
+      "timed_out": false
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 127.476361125,
+      "timed_out": false
+    },
+    "core-import-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.127539417,
+      "timed_out": false
+    }
+  },
+  "full_goal_achieved": false,
+  "project_estimate_percent": 88,
+  "actual_affected_pixels_or_touch_proved": false
+}

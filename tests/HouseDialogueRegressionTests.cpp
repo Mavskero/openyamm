@@ -3,6 +3,7 @@
 #include "game/app/GameSession.h"
 #include "game/audio/SoundIds.h"
 #include "game/data/GameDataLoader.h"
+#include "game/data/GameDataRepository.h"
 #include "game/events/EvtEnums.h"
 #include "game/events/ISceneEventContext.h"
 #include "game/gameplay/GenericActorDialog.h"
@@ -27,6 +28,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -203,6 +205,138 @@ public:
 private:
     float m_currentGameMinutes = 0.0f;
 };
+
+// Only the two BTB fixtures inject this world; the default house harness remains unchanged.
+class GeneratedNpcDialogueWorld : public OpenYAMM::Tests::PartySpellTestWorldRuntime,
+    public TempleConditionTimeSceneContext
+{
+public:
+    GeneratedNpcDialogueWorld(
+        OpenYAMM::Tests::HouseDialogueTestHarness &harness,
+        const OpenYAMM::Tests::RegressionGameData &gameData,
+        OpenYAMM::Game::GameSession &session)
+        : TempleConditionTimeSceneContext(0.0f),
+          m_harness(harness),
+          m_events(&gameData.houseTable, &gameData.npcDialogTable)
+    {
+        bindParty(&harness.party());
+        bindEventRuntimeState(&harness.eventRuntimeState());
+        bindGlobalEventProgram(&gameData.globalEventProgram);
+        bindGameSession(&session);
+        advanceGameMinutes(12.0f * 60.0f);
+        OpenYAMM::Game::GameplayRuntimeActorState actor = {};
+        actor.monsterId = 322;
+        addActor(actor);
+        m_delta.actors.push_back({});
+        m_delta.actors[0].name = "Peasant";
+        m_delta.actors[0].group = 85;
+        m_delta.actors[0].monsterId = actor.monsterId;
+    }
+
+    float currentGameMinutes() const override
+    {
+        return static_cast<float>(gameMinutes());
+    }
+
+    const OpenYAMM::Game::MapDeltaData *mapDeltaData() const override
+    {
+        return &m_delta;
+    }
+
+    OpenYAMM::Game::MapDeltaData *mapDeltaData() override
+    {
+        return &m_delta;
+    }
+
+    bool actorInspectState(
+        size_t actorIndex,
+        uint32_t animationTicks,
+        OpenYAMM::Game::GameplayActorInspectState &state) const override
+    {
+        (void)animationTicks;
+        if (actorIndex >= m_delta.actors.size())
+        {
+            return false;
+        }
+        state = {};
+        state.displayName = m_delta.actors[actorIndex].name;
+        state.monsterId = m_delta.actors[actorIndex].monsterId;
+        return true;
+    }
+
+    bool executeEventHooks(OpenYAMM::Game::EventRuntimeHookKind kind) override
+    {
+        const bool executed = m_events.executeHooks(
+            std::nullopt, *globalEventProgram(), kind, m_harness.eventRuntimeState(), &m_harness.party(), this);
+        if (executed)
+        {
+            m_harness.party().applyEventRuntimeState(m_harness.eventRuntimeState(), false);
+        }
+        return executed;
+    }
+
+private:
+    OpenYAMM::Tests::HouseDialogueTestHarness &m_harness;
+    OpenYAMM::Game::EventRuntime m_events;
+    OpenYAMM::Game::MapDeltaData m_delta;
+};
+
+struct GeneratedNpcDialogueFixture
+{
+    OpenYAMM::Engine::AssetFileSystem files;
+    OpenYAMM::Game::GameDataLoader loader;
+    OpenYAMM::Game::GameDataRepository data;
+    OpenYAMM::Game::GameSession session;
+    GeneratedNpcDialogueWorld world;
+    OpenYAMM::Game::GenericActorDialogResolution resolution;
+    OpenYAMM::Game::GeneratedNpcIdentity identity;
+
+    GeneratedNpcDialogueFixture(
+        OpenYAMM::Tests::HouseDialogueTestHarness &harness,
+        const OpenYAMM::Tests::RegressionGameData &gameData,
+        const std::string &mapFileName)
+        : world(harness, gameData, session)
+    {
+        const char *pRuntimeRoot = std::getenv("OPENYAMM_REGRESSION_RUNTIME_ROOT");
+        const std::filesystem::path root = pRuntimeRoot != nullptr && *pRuntimeRoot != '\0'
+            ? std::filesystem::path(pRuntimeRoot) : std::filesystem::path(OPENYAMM_SOURCE_DIR);
+        const std::filesystem::path assets = pRuntimeRoot != nullptr && *pRuntimeRoot != '\0'
+            ? root : root / "assets_dev";
+        REQUIRE(files.initialize(root, assets, OpenYAMM::Engine::AssetScaleTier::X1, "mm8"));
+        loader.setActiveWorldId("mm8");
+        REQUIRE(loader.loadCommonForGameplay(files));
+        data.bind(loader);
+        session.bindDataRepository(&data);
+        const OpenYAMM::Game::MapStatsEntry *pMap = data.mapStats().findByFileName(mapFileName);
+        REQUIRE(pMap != nullptr);
+        session.setCurrentMapFileName(pMap->fileName);
+        harness.setCurrentMap(*pMap);
+        harness.bindWorldRuntime(&world);
+        world.setMapName(pMap->fileName);
+
+        const std::optional<OpenYAMM::Game::GenericActorDialogResolution> generated =
+            OpenYAMM::Game::resolveGenericActorDialog(
+                pMap->fileName, "Peasant", 85, harness.eventRuntimeState(), gameData.npcDialogTable,
+                nullptr, pMap, nullptr, nullptr, &gameData.mergedNpcNameTable,
+                &gameData.mergedNpcProfessionTable, &gameData.mergedBolsterMapTable,
+                &gameData.mergedBolsterMonsterTable, 322, 0);
+        REQUIRE(generated.has_value());
+        REQUIRE(generated->generatedNpc);
+        resolution = *generated;
+        // Control the original profession and Alignment samples; identity still comes from the actor resolver.
+        resolution.generatedProfessionId = 52;
+        OpenYAMM::Game::applyGenericActorDialogResolution(harness.eventRuntimeState(), resolution);
+        identity = {resolution.generatedActorKey, 0};
+        harness.eventRuntimeState().namedMapVars[OpenYAMM::Game::generatedNpcVariable(identity, "Alignment")] = 1;
+        REQUIRE(OpenYAMM::Game::generatedNpcIdentity(harness.eventRuntimeState(), resolution.npcId, world, 0));
+    }
+
+    ~GeneratedNpcDialogueFixture()
+    {
+        session.bindDataRepository(nullptr);
+    }
+};
+
 constexpr uint32_t BerserkersFuryHouseId = 199;
 constexpr uint32_t FearsomeFetishesHouseId = 76;
 constexpr uint32_t NeedfulThingsHouseId = 77;
@@ -2326,29 +2460,44 @@ TEST_CASE("dismissing hired NPC closes dialogue")
 TEST_CASE("random NPC BTB gate follows merged continent reputation rules")
 {
     const OpenYAMM::Tests::RegressionGameData &gameData = requireRegressionGameData();
+
     OpenYAMM::Tests::HouseDialogueTestHarness harness(gameData);
+    GeneratedNpcDialogueFixture fixture(harness, gameData, "outd3.odm");
     harness.party().addGold(10000);
-
-    OpenYAMM::Game::MapStatsEntry map = {};
-    map.mergedContinentId = 3;
-    harness.setCurrentMap(map);
     harness.worldRuntime().setCurrentLocationReputation(10);
+    const OpenYAMM::Game::MergedContinentSettingEntry *pContinent =
+        fixture.data.mergedContinentSettingTable().findById(3);
+    REQUIRE(pContinent != nullptr);
+    REQUIRE(pContinent->reputationAffectsNpc);
+    const auto begTopic = gameData.npcDialogTable.getTopicById(1766);
+    const auto threatTopic = gameData.npcDialogTable.getTopicById(1767);
+    const auto bribeTopic = gameData.npcDialogTable.getTopicById(1768);
+    const auto gold = gameData.globalEventProgram->getImportedGlobalText(97);
+    REQUIRE(begTopic.has_value());
+    REQUIRE(threatTopic.has_value());
+    REQUIRE(bribeTopic.has_value());
+    REQUIRE(gold.has_value());
+    const std::string bribeLabel = bribeTopic->topic + " 1 " + *gold;
+    const std::string seenVariable = OpenYAMM::Game::generatedNpcVariable(fixture.identity, "SeenGreet");
+    CHECK_FALSE(harness.eventRuntimeState().namedMapVars.contains(seenVariable));
 
-    constexpr uint32_t RandomPeasantNpcId = 20001;
-    harness.eventRuntimeState().npcNameOverrides[RandomPeasantNpcId] = "Kevin";
-    harness.eventRuntimeState().npcPictureOverrides[RandomPeasantNpcId] = 1;
-    harness.eventRuntimeState().npcProfessionOverrides[RandomPeasantNpcId] = 52;
-
-    OpenYAMM::Game::EventDialogContent dialog = harness.openNpcDialogue(RandomPeasantNpcId);
+    // Original NPCWillSpeak rejects a G-aligned NPC at positive reputation on Enroth.
+    OpenYAMM::Game::EventDialogContent dialog = harness.openNpcDialogue(fixture.resolution.npcId, 0, 0);
     CHECK_FALSE(findActionIndexByLabel(dialog, "Join").has_value());
-    REQUIRE(findActionIndexByLabel(dialog, "Beg").has_value());
-    REQUIRE(findActionIndexByLabel(dialog, "Threat").has_value());
-    REQUIRE(findActionIndexByLabel(dialog, "Bribe 1 Gold").has_value());
+    REQUIRE(findActionIndexByLabel(dialog, begTopic->topic).has_value());
+    REQUIRE(findActionIndexByLabel(dialog, threatTopic->topic).has_value());
+    REQUIRE(findActionIndexByLabel(dialog, bribeLabel).has_value());
+    REQUIRE(harness.eventRuntimeState().dialogueState.generatedNpcConversation);
+    CHECK_FALSE(harness.eventRuntimeState().dialogueState.generatedNpcConversation->willSpeak);
+    REQUIRE(harness.eventRuntimeState().dialogueState.generatedNpcConversation->greeting);
+    CHECK_FALSE(harness.eventRuntimeState().dialogueState.generatedNpcConversation->greeting->empty());
+    CHECK_FALSE(dialog.lines.empty());
+    CHECK_EQ(harness.eventRuntimeState().namedMapVars.at(seenVariable), 1);
 
     const OpenYAMM::Game::EventDialogContent normalDialog =
-        harness.executeAndPresent(*findActionIndexByLabel(dialog, "Threat"));
+        harness.executeAndPresent(*findActionIndexByLabel(dialog, threatTopic->topic));
     CHECK(findActionIndexByLabel(normalDialog, "Join").has_value());
-    CHECK_FALSE(findActionIndexByLabel(normalDialog, "Threat").has_value());
+    CHECK_FALSE(findActionIndexByLabel(normalDialog, threatTopic->topic).has_value());
     REQUIRE_FALSE(harness.eventRuntimeState().messages.empty());
     CHECK(harness.eventRuntimeState().messages.back().find("%11") == std::string::npos);
     CHECK(harness.eventRuntimeState().messages.back().find("%12") == std::string::npos);
@@ -2357,23 +2506,35 @@ TEST_CASE("random NPC BTB gate follows merged continent reputation rules")
 TEST_CASE("random NPC BTB gate is disabled when merged continent does not affect NPC reputation")
 {
     const OpenYAMM::Tests::RegressionGameData &gameData = requireRegressionGameData();
+
     OpenYAMM::Tests::HouseDialogueTestHarness harness(gameData);
-
-    OpenYAMM::Game::MapStatsEntry map = {};
-    map.mergedContinentId = 1;
-    harness.setCurrentMap(map);
+    GeneratedNpcDialogueFixture fixture(harness, gameData, "out01.odm");
     harness.worldRuntime().setCurrentLocationReputation(10);
+    const OpenYAMM::Game::MergedContinentSettingEntry *pContinent =
+        fixture.data.mergedContinentSettingTable().findById(1);
+    REQUIRE(pContinent != nullptr);
+    REQUIRE_FALSE(pContinent->reputationAffectsNpc);
+    const auto begTopic = gameData.npcDialogTable.getTopicById(1766);
+    const auto threatTopic = gameData.npcDialogTable.getTopicById(1767);
+    const auto bribeTopic = gameData.npcDialogTable.getTopicById(1768);
+    const auto gold = gameData.globalEventProgram->getImportedGlobalText(97);
+    REQUIRE(begTopic.has_value());
+    REQUIRE(threatTopic.has_value());
+    REQUIRE(bribeTopic.has_value());
+    REQUIRE(gold.has_value());
 
-    constexpr uint32_t RandomPeasantNpcId = 20002;
-    harness.eventRuntimeState().npcNameOverrides[RandomPeasantNpcId] = "Kevin";
-    harness.eventRuntimeState().npcPictureOverrides[RandomPeasantNpcId] = 1;
-    harness.eventRuntimeState().npcProfessionOverrides[RandomPeasantNpcId] = 52;
-
-    const OpenYAMM::Game::EventDialogContent dialog = harness.openNpcDialogue(RandomPeasantNpcId);
+    const OpenYAMM::Game::EventDialogContent dialog = harness.openNpcDialogue(fixture.resolution.npcId, 0, 0);
     CHECK(findActionIndexByLabel(dialog, "Join").has_value());
-    CHECK_FALSE(findActionIndexByLabel(dialog, "Beg").has_value());
-    CHECK_FALSE(findActionIndexByLabel(dialog, "Threat").has_value());
-    CHECK_FALSE(findActionIndexByLabel(dialog, "Bribe 1 Gold").has_value());
+    CHECK_FALSE(findActionIndexByLabel(dialog, begTopic->topic).has_value());
+    CHECK_FALSE(findActionIndexByLabel(dialog, threatTopic->topic).has_value());
+    CHECK_FALSE(findActionIndexByLabel(dialog, bribeTopic->topic + " 1 " + *gold).has_value());
+    REQUIRE(harness.eventRuntimeState().dialogueState.generatedNpcConversation);
+    CHECK(harness.eventRuntimeState().dialogueState.generatedNpcConversation->willSpeak);
+    REQUIRE(harness.eventRuntimeState().dialogueState.generatedNpcConversation->greeting);
+    CHECK_FALSE(harness.eventRuntimeState().dialogueState.generatedNpcConversation->greeting->empty());
+    CHECK_FALSE(dialog.lines.empty());
+    CHECK_EQ(harness.eventRuntimeState().namedMapVars.at(
+        OpenYAMM::Game::generatedNpcVariable(fixture.identity, "SeenGreet")), 1);
 }
 
 TEST_CASE("merged continent settings gate profession news fallback")

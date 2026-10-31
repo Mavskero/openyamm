@@ -4,6 +4,29 @@ These rules apply to all AI-generated contributions in this repository.
 
 ## iPadOS handoff (2026-10-29)
 
+- USER STEERING 2026-10-31: physical-device debugging is PAUSED by explicit user request.
+  Continue device-independent implementation; no device/simulator interactions, installs, screenshots or
+  keep-awake input while paused. User switched all current subagents to gpt-6.1-sol/max; old Astra work is
+  preserved and handed to Sol. Main retains builds/App/git. Do not mark the whole objective paused or
+  complete.233 item-status text and234 generated NPC greeting, ordered bank/save text editing, shop drag
+  cancellation and bank capacity fixes are accepted in the source/build/focused offline scope below.
+  Last device observation was232 house64 standard stock. Shop drag-off/bank/long input/full campaign
+  remain unproved. Last22 old saves+new12 hash readback retained; no new save after12. Fixed releases stay.
+  Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
+  publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
+
+- 234 ACCEPTED_OFFLINE_SCOPED (2026-10-31): `handoff/offline-function-completion-234/README.md`.
+  Generated identity/NpcEnter now prepares original dynamic greetings/admission using existing Lua RNG;
+  original script fingerprints and14 current-language GlobalTxt dependencies imported. Ordered SDL edits,
+  sticky shop cancellation and capacity-safe actual bank transfers integrated; House64 skill caption localized.
+  Native380.696s/unsigned iOS378.998s/core0.181s/event0.447s pass;18 production/tool hashes match. Existing
+  inputcheck0.932s and2 existing NPC cases52assertions3.149s pass;0 newcases/App/savewrites/device/campaign/Release.
+  Complete234 runtime changes onlyGlobal.lua from233;Ui226/other17398 engine members/all4worlds retained.
+  Public2-member overlay relative232 andsource/resource hashes included; fixed229/214/195/RCs untouched.
+  Initial unknown unit target preserved; existing focused target used, no full test suite. Next concrete offline
+  fixes: queued tap replays wrong down position; below-threshold leave-and-return motion lost before shop resolver.
+  Long question path being checked; do not preclaim any affected device/touch/full natural campaign acceptance.
+
 - 231–232 ACCEPTED_DEVICE_SCOPED (2026-10-31):
   `openyamm/handoff/ipados-device-231-232-20261031/README.md` (repo: omit openyamm/).
   Physical iPad read old104, UI-equipped armor84/mace66, wrote only new Save12/105 and loaded it in two

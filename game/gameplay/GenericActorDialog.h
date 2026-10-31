@@ -3,6 +3,7 @@
 #include "game/events/EventRuntime.h"
 
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
 
@@ -15,7 +16,26 @@ class MergedMonsterPortraitTable;
 class MergedNpcNameTable;
 class MergedNpcProfessionTable;
 class MergedNewsTopicTable;
+class IGameplayWorldRuntime;
 struct MapStatsEntry;
+
+struct GeneratedNpcIdentity
+{
+    std::string actorKey;
+    uint32_t actorIndex = 0;
+};
+
+std::optional<GeneratedNpcIdentity> generatedNpcIdentity(
+    const EventRuntimeState &state, uint32_t npcId, const IGameplayWorldRuntime &world,
+    std::optional<uint32_t> actorIndex = std::nullopt);
+std::string generatedNpcVariable(const GeneratedNpcIdentity &identity, const std::string &field);
+std::optional<int32_t> generatedNpcDay(float gameMinutes);
+bool prepareGeneratedNpcConversation(EventRuntimeState &state, IGameplayWorldRuntime &world, Party &party,
+    const std::optional<ScriptedEventProgram> &globalProgram,
+    const std::function<std::optional<int32_t>()> &drawAlignment);
+std::optional<std::string> formatGeneratedNpcText(const std::string &text, const EventRuntimeState &state,
+    uint32_t npcId, const Party &party, const IGameplayWorldRuntime &world,
+    const std::optional<ScriptedEventProgram> &globalProgram);
 
 struct GenericActorDialogResolution
 {

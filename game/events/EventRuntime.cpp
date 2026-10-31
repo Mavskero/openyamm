@@ -5,6 +5,7 @@
 #include "engine/scripting/LuaStateOwner.h"
 #include "game/audio/SoundIds.h"
 #include "game/app/GameSession.h"
+#include "game/gameplay/GenericActorDialog.h"
 #include "game/content/BreachMazeState.h"
 #include "game/StringUtils.h"
 #include "game/maps/MapIdentity.h"
@@ -11350,7 +11351,12 @@ bool EventRuntime::executeHooks(
         return false;
     }
 
-    if (!scriptedProgramHasHook(localProgram, kind) && !scriptedProgramHasHook(globalProgram, kind))
+    const bool npcEnter = kind == EventRuntimeHookKind::NpcEnter;
+    if (npcEnter)
+    {
+        runtimeState.dialogueState.generatedNpcConversation.reset();
+    }
+    if (!npcEnter && !scriptedProgramHasHook(localProgram, kind) && !scriptedProgramHasHook(globalProgram, kind))
     {
         return false;
     }
@@ -11371,7 +11377,45 @@ bool EventRuntime::executeHooks(
 
     const bool globalExecuted = executeHookScope(*this, m_luaSessionCache->globalScope, kind, executionContext);
     const bool localExecuted = executeHookScope(*this, m_luaSessionCache->localScope, kind, executionContext);
-    return globalExecuted || localExecuted;
+    bool generatedNpcPrepared = false;
+    IGameplayWorldRuntime *pWorld = dynamic_cast<IGameplayWorldRuntime *>(pSceneEventContext);
+    if (npcEnter && pWorld != nullptr && pParty != nullptr)
+    {
+        generatedNpcPrepared = prepareGeneratedNpcConversation(runtimeState, *pWorld, *pParty, globalProgram,
+            [&]() -> std::optional<int32_t>
+            {
+                // NPCNewsTopics/NPCFollowers use Lua math.random, independently of EVT RandomBetween.
+                // Only the sampled Alignment is persistent in the original MapNPCNews metadata.
+                Engine::LuaStateOwner &lua = m_luaSessionCache->lua;
+                lua_State *pLuaState = lua.state();
+                const int top = lua_gettop(pLuaState);
+                lua_getglobal(pLuaState, "math");
+                if (!lua_istable(pLuaState, -1))
+                {
+                    lua_settop(pLuaState, top);
+                    return std::nullopt;
+                }
+                lua_getfield(pLuaState, -1, "random");
+                if (!lua_isfunction(pLuaState, -1))
+                {
+                    lua_settop(pLuaState, top);
+                    return std::nullopt;
+                }
+                lua_pushinteger(pLuaState, 1);
+                lua_pushinteger(pLuaState, 2);
+                std::optional<std::string> error;
+                const bool ok = lua.call(2, 1, error);
+                const std::optional<int32_t> result = ok && lua_isinteger(pLuaState, -1)
+                    ? std::optional<int32_t>(static_cast<int32_t>(lua_tointeger(pLuaState, -1))) : std::nullopt;
+                lua_settop(pLuaState, top);
+                if (!ok)
+                {
+                    m_luaSessionCache->lastError = error;
+                }
+                return result;
+            });
+    }
+    return globalExecuted || localExecuted || generatedNpcPrepared;
 }
 
 bool EventRuntime::executeMapRefillHooks(

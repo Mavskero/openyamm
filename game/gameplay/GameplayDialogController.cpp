@@ -600,7 +600,8 @@ void executeNpcHook(
     GameplayDialogController::Context &context,
     EventRuntimeHookKind kind,
     uint32_t npcId,
-    std::optional<uint32_t> sourceActorIndex)
+    std::optional<uint32_t> sourceActorIndex,
+    uint32_t hostHouseId = 0)
 {
     if (context.pWorldRuntime == nullptr || npcId == 0)
     {
@@ -611,6 +612,7 @@ void executeNpcHook(
     hookContext.kind = kind;
     hookContext.npcId = npcId;
     hookContext.actorIndex = sourceActorIndex;
+    hookContext.houseId = hostHouseId;
     hookContext.heldItemId = context.pParty != nullptr ? context.pParty->heldItemIdForQueries() : 0;
     context.eventRuntimeState.activeHookContext = std::move(hookContext);
     context.pWorldRuntime->executeEventHooks(kind);
@@ -1998,14 +2000,6 @@ int mm9TransportPrice(
         static_cast<int>(route.basePrice),
         route.priceMultiplier,
         effectiveReputationForContext(context));
-}
-
-int requiredNpcReputationForBtb(const MergedNpcBtbEntry &btbEntry)
-{
-    const std::string creed = toLowerCopy(btbEntry.creed);
-    return creed == "dark"
-        ? static_cast<int>(btbEntry.requiredReputation)
-        : -static_cast<int>(btbEntry.requiredReputation);
 }
 
 bool hasHiredNpcFollower(const EventRuntimeState &eventRuntimeState, uint32_t npcId)
@@ -3864,97 +3858,109 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
 
     if (action.kind == EventDialogActionKind::NpcBtb)
     {
-        bool accepted = action.argument == "accepted";
-        bool bribePaid = false;
-
-        if (context.pNpcDialogTable != nullptr && action.secondaryId != 0)
+        const uint32_t npcId = context.activeEventDialog.sourceId;
+        const std::optional<GeneratedNpcIdentity> identity = context.pWorldRuntime != nullptr
+            ? generatedNpcIdentity(context.eventRuntimeState, npcId, *context.pWorldRuntime,
+                context.activeEventDialog.sourceActorIndex) : std::nullopt;
+        std::optional<EventRuntimeState::DialogueRuntimeState::GeneratedNpcConversation> &conversation =
+            context.eventRuntimeState.dialogueState.generatedNpcConversation;
+        const std::optional<int32_t> day = context.pWorldRuntime != nullptr
+            ? generatedNpcDay(context.pWorldRuntime->gameMinutes()) : std::nullopt;
+        const std::optional<NpcEntry> npc = runtimeNpcEntry(context.pNpcDialogTable, context.eventRuntimeState, npcId);
+        const MergedNpcProfessionEntry *pProfession = npc && context.pNpcProfessionTable != nullptr
+            ? context.pNpcProfessionTable->get(npc->professionId) : nullptr;
+        const MergedNpcBtbEntry *pPersonality = pProfession != nullptr && context.pNpcBtbTable != nullptr
+            ? context.pNpcBtbTable->get(pProfession->personality) : nullptr;
+        if (!identity || !conversation || conversation->npcId != npcId
+            || conversation->actorKey != identity->actorKey || !conversation->admissionReady
+            || !day || pPersonality == nullptr || context.pParty == nullptr || context.pNpcDialogTable == nullptr)
         {
-            const uint32_t npcId = context.activeEventDialog.sourceId;
-            const std::optional<NpcEntry> npcEntry =
-                runtimeNpcEntry(context.pNpcDialogTable, context.eventRuntimeState, npcId);
-            const NpcEntry *pNpc = npcEntry ? &*npcEntry : nullptr;
-            const MergedNpcProfessionEntry *pProfession =
-                pNpc != nullptr && context.pNpcProfessionTable != nullptr
-                    ? context.pNpcProfessionTable->get(pNpc->professionId)
-                    : nullptr;
-            const MergedNpcBtbEntry *pBtbEntry =
-                pProfession != nullptr && context.pNpcBtbTable != nullptr
-                    ? context.pNpcBtbTable->get(pProfession->personality)
-                    : nullptr;
-            uint32_t textId = action.secondaryId;
+            return result;
+        }
+        if ((action.id == NpcBegTopicId || action.id == NpcThreatTopicId)
+            && context.pParty->activeMember() == nullptr)
+        {
+            return result; // Reputation.lua exits before attempting these topics without CurrentPlayer.
+        }
 
-            if (accepted && action.id == NpcBribeTopicId)
+        const std::optional<ScriptedEventProgram> emptyGlobalProgram = std::nullopt;
+        const std::optional<ScriptedEventProgram> &globalProgram = context.pGlobalEventProgram != nullptr
+            ? *context.pGlobalEventProgram : emptyGlobalProgram;
+        bool accepted = false;
+        bool insufficientGold = false;
+        uint32_t textId = 0;
+        std::string successField;
+        if (action.id == NpcBegTopicId)
+        {
+            const auto prior = context.eventRuntimeState.namedMapVars.find(
+                generatedNpcVariable(*identity, "BegSuccess"));
+            const bool repeated = prior != context.eventRuntimeState.namedMapVars.end() && prior->second == *day;
+            accepted = !repeated && pPersonality->acceptBeg;
+            textId = repeated ? pPersonality->begReturnTextId
+                : accepted ? pPersonality->begSuccessTextId : pPersonality->begFailTextId;
+            successField = "BegSuccess";
+        }
+        else if (action.id == NpcThreatTopicId)
+        {
+            accepted = pPersonality->acceptThreat;
+            textId = accepted ? pPersonality->threatSuccessTextId : pPersonality->threatFailTextId;
+            successField = "ThreatSuccess";
+        }
+        else if (action.id == NpcBribeTopicId)
+        {
+            accepted = pPersonality->acceptBribe;
+            // Cost is a present numeric source field: Lua treats zero as truthy, so zero stays zero.
+            const uint32_t cost = pProfession->weeklyCost;
+            if (accepted && context.pParty->gold() <= static_cast<int>(cost))
             {
-                const uint32_t bribeCost =
-                    pProfession != nullptr && pProfession->weeklyCost != 0 ? pProfession->weeklyCost : 50u;
-
-                if (context.pParty == nullptr || context.pParty->gold() <= static_cast<int>(bribeCost))
-                {
-                    accepted = false;
-                    textId = 0;
-                    context.eventRuntimeState.messages.push_back("You don't have enough gold.");
-                }
-                else
-                {
-                    context.pParty->addGold(-static_cast<int>(bribeCost));
-                    bribePaid = true;
-                }
+                accepted = false;
+                insufficientGold = true;
             }
-
-            const std::optional<std::string> text = context.pNpcDialogTable->getText(textId);
-
-            if (text && !text->empty())
+            else if (accepted)
             {
-                context.eventRuntimeState.messages.push_back(
-                    pNpc != nullptr && pProfession != nullptr
-                        ? formatNpcProfessionText(
-                            *text,
-                            *pNpc,
-                            *pProfession,
-                            context.pParty,
-                            effectiveReputationForContext(context),
-                            pBtbEntry != nullptr
-                                ? std::optional<int>(requiredNpcReputationForBtb(*pBtbEntry))
-                                : std::nullopt)
-                        : *text);
+                context.pParty->addGold(-static_cast<int>(cost));
+            }
+            textId = accepted ? pPersonality->bribeSuccessTextId : pPersonality->bribeFailTextId;
+            successField = "BribeSuccess";
+        }
+        else
+        {
+            return result;
+        }
+
+        if (accepted)
+        {
+            // Keep the three original MapNPCNews fields separate. Legacy merged access does not identify any one.
+            context.eventRuntimeState.namedMapVars[generatedNpcVariable(*identity, successField)] = *day;
+            conversation->willSpeak = true; // ExitBTBTopics installs Hire/News for this conversation only.
+        }
+        if (insufficientGold)
+        {
+            const std::optional<std::string> text = globalProgram ? globalProgram->getImportedGlobalText(155)
+                : std::nullopt;
+            context.eventRuntimeState.messages.push_back(text.value_or("You don't have enough gold."));
+        }
+        else if (const std::optional<std::string> text = context.pNpcDialogTable->getText(textId);
+            text && !text->empty())
+        {
+            if (const std::optional<std::string> formatted = formatGeneratedNpcText(
+                *text, context.eventRuntimeState, npcId,
+                *context.pParty, *context.pWorldRuntime, globalProgram))
+            {
+                context.eventRuntimeState.messages.push_back(*formatted);
             }
         }
 
-        if (accepted || bribePaid)
-        {
-            context.eventRuntimeState.variables[npcBtbDialogueAccessVariableKey(context.activeEventDialog.sourceId)] =
-                static_cast<int32_t>(npcBtbDialogueAccessDay(
-                    context.pWorldRuntime != nullptr ? context.pWorldRuntime->gameMinutes() : -1.0f));
-        }
-
-        if (context.pParty != nullptr)
-        {
-            SpeechId speechId = SpeechId::None;
-
-            if (action.id == NpcBegTopicId)
-            {
-                speechId = accepted ? SpeechId::Beg : SpeechId::BegFail;
-            }
-            else if (action.id == NpcThreatTopicId)
-            {
-                speechId = accepted ? SpeechId::Threat : SpeechId::ThreatFail;
-            }
-            else if (action.id == NpcBribeTopicId)
-            {
-                speechId = (accepted || bribePaid) ? SpeechId::Bribe : SpeechId::BribeFail;
-            }
-
-            if (speechId != SpeechId::None)
-            {
-                playSpeechReaction(context, context.pParty->activeMemberIndex(), speechId, true);
-            }
-        }
-
+        const SpeechId speechId = action.id == NpcBegTopicId ? (accepted ? SpeechId::Beg : SpeechId::BegFail)
+            : action.id == NpcThreatTopicId ? (accepted ? SpeechId::Threat : SpeechId::ThreatFail)
+            : accepted ? SpeechId::Bribe : SpeechId::BribeFail;
+        playSpeechReaction(context, context.pParty->activeMemberIndex(), speechId, true);
         setPendingDialogueContext(
             context.eventRuntimeState,
             DialogueContextKind::NpcTalk,
-            context.activeEventDialog.sourceId,
-            currentDialogueHostHouseId(context.eventRuntimeState));
+            npcId,
+            currentDialogueHostHouseId(context.eventRuntimeState),
+            context.activeEventDialog.sourceActorIndex);
         result.shouldOpenPendingEventDialog = true;
         return result;
     }
@@ -4126,7 +4132,7 @@ GameplayDialogController::PresentPendingDialogResult GameplayDialogController::p
         originalContext.npcEnterPending = false;
         context.eventRuntimeState.pendingDialogueContext->npcEnterPending = false;
         executeNpcHook(context, EventRuntimeHookKind::NpcEnter, originalContext.sourceId,
-            originalContext.sourceActorIndex);
+            originalContext.sourceActorIndex, originalContext.hostHouseId);
         if (!context.eventRuntimeState.pendingDialogueContext)
             return result;
         originalContext = *context.eventRuntimeState.pendingDialogueContext;
@@ -4296,7 +4302,7 @@ GameplayDialogController::Result GameplayDialogController::openNpcDialogue(
         return result;
     }
 
-    executeNpcHook(context, EventRuntimeHookKind::NpcEnter, npcId, sourceActorIndex);
+    executeNpcHook(context, EventRuntimeHookKind::NpcEnter, npcId, sourceActorIndex, hostHouseId);
     context.eventRuntimeState.dialogueState.ownedMercenaryOffer.reset();
     context.eventRuntimeState.dialogueState.pendingOwnedMercenaryJoin.reset();
     context.eventRuntimeState.dialogueState.hostHouseId = hostHouseId;
@@ -4865,9 +4871,8 @@ GameplayDialogController::Result GameplayDialogController::confirmHouseBankInput
             depositedAmount = context.pParty->gold();
         }
 
-        if (depositedAmount > 0)
+        if (depositedAmount > 0 && context.pParty->depositGoldToBank(depositedAmount) > 0)
         {
-            context.pParty->depositGoldToBank(depositedAmount);
             houseBankState.transactionPerformed = true;
 
             playSpeechReaction(
@@ -4895,9 +4900,8 @@ GameplayDialogController::Result GameplayDialogController::confirmHouseBankInput
             withdrawnAmount = context.pParty->bankGold();
         }
 
-        if (withdrawnAmount > 0)
+        if (withdrawnAmount > 0 && context.pParty->withdrawBankGold(withdrawnAmount) > 0)
         {
-            context.pParty->withdrawBankGold(withdrawnAmount);
             houseBankState.transactionPerformed = true;
         }
     }

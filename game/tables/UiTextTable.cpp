@@ -247,6 +247,8 @@ constexpr std::array<TextDefinition, size_t(UiTextTable::Message::Count)> Defini
     {"ui.not_applicable", "N/A"},
     {"ui.message_scroll_read_hint",
         "A message scroll. Pick up the scroll, then select the character's full-body portrait to read it."},
+    {"ui.item_broken", "Broken Item"},
+    {"ui.item_not_identified", "Not Identified"},
 }};
 
 bool hasExpectedParameters(const std::string &format, std::initializer_list<std::string_view> parameters)
@@ -306,7 +308,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     // the 179 with item feedback and stealing captions,
     // the 210 with item use and movement captions,
     // the 214 with equipment feedback captions,
-    // and the 223 with character status captions.
+    // the 223 with character status captions,
+    // and the 224 with the message-scroll reading hint.
     // Other missing-key shapes remain errors.
     constexpr size_t OriginalMessageCount = size_t(Message::ArcomageResign);
     constexpr size_t ArcomageMessageCount = size_t(Message::ItemTypeFormat);
@@ -329,6 +332,7 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
     constexpr size_t ItemUseMessageCount = size_t(Message::ItemCannotEquipHere);
     constexpr size_t EquipmentMessageCount = size_t(Message::ConditionGood);
     constexpr size_t CharacterStatusMessageCount = size_t(Message::MessageScrollReadHint);
+    constexpr size_t ScrollHintMessageCount = size_t(Message::ItemBroken);
     const size_t schemaMessageCount = rows.size();
     if (schemaMessageCount != Definitions.size()
         && schemaMessageCount != OriginalMessageCount
@@ -351,7 +355,8 @@ bool UiTextTable::loadFromRows(const std::vector<std::vector<std::string>> &rows
         && schemaMessageCount != ItemFeedbackMessageCount
         && schemaMessageCount != ItemUseMessageCount
         && schemaMessageCount != EquipmentMessageCount
-        && schemaMessageCount != CharacterStatusMessageCount)
+        && schemaMessageCount != CharacterStatusMessageCount
+        && schemaMessageCount != ScrollHintMessageCount)
     {
         return false;
     }

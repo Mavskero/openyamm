@@ -9,6 +9,7 @@
 #include <deque>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace OpenYAMM::Game
 {
@@ -85,6 +86,7 @@ private:
     uint64_t m_keyboardFocusGeneration = 0;
     bool m_keyboardFocusActive = true;
     std::string m_pendingTextInput;
+    std::vector<GameplayTextEditOperation> m_pendingTextEdits;
     std::array<uint16_t, SDL_SCANCODE_COUNT> m_pendingKeyboardPressCounts = {};
     std::deque<SDL_MouseButtonEvent> m_pendingMouseButtons;
     SDL_MouseButtonFlags m_deliveredMouseButtons = 0;

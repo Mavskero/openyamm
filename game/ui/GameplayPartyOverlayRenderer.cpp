@@ -5863,7 +5863,9 @@ void GameplayPartyOverlayRenderer::renderItemInspectOverlay(GameplayScreenRuntim
         showBrokenOnly || showUnidentifiedOnly
             ? std::string {} : resolveItemInspectDescriptionText(uiText, *pItemDefinition);
     const std::string itemStatusText =
-        showBrokenOnly ? "Broken item" : (showUnidentifiedOnly ? "Not identified" : std::string {});
+        showBrokenOnly
+            ? uiText.text(UiTextTable::Message::ItemBroken)
+            : (showUnidentifiedOnly ? uiText.text(UiTextTable::Message::ItemNotIdentified) : std::string {});
     const bool showStatusOnly = !itemStatusText.empty();
     const bool showDuration =
         !showStatusOnly

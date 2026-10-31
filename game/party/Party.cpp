@@ -4007,7 +4007,9 @@ bool Party::increaseActiveMemberSkillLevel(const std::string &skillName)
 
 int Party::depositGoldToBank(int amount)
 {
-    const int transferableGold = std::clamp(amount, 0, m_gold);
+    const int64_t bankCapacity = int64_t(std::numeric_limits<int>::max()) - m_bankGold;
+    const int transferableGold = static_cast<int>(
+        std::clamp<int64_t>(amount, 0, std::min<int64_t>(std::max(0, m_gold), bankCapacity)));
 
     if (transferableGold <= 0)
     {
@@ -4021,7 +4023,9 @@ int Party::depositGoldToBank(int amount)
 
 int Party::withdrawBankGold(int amount)
 {
-    const int transferableGold = std::clamp(amount, 0, m_bankGold);
+    const int64_t carriedCapacity = int64_t(std::numeric_limits<int>::max()) - m_gold;
+    const int transferableGold = static_cast<int>(
+        std::clamp<int64_t>(amount, 0, std::min<int64_t>(std::max(0, m_bankGold), carriedCapacity)));
 
     if (transferableGold <= 0)
     {
