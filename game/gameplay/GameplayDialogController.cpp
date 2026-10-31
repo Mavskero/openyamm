@@ -11,6 +11,7 @@
 #include "game/gameplay/HouseInteraction.h"
 #include "game/gameplay/MasteryTeacherDialog.h"
 #include "game/gameplay/MercenaryRecruitmentRuntime.h"
+#include "game/gameplay/NpcFollowerRuntime.h"
 #include "game/gameplay/OwnedMercenaryRuntime.h"
 #include "game/mm9/Mm9RudeDialogue.h"
 #include "game/mm9/Mm9MapTransition.h"
@@ -2652,7 +2653,8 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
                 }
                 pendingMove.travelPlan = {};
                 pendingMove.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
-                pendingMove.travelPlan.travelDays = std::max(0, (*pTransition)->travelDays);
+                pendingMove.travelPlan.travelDays = adjustedCrossMapTravelDays(
+                    context.eventRuntimeState, context.pCurrentMap, **pTransition, context.pParty);
                 pendingMove.travelPlan.foodRequired = mapTransitionTravelFoodRequired(context, **pTransition);
                 pendingMove.nativeArrivalStartEdge = (*pTransition)->nativeArrivalStartEdge;
             }
@@ -2704,7 +2706,8 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
         pendingMapMove.useMapStartPosition = (*pTransition)->useMapStartPosition;
         pendingMapMove.nativeArrivalStartEdge = (*pTransition)->nativeArrivalStartEdge;
         pendingMapMove.travelPlan.mode = EventRuntimeState::TravelPlanMode::TravelDays;
-        pendingMapMove.travelPlan.travelDays = std::max(0, (*pTransition)->travelDays);
+        pendingMapMove.travelPlan.travelDays = adjustedCrossMapTravelDays(
+            context.eventRuntimeState, context.pCurrentMap, **pTransition, context.pParty);
         pendingMapMove.travelPlan.foodRequired = mapTransitionTravelFoodRequired(context, **pTransition);
         assignMapMoveTraceSource(
             pendingMapMove,

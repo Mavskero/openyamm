@@ -11,6 +11,8 @@ namespace OpenYAMM::Game
 class MergedNpcProfessionTable;
 class NpcDialogTable;
 class Party;
+struct MapEdgeTransition;
+struct MapStatsEntry;
 
 struct HiredNpcFollowerView
 {
@@ -41,6 +43,11 @@ uint32_t hiredNpcFollowerGoldShare(uint32_t goldAmount, const EventRuntimeState 
 bool hiredNpcHasProfession(const EventRuntimeState &eventRuntimeState, uint32_t professionId);
 int hiredNpcTransportDayReduction(const EventRuntimeState &eventRuntimeState, bool stable);
 int hiredNpcCrossMapDayReduction(const EventRuntimeState &eventRuntimeState);
+int adjustedCrossMapTravelDays(
+    const EventRuntimeState &eventRuntimeState,
+    const MapStatsEntry *pCurrentMap,
+    const MapEdgeTransition &transition,
+    const Party *pParty = nullptr);
 int hiredNpcRestFoodReduction(const EventRuntimeState &eventRuntimeState);
 int hiredNpcSkillBonus(const EventRuntimeState &eventRuntimeState, const std::string &skillName);
 int hiredNpcSkillBonus(const std::vector<HiredNpcFollower> &followers, const std::string &skillName);

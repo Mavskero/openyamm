@@ -15,6 +15,17 @@ These rules apply to all AI-generated contributions in this repository.
   Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
   publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
 
+- 250 ACCEPTED_OFFLINE_MECHANICS_SCOPED: `openyamm/handoff/follower-travel-luck-250/README.md`.
+  Sharedpositiveoutdoorwalkingdays helper feedsquote andbothdeferredconfirmplans;Partyfollowers authoritative,
+  original5/6/7/44sum/min1;knownnonemptyoriginaledgespositive,unproven/default0retainedwithoutinventingaday.
+  ActualLuckscriptgetter includesprojectedLuckfor2D/26alias;base/private summaryunchanged,notUItooltip.
+  Native30.834s/unsignedgenericiOS30.591spass;2existingcases2.060s/57assert/15skippedpass,0newcases.
+  Twoaffectedwalkingformsquote/plan5→4,actualdeferredtime/food+heal,andLuckactual/alias/base/unprojected/dismiss
+  covered;7source/checkhashesmatch.0App/Save/resourceimport/device/simulator/campaign/Release. Adjacentraw
+  scriptresistance reviewed,noActualResistanceentry/newdefect. Resource246/002Ui233/Combat223/nav222/Save106
+  retained;fixedreleases/originals preserved. Physicalpaused,Sol6.1/max,~88%lowconfidence,fullnaturalcampaign/
+  allofflinecompletionunproved. Continueconcreteofflinework;donotreplaypassedbank/shop/routesormakecheckpoint.
+
 - 248–249 ACCEPTED_OFFLINE_MECHANICS_SCOPED: `openyamm/handoff/passive-follower-completion-248-249/README.md`.
   Shared23canonical NPCskillprojection/effectivecopy nowfeeds ordinaryspell/XP/price/Perception/Disarm/armor,
   retained7weapons;storedskills/mastery/equip/known/override/ownitemformulas preserved. IndependenttypedLuck/

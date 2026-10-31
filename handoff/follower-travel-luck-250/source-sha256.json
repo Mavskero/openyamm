@@ -1,0 +1,41 @@
+{
+  "changed_files": [
+    {
+      "path": "game/gameplay/GameplayDialogController.cpp",
+      "bytes": 191703,
+      "sha256": "81209d2ab31bc8f08e9cf8275ffdceeb609819a07acb9ab4be6567eff2dba671"
+    },
+    {
+      "path": "game/events/EventDialogContent.cpp",
+      "bytes": 77425,
+      "sha256": "60315ee7a63d4294e5d1e81b3adf69f0d0b203ecc9dfb87e3f2a046e937ef856"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.h",
+      "bytes": 2688,
+      "sha256": "126644c45e7c074f3ea27754022991267bf027bf224db94128911b9e5adc0d4a"
+    },
+    {
+      "path": "game/gameplay/NpcFollowerRuntime.cpp",
+      "bytes": 12869,
+      "sha256": "c158bf7789bef180e9d0877f4f15256fb22a7e3491f5bc337931f272d015132f"
+    },
+    {
+      "path": "game/gameplay/GameMechanics.cpp",
+      "bytes": 120883,
+      "sha256": "d930acd205b35d103b6f04d4f493966344c75c07c4ce71686f8756997fdf72f2"
+    },
+    {
+      "path": "tests/MM7MechanicsRuntimeTests.cpp",
+      "bytes": 30765,
+      "sha256": "e1a84e5f70722a9b653a48c3982fe50624936a492c13d2731cf8a7e0b065be8b"
+    },
+    {
+      "path": "tests/ScriptedMapTravelTests.cpp",
+      "bytes": 8203,
+      "sha256": "7ecdc26724091769acac5f2818a9cbcfded4eaaffa1a04a15811663d82a236c5"
+    }
+  ],
+  "production_files_count": 5,
+  "existing_test_files_count": 2
+}

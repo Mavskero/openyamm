@@ -19,16 +19,17 @@
 `handoff/ipados-device-231-232-20261031/README.md` 与 `scoped-result.json`。
 仓库为 [Mavskero/openyamm](https://github.com/Mavskero/openyamm)，开发分支 `codex/ipados`；
 提交`8989cf96dcd1d5c23de2d5da2a58030c92e3291d`记录231–232源码和脱敏受限真机结果。
-233–249及后续源码身份按当前Git提交和对应handoff逐文件摘要核对；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
+233–250及后续源码身份按当前Git提交和对应handoff逐文件摘要核对；242已推送并核对`673040d434d17207c0ac02f37763f271076c7b1f`，
 243–245为`ACCEPTED_OFFLINE_MAC_SCOPED`，Mac自然银行、商店、generated NPC及受影响修复已受限通过，未扩大到目标iPad验收。
 246随从字幕、247武器随从加成按源码／构建及既有组件范围受限通过，由主代理一次累计源码提交；没有新增App或设备验收。
 其累计基线`cb084d3a06c8085939ff60c1b0b00d8ed3125271`已推送并核对；248–249为`ACCEPTED_OFFLINE_MECHANICS_SCOPED`，7生产＋2既有测试共9份最终摘要核对。
+248–249已提交并推送`69c2fe94a574d0dbf34e06b5113670ccea1053bb`，远端HEAD及提交内9文件摘要核对通过；250已按源码／构建及两个既有case受限通过，7文件最终摘要全部匹配。
 恢复前先核对最新工作树和主代理后续结果，保留未提交工作，不reset／clean，不把该提交或旧Release当成更新后程序身份。
 
 固定Release229为 `ipados-ui-cumulative-229-20261030`，生产代码提交为
 `8cdae9215ef7bb52e8fe8f6e83bf16641280fd0e`；完整发布源码身份从该发布 `VERSION.json → source_head` 读取。
 按 `SOURCE-MANIFEST.json`、`ARTIFACT-SHA256SUMS`、`SHA256SUMS` 和 `delivery.json` 核对该固定发布，
-保留229、214、195和RC1–3原附件。231–249没有新Release，不能声称229附件已含后续修复。
+保留229、214、195和RC1–3原附件。231–250没有新Release，不能声称229附件已含后续修复。
 
 231–232实际通过旧Save104读取、正常UI穿戴护甲84／主手武器66、新槽Save12／105，
 以及两次保留数据更新后的独立进程读档。中文Stats／技能表头、真实重叠双指物品检查、
@@ -105,6 +106,11 @@ Party权威刷新含空followers，standalone Event fallback保留，带Event时
 首轮72断言71通过；只改两个夹具multiplier1.0→2.0，生产源不变，聚焦编译11.934844秒后仅该失败case复查1.942915秒／36断言通过，其他60个case未跑，原两项没有重跑，零新case。
 组件检查含XP125／价格／Perception与Disarm7／护甲AC＋2、buff／projectile rank／override／解雇、借用None→有效Normal、无Event防御／去重／stale Event／实际伤害函数及两名37叠加。
 247–249继续完整246/runtime-002／Ui233／Combat223／导航222／Save106；本批零App／写档／资源导入／设备／模拟器／战役回放／新Release，详见[248–249交接](handoff/passive-follower-completion-248-249/README.md)。
+250为`ACCEPTED_OFFLINE_MECHANICS_SCOPED`：ActualLuck脚本getter的0x2D／0x26别名读已投影Luck；步行quote／plan共享随从5／6／7／44减时，只处理正Days且源／目标均.odm。
+首次原生30.834420秒／未签名iOS30.590615秒及聚焦编译7.845368秒通过；首次仅2个既有case2.060471秒、57断言通过，15项跳过，零新case。
+walking两种生产确认形式（unpositioned／认证map_boundary）在Party有职业5、Event followers为空时quote／plan5→4，deferred前时间／食物不动、apply后＋4日／food10→5并治疗；Luck public值20、Base／未投影／解雇后10保持。
+原Lua无条件min1，但已知原表非空edge均正Days，未找到认证0日实例；default／未证0日保留，0日原源适配未证明。脚本／MM9／boat等路径不变；相邻Resistance仅raw／Base／Bonus，未找到ActualResistance消费者，未改。
+250零App／写档／资源导入／设备／模拟器／旧路线／战役回放／Release，继续完整246/runtime-002／Ui233／Combat223／导航222／Save106，见[250交接](handoff/follower-travel-luck-250/README.md)。
 完整自然战役和所有离线工作完成仍未证明。
 
 暂停前设备最后观察为232的House64标准商品页；已有库存截图在暂停后作了离线复核，但未执行拖离、购买或交易结果检查，商店条件仍未验。
@@ -119,7 +125,7 @@ Party权威刷新含空followers，standalone Event fallback保留，带Event时
 不得沿用上次摘要冒充恢复前的新核对。旧档只用副本，新保存只用未占用槽和新名称，不覆盖原件。
 合法 `save10.oysav` 是195正常新建牧师的“中文保存测试”手动档，恢复授权后可用于新索匹格镇银行自然条件；
 不能修改其物品、金钱或位姿来凑条件。243／245隔离Mac新档不扩大232设备原核对时点的结论。
-当前249仍写Save106、真实105／104读取证据沿用236；固定229及235不能读106，
+当前250仍写Save106、真实105／104读取证据沿用236；固定229及235不能读106，
 固定214／195及旧RC也不能读取105，回退须用保留的相应可读旧格式副本。
 
 固定229完整六文件为 `engine.zip`、`conversion.json`、`mm6.zip`、`mm7.zip`、`mm8.zip`、`mmmerge.zip`。

@@ -1,5 +1,6 @@
 #include "doctest/doctest.h"
 #include "tests/HouseDialogueTestHarness.h"
+#include "game/gameplay/TravelRuntime.h"
 
 #include <algorithm>
 #include <array>
@@ -110,29 +111,57 @@ TEST_CASE("scripted outdoor confirmation and cancellation do not charge implicit
 
 TEST_CASE("explicit outdoor walking route still charges its declared time and food and rests")
 {
-    HouseDialogueTestHarness harness(data());
-    MapStatsEntry map = {};
-    map.fileName = "Out02.odm";
-    map.name = "Source map";
-    map.eastTransition.emplace();
-    map.eastTransition->destinationMapFileName = "Out06.odm";
-    map.eastTransition->travelDays = 1;
-    harness.setCurrentMap(map);
-    harness.party().addFood(10 - harness.party().food());
-    Character *pMember = harness.party().activeMember();
-    REQUIRE(pMember != nullptr);
-    pMember->health = 1;
-    pMember->spellPoints = 0;
-    const double clock = harness.worldRuntime().gameMinutes();
-    EventRuntimeState::PendingDialogueContext prompt;
-    prompt.kind = DialogueContextKind::MapTransition;
-    prompt.sourceId = uint32_t(MapBoundaryEdge::East);
-    harness.eventRuntimeState().pendingDialogueContext = prompt;
-    choose(harness, EventDialogActionKind::MapTransitionConfirm);
-    CHECK(harness.worldRuntime().gameMinutes() == clock + 24 * 60);
-    CHECK(harness.party().food() == 5);
-    CHECK(harness.party().activeMember()->health == harness.party().activeMember()->maxHealth);
-    CHECK(harness.party().activeMember()->spellPoints == harness.party().activeMember()->maxSpellPoints);
-    REQUIRE(harness.eventRuntimeState().pendingMapMove.has_value());
-    CHECK(harness.eventRuntimeState().pendingMapMove->mapName == "Out06.odm");
+    // Exercise the two actual walking confirmation forms, including their deferred settlement.
+    for (bool positionedBoundary : {false, true})
+    {
+        CAPTURE(positionedBoundary);
+        HouseDialogueTestHarness harness(data());
+        MapStatsEntry map = {};
+        map.fileName = "Out02.odm";
+        map.name = "Source map";
+        map.eastTransition.emplace();
+        map.eastTransition->destinationMapFileName = "Out06.odm";
+        map.eastTransition->travelDays = 5;
+        harness.setCurrentMap(map);
+        harness.eventRuntimeState().mapFileName = map.fileName;
+        // Leave Event followers empty: the current Party owns hired followers for both quote/plan.
+        harness.party().addHiredNpcFollower({2001, 5, 100});
+        harness.party().addFood(10 - harness.party().food());
+        Character *pMember = harness.party().activeMember();
+        REQUIRE(pMember != nullptr);
+        pMember->health = 1;
+        pMember->spellPoints = 0;
+        const double clock = harness.worldRuntime().gameMinutes();
+        EventRuntimeState::PendingDialogueContext prompt;
+        prompt.kind = DialogueContextKind::MapTransition;
+        prompt.sourceId = uint32_t(MapBoundaryEdge::East);
+        if (positionedBoundary)
+        {
+            prompt.transitionMapMove.emplace();
+            prompt.transitionMapMove->mapName = "Out06.odm";
+            prompt.transitionMapMove->traceSourceKind = "map_boundary";
+            prompt.transitionMapMove->traceSourceId = prompt.sourceId;
+        }
+        harness.eventRuntimeState().pendingDialogueContext = prompt;
+        const EventDialogContent quote = buildEventDialogContent(
+            harness.eventRuntimeState(), 0, false, nullptr, nullptr, nullptr, nullptr, nullptr,
+            &map, nullptr, &harness.party(), &harness.worldRuntime(), float(clock));
+        REQUIRE_FALSE(quote.lines.empty());
+        CHECK(quote.lines[0] == "It will take 4 days to travel to Out06.odm.");
+        choose(harness, EventDialogActionKind::MapTransitionConfirm);
+        REQUIRE(harness.eventRuntimeState().pendingMapMove.has_value());
+        CHECK(harness.eventRuntimeState().pendingMapMove->mapName == "Out06.odm");
+        const auto plan = harness.eventRuntimeState().pendingMapMove->travelPlan;
+        CHECK(plan.mode == EventRuntimeState::TravelPlanMode::TravelDays);
+        CHECK(plan.travelDays == 4);
+        CHECK(plan.foodRequired == 5);
+        CHECK(harness.worldRuntime().gameMinutes() == clock);
+        CHECK(harness.party().food() == 10);
+        std::string error;
+        REQUIRE_MESSAGE(applyDeferredTravelPlan(harness.party(), &harness.worldRuntime(), plan, error), error);
+        CHECK(harness.worldRuntime().gameMinutes() == clock + 4 * 24 * 60);
+        CHECK(harness.party().food() == 5);
+        CHECK(harness.party().activeMember()->health == harness.party().activeMember()->maxHealth);
+        CHECK(harness.party().activeMember()->spellPoints == harness.party().activeMember()->maxSpellPoints);
+    }
 }

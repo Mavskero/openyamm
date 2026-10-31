@@ -539,6 +539,12 @@ TEST_CASE("MMerge follower luck and resistance bonuses are visible in character 
     const auto explicitEvent = GameMechanics::buildCharacterSheetSummary(
         *party.activeMember(), nullptr, nullptr, nullptr, &state);
     CHECK_EQ(projected.luck.actual, summary.luck.actual);
+    CHECK_EQ(GameMechanics::resolveCharacterDisplayedActualPrimaryStat(*party.activeMember(), 0x2D, nullptr), 20);
+    CHECK_EQ(GameMechanics::resolveCharacterDisplayedActualPrimaryStat(*party.activeMember(), 0x26, nullptr), 20);
+    CHECK_EQ(GameMechanics::resolveCharacterDisplayedBasePrimaryStat(*party.activeMember(), 0x26, nullptr), 10);
+    Character unprojected = *party.activeMember();
+    unprojected.hasHiredNpcDefenseProjection = false;
+    CHECK_EQ(GameMechanics::resolveCharacterDisplayedActualPrimaryStat(unprojected, 0x2D, nullptr), 10);
     CHECK_EQ(projected.fireResistance.actual, summary.fireResistance.actual);
     CHECK_EQ(explicitEvent.luck.actual, projected.luck.actual);
     CHECK_EQ(explicitEvent.fireResistance.actual, projected.fireResistance.actual);
@@ -557,6 +563,7 @@ TEST_CASE("MMerge follower luck and resistance bonuses are visible in character 
     const auto staleEvent = GameMechanics::buildCharacterSheetSummary(
         *party.activeMember(), nullptr, nullptr, nullptr, &state);
     CHECK_EQ(staleEvent.luck.actual, 10);
+    CHECK_EQ(GameMechanics::resolveCharacterDisplayedActualPrimaryStat(*party.activeMember(), 0x2D, nullptr), 10);
     CHECK_EQ(staleEvent.fireResistance.actual, 5);
 }
 

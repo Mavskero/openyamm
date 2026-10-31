@@ -2167,13 +2167,18 @@ int GameMechanics::resolveCharacterDisplayedActualPrimaryStat(
     const StandardItemEnchantTable *pStandardItemEnchantTable,
     const SpecialItemEnchantTable *pSpecialItemEnchantTable)
 {
+    const int followerLuckBonus = character.hasHiredNpcDefenseProjection
+            && (rawStatId == 0x26 || rawStatId == 0x2D)
+        ? character.hiredNpcDefenseBonuses.luck : 0;
+
     return resolveCharacterDisplayedBasePrimaryStat(
             character,
             rawStatId,
             pItemTable,
             pStandardItemEnchantTable,
             pSpecialItemEnchantTable)
-        + resolveCharacterPrimaryStatMagicalBonusValue(character, rawStatId);
+        + resolveCharacterPrimaryStatMagicalBonusValue(character, rawStatId)
+        + followerLuckBonus;
 }
 
 CharacterSheetSummary GameMechanics::buildCharacterSheetSummary(

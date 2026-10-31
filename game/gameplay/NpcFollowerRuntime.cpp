@@ -1,6 +1,8 @@
 #include "game/gameplay/NpcFollowerRuntime.h"
 
+#include "game/StringUtils.h"
 #include "game/party/Party.h"
+#include "game/tables/MapStats.h"
 #include "game/tables/MergedBaseTables.h"
 #include "game/tables/NpcDialogTable.h"
 
@@ -221,6 +223,33 @@ int hiredNpcCrossMapDayReduction(const EventRuntimeState &eventRuntimeState)
     }
 
     return reduction;
+}
+
+int adjustedCrossMapTravelDays(
+    const EventRuntimeState &eventRuntimeState,
+    const MapStatsEntry *pCurrentMap,
+    const MapEdgeTransition &transition,
+    const Party *pParty)
+{
+    const int baseDays = std::max(0, transition.travelDays);
+
+    // Preserve zero-day/default entries; only a timed walking journey has a one-day floor.
+    if (baseDays == 0 || pCurrentMap == nullptr
+        || !toLowerCopy(pCurrentMap->fileName).ends_with(".odm")
+        || !toLowerCopy(transition.destinationMapFileName).ends_with(".odm"))
+    {
+        return baseDays;
+    }
+
+    EventRuntimeState partyNpcState = {};
+    const EventRuntimeState *pNpcState = &eventRuntimeState;
+    if (pParty != nullptr)
+    {
+        pParty->applyGlobalNpcStateTo(partyNpcState);
+        pNpcState = &partyNpcState;
+    }
+
+    return std::max(1, baseDays - hiredNpcCrossMapDayReduction(*pNpcState));
 }
 
 int hiredNpcRestFoodReduction(const EventRuntimeState &eventRuntimeState)

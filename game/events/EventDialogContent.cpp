@@ -7,6 +7,7 @@
 #include "game/gameplay/HouseInteraction.h"
 #include "game/gameplay/MasteryTeacherDialog.h"
 #include "game/gameplay/MercenaryRecruitmentRuntime.h"
+#include "game/gameplay/NpcFollowerRuntime.h"
 #include "game/gameplay/ReputationRuntime.h"
 #include "game/StringUtils.h"
 #include "game/tables/CharacterInspectTable.h"
@@ -1120,7 +1121,9 @@ EventDialogContent buildEventDialogContent(
 
         // A positioned script move has no implicit journey duration. Only an explicit edge route
         // supplies days here; two outdoor filenames alone do not describe a walking journey.
-        const int travelDays = pTransition != nullptr && pTransition->has_value() ? (*pTransition)->travelDays : 0;
+        const int travelDays = pTransition != nullptr && pTransition->has_value()
+            ? adjustedCrossMapTravelDays(npcRuntimeState, pCurrentMap, **pTransition)
+            : 0;
         if (travelDays > 0)
         {
             std::string duration =
