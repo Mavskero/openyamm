@@ -1,0 +1,82 @@
+{
+  "checkpoint": 236,
+  "scope": "ACCEPTED_SOURCE_BUILD_AND_FOCUSED_OFFLINE_CODEC_AI_CHECK",
+  "at": "2026-10-31T07:40:37.037617+00:00",
+  "base_commit": "1e0ef5b6b6e29fc6ffaa15a69636be959caaab26",
+  "source_files": 9,
+  "built_source_hashes_match": true,
+  "checks": {
+    "build-native-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 101.163699042,
+      "timed_out": false
+    },
+    "build-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 98.016708583,
+      "timed_out": false
+    },
+    "compile-codec-check-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 5.170731417,
+      "timed_out": false
+    },
+    "codec-flight-check-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.252685166,
+      "timed_out": false
+    }
+  },
+  "codec_ai_result": {
+    "legacy104_105_read": true,
+    "four_snapshot_paths_roundtrip": true,
+    "nullopt_retained": true,
+    "invalid_writes_atomic": true,
+    "corrupt106_rejected": true,
+    "fixed_flight_z_three_cases": true,
+    "expired_marker_cleared": true,
+    "ground_and_horizontal_unchanged": true,
+    "old_input_bytes_unchanged": true
+  },
+  "new_unit_test_cases": 0,
+  "new_scoped_check": "one 222-recipe derivative for new106 field and sharedAI; no campaign suite",
+  "check_source": {
+    "path": "save106-flight-check.cpp",
+    "sha256": "929e135e365d47cbb22a2995da037069d3b00be31f51b265f4993b9f93340f32"
+  },
+  "save_write_version": 106,
+  "real_legacy_versions_read": [
+    104,
+    105
+  ],
+  "original_save_bytes_unchanged": true,
+  "gameplay_save_writes": 0,
+  "private_codec_fixture_files_created": 3,
+  "original_exe": {
+    "sha256": "97be86a7597fbd9763f9b4b0ed1f4a7e47c960703fa30857c32daa056b7d403b",
+    "yell_flee_chain": [
+      "0x42e78d",
+      "0x438856",
+      "0x402a6b"
+    ],
+    "yaw_pitch_consumption": "0x46f376-0x46f40d; yaw separately drivesXY, sin(pitch) drivesZ, no horizontalcos scaling",
+    "fixed_direction": "actor.Z+0.75*BodyHeight towardParty.Z+1 forFly",
+    "review_scope": "authenticated original source/exe function inspection, not an actual live campaign"
+  },
+  "runtime_base": "local-data/validation/offline-input-completion-235/runtime-002",
+  "ui_text_keys": 227,
+  "runtime_members_changed": [],
+  "runtime_files_unchanged": true,
+  "App_run": false,
+  "actual_flying_actor_pixels_or_touch_proved": false,
+  "physical_debugging_paused": true,
+  "device_operations": false,
+  "simulator_operations": false,
+  "old_campaign_replays": 0,
+  "subagent_model": "gpt-6.1-sol",
+  "subagent_reasoning": "max",
+  "new_release": false,
+  "full_goal_achieved": false,
+  "project_estimate_percent": 88,
+  "estimate_confidence": "low"
+}

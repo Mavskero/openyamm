@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 
 namespace OpenYAMM::Game
 {
@@ -22,13 +23,16 @@ struct ActorFleeReaction
     float yawRadians = 0.0f;
     float moveDirectionX = 0.0f;
     float moveDirectionY = 0.0f;
+    std::optional<float> yellFleeMoveDirectionZ;
 };
 
 inline ActorFleeReaction partyYellFleeReaction(
     const GameplayWorldPoint &actor,
     const GameplayWorldPoint &party,
     uint16_t moveSpeed,
-    uint32_t randomValue)
+    uint32_t randomValue,
+    uint16_t bodyHeight,
+    bool canFly)
 {
     constexpr float Pi = 3.14159265358979323846f;
     constexpr int TicksPerSecond = 128;
@@ -48,6 +52,15 @@ inline ActorFleeReaction partyYellFleeReaction(
         Pi * 2.0f);
     reaction.moveDirectionX = std::cos(reaction.yawRadians);
     reaction.moveDirectionY = std::sin(reaction.yawRadians);
+
+    if (canFly)
+    {
+        // The original flee direction uses Fly (1) as the party's vertical offset.
+        const float verticalDelta = party.z + 1.0f - (actor.z + static_cast<float>(bodyHeight) * 0.75f);
+        const float pitchRadians = std::atan2(verticalDelta, horizontalDistance);
+        reaction.yellFleeMoveDirectionZ = std::clamp(std::sin(pitchRadians), -1.0f, 1.0f);
+    }
+
     return reaction;
 }
 }

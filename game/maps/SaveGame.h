@@ -71,6 +71,7 @@ void migrateLegacyPartyMemberIdentities(GameSaveData &data, uint32_t sourceSaveV
 bool saveGameDataToPath(const std::filesystem::path &path, const GameSaveData &data, std::string &error,
     const BreachAlvarFriendActorRules *pCompanionRules = nullptr,
     const BreachMercenaryProfile *pMercenaryProfile = nullptr);
+// Save106 retains a flying actor's fixed Yell flee vertical direction. Older actor states have no override.
 // Save105 retains native outdoor arrival-start intent across queued/session/dialogue map moves. Older moves
 // have no native selector and keep their saved position semantics.
 // Save104 retains session-owned map moves and deferred travel plans. Older queued moves have already paid,

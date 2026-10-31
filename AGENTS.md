@@ -15,6 +15,16 @@ These rules apply to all AI-generated contributions in this repository.
   Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
   publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
 
+- 236 ACCEPTED_OFFLINE_SCOPED: `handoff/yell-flight-direction-236/README.md`.
+  Authenticated originalMM8 Yell flightpitch now persists typed optionalZ throughsharedFlee andboth worlds;
+  originalXY unscaled, no current-target/+512 overwrite, lifecycle clears; ordinaryFear/lowHP/Treant/RNG unchanged.
+  Save106 writesnewfield, real105/104readonly pass;root/cachedOutdoor+Indoor/nullopt/invalidwriter-atomic/corruptreader
+  and3fixedZ+expiry sharedAI checkedonce0.253s using222recipe derivative.0newunitcases/App/gameplaysave/device/
+  campaign/Release;3privatecodecfixturefiles only, oldinputsbytesunchanged. Native101.164s/unsignediOS98.017s
+  pass;9sourcehashmatch. Resource235/runtime-002 entirelyretained(Ui227),fixedreleases untouched. Fixed229/235
+  cannotread106;rollback uses preserved105/oldercopy. No actualflyingpixel/touch/fullcampaign claim. Current
+  physicaldebugging remainsuserpaused;subagentsSol6.1/max. BoundedUIKitIME bridge source review ongoing.
+
 - 234 ACCEPTED_OFFLINE_SCOPED (2026-10-31): `handoff/offline-function-completion-234/README.md`.
   Generated identity/NpcEnter now prepares original dynamic greetings/admission using existing Lua RNG;
   original script fingerprints and14 current-language GlobalTxt dependencies imported. Ordered SDL edits,

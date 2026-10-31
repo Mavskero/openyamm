@@ -5905,6 +5905,12 @@ std::vector<bool> IndoorWorldRuntime::applyIndoorActorAiFrameResult(
         {
             aiState.moveDirectionX = update.movementIntent.moveDirectionX;
             aiState.moveDirectionY = update.movementIntent.moveDirectionY;
+            aiState.yellFleeMoveDirectionZ = update.movementIntent.yellFleeMoveDirectionZ;
+        }
+
+        if (aiState.motionState != ActorAiMotionState::Fleeing || aiState.actionSeconds <= 0.0f || !aiState.canFly)
+        {
+            aiState.yellFleeMoveDirectionZ.reset();
         }
 
         if (update.movementIntent.updateYaw && !deferPathOwnedMovementIntent)
@@ -5989,6 +5995,7 @@ std::vector<bool> IndoorWorldRuntime::applyIndoorActorAiFrameResult(
         {
             actor.hp = 0;
             aiState.motionState = ActorAiMotionState::Dead;
+            aiState.yellFleeMoveDirectionZ.reset();
             aiState.animationState = ActorAiAnimationState::Dead;
             aiState.attackImpactTriggered = false;
             actor.currentActionAnimation = indoorActionAnimationFromActorAi(ActorAiAnimationState::Dead);
@@ -9747,6 +9754,7 @@ void IndoorWorldRuntime::applyIndoorActorMovementIntegration(
     movementFacts.runtime.crowdSideSign = aiState.crowdSideSign;
     movementFacts.movement.position =
         GameplayWorldPoint{aiState.preciseX, aiState.preciseY, aiState.preciseZ};
+    movementFacts.movement.yellFleeMoveDirectionZ = aiState.yellFleeMoveDirectionZ;
     movementFacts.movement.effectiveMoveSpeed = effectiveMoveSpeed;
     movementFacts.movement.contactedActorCount = contactedActorCount;
 
@@ -9880,6 +9888,7 @@ void IndoorWorldRuntime::applyIndoorActorMovementIntegration(
     {
         aiState.moveDirectionX = movementUpdate.movementIntent.moveDirectionX;
         aiState.moveDirectionY = movementUpdate.movementIntent.moveDirectionY;
+        aiState.yellFleeMoveDirectionZ = movementUpdate.movementIntent.yellFleeMoveDirectionZ;
     }
 
     if (movementUpdate.movementIntent.updateYaw)
@@ -9895,6 +9904,11 @@ void IndoorWorldRuntime::applyIndoorActorMovementIntegration(
     if (movementUpdate.state.motionState)
     {
         aiState.motionState = *movementUpdate.state.motionState;
+    }
+
+    if (aiState.motionState != ActorAiMotionState::Fleeing || aiState.actionSeconds <= 0.0f || !aiState.canFly)
+    {
+        aiState.yellFleeMoveDirectionZ.reset();
     }
 
     if (movementUpdate.animation.animationState)
@@ -10389,6 +10403,7 @@ std::optional<ActorAiFacts> IndoorWorldRuntime::collectIndoorActorAiFacts(
         GameplayWorldPoint{aiState.homePreciseX, aiState.homePreciseY, aiState.homePreciseZ};
     facts.movement.moveDirectionX = aiState.moveDirectionX;
     facts.movement.moveDirectionY = aiState.moveDirectionY;
+    facts.movement.yellFleeMoveDirectionZ = aiState.yellFleeMoveDirectionZ;
     facts.movement.velocityX = aiState.velocityX;
     facts.movement.velocityY = aiState.velocityY;
     facts.movement.velocityZ = aiState.velocityZ;
@@ -10864,6 +10879,7 @@ void IndoorWorldRuntime::updateTurnBasedPausedActorAnimations(float deltaSeconds
         if (actor.hp <= 0 && aiState.motionState != ActorAiMotionState::Dying)
         {
             aiState.motionState = ActorAiMotionState::Dying;
+            aiState.yellFleeMoveDirectionZ.reset();
             aiState.animationState = ActorAiAnimationState::Dying;
             aiState.actionSeconds = aiState.dyingAnimationSeconds;
             aiState.animationTimeTicks = 0.0f;
@@ -10895,6 +10911,7 @@ void IndoorWorldRuntime::updateTurnBasedPausedActorAnimations(float deltaSeconds
                 if (aiState.actionSeconds <= 0.0f)
                 {
                     aiState.motionState = ActorAiMotionState::Standing;
+                    aiState.yellFleeMoveDirectionZ.reset();
                     aiState.animationState = ActorAiAnimationState::Standing;
                 }
 
@@ -10910,6 +10927,7 @@ void IndoorWorldRuntime::updateTurnBasedPausedActorAnimations(float deltaSeconds
             }
 
             aiState.motionState = ActorAiMotionState::Standing;
+            aiState.yellFleeMoveDirectionZ.reset();
             aiState.moveDirectionX = 0.0f;
             aiState.moveDirectionY = 0.0f;
             aiState.velocityX = 0.0f;
@@ -11013,6 +11031,7 @@ void IndoorWorldRuntime::updateTurnBasedPausedActorAnimations(float deltaSeconds
         {
             actor.hp = 0;
             aiState.motionState = ActorAiMotionState::Dead;
+            aiState.yellFleeMoveDirectionZ.reset();
             aiState.animationState = ActorAiAnimationState::Dead;
             aiState.actionSeconds = 0.0f;
             aiState.animationTimeTicks = 0.0f;
@@ -11977,7 +11996,8 @@ void IndoorWorldRuntime::fleeNearbyActorsFromParty()
         }
 
         const ActorFleeReaction reaction = partyYellFleeReaction(
-            actorPosition, partyPosition, aiState.movementSpeed, EventRuntime::randomValue(*pEventState, 0));
+            actorPosition, partyPosition, aiState.movementSpeed, EventRuntime::randomValue(*pEventState, 0),
+            aiState.collisionHeight, aiState.canFly);
         aiState.motionState = ActorAiMotionState::Fleeing;
         aiState.animationState = ActorAiAnimationState::Walking;
         aiState.animationTimeTicks = 0.0f;
@@ -11985,6 +12005,8 @@ void IndoorWorldRuntime::fleeNearbyActorsFromParty()
         aiState.yawRadians = reaction.yawRadians;
         aiState.moveDirectionX = reaction.moveDirectionX;
         aiState.moveDirectionY = reaction.moveDirectionY;
+        aiState.yellFleeMoveDirectionZ = reaction.actionSeconds > 0.0f
+            ? reaction.yellFleeMoveDirectionZ : std::nullopt;
         actor.currentActionAnimation = indoorActionAnimationFromActorAi(aiState.animationState);
     }
 }
@@ -12782,6 +12804,7 @@ bool IndoorWorldRuntime::applyPartySpellToActor(
             | static_cast<uint32_t>(EvtActorAttribute::Aggressor)
             | static_cast<uint32_t>(EvtActorAttribute::Nearby));
         aiState.motionState = ActorAiMotionState::Standing;
+        aiState.yellFleeMoveDirectionZ.reset();
         aiState.animationState = ActorAiAnimationState::Standing;
         aiState.animationTimeTicks = 0.0f;
         aiState.actionSeconds = 0.0f;
@@ -13615,6 +13638,7 @@ void IndoorWorldRuntime::beginMapActorDyingState(size_t actorIndex, MapDeltaActo
     }
 
     aiState.motionState = ActorAiMotionState::Dying;
+    aiState.yellFleeMoveDirectionZ.reset();
     aiState.animationState = ActorAiAnimationState::Dying;
     aiState.actionSeconds = aiState.dyingAnimationSeconds;
     aiState.animationTimeTicks = 0.0f;
@@ -13929,6 +13953,7 @@ void IndoorWorldRuntime::updateResolvedActorSpecials(float deltaSeconds)
         removed.specialState.replicationPending = false;
         removed.specialState.replicationDueGameMinutes = 0.0;
         removed.motionState = ActorAiMotionState::Dead;
+        removed.yellFleeMoveDirectionZ.reset();
         removed.animationState = ActorAiAnimationState::Dead;
         removed.velocityX = removed.velocityY = removed.velocityZ = 0.0f;
         if (m_activeCorpseView && m_activeCorpseView->sourceIndex == actorIndex)
@@ -14318,6 +14343,7 @@ void IndoorWorldRuntime::beginMapActorHitReaction(
     const MonsterEntry *pMonsterEntry =
         m_pMonsterTable != nullptr ? resolveRuntimeMonsterEntry(*m_pMonsterTable, actor) : nullptr;
     aiState.motionState = ActorAiMotionState::Stunned;
+    aiState.yellFleeMoveDirectionZ.reset();
     aiState.animationState = ActorAiAnimationState::GotHit;
     aiState.animationTimeTicks = 0.0f;
     aiState.actionSeconds =
@@ -15059,6 +15085,7 @@ bool IndoorWorldRuntime::applyPartyAttackMeleeDamage(
         {
             aiState.suppressLowHealthFlee = true;
             aiState.motionState = ActorAiMotionState::Standing;
+            aiState.yellFleeMoveDirectionZ.reset();
             aiState.animationState = ActorAiAnimationState::Standing;
             aiState.actionSeconds = 0.0f;
             aiState.moveDirectionX = 0.0f;
@@ -17849,6 +17876,17 @@ void IndoorWorldRuntime::restoreSnapshot(const Snapshot &snapshot)
     for (size_t index = 0; index < restoredActors.size(); ++index)
     {
         MapActorAiState &state = restoredActors[index];
+        if (state.yellFleeMoveDirectionZ
+            && (!std::isfinite(*state.yellFleeMoveDirectionZ)
+                || *state.yellFleeMoveDirectionZ < -1.0f || *state.yellFleeMoveDirectionZ > 1.0f))
+        {
+            throw std::invalid_argument("Invalid restored indoor Yell flee direction");
+        }
+
+        if (state.motionState != ActorAiMotionState::Fleeing || state.actionSeconds <= 0.0f || !state.canFly)
+        {
+            state.yellFleeMoveDirectionZ.reset();
+        }
         state.pResolvedCombatView.reset();
         state.bolsterCacheValid = false;
         if (state.combatState.resolved() == nullptr)
@@ -17981,6 +18019,7 @@ void IndoorWorldRuntime::applyMapReentryReset()
             aiState.preciseY = aiState.homePreciseY;
             aiState.preciseZ = aiState.homePreciseZ;
             aiState.motionState = ActorAiMotionState::Standing;
+            aiState.yellFleeMoveDirectionZ.reset();
             aiState.animationState = ActorAiAnimationState::Standing;
             aiState.animationTimeTicks = 0.0f;
             aiState.actionSeconds = 0.0f;

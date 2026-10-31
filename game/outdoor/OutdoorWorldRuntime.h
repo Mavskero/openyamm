@@ -327,6 +327,8 @@ public:
         // Save101: source removal is terminal for this actor identity, independent of death/visibility masks.
         bool sourceRemoved = false;
         std::optional<uint32_t> levelOverride;
+        // Save106: the fixed sin(pitch) of an active flying Yell flee.
+        std::optional<float> yellFleeMoveDirectionZ;
 
         bool isSourceRemoved() const noexcept { return sourceRemoved || breachAlvarCompanionRemoved; }
     };
@@ -1706,6 +1708,7 @@ private:
         ActorAiMovementAction movementAction,
         float moveSpeed,
         float desiredMoveZ,
+        bool preserveYellFleeDirection,
         bool meleePursuitActive,
         bool inMeleeRange,
         const GameplayWorldPoint &targetPosition,

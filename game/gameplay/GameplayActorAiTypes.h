@@ -245,6 +245,7 @@ struct ActorMovementFacts
     bool movementAllowed = false;
     bool movementBlocked = false;
     bool movementSuppressedByNavigation = false;
+    std::optional<float> yellFleeMoveDirectionZ;
 };
 
 struct ActorWorldFacts
@@ -334,6 +335,8 @@ struct ActorMovementIntent
     bool inMeleeRange = false;
     bool resetCrowdSteering = false;
     bool updateCrowdProbePosition = false;
+    // Presence also preserves a level pitch instead of applying the target-height fallback.
+    std::optional<float> yellFleeMoveDirectionZ;
 };
 
 struct ActorAttackRequest

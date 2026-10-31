@@ -142,6 +142,8 @@ public:
         mutable int32_t bolsterCacheUniqueNameId = 0;
         mutable bool bolsterCacheUniqueNameExcluded = false;
         mutable GameplayMonsterBolsterResult bolsterCache = {};
+        // Save106: the fixed sin(pitch) of an active flying Yell flee.
+        std::optional<float> yellFleeMoveDirectionZ;
     };
 
     struct ActorInspectPreviewAnimationState

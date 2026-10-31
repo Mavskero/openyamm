@@ -793,6 +793,7 @@ bool sameBreachAlvarActorBaseline(const OutdoorWorldRuntime::MapActorState &a,
         && a.actionSeconds == b.actionSeconds
         && a.moveDirectionX == b.moveDirectionX
         && a.moveDirectionY == b.moveDirectionY
+        && a.yellFleeMoveDirectionZ == b.yellFleeMoveDirectionZ
         && a.velocityX == b.velocityX
         && a.velocityY == b.velocityY
         && a.velocityZ == b.velocityZ
@@ -3547,6 +3548,7 @@ void beginHitReaction(
     const SpriteFrameTable *pSpriteFrameTable)
 {
     actor.aiState = OutdoorWorldRuntime::ActorAiState::Stunned;
+    actor.yellFleeMoveDirectionZ.reset();
     actor.animation = OutdoorWorldRuntime::ActorAnimation::GotHit;
     actor.animationTimeTicks = 0.0f;
     actor.moveDirectionX = 0.0f;
@@ -3572,6 +3574,7 @@ void beginDyingState(
 {
     actor.currentHp = 0;
     actor.aiState = OutdoorWorldRuntime::ActorAiState::Dying;
+    actor.yellFleeMoveDirectionZ.reset();
     actor.animation = OutdoorWorldRuntime::ActorAnimation::Dying;
     actor.animationTimeTicks = 0.0f;
     actor.moveDirectionX = 0.0f;
@@ -4703,6 +4706,7 @@ void updateInactiveActorPresentation(
     if (actor.isDead || actor.aiState == OutdoorWorldRuntime::ActorAiState::Dead)
     {
         actor.aiState = OutdoorWorldRuntime::ActorAiState::Dead;
+        actor.yellFleeMoveDirectionZ.reset();
         actor.animation = OutdoorWorldRuntime::ActorAnimation::Dead;
         actor.moveDirectionX = 0.0f;
         actor.moveDirectionY = 0.0f;
@@ -4712,6 +4716,7 @@ void updateInactiveActorPresentation(
     }
 
     actor.aiState = OutdoorWorldRuntime::ActorAiState::Standing;
+    actor.yellFleeMoveDirectionZ.reset();
     actor.moveDirectionX = 0.0f;
     actor.moveDirectionY = 0.0f;
     actor.velocityX = 0.0f;
@@ -4774,6 +4779,7 @@ void updateTurnBasedActorWaitingPresentation(
     if (actor.isDead || actor.aiState == OutdoorWorldRuntime::ActorAiState::Dead)
     {
         actor.aiState = OutdoorWorldRuntime::ActorAiState::Dead;
+        actor.yellFleeMoveDirectionZ.reset();
         actor.animation = OutdoorWorldRuntime::ActorAnimation::Dead;
         actor.moveDirectionX = 0.0f;
         actor.moveDirectionY = 0.0f;
@@ -4783,6 +4789,7 @@ void updateTurnBasedActorWaitingPresentation(
     }
 
     actor.aiState = OutdoorWorldRuntime::ActorAiState::Standing;
+    actor.yellFleeMoveDirectionZ.reset();
     actor.moveDirectionX = 0.0f;
     actor.moveDirectionY = 0.0f;
     actor.velocityX = 0.0f;
@@ -7079,6 +7086,7 @@ void OutdoorWorldRuntime::updateTurnBasedPausedActorAnimations(float deltaSecond
         if (deathFrame.action == InactiveActorDeathAction::HoldDead)
         {
             actor.aiState = ActorAiState::Dead;
+            actor.yellFleeMoveDirectionZ.reset();
             actor.animation = ActorAnimation::Dead;
             actor.moveDirectionX = 0.0f;
             actor.moveDirectionY = 0.0f;
@@ -7115,6 +7123,7 @@ void OutdoorWorldRuntime::updateTurnBasedPausedActorAnimations(float deltaSecond
                 if (actor.actionSeconds <= 0.0f)
                 {
                     actor.aiState = ActorAiState::Standing;
+                    actor.yellFleeMoveDirectionZ.reset();
                     actor.animation = ActorAnimation::Standing;
                     actor.attackImpactTriggered = false;
                 }
@@ -7128,6 +7137,7 @@ void OutdoorWorldRuntime::updateTurnBasedPausedActorAnimations(float deltaSecond
 
         spawnBloodSplatForActorIfNeeded(actorIndex);
         actor.aiState = ActorAiState::Dying;
+        actor.yellFleeMoveDirectionZ.reset();
         actor.animation = ActorAnimation::Dying;
         actor.animationTimeTicks += animationTickDelta;
         actor.actionSeconds = deathFrame.actionSeconds;
@@ -7224,6 +7234,7 @@ void OutdoorWorldRuntime::stopTurnBasedActorMovement()
         }
 
         actor.aiState = ActorAiState::Standing;
+        actor.yellFleeMoveDirectionZ.reset();
         actor.animation = ActorAnimation::Standing;
         actor.moveDirectionX = 0.0f;
         actor.moveDirectionY = 0.0f;
@@ -7694,6 +7705,16 @@ OutdoorWorldRuntime::Snapshot OutdoorWorldRuntime::snapshot() const
 
 void OutdoorWorldRuntime::restoreSnapshot(const Snapshot &snapshot)
 {
+    for (const MapActorState &actor : snapshot.mapActors)
+    {
+        if (actor.yellFleeMoveDirectionZ
+            && (!std::isfinite(*actor.yellFleeMoveDirectionZ)
+                || *actor.yellFleeMoveDirectionZ < -1.0f || *actor.yellFleeMoveDirectionZ > 1.0f))
+        {
+            throw std::invalid_argument("Invalid restored outdoor Yell flee direction");
+        }
+    }
+
     ++m_breachAlvarSceneGeneration;
     if (!validGameMinutes(snapshot.gameMinutes))
     {
@@ -7891,6 +7912,10 @@ void OutdoorWorldRuntime::restoreSnapshot(const Snapshot &snapshot)
     for (MapActorState &actor : m_mapActors)
     {
         enforceBreachAlvarFriendActorLifecycle(actor);
+        if (actor.aiState != ActorAiState::Fleeing || actor.actionSeconds <= 0.0f || !actor.canFly)
+        {
+            actor.yellFleeMoveDirectionZ.reset();
+        }
     }
     if (m_activeCorpseView && m_activeCorpseView->sourceIndex < m_mapActors.size()
         && m_mapActors[m_activeCorpseView->sourceIndex].isSourceRemoved())
@@ -7941,6 +7966,7 @@ void OutdoorWorldRuntime::applyMapReentryReset()
         actor.z = actor.homeZ;
         actor.currentHp = std::max(1, actor.combatState.maximumHitPoints());
         actor.aiState = ActorAiState::Standing;
+        actor.yellFleeMoveDirectionZ.reset();
         actor.animation = ActorAnimation::Standing;
         actor.animationTimeTicks = 0.0f;
         actor.actionSeconds = 0.0f;
@@ -9178,6 +9204,7 @@ std::optional<ActorAiFacts> OutdoorWorldRuntime::collectOutdoorActorAiFacts(
     facts.movement.homePosition = GameplayWorldPoint{actor.homePreciseX, actor.homePreciseY, actor.homePreciseZ};
     facts.movement.moveDirectionX = actor.moveDirectionX;
     facts.movement.moveDirectionY = actor.moveDirectionY;
+    facts.movement.yellFleeMoveDirectionZ = actor.yellFleeMoveDirectionZ;
     facts.movement.velocityX = actor.velocityX;
     facts.movement.velocityY = actor.velocityY;
     facts.movement.velocityZ = actor.velocityZ;
@@ -9751,6 +9778,12 @@ void OutdoorWorldRuntime::applyOutdoorActorMovementIntent(
     {
         actor.moveDirectionX = movementIntent.moveDirectionX;
         actor.moveDirectionY = movementIntent.moveDirectionY;
+        actor.yellFleeMoveDirectionZ = movementIntent.yellFleeMoveDirectionZ;
+    }
+
+    if (actor.aiState != ActorAiState::Fleeing || actor.actionSeconds <= 0.0f || !actor.canFly)
+    {
+        actor.yellFleeMoveDirectionZ.reset();
     }
 
     if (movementIntent.updateYaw)
@@ -9798,6 +9831,7 @@ void OutdoorWorldRuntime::applyOutdoorActorMovementIntent(
         movementIntent.action,
         movementIntent.moveSpeed,
         movementIntent.desiredMoveZ,
+        movementIntent.yellFleeMoveDirectionZ.has_value(),
         movementIntent.meleePursuitActive,
         movementIntent.inMeleeRange,
         movementIntent.targetPosition,
@@ -10190,6 +10224,7 @@ void OutdoorWorldRuntime::applyOutdoorActorPostMovementAiUpdate(
     {
         actor.moveDirectionX = movementUpdate.movementIntent.moveDirectionX;
         actor.moveDirectionY = movementUpdate.movementIntent.moveDirectionY;
+        actor.yellFleeMoveDirectionZ = movementUpdate.movementIntent.yellFleeMoveDirectionZ;
     }
 
     if (movementUpdate.movementIntent.updateYaw)
@@ -10205,6 +10240,11 @@ void OutdoorWorldRuntime::applyOutdoorActorPostMovementAiUpdate(
     if (movementUpdate.state.motionState)
     {
         actor.aiState = outdoorActorAiStateFromGameplay(*movementUpdate.state.motionState);
+    }
+
+    if (actor.aiState != ActorAiState::Fleeing || actor.actionSeconds <= 0.0f || !actor.canFly)
+    {
+        actor.yellFleeMoveDirectionZ.reset();
     }
 
     if (movementUpdate.animation.animationState)
@@ -10235,6 +10275,7 @@ void OutdoorWorldRuntime::applyOutdoorActorMovementIntegration(
     ActorAiMovementAction movementAction,
     float moveSpeed,
     float desiredMoveZ,
+    bool preserveYellFleeDirection,
     bool meleePursuitActive,
     bool inMeleeRange,
     const GameplayWorldPoint &targetPosition,
@@ -10530,7 +10571,7 @@ void OutdoorWorldRuntime::applyOutdoorActorMovementIntegration(
 
     float effectiveDesiredMoveZ = desiredMoveZ;
 
-    if (pStats->canFly && std::abs(effectiveDesiredMoveZ) <= 0.001f)
+    if (pStats->canFly && !preserveYellFleeDirection && std::abs(effectiveDesiredMoveZ) <= 0.001f)
     {
         const float actorTargetZ =
             actor.preciseZ + std::max(24.0f, static_cast<float>(actor.height) * 0.7f);
@@ -10784,6 +10825,7 @@ void OutdoorWorldRuntime::applyOutdoorActorMovementIntegration(
     movementFacts.movement.position = GameplayWorldPoint{actor.preciseX, actor.preciseY, actor.preciseZ};
     movementFacts.movement.moveDirectionX = actor.moveDirectionX;
     movementFacts.movement.moveDirectionY = actor.moveDirectionY;
+    movementFacts.movement.yellFleeMoveDirectionZ = actor.yellFleeMoveDirectionZ;
     movementFacts.movement.velocityX = actor.velocityX;
     movementFacts.movement.velocityY = actor.velocityY;
     movementFacts.movement.velocityZ = actor.velocityZ;
@@ -10844,6 +10886,7 @@ void OutdoorWorldRuntime::updateOutdoorInactiveAndInvalidActors(
             {
                 resetCrowdSteeringState(actor);
                 actor.aiState = ActorAiState::Dead;
+                actor.yellFleeMoveDirectionZ.reset();
                 actor.animation = ActorAnimation::Dead;
                 continue;
             }
@@ -10897,6 +10940,7 @@ void OutdoorWorldRuntime::updateOutdoorInactiveAndInvalidActors(
             if (inactiveDeathFrame.action == InactiveActorDeathAction::HoldDead)
             {
                 actor.aiState = ActorAiState::Dead;
+                actor.yellFleeMoveDirectionZ.reset();
                 actor.animation = ActorAnimation::Dead;
                 actor.moveDirectionX = 0.0f;
                 actor.moveDirectionY = 0.0f;
@@ -10916,6 +10960,7 @@ void OutdoorWorldRuntime::updateOutdoorInactiveAndInvalidActors(
                 if (inactiveDeathFrame.action == InactiveActorDeathAction::AdvanceDying)
                 {
                     actor.aiState = ActorAiState::Dying;
+                    actor.yellFleeMoveDirectionZ.reset();
                     actor.animation = ActorAnimation::Dying;
                     actor.animationTimeTicks += ActorUpdateStepSeconds * TicksPerSecond;
                     actor.actionSeconds = inactiveDeathFrame.actionSeconds;
@@ -10990,6 +11035,7 @@ void OutdoorWorldRuntime::updateMm9ActorReactions(
             if (!actor.isDead && !actor.hostileToParty)
             {
                 actor.aiState = ActorAiState::Standing;
+                actor.yellFleeMoveDirectionZ.reset();
                 actor.animation = ActorAnimation::Standing;
                 actor.actionSeconds = 0.0f;
                 actor.moveDirectionX = 0.0f;
@@ -14579,7 +14625,8 @@ void OutdoorWorldRuntime::fleeNearbyActorsFromParty()
         }
 
         const ActorFleeReaction reaction = partyYellFleeReaction(
-            actorPosition, partyPosition, actor.moveSpeed, EventRuntime::randomValue(*pEventState, 0));
+            actorPosition, partyPosition, actor.moveSpeed, EventRuntime::randomValue(*pEventState, 0),
+            actor.height, actor.canFly);
         actor.aiState = ActorAiState::Fleeing;
         actor.animation = ActorAnimation::Walking;
         actor.animationTimeTicks = 0.0f;
@@ -14587,6 +14634,8 @@ void OutdoorWorldRuntime::fleeNearbyActorsFromParty()
         actor.yawRadians = reaction.yawRadians;
         actor.moveDirectionX = reaction.moveDirectionX;
         actor.moveDirectionY = reaction.moveDirectionY;
+        actor.yellFleeMoveDirectionZ = reaction.actionSeconds > 0.0f
+            ? reaction.yellFleeMoveDirectionZ : std::nullopt;
     }
 }
 
@@ -15858,6 +15907,7 @@ bool OutdoorWorldRuntime::setMapActorDead(size_t actorIndex, bool isDead, bool e
     actor.isDead = isDead;
     actor.currentHp = isDead ? 0 : actor.combatState.maximumHitPoints();
     actor.aiState = isDead ? ActorAiState::Dead : ActorAiState::Standing;
+    actor.yellFleeMoveDirectionZ.reset();
     actor.animation = isDead ? ActorAnimation::Dead : ActorAnimation::Standing;
     actor.animationTimeTicks = 0.0f;
     actor.actionSeconds = 0.0f;
@@ -16293,6 +16343,7 @@ bool OutdoorWorldRuntime::setMapActorHostileToParty(
     }
 
     actor.aiState = ActorAiState::Standing;
+    actor.yellFleeMoveDirectionZ.reset();
     actor.animation = ActorAnimation::Standing;
     actor.animationTimeTicks = 0.0f;
     actor.moveDirectionX = 0.0f;
@@ -16403,6 +16454,7 @@ bool OutdoorWorldRuntime::applyPartyAttackToMapActor(
     {
         actor.suppressLowHealthFlee = true;
         actor.aiState = ActorAiState::Standing;
+        actor.yellFleeMoveDirectionZ.reset();
         actor.animation = ActorAnimation::Standing;
         actor.actionSeconds = 0.0f;
         actor.moveDirectionX = 0.0f;
@@ -16606,6 +16658,7 @@ void OutdoorWorldRuntime::applyPartyAttackMeleeEffects(
         actor.stunRemainingSeconds =
             std::max(actor.stunRemainingSeconds, 0.5f + 0.35f * static_cast<float>(skillLevel));
         actor.aiState = ActorAiState::Stunned;
+        actor.yellFleeMoveDirectionZ.reset();
         actor.animation = ActorAnimation::GotHit;
         actor.actionSeconds = std::max(actor.actionSeconds, actor.stunRemainingSeconds);
         const bx::Vec3 knockback = actorKnockbackVelocity(
@@ -17058,6 +17111,7 @@ bool OutdoorWorldRuntime::applyPartySpellToMapActor(
                 [&actor]()
             {
                 actor.aiState = ActorAiState::Standing;
+                actor.yellFleeMoveDirectionZ.reset();
                 actor.animation = ActorAnimation::Standing;
                 actor.animationTimeTicks = 0.0f;
                 actor.actionSeconds = 0.0f;
@@ -17074,6 +17128,7 @@ bool OutdoorWorldRuntime::applyPartySpellToMapActor(
                 case GameplayActorService::SharedSpellEffectKind::Stun:
                 {
                     actor.aiState = ActorAiState::Stunned;
+                    actor.yellFleeMoveDirectionZ.reset();
                     actor.animation = ActorAnimation::GotHit;
                     actor.actionSeconds = std::max(actor.actionSeconds, actor.stunRemainingSeconds);
                     faceDirection(actor, partyX - actor.preciseX, partyY - actor.preciseY);
@@ -17336,6 +17391,7 @@ bool OutdoorWorldRuntime::resurrectMapActor(size_t actorIndex, int health, bool 
     actor.homeY = actor.y;
     actor.homeZ = actor.z;
     actor.aiState = ActorAiState::Standing;
+    actor.yellFleeMoveDirectionZ.reset();
     actor.animation = ActorAnimation::Standing;
     actor.animationTimeTicks = 0.0f;
     actor.actionSeconds = 0.0f;
@@ -17594,6 +17650,7 @@ bool OutdoorWorldRuntime::faceMapActorTowardPoint(size_t actorIndex, float targe
 
     faceDirection(actor, targetX - actor.preciseX, targetY - actor.preciseY);
     actor.aiState = ActorAiState::Standing;
+    actor.yellFleeMoveDirectionZ.reset();
     actor.animation = ActorAnimation::Standing;
     actor.animationTimeTicks = 0.0f;
     actor.moveDirectionX = 0.0f;
@@ -19197,6 +19254,7 @@ void OutdoorWorldRuntime::maintainBreachAlvarFriendActor()
         {
             actor.isDead = false;
             actor.aiState = ActorAiState::Standing;
+            actor.yellFleeMoveDirectionZ.reset();
             actor.animation = ActorAnimation::Standing;
             actor.animationTimeTicks = actor.actionSeconds = 0.0f;
             actor.attackImpactTriggered = false;
@@ -20993,6 +21051,7 @@ void OutdoorWorldRuntime::resolveArmageddonDetonation(float partyX, float partyY
         {
             actor.stunRemainingSeconds = std::max(actor.stunRemainingSeconds, 1.0f);
             actor.aiState = ActorAiState::Stunned;
+            actor.yellFleeMoveDirectionZ.reset();
             actor.animation = ActorAnimation::GotHit;
             actor.actionSeconds = std::max(actor.actionSeconds, actor.stunRemainingSeconds);
         }

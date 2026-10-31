@@ -39,7 +39,8 @@ namespace OpenYAMM::Game
 {
 namespace
 {
-constexpr uint32_t SaveVersion = 105;
+constexpr uint32_t SaveVersion = 106;
+constexpr uint32_t SaveVersionYellFleeMoveDirectionZ = 106;
 constexpr uint32_t SaveVersionNativeArrivalStart = 105;
 constexpr uint32_t SaveVersionDeferredTravel = 104;
 constexpr uint32_t SaveVersionReusableMercenarySlots = 103;
@@ -412,6 +413,29 @@ bool readValue(BinaryReader &reader, std::optional<T> &value)
     }
 
     value = std::move(decoded);
+    return true;
+}
+
+bool validYellFleeMoveDirectionZ(const std::optional<float> &value)
+{
+    return !value || (std::isfinite(*value) && *value >= -1.0f && *value <= 1.0f);
+}
+
+bool readYellFleeMoveDirectionZ(BinaryReader &reader, std::optional<float> &value)
+{
+    if (reader.version() < SaveVersionYellFleeMoveDirectionZ)
+    {
+        value.reset();
+        return true;
+    }
+
+    std::optional<float> decoded;
+    if (!readValue(reader, decoded) || !validYellFleeMoveDirectionZ(decoded))
+    {
+        return false;
+    }
+
+    value = decoded;
     return true;
 }
 
@@ -2146,6 +2170,7 @@ void writeValue(BinaryWriter &writer, const IndoorWorldRuntime::MapActorAiState 
     writeValue(writer, value.homePreciseZ);
     writeValue(writer, value.moveDirectionX);
     writeValue(writer, value.moveDirectionY);
+    writeValue(writer, value.yellFleeMoveDirectionZ);
     writeValue(writer, value.velocityX);
     writeValue(writer, value.velocityY);
     writeValue(writer, value.velocityZ);
@@ -2208,6 +2233,7 @@ bool readValue(BinaryReader &reader, IndoorWorldRuntime::MapActorAiState &value)
         && readValue(reader, value.homePreciseZ)
         && readValue(reader, value.moveDirectionX)
         && readValue(reader, value.moveDirectionY)
+        && readYellFleeMoveDirectionZ(reader, value.yellFleeMoveDirectionZ)
         && readValue(reader, value.velocityX)
         && readValue(reader, value.velocityY)
         && readValue(reader, value.velocityZ)
@@ -3641,6 +3667,7 @@ void writeValue(BinaryWriter &writer, const OutdoorWorldRuntime::MapActorState &
     writeValue(writer, value.actionSeconds);
     writeValue(writer, value.moveDirectionX);
     writeValue(writer, value.moveDirectionY);
+    writeValue(writer, value.yellFleeMoveDirectionZ);
     writeValue(writer, value.velocityX);
     writeValue(writer, value.velocityY);
     writeValue(writer, value.velocityZ);
@@ -3797,6 +3824,7 @@ bool readValue(BinaryReader &reader, OutdoorWorldRuntime::MapActorState &value)
         && readValue(reader, value.actionSeconds)
         && readValue(reader, value.moveDirectionX)
         && readValue(reader, value.moveDirectionY)
+        && readYellFleeMoveDirectionZ(reader, value.yellFleeMoveDirectionZ)
         && readValue(reader, value.velocityX)
         && readValue(reader, value.velocityY)
         && readValue(reader, value.velocityZ)
@@ -6017,6 +6045,11 @@ bool validateSavedActorCombat(const GameSaveData &data, std::string &error)
             [](const auto &actor) { return actor.combatState.resolved() != nullptr; });
         for (const OutdoorWorldRuntime::MapActorState &actor : world.mapActors)
         {
+            if (!validYellFleeMoveDirectionZ(actor.yellFleeMoveDirectionZ))
+            {
+                error = "Invalid outdoor Yell flee vertical direction";
+                return false;
+            }
             if (actor.combatState.mode() == GameplayActorCombatMode::LegacyDynamic
                 || (hasResolved && !actorIds.insert(actor.actorId).second))
             {
@@ -6052,6 +6085,11 @@ bool validateSavedActorCombat(const GameSaveData &data, std::string &error)
         for (size_t index = 0; index < actors.size(); ++index)
         {
             const IndoorWorldRuntime::MapActorAiState &actor = actors[index];
+            if (!validYellFleeMoveDirectionZ(actor.yellFleeMoveDirectionZ))
+            {
+                error = "Invalid indoor Yell flee vertical direction";
+                return false;
+            }
             if (actor.stolenItems.size() > 2 || std::any_of(actor.stolenItems.begin(), actor.stolenItems.end(),
                 [](const InventoryItem &item)
                 {

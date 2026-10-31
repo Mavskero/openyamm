@@ -1,0 +1,38 @@
+[
+  {
+    "path": "game/gameplay/ActorFleeReaction.h",
+    "sha256": "a661c4fb77ca2b4c1c7ea9049cc0a761e3220c3584a86eb61bc8e281404ffbd4"
+  },
+  {
+    "path": "game/gameplay/GameplayActorAiSystem.cpp",
+    "sha256": "db373f2e622f99cc976a7a20bb9bb062d09c24af3cc5e311805818b646bde413"
+  },
+  {
+    "path": "game/gameplay/GameplayActorAiTypes.h",
+    "sha256": "fc8e2b4a0d62f0d46e9f0196a855d58efcb6a88d720b93eda0a0d110b7ac88ae"
+  },
+  {
+    "path": "game/indoor/IndoorWorldRuntime.cpp",
+    "sha256": "98095dbb4b30d8d699ffc10774c3b83740ee7273f087a2e2088421a1819aa5d5"
+  },
+  {
+    "path": "game/indoor/IndoorWorldRuntime.h",
+    "sha256": "2f0f568500df9f98c1052f6fadc7a267f85ee6aa92a840305f083b25a4fd9b10"
+  },
+  {
+    "path": "game/maps/SaveGame.cpp",
+    "sha256": "a49cc34c43d10f964e94527e9a1b9a20e053c12dd3caa5677debcad9a2a680b5"
+  },
+  {
+    "path": "game/maps/SaveGame.h",
+    "sha256": "6d393918f364699a53965fbedbc3cae5140501afcd038cdc9db23a5a59d6c1a0"
+  },
+  {
+    "path": "game/outdoor/OutdoorWorldRuntime.cpp",
+    "sha256": "1c4cc154a7eaed10a4fdbf4a0ea62caeece5c9ee6aaa2161600841c54044b7b4"
+  },
+  {
+    "path": "game/outdoor/OutdoorWorldRuntime.h",
+    "sha256": "9680814743eddf081f1aba51bc17b9e9f723029ce743949f8574694696d85db4"
+  }
+]

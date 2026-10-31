@@ -1903,7 +1903,9 @@ ActorMovementCommit buildActiveMovementCommit(
     const float verticalTargetDelta = movementTargetPosition.z - actor.world.targetZ;
     const bool flyingVerticalMove =
         actor.stats.canFly
-        && std::abs(verticalTargetDelta) > 8.0f;
+        && (update.movementIntent.yellFleeMoveDirectionZ
+            ? std::abs(*update.movementIntent.yellFleeMoveDirectionZ) > 0.001f
+            : std::abs(verticalTargetDelta) > 8.0f);
 
     result.resetCrowdSteering = !preserveCrowdSteering;
     result.applyMovement =
@@ -2075,6 +2077,12 @@ bool AI_ContinueFlee(ActorAiCommandContext &ai)
     ai.setMovementAction(ActorAiMovementAction::Flee);
     ai.setMoveDirection(actor.movement.moveDirectionX, actor.movement.moveDirectionY);
     ai.setDesiredMovement(actor.movement.moveDirectionX, actor.movement.moveDirectionY);
+
+    if (actor.stats.canFly && actor.movement.yellFleeMoveDirectionZ)
+    {
+        ai.update().movementIntent.yellFleeMoveDirectionZ = actor.movement.yellFleeMoveDirectionZ;
+    }
+
     ai.faceYaw(std::atan2(actor.movement.moveDirectionY, actor.movement.moveDirectionX));
     ai.update().movementIntent.applyMovement = true;
     return true;
@@ -2442,7 +2450,11 @@ void applyActiveMovementCommit(
     update.movementIntent.targetHasAttackLineOfSight = actor.target.currentHasAttackLineOfSight;
     update.movementIntent.inMeleeRange = actor.movement.inMeleeRange;
 
-    if (actor.stats.canFly)
+    if (update.movementIntent.yellFleeMoveDirectionZ)
+    {
+        update.movementIntent.desiredMoveZ = *update.movementIntent.yellFleeMoveDirectionZ;
+    }
+    else if (actor.stats.canFly)
     {
         const float verticalTargetDelta = movementTargetPosition.z - actor.world.targetZ;
         const float horizontalDistance =
