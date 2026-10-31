@@ -105,6 +105,18 @@ void GameInputSystem::deliverMobileTouchPath(MobileTouchPath &path, int screenWi
     path = {};
 }
 
+void GameInputSystem::clearTextComposition()
+{
+    // Preserve earlier edit ordering so composition-owned keys stay composition-owned.
+    if (!m_pendingTextEdits.empty()
+        && m_pendingTextEdits.back().kind == GameplayTextEditOperation::Kind::Composition
+        && m_pendingTextEdits.back().text.empty())
+    {
+        return;
+    }
+    m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::Composition, {}});
+}
+
 void GameInputSystem::handleSdlEvent(const SDL_Event &event)
 {
     if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
@@ -116,6 +128,7 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         m_pendingKeyboardPressCounts.fill(0);
         m_pendingTextInput.clear();
         m_pendingTextEdits.clear();
+        clearTextComposition();
         resetRelativeMouseMotion();
         return;
     }
@@ -147,12 +160,20 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         return;
     }
 
+    if (event.type == SDL_EVENT_TEXT_EDITING)
+    {
+        m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::Composition,
+            event.edit.text != nullptr ? event.edit.text : ""});
+        return;
+    }
+
     if (event.type == SDL_EVENT_TEXT_INPUT)
     {
+        m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::InsertText,
+            event.text.text != nullptr ? event.text.text : ""});
         if (event.text.text != nullptr)
         {
             m_pendingTextInput.append(event.text.text, std::strlen(event.text.text));
-            m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::InsertText, event.text.text});
         }
 
         return;
@@ -192,6 +213,14 @@ void GameInputSystem::handleSdlEvent(const SDL_Event &event)
         else if (event.key.scancode == SDL_SCANCODE_DELETE)
         {
             m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::Delete, {}});
+        }
+        else if (event.key.scancode == SDL_SCANCODE_RETURN || event.key.scancode == SDL_SCANCODE_KP_ENTER)
+        {
+            m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::Confirm, {}});
+        }
+        else if (event.key.scancode == SDL_SCANCODE_ESCAPE)
+        {
+            m_pendingTextEdits.push_back({GameplayTextEditOperation::Kind::Cancel, {}});
         }
         else if (!textInputActive)
         {
@@ -476,6 +505,10 @@ void GameInputSystem::updateFromEngineInput(
     {
         *m_frame.textEdits = std::move(m_pendingTextEdits);
         m_frame.keyboardPressCounts = m_pendingKeyboardPressCounts;
+    }
+    else
+    {
+        m_frame.textEdits->push_back({GameplayTextEditOperation::Kind::Composition, {}});
     }
 
     m_pendingTextEdits.clear();

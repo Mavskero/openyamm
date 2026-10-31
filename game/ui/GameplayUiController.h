@@ -341,8 +341,17 @@ public:
         bool editActive = false;
         size_t editSlotIndex = 0;
         std::string editBuffer;
+        std::string compositionText;
+        bool compositionActive = false;
+        bool compositionEraseHeldSuppressed = false;
         std::string errorText;
         std::vector<SaveSlotSummary> slots;
+
+        void clearTextComposition()
+        {
+            compositionText.clear();
+            compositionActive = false;
+        }
     };
 
     struct LoadGameScreenState
@@ -434,7 +443,15 @@ public:
         uint32_t houseId = 0;
         HouseBankInputMode inputMode = HouseBankInputMode::None;
         std::string inputText;
+        std::string compositionText;
+        bool compositionActive = false;
         bool transactionPerformed = false;
+
+        void clearTextComposition()
+        {
+            compositionText.clear();
+            compositionActive = false;
+        }
 
         bool inputActive() const
         {

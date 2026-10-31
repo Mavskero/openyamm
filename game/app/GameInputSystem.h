@@ -34,6 +34,7 @@ public:
     bool consumeMobileDebugConsoleToggleRequested();
     void resetRelativeMouseMotion();
     void suppressMouseButtonsUntilReleased();
+    void clearTextComposition();
 
 private:
     enum class MobileTouchRole

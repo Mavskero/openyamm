@@ -1,0 +1,116 @@
+{
+  "checkpoint": 237,
+  "status": "ACCEPTED_OFFLINE_SCOPED",
+  "base_commit": "3b0bb81d7595a3fd41a2d77addbe6d89b74bd0d0",
+  "date": "2026-10-31",
+  "physical_debugging": "paused_by_explicit_user_instruction",
+  "subagent_model": "gpt-6.1-sol",
+  "subagent_reasoning": "max",
+  "production_changes": [
+    "Persistent UIKit patch exposes hidden native marked text as presentation-only SDL_TEXT_EDITING; clear precedes original commit/delete diff; guarded unmark fallback uses the same original diff once",
+    "UIKit selection offsets convert UTF16 to SDL character indices; original committedText baseline, commit/delete rules, 64-space backspace baseline and scene-bounds patch retained",
+    "Save/name/bank transient preedit is separate from committed buffers; ordered Confirm/Cancel stop later edits; composition-owned keys cannot erase or submit committed text",
+    "Focus/owner/slot/scroll/close and console clear presentation with ordered cancellation; held erase suppression remains until release or a new valid erase",
+    "Bank ordered Escape retains the original Action113 rejection once; nonbank and nullopt legacy routes retained",
+    "New-name and question direct SDL editors connect manual paste using existing modifiers, Unicode filters and character limits only outside composition"
+  ],
+  "checks": {
+    "configure-ios-001": {
+      "exit_code": 0,
+      "elapsed_seconds": 1.008836375
+    },
+    "build-native-002": {
+      "exit_code": 0,
+      "elapsed_seconds": 90.5679645
+    },
+    "build-ios-002": {
+      "exit_code": 0,
+      "elapsed_seconds": 96.96185175
+    },
+    "input-check-002": {
+      "exit_code": 0,
+      "elapsed_seconds": 0.9023552499999999
+    }
+  },
+  "source_count": 15,
+  "production_files": 12,
+  "cmake_patch_files": 2,
+  "existing_input_check_files": 1,
+  "all_15_built_source_hashes_match": true,
+  "uikit_dependency_sha256": "f7523109c6baf167e518df6f251b3a05091c7e6ac2782e3e1f788562bd793f3b",
+  "existing_input_executable_runs": 1,
+  "affected_assertions_added": 8,
+  "new_unit_cases": 0,
+  "input_check_scope": [
+    "Save composition-owned Backspace/Return/Escape protection",
+    "Commit followed by real Return in the same frame",
+    "Focus loss and gain within a frame",
+    "Blocked input clear",
+    "Queued console clear preserves earlier IME key ownership",
+    "Bank composition key protection",
+    "Bank Confirm excludes later text",
+    "Controlled Action113 hook rejection is honored once"
+  ],
+  "bank_check_limit": "Input consumer only. The first bank boundary uses no world; the Escape check uses a controlled rejecting hook. No bank transaction or original campaign hook was executed.",
+  "preserved_attempts": [
+    {
+      "names": [
+        "build-native-001",
+        "build-ios-001"
+      ],
+      "status": "interrupted_by_main_for_confirmed_source_review_correction",
+      "elapsed_seconds_each_approximately": 88.327,
+      "reason": "New ordered bank Cancel initially bypassed Action113 rejection; corrected before accepted builds"
+    },
+    {
+      "name": "input-check-001",
+      "status": "launch_failed_before_execution",
+      "reason": "Wrong executable directory; corrected path used once in input-check-002; no extra test execution"
+    }
+  ],
+  "runtime": {
+    "checkpoint": 235,
+    "assembly": "runtime-002",
+    "changed_this_checkpoint": false,
+    "ui_text": 227,
+    "combat_text": 223,
+    "navigation": 222,
+    "new_overlay": false,
+    "four_worlds_retained": true
+  },
+  "save": {
+    "current_write_version": 106,
+    "format_changed_this_checkpoint": false,
+    "last_verified_legacy_versions": [
+      104,
+      105
+    ],
+    "legacy_verification_checkpoint": 236,
+    "gameplay_save_writes": 0,
+    "codec_fixture_writes_this_checkpoint": 0,
+    "old_saves_touched": false
+  },
+  "main_game_app_runs": 0,
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "campaign_replays": 0,
+  "new_release": false,
+  "not_proved": [
+    "Actual UIKit IME callback and hardware keyboard ordering",
+    "Actual preedit pixels or physical touch",
+    "Actual bank/shop transactions",
+    "Long question device input",
+    "Full natural campaign"
+  ],
+  "fixed_releases_retained": [
+    "229",
+    "214",
+    "195",
+    "RC1",
+    "RC2",
+    "RC3"
+  ],
+  "full_goal_achieved": false,
+  "engineering_estimate_percent": 88,
+  "estimate_confidence": "low; qualitative, not measured campaign coverage"
+}

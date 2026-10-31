@@ -540,6 +540,7 @@ void GameplayUiController::beginHouseBankInput(uint32_t houseId, HouseBankInputM
     state.houseBankState.houseId = houseId;
     state.houseBankState.inputMode = mode;
     state.houseBankState.inputText.clear();
+    state.houseBankState.clearTextComposition();
 }
 
 void GameplayUiController::clearHouseBankState()

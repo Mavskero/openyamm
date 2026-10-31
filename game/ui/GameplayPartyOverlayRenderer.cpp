@@ -3791,6 +3791,10 @@ void GameplayPartyOverlayRenderer::renderSaveLoadOverlay(
         if (editingRow)
         {
             label = pSaveGameScreen->editBuffer;
+            if (pSaveGameScreen->compositionActive && !pSaveGameScreen->compositionText.empty())
+            {
+                label += "[" + pSaveGameScreen->compositionText + "]";
+            }
 
             if ((SDL_GetTicks() / 500u) % 2u == 0u)
             {

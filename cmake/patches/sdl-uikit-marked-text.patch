@@ -1,0 +1,159 @@
+--- a/src/video/uikit/SDL_uikitviewcontroller.m
++++ b/src/video/uikit/SDL_uikitviewcontroller.m
+@@ -55,6 +55,14 @@
+ }
+ #endif
+ 
++#ifdef SDL_IPHONE_KEYBOARD
++@interface SDL_uikitviewcontroller ()
++- (void)syncMarkedText;
++- (void)clearMarkedText;
++- (void)textFieldDidUnmarkText;
++@end
++#endif
++
+ @implementation SDLUITextField : UITextField
+ - (BOOL)canPerformAction:(SEL)action withSender:(id)sender
+ {
+@@ -64,6 +72,21 @@
+ 
+     return [super canPerformAction:action withSender:sender];
+ }
++
++#ifdef SDL_IPHONE_KEYBOARD
++// OpenYAMM: unmarking need not change the field's text or post a notification.
++- (void)setMarkedText:(NSString *)markedText selectedRange:(NSRange)selectedRange
++{
++    [super setMarkedText:markedText selectedRange:selectedRange];
++    [(SDL_uikitviewcontroller *)self.delegate syncMarkedText];
++}
++
++- (void)unmarkText
++{
++    [super unmarkText];
++    [(SDL_uikitviewcontroller *)self.delegate textFieldDidUnmarkText];
++}
++#endif
+ @end
+ 
+ @implementation SDL_uikitviewcontroller
+@@ -79,6 +102,9 @@
+     BOOL rotatingOrientation;
+     NSString *committedText;
+     NSString *obligateForBackspace;
++    NSString *lastMarkedText;
++    int lastMarkedTextStart;
++    int lastMarkedTextLength;
+     BOOL isOTPMode;
+ #endif
+ }
+@@ -517,6 +543,8 @@
+  * also hides the onscreen virtual keyboard if no hardware keyboard is attached. */
+ - (bool)stopTextInput
+ {
++    [self clearMarkedText];
++
+     if (textFieldFocused) {
+         textFieldFocused = NO;
+         SDL_SendScreenKeyboardHidden();
+@@ -576,6 +604,69 @@
+     hidingKeyboard = NO;
+ }
+ 
++// OpenYAMM: preedit is presentation-only; committedText remains the diff baseline.
++- (void)clearMarkedText
++{
++    if (lastMarkedText == nil) {
++        return;
++    }
++
++    lastMarkedText = nil;
++    lastMarkedTextStart = 0;
++    lastMarkedTextLength = 0;
++    if (window && SDL_GetKeyboardFocus() == window && SDL_TextInputActive(window)) {
++        SDL_SendEditingText("", 0, 0);
++    }
++}
++
++- (void)syncMarkedText
++{
++    UITextRange *markedRange = textField.markedTextRange;
++    NSString *markedText = markedRange ? [textField textInRange:markedRange] : nil;
++    if (markedText.length == 0) {
++        [self clearMarkedText];
++        return;
++    }
++    if (!textFieldFocused || !window || SDL_GetKeyboardFocus() != window || !SDL_TextInputActive(window)) {
++        return;
++    }
++
++    int start = -1;
++    int length = -1;
++    UITextRange *selection = textField.selectedTextRange;
++    if (selection) {
++        NSInteger utf16Start = [textField offsetFromPosition:markedRange.start toPosition:selection.start];
++        NSInteger utf16End = [textField offsetFromPosition:markedRange.start toPosition:selection.end];
++        if (utf16Start >= 0 && utf16End >= utf16Start && (NSUInteger)utf16End <= markedText.length) {
++            // Match Cocoa: UIKit positions count UTF-16 units, SDL counts characters.
++            NSUInteger utf32Start = [[markedText substringToIndex:(NSUInteger)utf16Start] lengthOfBytesUsingEncoding:NSUTF32StringEncoding] / 4;
++            NSUInteger utf32End = [[markedText substringToIndex:(NSUInteger)utf16End] lengthOfBytesUsingEncoding:NSUTF32StringEncoding] / 4;
++            start = (int)utf32Start;
++            length = (int)(utf32End - utf32Start);
++        }
++    }
++
++    if ([lastMarkedText isEqualToString:markedText] && lastMarkedTextStart == start && lastMarkedTextLength == length) {
++        return;
++    }
++
++    lastMarkedText = [markedText copy];
++    lastMarkedTextStart = start;
++    lastMarkedTextLength = length;
++    SDL_SendEditingText([markedText UTF8String], start, length);
++}
++
++- (void)textFieldDidUnmarkText
++{
++    if (lastMarkedText != nil && textFieldFocused && window && SDL_GetKeyboardFocus() == window && SDL_TextInputActive(window)) {
++        // If UIKit did not notify, finish through the original commit/delete diff.
++        // A prior notification or reset/stop has already cleared lastMarkedText.
++        [self textFieldTextDidChange:nil];
++    } else {
++        [self syncMarkedText];
++    }
++}
++
+ - (void)textFieldTextDidChange:(NSNotification *)notification
+ {
+     // When opening a password manager overlay to select a password and have it auto-filled,
+@@ -585,6 +676,9 @@
+ 
+     if (startTextInputMomentarily)
+         SDL_StartTextInput(window);
++
++    // Clear preedit before the original diff emits real deletions or committed text.
++    [self syncMarkedText];
+ 
+     if (textField.markedTextRange == nil) {
+         if (isOTPMode && labs((NSInteger)textField.text.length - (NSInteger)committedText.length) != 1) {
+@@ -682,6 +776,11 @@
+ // Terminates the editing session
+ - (BOOL)textFieldShouldReturn:(UITextField *)_textField
+ {
++    if (_textField.markedTextRange != nil) {
++        // Let UIKit handle the IME's Return without submitting the game's prompt.
++        return YES;
++    }
++
+     SDL_SendKeyboardKeyAutoRelease(0, SDL_SCANCODE_RETURN);
+     if (textFieldFocused &&
+         SDL_GetHintBoolean(SDL_HINT_RETURN_KEY_HIDES_IME, false)) {
+@@ -692,6 +791,8 @@
+ 
+ - (void)resetTextState
+ {
++    [self clearMarkedText];
++
+     if (!isOTPMode) {
+         textField.text = obligateForBackspace;
+         committedText = textField.text;

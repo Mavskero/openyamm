@@ -236,6 +236,11 @@ void GameplayInputController::handleStandardUiHotkeys(
 
     if (isEscapeNewlyPressed(context, config.pInputFrame, config.pKeyboardState))
     {
+        if (houseBankInputActive && config.pInputFrame != nullptr && config.pInputFrame->textEdits)
+        {
+            // The bank validates Escape at its position in the ordered text events.
+            return;
+        }
         if (!context.allowSourceGameplayAction(SourceActionEscape))
         {
             context.interactionState().menuToggleLatch = true;

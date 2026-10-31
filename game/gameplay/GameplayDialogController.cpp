@@ -4778,9 +4778,15 @@ bool GameplayDialogController::refreshHouseBankInputDialog(Context &context, boo
     const std::string promptLabel = text.text(
         houseBankState.inputMode == GameplayUiController::HouseBankInputMode::Deposit
             ? UiTextTable::Message::BankDeposit : UiTextTable::Message::BankWithdraw);
-    const std::string enteredText = houseBankState.inputText.empty()
-        ? (showCursor ? "_" : "")
-        : (houseBankState.inputText + (showCursor ? "_" : ""));
+    std::string enteredText = houseBankState.inputText;
+    if (houseBankState.compositionActive && !houseBankState.compositionText.empty())
+    {
+        enteredText += "[" + houseBankState.compositionText + "]";
+    }
+    if (showCursor)
+    {
+        enteredText += "_";
+    }
 
     context.activeEventDialog.lines.clear();
     context.activeEventDialog.lines.push_back(
@@ -4805,6 +4811,7 @@ GameplayDialogController::Result GameplayDialogController::returnToHouseBankMain
     const uint32_t houseId = houseBankState.houseId;
     houseBankState.inputMode = GameplayUiController::HouseBankInputMode::None;
     houseBankState.inputText.clear();
+    houseBankState.clearTextComposition();
 
     if (houseId == 0)
     {

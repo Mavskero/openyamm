@@ -26,7 +26,10 @@ struct GameplayTextEditOperation
         InsertText,
         Backspace,
         Delete,
-        FallbackKey
+        FallbackKey,
+        Composition,
+        Confirm,
+        Cancel
     };
 
     Kind kind = Kind::InsertText;

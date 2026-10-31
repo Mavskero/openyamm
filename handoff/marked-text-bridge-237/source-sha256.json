@@ -1,0 +1,86 @@
+{
+  "checkpoint": 237,
+  "base_commit": "3b0bb81d7595a3fd41a2d77addbe6d89b74bd0d0",
+  "scope": "15 frozen source/patch/check files; matching at accepted native/iOS build completion",
+  "files": [
+    {
+      "path": "cmake/PatchSdlUIKit.cmake",
+      "sha256": "3560c058b1f5459c34c3ef935117403fa5940cad019db1c8b25b4e93c0859830",
+      "bytes": 1279
+    },
+    {
+      "path": "cmake/patches/sdl-uikit-marked-text.patch",
+      "sha256": "754d3248b91062a70f04ecf3e566e5fb69636ebef26e18b975243ba32520e596",
+      "bytes": 5204
+    },
+    {
+      "path": "game/app/GameApplication.cpp",
+      "sha256": "e010bc4351a1336a704c5123ac1226f5fa0a5d6d76999fe2eece5f070b4cebf5",
+      "bytes": 405816
+    },
+    {
+      "path": "game/app/GameInputSystem.cpp",
+      "sha256": "82e83976845a1186e95fae321f2575c0f4deb4993ed222ce079c7019d1af3cc0",
+      "bytes": 48844
+    },
+    {
+      "path": "game/app/GameInputSystem.h",
+      "sha256": "89294dc0d91a14cc4085cfa32f6e94a0de15417cbbbca701154a91d2bb0d014f",
+      "bytes": 4672
+    },
+    {
+      "path": "game/gameplay/GameplayDialogController.cpp",
+      "sha256": "ec4b6b1df4a9071ac35cfcd564b1456656b09db53c21eb33f5fa7d295af8e89a",
+      "bytes": 189547
+    },
+    {
+      "path": "game/gameplay/GameplayInputController.cpp",
+      "sha256": "c6d1bc86c99b2bd7cb81e9648c32a4e4fa2d28180426a552ddc8944d391fbf83",
+      "bytes": 39820
+    },
+    {
+      "path": "game/gameplay/GameplayInputFrame.h",
+      "sha256": "588a94f99f1d569337b5e95e74206235a26243602d9362957131b038cfda4ca1",
+      "bytes": 3584
+    },
+    {
+      "path": "game/gameplay/GameplayOverlayInputController.cpp",
+      "sha256": "1c6f28b42036a026d706fce7543232489fdbf183f5a817991cb741e3322232f2",
+      "bytes": 215656
+    },
+    {
+      "path": "game/ui/GameplayPartyOverlayRenderer.cpp",
+      "sha256": "a425bc4010048b9729f9a5fc69a786ab036e59846b51e9a851a80467a3df8268",
+      "bytes": 436369
+    },
+    {
+      "path": "game/ui/GameplayUiController.cpp",
+      "sha256": "37e75c7fbc421e37c3782c5e50dd202d7f3542849fc953f498f90637b0d39573",
+      "bytes": 17116
+    },
+    {
+      "path": "game/ui/GameplayUiController.h",
+      "sha256": "f2f53bc3c45fc4b8a210bf4a762df765fc30d7828167a2bb96d8029bebea5bf3",
+      "bytes": 18878
+    },
+    {
+      "path": "game/ui/screens/NewGameScreen.cpp",
+      "sha256": "b20aaad6fd442b091d1e913443cd0e5aba81bc2886dbf63c93034c25407fef3c",
+      "bytes": 128420
+    },
+    {
+      "path": "game/ui/screens/NewGameScreen.h",
+      "sha256": "79d1fd433da0378bb08a98f0b5f3839d61fb44d4538bf655ddf0d87365548da0",
+      "bytes": 8887
+    },
+    {
+      "path": "tools/AppleInputCheck.cpp",
+      "sha256": "fa303ae7ee82b4aaac7bc8ac6cc5b19f2bb96efcade3f0349de03e8aa1b659ae",
+      "bytes": 72363
+    }
+  ],
+  "uikit_dependency": {
+    "path_suffix": "src/video/uikit/SDL_uikitviewcontroller.m",
+    "sha256": "f7523109c6baf167e518df6f251b3a05091c7e6ac2782e3e1f788562bd793f3b"
+  }
+}

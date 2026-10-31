@@ -25,6 +25,18 @@ These rules apply to all AI-generated contributions in this repository.
   cannotread106;rollback uses preserved105/oldercopy. No actualflyingpixel/touch/fullcampaign claim. Current
   physicaldebugging remainsuserpaused;subagentsSol6.1/max. BoundedUIKitIME bridge source review ongoing.
 
+- 237 ACCEPTED_OFFLINE_SCOPED: `handoff/marked-text-bridge-237/README.md`.
+  UIKit persistent patch exposes hidden-field preedit viaTEXT_EDITING, clears before originaldiff and guardsunmark;
+  originalcommit/delete/64space/scene-bounds retained. Save/name/bank transientdisplay, orderedConfirm/Cancel and
+  compositionkey protection, focus/owner/console cleanup; bankAction113 refusal retainedonce. Name/question paste
+  wiredonlyoutsidecomposition. Native90.568s/unsignediOS96.962s/existinginput0.902spass;15frozenhashesmatch,
+  actualUIKitdependencyhashmatch.8affectedassertions,0newunitcases/App/savewrite/device/simulator/campaign/Release.
+  Initialbuilds stopped88.327s forsource-rejected Escape correction; wronginputpath launchednoprogram; retained.
+  Resource235/runtime-002(Ui227)/Save106 entirelyretained, old104/105read evidencefrom236notreplayed. ActualUIKit
+  callback/hardwareordering/pixels/banktransaction/fullnaturalcampaign unproved; physicaldebug userpaused,
+  subagentsSol6.1/max,fullgoalactive/~88%lowconfidence. Nextconcrete sourcegap: ordinarySave Escape can bypass
+  upperAction113 rejection; verifyoriginalScreen11 andforwardrefusal onceinleaf, no devicecheckpoint.
+
 - 234 ACCEPTED_OFFLINE_SCOPED (2026-10-31): `handoff/offline-function-completion-234/README.md`.
   Generated identity/NpcEnter now prepares original dynamic greetings/admission using existing Lua RNG;
   original script fingerprints and14 current-language GlobalTxt dependencies imported. Ordered SDL edits,

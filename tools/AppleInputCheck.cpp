@@ -1154,6 +1154,63 @@ elements:
             }
         } saveAdapter(runtime);
         runtime.bindSceneAdapter(&saveAdapter);
+        const auto textEditing = [&](const char *text)
+        {
+            SDL_Event editing = {};
+            editing.type = SDL_EVENT_TEXT_EDITING;
+            editing.edit.text = text;
+            input.handleSdlEvent(editing);
+        };
+        saveScreen.editBuffer = "前";
+        textEditing("zhong");
+        keyTap(SDL_SCANCODE_BACKSPACE);
+        keyTap(SDL_SCANCODE_RETURN);
+        keyTap(SDL_SCANCODE_ESCAPE);
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        require(saveScreen.active && saveScreen.editActive && saveScreen.compositionActive
+            && saveScreen.compositionText == "zhong" && saveScreen.editBuffer == "前"
+            && saveAdapter.m_committedName.empty(),
+            "IME keys changed or submitted a name before its composition was committed");
+        textEditing("");
+        SDL_Event compositionCommit = {};
+        compositionCommit.type = SDL_EVENT_TEXT_INPUT;
+        compositionCommit.text.text = "中";
+        input.handleSdlEvent(compositionCommit);
+        keyTap(SDL_SCANCODE_RETURN);
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        require(!saveScreen.compositionActive && saveScreen.compositionText.empty()
+            && saveScreen.editBuffer == "前中" && saveAdapter.m_committedName == "前中",
+            "A real Return following the IME commit was delayed or saved preedit text");
+        textEditing("wei");
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        input.handleSdlEvent(focusLost);
+        input.handleSdlEvent(focusGained);
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        require(!saveScreen.compositionActive && saveScreen.editBuffer == "前中",
+            "Focus loss and gain in one frame left stale save composition");
+        textEditing("bao");
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        update(true);
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        require(!saveScreen.compositionActive && saveScreen.editBuffer == "前中",
+            "Blocked input retained save preedit or committed it");
+        textEditing("liu");
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        keyTap(SDL_SCANCODE_BACKSPACE);
+        // Console hides the visible preedit immediately; the queued clear owns its event boundary.
+        saveScreen.compositionText.clear();
+        input.clearTextComposition();
+        update();
+        GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        require(!saveScreen.compositionActive && saveScreen.editBuffer == "前中",
+            "Queued composition clearing reordered an earlier IME Backspace");
+        saveAdapter.m_committedName.clear();
         saveScreen.editBuffer = "连";
         SDL_Event committedText = {};
         committedText.type = SDL_EVENT_TEXT_INPUT;
@@ -1251,8 +1308,59 @@ elements:
         escapeTap();
         update();
         GameplayOverlayInputController::handleSaveGameOverlayInput(runtime, input.frame());
+        // No world is bound here: exercise the real bank input consumer without a transaction.
+        auto &bankInput = runtime.houseBankState();
+        bankInput.houseId = 281;
+        bankInput.inputMode = GameplayUiController::HouseBankInputMode::Deposit;
+        bankInput.inputText = "12";
+        textEditing("3");
+        keyTap(SDL_SCANCODE_BACKSPACE);
+        keyTap(SDL_SCANCODE_RETURN);
+        keyTap(SDL_SCANCODE_ESCAPE);
+        update();
+        GameplayOverlayInputController::handleDialogueOverlayInput(runtime, input.frame(), false);
+        require(bankInput.inputActive() && bankInput.compositionActive && bankInput.inputText == "12",
+            "Bank IME keys erased or submitted committed digits during composition");
+        textEditing("");
+        compositionCommit.text.text = "3";
+        input.handleSdlEvent(compositionCommit);
+        keyTap(SDL_SCANCODE_RETURN);
+        compositionCommit.text.text = "4";
+        input.handleSdlEvent(compositionCommit);
+        update();
+        GameplayOverlayInputController::handleDialogueOverlayInput(runtime, input.frame(), false);
+        require(!bankInput.compositionActive && bankInput.inputText == "123",
+            "Bank confirmation included a text event that arrived after Return");
+        struct BankEscapeWorld final : OpenYAMM::Tests::PartySpellTestWorldRuntime
+        {
+            int escapeHookCalls = 0;
+            bool executeEventHooks(EventRuntimeHookKind kind) override
+            {
+                auto &hook = eventRuntimeState()->activeHookContext;
+                if (kind == EventRuntimeHookKind::GameplayAction && hook
+                    && hook->gameplayActionId == SourceActionEscape)
+                {
+                    ++escapeHookCalls;
+                    hook->blocked = true;
+                    return true;
+                }
+                return false;
+            }
+        } bankEscapeWorld;
+        session.bindActiveWorldRuntime(&bankEscapeWorld);
+        keyTap(SDL_SCANCODE_ESCAPE);
+        update();
+        GameplayStandardUiHotkeyConfig bankHotkeys = {};
+        bankHotkeys.pKeyboardState = input.frame().keyboardState();
+        bankHotkeys.pInputFrame = &input.frame();
+        GameplayInputController::handleStandardUiHotkeys(runtime, bankHotkeys);
+        GameplayOverlayInputController::handleDialogueOverlayInput(runtime, input.frame(), false);
+        require(bankInput.inputActive() && bankInput.inputText == "123" && bankEscapeWorld.escapeHookCalls == 1,
+            "Bank ordered Escape bypassed or repeated the source action rejection");
+        session.bindActiveWorldRuntime(nullptr);
+        bankInput = {};
         std::cout << "Touch, short movement/rest/combat input, focus, real menu clicks "
-            "and Chinese save editing/pagination passed\n";
+            "and Chinese save/bank editing/composition/pagination passed\n";
         SDL_Quit();
         return 0;
     }

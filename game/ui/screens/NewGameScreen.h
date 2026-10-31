@@ -68,6 +68,7 @@ public:
     void onExit() override;
     void handleSdlEvent(const SDL_Event &event) override;
     bool textInputActive() const;
+    void clearTextComposition();
     SDL_Rect textInputArea(int windowWidth, int windowHeight) const;
     std::optional<SDL_FRect> mobileInspectButtonRect(int windowWidth, int windowHeight) const;
 
@@ -216,6 +217,8 @@ private:
     size_t m_activePartySlot = 0;
     std::mt19937 m_nameRng;
     bool m_pcNamesLoaded = false;
+    std::string m_nameCompositionText;
+    bool m_nameCompositionActive = false;
     bool m_nameBackspaceHeld = false;
     float m_nameBackspaceRepeatTimer = 0.0f;
     float m_creationCompletionErrorSeconds = 0.0f;

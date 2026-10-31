@@ -2209,6 +2209,8 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
 
     if (!saveGameScreen.active)
     {
+        saveGameScreen.clearTextComposition();
+        saveGameScreen.compositionEraseHeldSuppressed = false;
         view.interactionState().saveGameToggleLatch = false;
         view.interactionState().saveGameClickLatch = false;
         view.interactionState().saveGamePressedTarget = {};
@@ -2216,36 +2218,80 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
         return false;
     }
 
-    const bool escapePressed = input.scancodePressCount(SDL_SCANCODE_ESCAPE) > 0
-        || (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE]);
-    const bool commitPressed = saveGameScreen.editActive
+    if (!saveGameScreen.editActive)
+    {
+        saveGameScreen.clearTextComposition();
+        saveGameScreen.compositionEraseHeldSuppressed = false;
+    }
+    else if (!input.keyboardFocusActive)
+    {
+        saveGameScreen.clearTextComposition();
+        saveGameScreen.compositionEraseHeldSuppressed = true;
+        resetSaveGameEditInputState(view.interactionState());
+    }
+    bool escapePressed = !input.textEdits && !saveGameScreen.compositionActive
+        && (input.scancodePressCount(SDL_SCANCODE_ESCAPE) > 0
+            || (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_ESCAPE]));
+    bool commitPressed = !input.textEdits && saveGameScreen.editActive && !saveGameScreen.compositionActive
         && (input.scancodePressCount(SDL_SCANCODE_RETURN) > 0
             || (pKeyboardState != nullptr && pKeyboardState[SDL_SCANCODE_RETURN]));
     uint16_t appliedErasePressCount = 0;
 
-    if (saveGameScreen.editActive && !escapePressed)
+    if (input.textEdits)
     {
-        // IME commit and Return can arrive in one frame. Apply the committed
-        // Unicode text before checking the final name and creating the save.
         const std::string textBeforeEdits = saveGameScreen.editBuffer;
-        if (input.textEdits)
+        for (const GameplayTextEditOperation &edit : *input.textEdits)
         {
-            for (const GameplayTextEditOperation &edit : *input.textEdits)
+            if (edit.kind == GameplayTextEditOperation::Kind::Composition && saveGameScreen.editActive)
+            {
+                saveGameScreen.clearTextComposition();
+                saveGameScreen.compositionActive = input.keyboardFocusActive && !edit.text.empty();
+                if (saveGameScreen.compositionActive)
+                {
+                    appendUtf8Label(saveGameScreen.compositionText, edit.text, 30);
+                    saveGameScreen.compositionEraseHeldSuppressed = saveGameScreen.compositionEraseHeldSuppressed
+                        || (pKeyboardState != nullptr
+                            && (pKeyboardState[SDL_SCANCODE_BACKSPACE] || pKeyboardState[SDL_SCANCODE_DELETE]));
+                    resetSaveGameEditInputState(view.interactionState());
+                }
+            }
+            else if (edit.kind == GameplayTextEditOperation::Kind::Cancel && !saveGameScreen.compositionActive)
+            {
+                escapePressed = true;
+                break;
+            }
+            else if (edit.kind == GameplayTextEditOperation::Kind::Confirm
+                && saveGameScreen.editActive && !saveGameScreen.compositionActive)
+            {
+                commitPressed = true;
+                break;
+            }
+            else if (saveGameScreen.editActive)
             {
                 if (edit.kind == GameplayTextEditOperation::Kind::InsertText)
                 {
+                    saveGameScreen.clearTextComposition();
                     appendUtf8Label(saveGameScreen.editBuffer, edit.text, 30);
                 }
                 else if (edit.kind == GameplayTextEditOperation::Kind::Backspace
                     || edit.kind == GameplayTextEditOperation::Kind::Delete)
                 {
-                    eraseSaveGameEditCharacter(saveGameScreen);
-                    if (appliedErasePressCount < std::numeric_limits<uint16_t>::max())
+                    if (saveGameScreen.compositionActive)
                     {
-                        ++appliedErasePressCount;
+                        saveGameScreen.compositionEraseHeldSuppressed = true;
+                    }
+                    else
+                    {
+                        saveGameScreen.compositionEraseHeldSuppressed = false;
+                        eraseSaveGameEditCharacter(saveGameScreen);
+                        if (appliedErasePressCount < std::numeric_limits<uint16_t>::max())
+                        {
+                            ++appliedErasePressCount;
+                        }
                     }
                 }
-                else if (edit.kind == GameplayTextEditOperation::Kind::FallbackKey && input.textInput.empty())
+                else if (edit.kind == GameplayTextEditOperation::Kind::FallbackKey
+                    && input.textInput.empty() && !saveGameScreen.compositionActive)
                 {
                     for (const SaveGameKeyBinding &binding : SaveGameEditBindings)
                     {
@@ -2259,11 +2305,20 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
                 }
             }
         }
-        else
-        {
-            appendUtf8Label(saveGameScreen.editBuffer, input.textInput, 30);
-        }
         if (saveGameScreen.editBuffer != textBeforeEdits)
+        {
+            saveGameScreen.errorText.clear();
+        }
+    }
+    else if (saveGameScreen.editActive && !escapePressed)
+    {
+        const std::string textBeforeAppend = saveGameScreen.editBuffer;
+        if (!input.textInput.empty())
+        {
+            saveGameScreen.clearTextComposition();
+        }
+        appendUtf8Label(saveGameScreen.editBuffer, input.textInput, 30);
+        if (saveGameScreen.editBuffer != textBeforeAppend)
         {
             saveGameScreen.errorText.clear();
         }
@@ -2271,7 +2326,8 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
 
     if (escapePressed)
     {
-        if (input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0 || !view.interactionState().saveGameToggleLatch)
+        if (input.textEdits || input.scancodePressCount(SDL_SCANCODE_ESCAPE) != 0
+            || !view.interactionState().saveGameToggleLatch)
         {
             view.closeSaveGameOverlay();
             latchGameplayMenuEscape(view);
@@ -2280,8 +2336,11 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
     }
     else if (commitPressed)
     {
-        if (input.scancodePressCount(SDL_SCANCODE_RETURN) != 0 || !view.interactionState().saveGameToggleLatch)
+        if (input.textEdits || input.scancodePressCount(SDL_SCANCODE_RETURN) != 0
+            || input.scancodePressCount(SDL_SCANCODE_KP_ENTER) != 0
+            || !view.interactionState().saveGameToggleLatch)
         {
+            saveGameScreen.clearTextComposition();
             commitSaveGameEditAndSave(view, saveGameScreen);
             resetSaveGameEditInputState(view.interactionState());
             view.interactionState().saveGameToggleLatch = true;
@@ -2297,7 +2356,8 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
         return true;
     }
 
-    if (saveGameScreen.editActive && pKeyboardState != nullptr)
+    if (!escapePressed && !commitPressed && saveGameScreen.editActive
+        && pKeyboardState != nullptr && input.keyboardFocusActive)
     {
         const bool shiftPressed =
             pKeyboardState[SDL_SCANCODE_LSHIFT] || pKeyboardState[SDL_SCANCODE_RSHIFT];
@@ -2309,7 +2369,7 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
 
             if (pressed)
             {
-                if (!input.textEdits && input.textInput.empty()
+                if (!input.textEdits && input.textInput.empty() && !saveGameScreen.compositionActive
                     && !view.interactionState().saveGameEditKeyLatches[bindingIndex]
                     && (SDL_GetKeyboardFocus() == nullptr || !SDL_TextInputActive(SDL_GetKeyboardFocus())))
                 {
@@ -2325,14 +2385,27 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
             }
         }
 
-        updateSaveGameEraseRepeat(
-            saveGameScreen,
-            view.interactionState(),
-            pKeyboardState[SDL_SCANCODE_BACKSPACE] || pKeyboardState[SDL_SCANCODE_DELETE],
-            input.textEdits ? appliedErasePressCount
-                : input.scancodePressCount(SDL_SCANCODE_BACKSPACE) + input.scancodePressCount(SDL_SCANCODE_DELETE),
-            SDL_GetTicks(),
-            input.textEdits.has_value());
+        const bool eraseHeld = pKeyboardState[SDL_SCANCODE_BACKSPACE] || pKeyboardState[SDL_SCANCODE_DELETE];
+        if (!eraseHeld)
+        {
+            saveGameScreen.compositionEraseHeldSuppressed = false;
+        }
+        if (saveGameScreen.compositionActive || saveGameScreen.compositionEraseHeldSuppressed)
+        {
+            saveGameScreen.compositionEraseHeldSuppressed = eraseHeld;
+            resetSaveGameEditInputState(view.interactionState());
+        }
+        else
+        {
+            updateSaveGameEraseRepeat(
+                saveGameScreen,
+                view.interactionState(),
+                eraseHeld,
+                input.textEdits ? appliedErasePressCount
+                    : input.scancodePressCount(SDL_SCANCODE_BACKSPACE) + input.scancodePressCount(SDL_SCANCODE_DELETE),
+                SDL_GetTicks(),
+                input.textEdits.has_value());
+        }
     }
     else
     {
@@ -2360,6 +2433,8 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
             saveGameScreen.editActive = false;
             saveGameScreen.editSlotIndex = 0;
             saveGameScreen.editBuffer.clear();
+            saveGameScreen.clearTextComposition();
+            saveGameScreen.compositionEraseHeldSuppressed = false;
             saveGameScreen.errorText.clear();
             resetSaveGameEditInputState(view.interactionState());
             view.interactionState().lastSaveGameClickedSlotIndex = std::numeric_limits<size_t>::max();
@@ -2473,6 +2548,8 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
                     {
                         saveGameScreen.editActive = false;
                         saveGameScreen.editBuffer.clear();
+                        saveGameScreen.clearTextComposition();
+                        saveGameScreen.compositionEraseHeldSuppressed = false;
                         saveGameScreen.errorText.clear();
                         resetSaveGameEditInputState(view.interactionState());
                     }
@@ -2490,6 +2567,8 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
                             saveGameScreen.slots[slotIndex].populated
                                 ? saveGameScreen.slots[slotIndex].fileLabel
                                 : std::string();
+                        saveGameScreen.clearTextComposition();
+                        saveGameScreen.compositionEraseHeldSuppressed = false;
                         saveGameScreen.errorText.clear();
                         resetSaveGameEditInputState(view.interactionState());
                     }
@@ -2508,7 +2587,10 @@ bool GameplayOverlayInputController::handleSaveGameOverlayInput(
                 break;
 
             case GameplaySaveLoadPointerTargetType::ConfirmButton:
-                commitSaveGameEditAndSave(view, saveGameScreen);
+                if (!saveGameScreen.compositionActive)
+                {
+                    commitSaveGameEditAndSave(view, saveGameScreen);
+                }
                 break;
 
             case GameplaySaveLoadPointerTargetType::CancelButton:
@@ -3274,7 +3356,12 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
     const bool *pKeyboardState = input.keyboardState();
     const int screenWidth = input.screenWidth;
     const int screenHeight = input.screenHeight;
-    const bool bankInputActive = view.houseBankState().inputActive();
+    GameplayUiController::HouseBankState &houseBankState = view.houseBankState();
+    const bool bankInputActive = houseBankState.inputActive();
+    if (!bankInputActive || !input.keyboardFocusActive)
+    {
+        houseBankState.clearTextComposition();
+    }
 
     if (view.partyReadOnly() != nullptr)
     {
@@ -3310,16 +3397,39 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
     if (bankInputActive)
     {
         clearShopInventoryGesture(view);
+        bool orderedConfirmPressed = false;
+        bool orderedCancelPressed = false;
         if (input.textEdits)
         {
             for (const GameplayTextEditOperation &edit : *input.textEdits)
             {
-                std::string &text = view.houseBankState().inputText;
-                if (edit.kind == GameplayTextEditOperation::Kind::InsertText)
+                std::string &text = houseBankState.inputText;
+                if (edit.kind == GameplayTextEditOperation::Kind::Composition)
                 {
+                    houseBankState.clearTextComposition();
+                    houseBankState.compositionActive = input.keyboardFocusActive && !edit.text.empty();
+                    if (houseBankState.compositionActive)
+                    {
+                        appendUtf8Label(houseBankState.compositionText, edit.text, 10);
+                    }
+                }
+                else if (edit.kind == GameplayTextEditOperation::Kind::InsertText)
+                {
+                    houseBankState.clearTextComposition();
                     appendDigitTextInput(text, edit.text, 10);
                 }
-                else if (edit.kind == GameplayTextEditOperation::Kind::FallbackKey && input.textInput.empty())
+                else if (edit.kind == GameplayTextEditOperation::Kind::Confirm && !houseBankState.compositionActive)
+                {
+                    orderedConfirmPressed = true;
+                    break;
+                }
+                else if (edit.kind == GameplayTextEditOperation::Kind::Cancel && !houseBankState.compositionActive)
+                {
+                    orderedCancelPressed = true;
+                    break;
+                }
+                else if (edit.kind == GameplayTextEditOperation::Kind::FallbackKey
+                    && input.textInput.empty() && !houseBankState.compositionActive)
                 {
                     const char digit = digitForTextInputScancode(edit.scancode);
                     if (digit != '\0')
@@ -3327,7 +3437,8 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                         appendDigitTextInput(text, std::string(1, digit), 10);
                     }
                 }
-                else if (edit.kind == GameplayTextEditOperation::Kind::Backspace && !text.empty())
+                else if (edit.kind == GameplayTextEditOperation::Kind::Backspace
+                    && !houseBankState.compositionActive && !text.empty())
                 {
                     text.pop_back();
                 }
@@ -3335,7 +3446,11 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
         }
         else
         {
-            appendDigitTextInput(view.houseBankState().inputText, input.textInput, 10);
+            if (!input.textInput.empty())
+            {
+                houseBankState.clearTextComposition();
+            }
+            appendDigitTextInput(houseBankState.inputText, input.textInput, 10);
         }
 
         static constexpr SDL_Scancode DigitScancodes[10] = {
@@ -3373,40 +3488,49 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
             {
                 pressCount = 1;
             }
-            if (!input.textEdits && input.textInput.empty() && view.houseBankState().inputText.size() < 10)
+            if (!input.textEdits && input.textInput.empty() && !houseBankState.compositionActive
+                && houseBankState.inputText.size() < 10)
             {
-                const size_t available = 10 - view.houseBankState().inputText.size();
-                view.houseBankState().inputText.append(std::min(pressCount, available), static_cast<char>('0' + digit));
+                const size_t available = 10 - houseBankState.inputText.size();
+                houseBankState.inputText.append(std::min(pressCount, available), static_cast<char>('0' + digit));
             }
             view.interactionState().houseBankDigitLatches[digit] = held;
         }
 
         const bool backspaceHeld = input.isScancodeHeld(SDL_SCANCODE_BACKSPACE);
-        size_t eraseCount = input.textEdits ? 0 : input.scancodePressCount(SDL_SCANCODE_BACKSPACE);
-        if (!input.textEdits && eraseCount == 0
+        size_t eraseCount = input.textEdits || houseBankState.compositionActive
+            ? 0 : input.scancodePressCount(SDL_SCANCODE_BACKSPACE);
+        if (!input.textEdits && !houseBankState.compositionActive && eraseCount == 0
             && backspaceHeld && !view.interactionState().houseBankBackspaceLatch)
         {
             eraseCount = 1;
         }
         if (eraseCount != 0)
         {
-            std::string &text = view.houseBankState().inputText;
+            std::string &text = houseBankState.inputText;
             text.erase(text.size() - std::min(eraseCount, text.size()));
         }
         view.interactionState().houseBankBackspaceLatch = backspaceHeld;
 
         const bool confirmHeld = input.isScancodeHeld(SDL_SCANCODE_RETURN)
             || input.isScancodeHeld(SDL_SCANCODE_KP_ENTER);
-        const bool confirmPressed = input.scancodePressCount(SDL_SCANCODE_RETURN) != 0
-            || input.scancodePressCount(SDL_SCANCODE_KP_ENTER) != 0
-            || (confirmHeld && !view.interactionState().houseBankConfirmLatch
-                && !view.interactionState().eventDialogAcceptLatch);
+        const bool confirmPressed = orderedConfirmPressed
+            || (!input.textEdits && !houseBankState.compositionActive
+                && (input.scancodePressCount(SDL_SCANCODE_RETURN) != 0
+                    || input.scancodePressCount(SDL_SCANCODE_KP_ENTER) != 0
+                    || (confirmHeld && !view.interactionState().houseBankConfirmLatch
+                        && !view.interactionState().eventDialogAcceptLatch)));
+        const bool closeHeld = input.isScancodeHeld(SDL_SCANCODE_ESCAPE);
         // The parent topic's Return can open this prompt, and a held confirmation
         // must not activate a parent topic after the transaction returns there.
         const bool parentAcceptHeld = input.isScancodeHeld(SDL_SCANCODE_RETURN)
             || input.isScancodeHeld(SDL_SCANCODE_SPACE);
         view.interactionState().houseBankConfirmLatch = confirmHeld;
         view.interactionState().eventDialogAcceptLatch = parentAcceptHeld;
+        if (input.textEdits)
+        {
+            view.interactionState().closeOverlayLatch = closeHeld;
+        }
         if (confirmPressed)
         {
             const std::array<bool, 5> partySelectionHeld = view.interactionState().eventDialogPartySelectLatches;
@@ -3414,6 +3538,23 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
             view.interactionState().houseBankConfirmLatch = confirmHeld;
             view.interactionState().eventDialogAcceptLatch = parentAcceptHeld;
             view.interactionState().eventDialogPartySelectLatches = partySelectionHeld;
+            if (input.textEdits)
+            {
+                view.interactionState().closeOverlayLatch = closeHeld;
+            }
+            return;
+        }
+        if (orderedCancelPressed)
+        {
+            if (!view.allowSourceGameplayAction(SourceActionEscape))
+            {
+                view.interactionState().menuToggleLatch = true;
+                view.interactionState().closeOverlayLatch = true;
+                return;
+            }
+            view.interactionState().dialogueTopicContentKey.clear();
+            view.handleDialogueCloseRequest();
+            latchGameplayMenuEscape(view);
             return;
         }
 
@@ -3468,7 +3609,8 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
             findBankPointerTarget,
             [&view](const GameplayDialoguePointerTarget &target)
             {
-                if (target.type == GameplayDialoguePointerTargetType::Action)
+                if (target.type == GameplayDialoguePointerTargetType::Action
+                    && !view.houseBankState().compositionActive)
                 {
                     view.confirmHouseBankInput();
                 }
@@ -3480,21 +3622,22 @@ void GameplayOverlayInputController::handleDialogueOverlayInput(
                 }
             });
 
-        const bool closePressed = pKeyboardState[SDL_SCANCODE_ESCAPE];
-
-        if (closePressed)
+        if (!input.textEdits)
         {
-            if (!view.interactionState().closeOverlayLatch)
+            if (closeHeld && !houseBankState.compositionActive)
             {
-                view.interactionState().dialogueTopicContentKey.clear();
-                view.handleDialogueCloseRequest();
-                latchGameplayMenuEscape(view);
-                view.interactionState().closeOverlayLatch = true;
+                if (!view.interactionState().closeOverlayLatch)
+                {
+                    view.interactionState().dialogueTopicContentKey.clear();
+                    view.handleDialogueCloseRequest();
+                    latchGameplayMenuEscape(view);
+                    view.interactionState().closeOverlayLatch = true;
+                }
             }
-        }
-        else
-        {
-            view.interactionState().closeOverlayLatch = false;
+            else
+            {
+                view.interactionState().closeOverlayLatch = closeHeld;
+            }
         }
 
         return;

@@ -5198,6 +5198,19 @@ bool GameApplication::processPendingDebugMapJump()
 
 void GameApplication::handleSdlEvent(const SDL_Event &event)
 {
+    const auto clearTextCompositionsForConsole = [this]()
+    {
+        auto &saveGameScreen = m_gameSession.gameplayScreenRuntime().saveGameScreenState();
+        saveGameScreen.compositionText.clear();
+        saveGameScreen.compositionEraseHeldSuppressed = true;
+        m_gameSession.gameplayScreenRuntime().houseBankState().compositionText.clear();
+        if (auto *pNewGameScreen = dynamic_cast<NewGameScreen *>(m_screenManager.activeScreen()))
+        {
+            pNewGameScreen->clearTextComposition();
+        }
+        m_gameInputSystem.clearTextComposition();
+    };
+
 #if defined(SDL_PLATFORM_IOS)
     if (event.type == SDL_EVENT_FINGER_DOWN)
     {
@@ -5221,15 +5234,18 @@ void GameApplication::handleSdlEvent(const SDL_Event &event)
             && (event.key.key == SDLK_GRAVE || event.key.scancode == SDL_SCANCODE_GRAVE))
         {
             m_debugConsole.toggleEnabled();
+            clearTextCompositionsForConsole();
             m_gameSession.requestRelativeMouseMotionReset();
             return;
         }
 
         if (m_debugConsole.wantsGameplayInputBlocked())
         {
+            clearTextCompositionsForConsole();
             const ImGuiIO &io = ImGui::GetIO();
 
             if (event.type == SDL_EVENT_TEXT_INPUT
+                || event.type == SDL_EVENT_TEXT_EDITING
                 || event.type == SDL_EVENT_KEY_DOWN
                 || event.type == SDL_EVENT_KEY_UP
                 || event.type == SDL_EVENT_MOUSE_BUTTON_DOWN
@@ -5275,6 +5291,7 @@ void GameApplication::handleSdlEvent(const SDL_Event &event)
         if (m_settings.debugConsole && m_debugConsoleRendererInitialized)
         {
             m_debugConsole.toggleEnabled();
+            clearTextCompositionsForConsole();
             m_gameSession.requestRelativeMouseMotionReset();
         }
 
@@ -5471,6 +5488,22 @@ bool GameApplication::handlePendingInputPromptSdlEvent(const SDL_Event &event)
     // do not add a frame-wide latch that would swallow the next explicit Return.
     if (m_pendingInputCompositionActive)
     {
+        return true;
+    }
+
+#if defined(__APPLE__)
+    const bool pasteModifier = (event.key.mod & SDL_KMOD_GUI) != 0;
+#else
+    const bool pasteModifier = (event.key.mod & SDL_KMOD_CTRL) != 0;
+#endif
+    if (pasteModifier && event.key.scancode == SDL_SCANCODE_V)
+    {
+        char *pClipboard = SDL_GetClipboardText();
+        if (pClipboard != nullptr)
+        {
+            appendUtf8Label(m_pendingInputText, pClipboard, MaximumPendingInputCharacters);
+            SDL_free(pClipboard);
+        }
         return true;
     }
 
@@ -9369,6 +9402,18 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
     beginDebugConsoleFrame();
     const bool debugConsoleOpen = m_debugConsole.wantsGameplayInputBlocked();
     const bool debugConsoleFreezesGameplay = m_debugConsole.freezesGameplay();
+    if (debugConsoleOpen)
+    {
+        auto &saveGameScreen = m_gameSession.gameplayScreenRuntime().saveGameScreenState();
+        saveGameScreen.compositionText.clear();
+        saveGameScreen.compositionEraseHeldSuppressed = true;
+        m_gameSession.gameplayScreenRuntime().houseBankState().compositionText.clear();
+        if (auto *pNewGameScreen = dynamic_cast<NewGameScreen *>(m_screenManager.activeScreen()))
+        {
+            pNewGameScreen->clearTextComposition();
+        }
+        m_gameInputSystem.clearTextComposition();
+    }
     recordFrameDiagnostics(
         m_framePerformanceDiagnostics.debugConsoleBeginNanoseconds,
         debugConsoleBeginTickCount);
@@ -9417,6 +9462,12 @@ void GameApplication::renderFrame(int width, int height, float mouseWheelDelta, 
         mobileFlightControlsEnabled,
         mobileInspectControlEnabled,
         mobileInspectButtonRect);
+    if (debugConsoleOpen)
+    {
+        // Blocked input has discarded the queued edits, including composition-owned keys.
+        m_gameSession.gameplayScreenRuntime().saveGameScreenState().clearTextComposition();
+        m_gameSession.gameplayScreenRuntime().houseBankState().clearTextComposition();
+    }
     m_gameSession.bindCurrentGameplayInputFrame(&m_gameInputSystem.frame());
     recordFrameDiagnostics(m_framePerformanceDiagnostics.inputNanoseconds, inputBeginTickCount);
 

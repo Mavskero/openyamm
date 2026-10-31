@@ -982,6 +982,7 @@ void NewGameScreen::prepareForFirstFrame()
 
 void NewGameScreen::onEnter()
 {
+    clearTextComposition();
     ensureContinentLayoutLoaded();
     ensureLayoutLoaded();
     m_stage = FlowStage::ContinentSelection;
@@ -1036,7 +1037,7 @@ void NewGameScreen::handleSdlEvent(const SDL_Event &event)
 
     if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
     {
-        resetNameBackspaceRepeat();
+        clearTextComposition();
         m_returnPressed = false;
         m_escapePressed = false;
         return;
@@ -1048,8 +1049,20 @@ void NewGameScreen::handleSdlEvent(const SDL_Event &event)
         return;
     }
 
+    if (event.type == SDL_EVENT_TEXT_EDITING && m_state.nameEditing)
+    {
+        clearTextComposition();
+        m_nameCompositionActive = event.edit.text != nullptr && event.edit.text[0] != '\0';
+        if (m_nameCompositionActive)
+        {
+            appendUtf8Label(m_nameCompositionText, event.edit.text, MaximumNameLength);
+        }
+        return;
+    }
+
     if (event.type == SDL_EVENT_TEXT_INPUT && m_state.nameEditing)
     {
+        clearTextComposition();
         const char *pText = event.text.text;
 
         if (pText == nullptr)
@@ -1084,6 +1097,34 @@ void NewGameScreen::handleSdlEvent(const SDL_Event &event)
                 break;
         }
 
+        return;
+    }
+
+    if (m_state.nameEditing && m_nameCompositionActive
+        && (event.key.key == SDLK_BACKSPACE || event.key.key == SDLK_DELETE
+            || event.key.key == SDLK_RETURN || event.key.key == SDLK_KP_ENTER
+            || event.key.key == SDLK_ESCAPE))
+    {
+        resetNameBackspaceRepeat();
+        return;
+    }
+
+#if defined(__APPLE__)
+    const bool pasteModifier = (event.key.mod & SDL_KMOD_GUI) != 0;
+#else
+    const bool pasteModifier = (event.key.mod & SDL_KMOD_CTRL) != 0;
+#endif
+    if (m_state.nameEditing && pasteModifier && event.key.scancode == SDL_SCANCODE_V)
+    {
+        if (!m_nameCompositionActive)
+        {
+            char *pClipboard = SDL_GetClipboardText();
+            if (pClipboard != nullptr)
+            {
+                appendUtf8Label(m_state.nameEditBuffer, pClipboard, MaximumNameLength);
+                SDL_free(pClipboard);
+            }
+        }
         return;
     }
 
@@ -1543,7 +1584,7 @@ void NewGameScreen::beginNameEditing()
         return;
     }
 
-    resetNameBackspaceRepeat();
+    clearTextComposition();
     m_state.nameEditing = true;
     m_state.nameEditBuffer = m_state.name;
 #if !defined(__ANDROID__)
@@ -1558,7 +1599,7 @@ void NewGameScreen::beginNameEditing()
 
 void NewGameScreen::endNameEditing(bool commitEdit)
 {
-    resetNameBackspaceRepeat();
+    clearTextComposition();
 
     if (!m_state.nameEditing)
     {
@@ -1600,9 +1641,16 @@ void NewGameScreen::resetNameBackspaceRepeat()
     m_nameBackspaceRepeatTimer = 0.0f;
 }
 
+void NewGameScreen::clearTextComposition()
+{
+    m_nameCompositionText.clear();
+    m_nameCompositionActive = false;
+    resetNameBackspaceRepeat();
+}
+
 void NewGameScreen::updateNameBackspaceRepeat(float deltaSeconds)
 {
-    if (!m_nameBackspaceHeld || !m_state.nameEditing)
+    if (!m_nameBackspaceHeld || !m_state.nameEditing || m_nameCompositionActive)
     {
         resetNameBackspaceRepeat();
         return;
@@ -3314,7 +3362,11 @@ void NewGameScreen::drawScreen(float deltaSeconds)
         beginNameEditing();
     }
 
-    const std::string displayedName = m_state.nameEditing ? m_state.nameEditBuffer : m_state.name;
+    std::string displayedName = m_state.nameEditing ? m_state.nameEditBuffer : m_state.name;
+    if (m_state.nameEditing && m_nameCompositionActive && !m_nameCompositionText.empty())
+    {
+        displayedName += "[" + m_nameCompositionText + "]";
+    }
     const auto nameWidth = [this, &fontName, &displayedName](float textScale)
     {
 #if defined(__APPLE__)
