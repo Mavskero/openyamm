@@ -15,6 +15,16 @@ These rules apply to all AI-generated contributions in this repository.
   Work: `local-data/validation/offline-function-completion-234/`; do not repeat permission questions or
   publish a new device checkpoint for small fixes. Full goal active by user resume,~88% low-confidence.
 
+- 245 ACCEPTED_OFFLINE_MAC_SCOPED: `openyamm/handoff/natural-mac-generated-npc-245/README.md`.
+  Firstnatural007 generatedNPC Wilfred2662/Beg2667 passed; observedprofession2336 raw%01/%17 nowformats runtime
+  NPC/profession through existinghelper. Native7.232s/unsignedgeneric iOS10.340s pass,onefrozen sourceSHA matches;
+  0unitruns/newcases. OnlynewprivateSlot2/106 writtenoncebeforefix,alloldoriginal/copies+new2 unchangedafterrepair.
+  Repair008 same-dayBeg2651 correctlyrefused;normalUntilDawn thena differentNPC BernieBeg→MoreInfo showsactual
+  name伯尼/fee3 in2completeChinese lines,no rawtokens;oneCouncilnews3lines visible. No fixtures/teleport/rulechange/
+  repairSavewrite/device/simulator/campaign/Release.007/008 normallyexited/logscollected. Resource241/Ui228/Combat223/
+  nav222/Save106 retained;fixedreleases preserved. Physicaldebug userpaused,Sol6.1/max,~88%lowconfidence;
+  fullnaturalcampaign/allofflinecompletion unproved. Do not replaypassedbank/shop routes orcreatecheckpoint.
+
 - 244 ACCEPTED_OFFLINE_MAC_SCOPED: `handoff/natural-mac-shop-244/README.md`.
   FirstnormalMM6 House62 stockMacdrag unexpectedly bought90gold; ordinarynewhelmet sale17worked, originalitems
   retained. MacCocoa explicitabsolute Dragged nowbypasses prematureglobal-snapshot reconcile atuniquecallsite;

@@ -1,0 +1,12 @@
+{
+  "changed_files": [
+    {
+      "path": "game/gameplay/GameplayDialogController.cpp",
+      "bytes": 190206,
+      "sha256": "741b73f741bb030828a2df69950429eb3c79a78461b886170e8e97e854206406"
+    }
+  ],
+  "native_executable_sha256": "505cf4c62ee6d884b80cc9fd67192f30387d7c340492f9879585c80b646a4671",
+  "builds_passed": true,
+  "runtime_unchanged": true
+}

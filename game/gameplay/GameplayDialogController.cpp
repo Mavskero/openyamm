@@ -3837,13 +3837,23 @@ GameplayDialogController::Result GameplayDialogController::executeActiveDialogAc
 
     if (action.kind == EventDialogActionKind::NpcProfessionDescription)
     {
-        if (context.pNpcDialogTable != nullptr && action.secondaryId != 0)
+        if (context.pNpcDialogTable != nullptr && context.pNpcProfessionTable != nullptr
+            && action.secondaryId != 0)
         {
+            const std::optional<NpcEntry> npcEntry = runtimeNpcEntry(
+                context.pNpcDialogTable, context.eventRuntimeState, context.activeEventDialog.sourceId);
+            const MergedNpcProfessionEntry *pProfession =
+                npcEntry ? context.pNpcProfessionTable->get(npcEntry->professionId) : nullptr;
             const std::optional<std::string> description = context.pNpcDialogTable->getText(action.secondaryId);
 
-            if (description && !description->empty())
+            if (npcEntry && pProfession != nullptr && description && !description->empty())
             {
-                context.eventRuntimeState.messages.push_back(*description);
+                context.eventRuntimeState.messages.push_back(formatNpcProfessionText(
+                    *description,
+                    *npcEntry,
+                    *pProfession,
+                    context.pParty,
+                    effectiveReputationForContext(context)));
             }
         }
 

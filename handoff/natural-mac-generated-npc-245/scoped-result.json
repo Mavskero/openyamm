@@ -1,0 +1,88 @@
+{
+  "checkpoint": 245,
+  "status": "ACCEPTED_OFFLINE_MAC_SCOPED",
+  "source_base": "3f3fc80d48ba580f65d6328d6d82f06312a2c2f8",
+  "physical_debugging": "paused",
+  "device_operations": 0,
+  "simulator_operations": 0,
+  "initial_normal_play": {
+    "npc": "威尔勒德",
+    "exact_npc_actor_index_sampled": false,
+    "greeting": "Original generated Paladin LowRep1E NPCText2662, role namePlayer and reputation中立, four visible lines",
+    "beg": "Original2667 success; Join/More information/Blasters restored",
+    "defect": "Profession description2336 exposed raw %01/%17; original profession16 cost400 expects runtime name and4",
+    "fixtures": false,
+    "teleport": false
+  },
+  "changed_source": [
+    {
+      "path": "game/gameplay/GameplayDialogController.cpp",
+      "bytes": 190206,
+      "sha256": "741b73f741bb030828a2df69950429eb3c79a78461b886170e8e97e854206406"
+    }
+  ],
+  "repair": "Use runtime NPC/profession metadata and existing formatNpcProfessionText in NpcProfessionDescription; pending/reopen and gameplay rules unchanged",
+  "builds": {
+    "native": {
+      "passed": true,
+      "elapsed_seconds": 7.232242125
+    },
+    "unsigned_generic_ios": {
+      "passed": true,
+      "elapsed_seconds": 10.33997375
+    },
+    "source_hash_matches": true
+  },
+  "native_executable_sha256": "505cf4c62ee6d884b80cc9fd67192f30387d7c340492f9879585c80b646a4671",
+  "actual_affected_recheck": [
+    {
+      "action": "008 normal UI Load new private Slot2",
+      "result": "Wilfred second greeting and same-day repeated Beg correctly refused with original2651; no rule bypass"
+    },
+    {
+      "action": "Normal rest until next dawn",
+      "result": "Day2 to Day3 06:00;100gold and5food retained"
+    },
+    {
+      "action": "Normal town encounter with a different NPC 伯尼, ordinary Beg then More information",
+      "result": "PASS: 你的所有角色的交际术增加8点。伯尼花费你得到的所有金币的百分之3。; two complete lines, no %01/%17 tokens;100gold5food retained"
+    },
+    {
+      "action": "Same NPC 议会成员 ordinary news topic",
+      "result": "Complete three-line Chinese council explanation visible; no clipping observed"
+    },
+    {
+      "action": "Escape to menu then Quit twice",
+      "result": "008 PID absent and final log collected; no relaunch observation after final Quit"
+    }
+  ],
+  "affected_recheck_npc_is_initial_npc": false,
+  "source_and_peer_review_pass": true,
+  "save_writes": 1,
+  "repair_process_save_writes": 0,
+  "save_write_scope": "Only one normal UI write to a previously empty private Slot2/106 before repair, to resume affected context. All earlier originals/copies and newSlot2 unchanged after recheck.",
+  "original_and_private_save_hashes_unchanged": true,
+  "private_save_inventory_count": 3,
+  "runtime": "complete241/runtime-002 unchanged",
+  "ui_text": 228,
+  "combat_text": 223,
+  "navigation": 222,
+  "save_version": 106,
+  "new_unit_cases": 0,
+  "unit_cases_run": 0,
+  "campaigns_replayed": 0,
+  "old_routes_replayed": 0,
+  "new_release": false,
+  "screenshots": "Reviewed inline CUA only; no exported screenshot files",
+  "not_claimed": [
+    "Same original Wilfred post-repair description pixels",
+    "Every generated NPC or profession",
+    "Physical iPad touch/UIKit",
+    "Full natural campaign",
+    "All offline work complete"
+  ],
+  "estimate_percent": 88,
+  "estimate_confidence": "low",
+  "full_goal_achieved": false,
+  "timestamp": "2026-10-31T11:27:16.515071+00:00"
+}
